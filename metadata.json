@@ -1,0 +1,5 @@
+{
+  "name": "Rembrandt IA Studio 3",
+  "description": "An all-in-one application to generate and edit images, create videos from text and images, have real-time voice conversations with an AI, and generate text-to-speech audio.",
+  "requestFramePermissions": ["microphone"]
+}
