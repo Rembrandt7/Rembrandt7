@@ -5,10 +5,11 @@ import Spinner from './common/Spinner';
 import IconButton from './common/IconButton';
 import { ReferenceImage } from './common/ReferenceImageManager';
 import MarkdownRenderer from './common/MarkdownRenderer';
+import SmartTextarea from './common/SmartTextarea';
 import { SUPABASE_CONFIG } from '../utils/constants';
 import { useLinks } from '../contexts/LinkContext';
 import { cleanJsonResponse } from '../utils/jsonUtils';
-import { History, Trash2, Mail, MessageSquare } from 'lucide-react';
+import { History, Trash2, Mail, MessageSquare, Star, Sparkles, Send, Check } from 'lucide-react';
 import { motion, AnimatePresence } from 'motion/react';
 
 type Tone = 'Profesional' | 'Casual';
@@ -73,8 +74,9 @@ const stripHtml = (html: string): string => {
 };
 
 const EmailGenerator: React.FC<EmailGeneratorProps> = ({ attachedImages, onAttachmentsChange }) => {
-    const { config, updateConfig } = useLinks();
+    const { config, updateConfig, googleApiConfig } = useLinks();
     const [idea, setIdea] = useState('');
+    const [previousEmail, setPreviousEmail] = useState('');
     const [project, setProject] = useState('');
     const [tone, setTone] = useState<Tone>('Profesional');
     const [messageLength, setMessageLength] = useState<MessageLength>('Reducido');
@@ -86,6 +88,24 @@ const EmailGenerator: React.FC<EmailGeneratorProps> = ({ attachedImages, onAttac
     const [contacts, setContacts] = useState<Contact[]>([]);
     const [fraccionamientosList, setFraccionamientosList] = useState<string[]>([]);
     
+    const [favorites, setFavorites] = useState<string[]>(() => {
+        try {
+            return JSON.parse(localStorage.getItem('contact-favorites') || '[]');
+        } catch {
+            return [];
+        }
+    });
+
+    const toggleFavorite = (contactName: string) => {
+        setFavorites(prev => {
+            const newFavs = prev.includes(contactName) 
+                ? prev.filter(f => f !== contactName)
+                : [...prev, contactName];
+            localStorage.setItem('contact-favorites', JSON.stringify(newFavs));
+            return newFavs;
+        });
+    };
+
     // We use index for selection to ensure we grab the exact object in memory
     const [selectedContactIndex, setSelectedContactIndex] = useState<string>('');
     const [isContactsLoading, setIsContactsLoading] = useState(false);
@@ -104,6 +124,8 @@ const EmailGenerator: React.FC<EmailGeneratorProps> = ({ attachedImages, onAttac
     const [recipientEmailTld, setRecipientEmailTld] = useState(emailTlds[0]);
 
     const [isLoading, setIsLoading] = useState(false);
+    const [isImproving, setIsImproving] = useState<boolean>(false);
+    const [selectedImproveStyles, setSelectedImproveStyles] = useState<string[]>(['email', 'whatsapp', 'direct']);
     const [error, setError] = useState<string | null>(null);
     const [generatedContent, setGeneratedContent] = useState<GeneratedContent | null>(null);
     const [copied, setCopied] = useState<CopiedState>(null);
@@ -298,8 +320,8 @@ const EmailGenerator: React.FC<EmailGeneratorProps> = ({ attachedImages, onAttac
     }, [recipientEmailUser, recipientEmailDomain, customDomain, recipientEmailTld]);
 
     const handleGenerate = useCallback(async () => {
-        if (!idea) {
-            setError('Por favor, introduce la idea principal del mensaje.');
+        if (!idea.trim() && !previousEmail.trim()) {
+            setError('Por favor, introduce la idea principal del mensaje o pega un Correo Anterior para responder.');
             return;
         }
 
@@ -308,10 +330,17 @@ const EmailGenerator: React.FC<EmailGeneratorProps> = ({ attachedImages, onAttac
         setGeneratedContent(null);
 
         try {
-            if (!process.env.API_KEY) {
-                throw new Error("API_KEY environment variable is not set.");
+            const apiKey = googleApiConfig?.apiKey || process.env.API_KEY || process.env.GEMINI_API_KEY;
+            
+            if (!apiKey) {
+                throw new Error("No se ha configurado la API Key de Gemini. Por favor, revísala en los ajustes.");
             }
-            const ai = new GoogleGenAI({ apiKey: process.env.API_KEY });
+            const ai = new GoogleGenAI({ 
+                apiKey,
+                httpOptions: {
+                    baseUrl: `${window.location.origin}/api/proxy/google`
+                }
+            });
             
             // --- Determine Context and Greeting ---
             // Re-fetch selected contact from state just in case, though we used inputs
@@ -355,23 +384,33 @@ const EmailGenerator: React.FC<EmailGeneratorProps> = ({ attachedImages, onAttac
                 ? "Destinatario HOMBRE (gramática masculina: 'invitarlo', 'bienvenido')." 
                 : "Destinatario MUJER (gramática femenina: 'invitarla', 'bienvenida').";
 
-            const systemInstruction = `Eres un experto en comunicación corporativa. Tu tarea es generar un email y un mensaje de WhatsApp basados en la idea del usuario.
+            const systemInstruction = `Eres un experto en comunicación corporativa y relaciones públicas de alto nivel.
             
+            **ADN DEL USUARIO:**
+            ${config.memoria_ia?.estilo ? `- ESTILO DE REDACCIÓN: ${config.memoria_ia.estilo}` : ''}
+
+            **CONTEXTO SITUACIONAL:**
+            ${previousEmail.trim() ? `El usuario ha recibido un mensaje anterior que dice:\n"""\n${previousEmail}\n"""\n\n` : ''}
+
             **REGLAS CRÍTICAS:**
-            1. Saludo inicial: Debe ser acorde a la hora del día (${timeGreeting}).
+            1. Saludo inicial: Profesional y acorde a la hora del día (${timeGreeting}).
             2. Nombre/Trato: ${greetingInstruction}
             3. Gramática: ${genderContextInstruction}
-            4. Formato Email: Usa HTML básico (<b>, <i>, <br>). Firma siempre como "<b>Arq. Rembrandt Blanco Arrambide</b>".
-            5. Formato WhatsApp: Sin firma, directo, amable y profesional.
-            6. Idioma: Español.
-            7. Proyecto: Si se menciona un proyecto, intégralo naturalmente.`;
+            4. Objetivo Principal: Tu objetivo es redactar un mensaje IMPECABLE, PROFESIONAL y DIRECTO basado estrictamente en la idea proporcionada por el usuario. 
+            5. Formato Email: Usa HTML básico (<b>, <i>, <br>). Firma siempre como "<b>Arq. Rembrandt Blanco Arrambide</b>".
+            6. Formato WhatsApp: Sin firma, directo, amable y con emojis profesionales si el tono es casual, pero siempre manteniendo la seriedad corporativa.
+            7. Idioma: Español.
+            8. Proyecto: Si se menciona un proyecto o fraccionamiento, asegúrate de que esté correctamente integrado en el contexto del mensaje.`;
 
-            const userPrompt = `Genera los mensajes para la siguiente idea:
-            - Idea: "${idea}"
+            const userPrompt = `Genera los mensajes de comunicación profesional considerando lo siguiente:
             - Tono: "${tone}"
             - Longitud: "${messageLength}"
             - Proyecto: "${project || 'General'}"
-            ${attachedImages.length > 0 ? `- Adjuntos: Se han incluido ${attachedImages.length} imágenes. Menciona que se adjuntan archivos.` : ''}`;
+            ${attachedImages.length > 0 ? `- Adjuntos: Se han incluido ${attachedImages.length} imágenes.` : ''}
+            
+            Idea / Inspiración adicional: "${idea}"
+            
+            Recuerda: El objetivo final es comunicar el mensaje de forma clara, profesional y efectiva.`;
 
             const parts: any[] = [];
             if (attachedImages.length > 0) {
@@ -384,7 +423,7 @@ const EmailGenerator: React.FC<EmailGeneratorProps> = ({ attachedImages, onAttac
             parts.push({ text: userPrompt });
 
             const response = await ai.models.generateContent({
-                model: 'gemini-3.1-flash-lite-preview',
+                model: 'gemini-2.5-flash',
                 contents: { parts },
                 config: {
                     systemInstruction,
@@ -436,7 +475,112 @@ const EmailGenerator: React.FC<EmailGeneratorProps> = ({ attachedImages, onAttac
         } finally {
             setIsLoading(false);
         }
-    }, [idea, tone, messageLength, attachedImages, recipientTitle, recipientName, recipientGender, project, selectedContactIndex, contacts]);
+    }, [idea, previousEmail, tone, messageLength, attachedImages, recipientTitle, recipientName, recipientGender, project, selectedContactIndex, contacts]);
+
+    const handleImproveWithStyle = useCallback(async () => {
+        if (!idea.trim() && !previousEmail.trim()) {
+            setError('Introduce un borrador o idea para mejorar.');
+            return;
+        }
+
+        if (selectedImproveStyles.length === 0) {
+            setError('Selecciona al menos un estilo para mejorar.');
+            return;
+        }
+
+        setIsImproving(true);
+        setError(null);
+
+        try {
+            const apiKey = googleApiConfig?.apiKey || process.env.API_KEY || process.env.GEMINI_API_KEY;
+            if (!apiKey) throw new Error("API Key no configurada.");
+
+            const ai = new GoogleGenAI({ 
+                apiKey,
+                httpOptions: { baseUrl: `${window.location.origin}/api/proxy/google` }
+            });
+
+            // Context from existing fields
+            const dataName = recipientName;
+            const dataTitle = recipientTitle;
+            const hour = new Date().getHours();
+            let timeGreeting = "Hola";
+            if (hour >= 5 && hour < 12) timeGreeting = "Buenos días";
+            else if (hour >= 12 && hour < 20) timeGreeting = "Buenas tardes";
+            else timeGreeting = "Buenas noches";
+
+            const memoryContext = `
+            ${config.memoria_ia?.estilo ? `- ESTILO DE REDACCIÓN: ${config.memoria_ia.estilo}` : ''}
+            ${config.memoria_ia?.laboral ? `- CONTEXTO LABORAL: ${config.memoria_ia.laboral}` : ''}`;
+
+            let instructions = [];
+            if (selectedImproveStyles.includes('email')) {
+                instructions.push(`- CORREO: Genera un correo profesional con HTML básico. Firma: "<b>Arq. Rembrandt Blanco Arrambide</b>". Destinatario: ${dataTitle} ${dataName}. Saludo: ${timeGreeting}.`);
+            }
+            if (selectedImproveStyles.includes('whatsapp')) {
+                instructions.push(`- WHATSAPP: Genera un mensaje directo y amable con emojis. Destinatario: ${dataName}.`);
+            }
+            if (selectedImproveStyles.includes('direct')) {
+                instructions.push(`- MEJORA DIRECTA: Mejora el texto original corrigiendo ortografía, gramática y claridad, manteniendo el formato de idea pero más pulido.`);
+            }
+
+            const systemInstruction = `Eres un experto en comunicación corporativa.
+            ${memoryContext}
+            Genera las versiones solicitadas basándote en la idea del usuario:
+            ${instructions.join('\n')}
+            
+            Responde ÚNICAMENTE con JSON según el esquema, dejando campos vacíos "" si no fueron seleccionados.`;
+
+            const userPrompt = `Texto/Idea actual: "${idea}"
+            ${previousEmail.trim() ? `Contexto (mensaje anterior): "${previousEmail}"` : ''}
+            Proyecto: "${project || 'General'}"`;
+
+            const response = await ai.models.generateContent({
+                model: 'gemini-2.5-flash',
+                contents: { parts: [{ text: userPrompt }] },
+                config: {
+                    systemInstruction,
+                    responseMimeType: 'application/json',
+                    responseSchema: {
+                        type: Type.OBJECT,
+                        properties: {
+                            emailSubject: { type: Type.STRING },
+                            emailBody: { type: Type.STRING },
+                            whatsappMessage: { type: Type.STRING },
+                            improvedIdea: { type: Type.STRING }
+                        },
+                        required: ["emailSubject", "emailBody", "whatsappMessage", "improvedIdea"],
+                    },
+                },
+            });
+
+            const parsed = JSON.parse(cleanJsonResponse(response.text.trim()));
+            setGeneratedContent(parsed);
+            
+            // Add to history
+            const historyItem = {
+                id: Date.now().toString(),
+                type: 'email' as const,
+                original: `[Mejora Lote: ${selectedImproveStyles.join(', ')}] ${idea}`,
+                result: JSON.stringify(parsed),
+                timestamp: Date.now()
+            };
+            updateConfig(prev => ({ ...prev, aiHistory: [historyItem, ...(prev.aiHistory || [])].slice(0, 50) }));
+
+        } catch (e: any) {
+            setError(e.message || "Error al mejorar el mensaje.");
+        } finally {
+            setIsImproving(false);
+        }
+    }, [idea, previousEmail, recipientName, recipientTitle, project, googleApiConfig, config, updateConfig, selectedImproveStyles]);
+
+    const toggleStyle = (style: string) => {
+        setSelectedImproveStyles(prev => 
+            prev.includes(style) 
+                ? prev.filter(s => s !== style) 
+                : [...prev, style]
+        );
+    };
   
     const handleCopyToClipboard = async (text: string, type: CopiedState) => {
         if (type === 'email' && generatedContent?.emailBody) {
@@ -688,18 +832,44 @@ const EmailGenerator: React.FC<EmailGeneratorProps> = ({ attachedImages, onAttac
                         </button>
                     </div>
                      
-                     <div className="relative">
+                     <div className="relative flex items-center gap-2">
                         <select value={selectedContactIndex} onChange={handleContactSelect} className="w-full p-2 bg-gray-700 rounded-md border border-gray-600 focus:ring-2 focus:ring-purple-500 text-sm">
                             <option value="">-- Cargar de Base de Datos --</option>
-                            {contacts.map((c, idx) => {
-                                const cName = getDBValue(c, ['cliente', 'nombre', 'name']);
-                                const cTitle = getDBValue(c, ['lic', 'titulo', 'prefix']) || '';
-                                return <option key={idx} value={idx}>{`${cTitle} ${cName}`}</option>;
-                            })}
+                            {contacts.map((c, idx) => ({ c, idx }))
+                                .sort((a, b) => {
+                                    const nameA = String(getDBValue(a.c, ['cliente', 'nombre', 'name']) || '');
+                                    const nameB = String(getDBValue(b.c, ['cliente', 'nombre', 'name']) || '');
+                                    const isFavA = favorites.includes(nameA);
+                                    const isFavB = favorites.includes(nameB);
+                                    if (isFavA && !isFavB) return -1;
+                                    if (!isFavA && isFavB) return 1;
+                                    return nameA.localeCompare(nameB);
+                                })
+                                .map(({ c, idx }) => {
+                                    const cName = getDBValue(c, ['cliente', 'nombre', 'name']);
+                                    const cTitle = getDBValue(c, ['lic', 'titulo', 'prefix']) || '';
+                                    const isFav = favorites.includes(String(cName));
+                                    return <option key={idx} value={idx}>{`${isFav ? '⭐ ' : ''}${cTitle} ${cName}`}</option>;
+                                })
+                            }
                         </select>
+                        <button 
+                             onClick={() => {
+                                 if (selectedContactIndex !== '') {
+                                     const contact = contacts[parseInt(selectedContactIndex, 10)];
+                                     const cName = getDBValue(contact, ['cliente', 'nombre', 'name']);
+                                     if (cName) toggleFavorite(String(cName));
+                                 }
+                             }}
+                             disabled={selectedContactIndex === ''}
+                             className={`shrink-0 flex justify-center items-center h-[38px] w-[38px] rounded-md border transition-colors ${selectedContactIndex !== '' && favorites.includes(String(getDBValue(contacts[parseInt(selectedContactIndex, 10)], ['cliente', 'nombre', 'name']))) ? 'bg-yellow-500/20 text-yellow-400 border-yellow-500/50' : 'bg-gray-700 text-gray-400 border-gray-600 hover:text-white'}`}
+                             title="Marcar/Desmarcar Favorito"
+                         >
+                            <Star size={16} className={selectedContactIndex !== '' && favorites.includes(String(getDBValue(contacts[parseInt(selectedContactIndex, 10)], ['cliente', 'nombre', 'name']))) ? 'fill-current' : ''} />
+                         </button>
                         {selectedContactIndex !== '' && (
-                            <div className="absolute right-8 top-1/2 -translate-y-1/2 pointer-events-none text-green-400 text-xs font-bold animate-pulse bg-gray-800 px-1 rounded">
-                                ✓ Datos Cargados
+                            <div className="absolute right-12 top-1/2 -translate-y-1/2 pointer-events-none text-green-400 text-xs font-bold animate-pulse bg-gray-800 px-1 rounded">
+                                ✓
                             </div>
                         )}
                      </div>
@@ -734,13 +904,29 @@ const EmailGenerator: React.FC<EmailGeneratorProps> = ({ attachedImages, onAttac
                     </div>
                 </div>
 
-                <div>
-                    <label htmlFor="idea" className="block mb-2 text-sm font-medium text-gray-300">Idea Principal</label>
-                    <textarea id="idea" value={idea} onChange={(e) => setIdea(e.target.value)}
-                        placeholder="Ej: 'Recordar sobre la junta de mañana y confirmar asistencia...'"
-                        className="w-full p-2 bg-gray-700 rounded-md border border-gray-600 focus:ring-2 focus:ring-purple-500 text-sm"
-                        rows={4}
-                    />
+                <div className="space-y-4">
+                    <div>
+                        <label htmlFor="idea" className="block mb-2 text-sm font-medium text-gray-300">Idea Principal <span className="text-gray-500 text-xs font-normal">(Opcional si pegas un correo abajo)</span></label>
+                        <SmartTextarea id="idea" value={idea} onChange={(e) => setIdea(e.target.value)}
+                            placeholder="Ej: 'Recordar sobre la junta de mañana...' o 'Dile que sí apruebo el presupuesto'."
+                            className="w-full p-2 bg-gray-700 rounded-md border border-gray-600 focus:ring-2 focus:ring-purple-500 text-sm"
+                            rows={3}
+                        />
+                    </div>
+
+                    <details className="group border border-gray-700 rounded-md bg-gray-900/50">
+                        <summary className="cursor-pointer font-medium text-sm text-gray-300 p-3 select-none flex items-center justify-between">
+                            Correo o Mensaje Anterior (Para Responder)
+                            <span className="text-purple-400 group-open:rotate-180 transition-transform">▼</span>
+                        </summary>
+                        <div className="p-3 border-t border-gray-700">
+                            <SmartTextarea id="previousEmail" value={previousEmail} onChange={(e) => setPreviousEmail(e.target.value)}
+                                placeholder="Pega aquí el correo que quieres responder. Si dejas la Idea Principal vacía, te sugeriré qué responder."
+                                className="w-full p-2 bg-gray-700 rounded-md border border-gray-600 focus:ring-2 focus:ring-purple-500 text-sm"
+                                rows={3}
+                            />
+                        </div>
+                    </details>
                 </div>
                 
                 <div>
@@ -785,12 +971,92 @@ const EmailGenerator: React.FC<EmailGeneratorProps> = ({ attachedImages, onAttac
                     </div>
                 </div>
 
-                <button onClick={handleGenerate} disabled={isLoading}
-                    className="w-full px-6 py-3 font-semibold text-white bg-purple-600 rounded-md hover:bg-purple-700 disabled:bg-gray-500 disabled:cursor-not-allowed transition-colors flex items-center justify-center gap-2"
-                >
-                    {isLoading && <Spinner size="5" />}
-                    {isLoading ? 'Generando...' : 'Generar Mensajes'}
-                </button>
+                <div className="flex flex-col gap-3">
+                    <button onClick={handleGenerate} disabled={isLoading || !!isImproving}
+                        className="w-full px-6 py-3 font-semibold text-white bg-purple-600 rounded-md hover:bg-purple-700 disabled:bg-gray-700 disabled:cursor-not-allowed transition-all flex items-center justify-center gap-2 shadow-lg shadow-purple-900/20"
+                    >
+                        {isLoading ? (
+                            <>
+                                <Spinner size="5" />
+                                <span>Generando...</span>
+                            </>
+                        ) : (
+                            <>
+                                <Send size={18} />
+                                <span>Generar Mensajes (Ambos)</span>
+                            </>
+                        )}
+                    </button>
+
+                    <button 
+                        onClick={handleImproveWithStyle} 
+                        disabled={isLoading || isImproving || !idea.trim() || selectedImproveStyles.length === 0}
+                        className="w-full px-6 py-3 font-semibold text-white bg-indigo-600 rounded-md hover:bg-indigo-700 disabled:bg-gray-700 disabled:cursor-not-allowed transition-all flex items-center justify-center gap-2 shadow-lg shadow-indigo-900/20"
+                    >
+                        {isImproving ? (
+                            <>
+                                <Spinner size="5" />
+                                <span>Mejorando...</span>
+                            </>
+                        ) : (
+                            <>
+                                <Sparkles size={18} />
+                                <span>Mejorar con IA ({selectedImproveStyles.length})</span>
+                            </>
+                        )}
+                    </button>
+
+                    <div className="grid grid-cols-3 gap-2">
+                        <button 
+                            onClick={() => toggleStyle('email')}
+                            className={`flex flex-col items-center justify-center p-3 rounded-xl border transition-all group relative ${
+                                selectedImproveStyles.includes('email') 
+                                ? 'bg-blue-900/30 border-blue-500 text-blue-100 shadow-[0_0_15px_rgba(59,130,246,0.2)]' 
+                                : 'bg-gray-800 border-gray-700 text-gray-400 opacity-60'
+                            }`}
+                        >
+                            {selectedImproveStyles.includes('email') && (
+                                <div className="absolute top-1 right-1 bg-blue-500 rounded-full p-0.5">
+                                    <Check size={8} className="text-white" />
+                                </div>
+                            )}
+                            <Mail size={18} className={selectedImproveStyles.includes('email') ? 'text-blue-400' : ''} />
+                            <span className="text-[9px] mt-1 font-bold">Correo</span>
+                        </button>
+                        <button 
+                            onClick={() => toggleStyle('whatsapp')}
+                            className={`flex flex-col items-center justify-center p-3 rounded-xl border transition-all group relative ${
+                                selectedImproveStyles.includes('whatsapp') 
+                                ? 'bg-green-900/30 border-green-500 text-green-100 shadow-[0_0_15px_rgba(34,197,94,0.2)]' 
+                                : 'bg-gray-800 border-gray-700 text-gray-400 opacity-60'
+                            }`}
+                        >
+                            {selectedImproveStyles.includes('whatsapp') && (
+                                <div className="absolute top-1 right-1 bg-green-500 rounded-full p-0.5">
+                                    <Check size={8} className="text-white" />
+                                </div>
+                            )}
+                            <MessageSquare size={18} className={selectedImproveStyles.includes('whatsapp') ? 'text-green-400' : ''} />
+                            <span className="text-[9px] mt-1 font-bold">WhatsApp</span>
+                        </button>
+                        <button 
+                            onClick={() => toggleStyle('direct')}
+                            className={`flex flex-col items-center justify-center p-3 rounded-xl border transition-all group relative ${
+                                selectedImproveStyles.includes('direct') 
+                                ? 'bg-purple-900/30 border-purple-500 text-purple-100 shadow-[0_0_15px_rgba(168,85,247,0.2)]' 
+                                : 'bg-gray-800 border-gray-700 text-gray-400 opacity-60'
+                            }`}
+                        >
+                            {selectedImproveStyles.includes('direct') && (
+                                <div className="absolute top-1 right-1 bg-purple-500 rounded-full p-0.5">
+                                    <Check size={8} className="text-white" />
+                                </div>
+                            )}
+                            <Sparkles size={18} className={selectedImproveStyles.includes('direct') ? 'text-purple-400' : ''} />
+                            <span className="text-[9px] mt-1 font-bold">Mejorar</span>
+                        </button>
+                    </div>
+                </div>
             </div>
 
             {/* --- Right Column: Outputs --- */}
@@ -847,6 +1113,32 @@ const EmailGenerator: React.FC<EmailGeneratorProps> = ({ attachedImages, onAttac
                                 {generatedContent.whatsappMessage}
                             </div>
                         </div>
+
+                        {/* Mejora Directa Resultados */}
+                        {generatedContent.improvedIdea && (
+                            <div className="mt-6 border-t border-gray-800 pt-6">
+                                <h3 className="text-sm font-bold text-purple-400 flex items-center gap-2 mb-3">
+                                    <Sparkles size={16} />
+                                    Mejora Directa del Borrador
+                                </h3>
+                                <div className="p-4 bg-gray-800/40 rounded-2xl border border-purple-500/30 shadow-[0_0_20px_rgba(168,85,247,0.1)]">
+                                    <div className="text-sm text-gray-300 leading-relaxed whitespace-pre-wrap italic">
+                                        "{generatedContent.improvedIdea}"
+                                    </div>
+                                    <button 
+                                        onClick={() => {
+                                            setIdea(generatedContent.improvedIdea || '');
+                                            setCopied('email'); 
+                                            setTimeout(() => setCopied(null), 2000);
+                                        }}
+                                        className="mt-3 px-3 py-1.5 text-[10px] font-bold bg-purple-600/20 text-purple-300 border border-purple-500/30 rounded-lg hover:bg-purple-600/40 hover:scale-105 transition-all flex items-center gap-2"
+                                    >
+                                        <Star size={12} />
+                                        USAR COMO IDEA PRINCIPAL
+                                    </button>
+                                </div>
+                            </div>
+                        )}
                     </div>
                 )}
             </div>

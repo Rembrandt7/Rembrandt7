@@ -21,7 +21,7 @@ const Assistant: React.FC<AssistantProps> = ({ messages, setMessages, onAttachIm
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const chatEndRef = useRef<HTMLDivElement>(null);
-  const { config, updateConfig } = useLinks();
+  const { config, updateConfig, googleApiConfig } = useLinks();
 
   useEffect(() => {
     chatEndRef.current?.scrollIntoView({ behavior: 'smooth' });
@@ -37,8 +37,16 @@ const Assistant: React.FC<AssistantProps> = ({ messages, setMessages, onAttachIm
     setError(null);
 
     try {
-        if (!process.env.API_KEY) throw new Error("API_KEY environment variable is not set.");
-        const ai = new GoogleGenAI({ apiKey: process.env.API_KEY });
+        const apiKey = googleApiConfig?.apiKey || process.env.API_KEY || process.env.GEMINI_API_KEY;
+        
+        if (!apiKey) {
+            throw new Error("No se ha configurado la API Key de Gemini. Configúrala en los ajustes.");
+        }
+
+        const ai = new GoogleGenAI({ 
+            apiKey,
+            baseUrl: `${window.location.origin}/api/proxy/google`
+        });
 
         const imageRequestKeywords = [
             // Spanish
@@ -127,6 +135,19 @@ const Assistant: React.FC<AssistantProps> = ({ messages, setMessages, onAttachIm
                 },
             };
 
+            const updateADNFunction: FunctionDeclaration = {
+                name: "updateADN",
+                description: "Actualiza la memoria a largo plazo (ADN) del usuario. Úsalo cuando el usuario te pida explícitamente que recuerdes algo ('acuérdate de esto', 'guarda esto', 'recuerda que...').",
+                parameters: {
+                    type: Type.OBJECT,
+                    properties: {
+                        pilar: { type: Type.STRING, description: "En qué pilar guardar la info: 'perfil' (quién es, gustos generales), 'estilo' (cómo escribe, tono), 'laboral' (su trabajo, profesión, entorno laboral), 'personal' (vida personal, familia, objetivos).", enum: ["perfil", "estilo", "laboral", "personal"] },
+                        content: { type: Type.STRING, description: "El texto exacto o resumen para recordar." }
+                    },
+                    required: ["pilar", "content"],
+                },
+            };
+
             const systemInstruction = `
 Eres Rembrandt, un asistente de IA avanzado integrado en la aplicación "Rembrandt IA Studio".
 Tienes acceso a toda la información de la aplicación del usuario.
@@ -152,11 +173,11 @@ Puedes usar las herramientas proporcionadas para añadir notas, eventos al calen
             ];
 
             const response = await ai.models.generateContent({
-                model: 'gemini-3.1-flash-lite-preview',
+                model: 'gemini-2.5-flash',
                 contents: contents as any,
                 config: {
                     systemInstruction,
-                    tools: [{ functionDeclarations: [addNoteFunction, addCalendarEventFunction, addLinkFunction, updateFinanceBalanceFunction] }],
+                    tools: [{ functionDeclarations: [addNoteFunction, addCalendarEventFunction, addLinkFunction, updateFinanceBalanceFunction, updateADNFunction] }],
                 }
             });
             
@@ -211,6 +232,18 @@ Puedes usar las herramientas proporcionadas para añadir notas, eventos al calen
                                 responseText += `\n\n*No pude encontrar la tarjeta con ID ${args.cardId} para actualizar el balance.*`;
                             }
                         }
+                    } else if (call.name === 'updateADN') {
+                        const args = call.args as any;
+                        const pilar = args.pilar as 'perfil' | 'estilo' | 'laboral' | 'personal';
+                        
+                        if (!newConfig.memoria_ia || typeof newConfig.memoria_ia !== 'object') {
+                            newConfig.memoria_ia = { perfil: '', estilo: '', laboral: '', personal: '' };
+                        }
+                        
+                        const existingContent = newConfig.memoria_ia[pilar] || '';
+                        newConfig.memoria_ia[pilar] = existingContent ? `${existingContent}\n- ${args.content}` : `- ${args.content}`;
+                        
+                        responseText += `\n\n*He guardado esa información en tu ADN (Pilar: ${pilar}).*`;
                     }
                 }
                 updateConfig(newConfig);

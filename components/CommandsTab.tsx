@@ -789,34 +789,63 @@ const CommandsTab: React.FC<CommandsTabProps> = ({ programFilter: initialFilter 
       </DndContext>
 
       {/* AI Memory Section */}
-      <div className="mt-12 bg-gray-900/50 rounded-2xl border border-purple-500/20 p-6 shadow-xl">
-        <div className="flex items-center justify-between mb-4">
+      <div className="mt-12 bg-gray-900/50 rounded-2xl border border-purple-500/20 shadow-xl overflow-hidden mb-8">
+        <div className="p-6 border-b border-gray-800 flex items-center justify-between">
           <div className="flex items-center gap-3">
-            <div className="p-2 bg-purple-600/20 rounded-lg">
+            <div className="p-2 bg-gradient-to-br from-purple-600/20 to-pink-600/20 rounded-lg">
               <Brain className="text-purple-400" size={24} />
             </div>
             <div>
-              <h3 className="text-lg font-bold text-white">Memoria de la IA (Rembrandt)</h3>
-              <p className="text-xs text-gray-400">Conocimientos generales y datos que la IA ha aprendido de ti.</p>
+              <h3 className="text-lg font-bold text-white uppercase tracking-wider">🧠 ADN Rembrandt (Memoria Híbrida)</h3>
+              <p className="text-[11px] text-gray-400">Contexto segregado que alimenta de forma inteligente a todos los módulos.</p>
             </div>
           </div>
           <button 
             onClick={() => saveToSupabase()}
-            className="text-xs bg-purple-600 hover:bg-purple-700 text-white px-3 py-1.5 rounded-lg font-bold transition-colors"
+            className="text-xs bg-gradient-to-r from-purple-600 to-indigo-600 hover:from-purple-500 hover:to-indigo-500 text-white px-4 py-2 rounded-lg font-bold transition-colors shadow-lg shadow-purple-900/50"
           >
-            Guardar Memoria
+            Guardar ADN
           </button>
         </div>
         
-        <textarea
-          value={config.memoria_ia || ''}
-          onChange={(e) => updateConfig({ ...config, memoria_ia: e.target.value })}
-          placeholder="La IA guardará aquí conocimientos generales que le proporciones..."
-          className="w-full h-40 bg-gray-800 border border-gray-700 rounded-xl p-4 text-sm text-gray-300 font-mono focus:ring-2 focus:ring-purple-500 outline-none resize-none"
-        />
-        <p className="mt-2 text-[10px] text-gray-500 italic">
-          * Esta información es utilizada por el Asistente de IA para tener contexto sobre tus preferencias y conocimientos generales.
-        </p>
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-4 p-6 bg-black/20">
+          <div className="space-y-2 relative group">
+             <label className="text-xs font-bold text-purple-400 uppercase tracking-widest pl-1">Perfil Profesional</label>
+             <textarea
+              value={config.memoria_ia?.perfil || ''}
+              onChange={(e) => updateConfig({ ...config, memoria_ia: { ...config.memoria_ia, perfil: e.target.value } })}
+              placeholder="¿Quién eres? ¿A qué te dedicas? (Ej: Soy Arquitecto en XYZ, lidero 3 equipos...)"
+              className="w-full h-32 bg-gray-800/80 border border-gray-700/50 rounded-xl p-4 text-sm text-gray-300 focus:border-purple-500 outline-none resize-none transition-all group-hover:border-purple-500/50 leading-relaxed"
+             />
+          </div>
+          <div className="space-y-2 relative group">
+             <label className="text-xs font-bold text-indigo-400 uppercase tracking-widest pl-1">Estilo de Redacción</label>
+             <textarea
+              value={config.memoria_ia?.estilo || ''}
+              onChange={(e) => updateConfig({ ...config, memoria_ia: { ...config.memoria_ia, estilo: e.target.value } })}
+              placeholder="¿Cómo escribes? (Ej: Correos formales pero amables, viñetas en vez de párrafos largos...)"
+              className="w-full h-32 bg-gray-800/80 border border-gray-700/50 rounded-xl p-4 text-sm text-gray-300 focus:border-indigo-500 outline-none resize-none transition-all group-hover:border-indigo-500/50 leading-relaxed"
+             />
+          </div>
+          <div className="space-y-2 relative group">
+             <label className="text-xs font-bold text-blue-400 uppercase tracking-widest pl-1">Contexto Laboral Activo</label>
+             <textarea
+              value={config.memoria_ia?.laboral || ''}
+              onChange={(e) => updateConfig({ ...config, memoria_ia: { ...config.memoria_ia, laboral: e.target.value } })}
+              placeholder="Proyectos actuales de tu trabajo. (Ej: Proyecto Alfa 2026, mi jefe es Carlos...)"
+              className="w-full h-32 bg-gray-800/80 border border-gray-700/50 rounded-xl p-4 text-sm text-gray-300 focus:border-blue-500 outline-none resize-none transition-all group-hover:border-blue-500/50 leading-relaxed"
+             />
+          </div>
+          <div className="space-y-2 relative group">
+             <label className="text-xs font-bold text-pink-400 uppercase tracking-widest pl-1">Diario Personal / Gustos</label>
+             <textarea
+              value={config.memoria_ia?.personal || ''}
+              onChange={(e) => updateConfig({ ...config, memoria_ia: { ...config.memoria_ia, personal: e.target.value } })}
+              placeholder="Tus aficiones y recuentos libres. (Ej: Me encanta aprender de IA, juego tenis...)"
+              className="w-full h-32 bg-gray-800/80 border border-gray-700/50 rounded-xl p-4 text-sm text-gray-300 focus:border-pink-500 outline-none resize-none transition-all group-hover:border-pink-500/50 leading-relaxed"
+             />
+          </div>
+        </div>
       </div>
 
       {/* Modal for new group */}

@@ -1,50 +1,72 @@
 import React, { useState, useEffect } from 'react';
 import { useLinks } from '../contexts/LinkContext';
 import { FinanzasCard, FinancialItem } from '../types';
-import { Plus, Edit, Trash2, CreditCard, Wallet, TrendingUp, TrendingDown } from 'lucide-react';
+import { Plus, Edit, Trash2, CreditCard, Wallet, TrendingUp, TrendingDown, Save, Download } from 'lucide-react';
 import { motion, AnimatePresence } from 'motion/react';
+import { supabase } from '../services/supabaseClient';
+import { toast } from 'sonner';
 
-const CardItem: React.FC<{ card: FinanzasCard, onEdit: (c: FinanzasCard) => void, onDelete: (id: string) => void, onAdjust: (id: string, amount: number) => void, onOpenActionModal: (id: string, isPositive: boolean, label: string) => void }> = ({ card, onEdit, onDelete, onAdjust, onOpenActionModal }) => {
+const CardItem: React.FC<{ 
+  card: FinanzasCard, 
+  onEdit: (c: FinanzasCard) => void, 
+  onDelete: (id: string) => void, 
+  onAdjust: (id: string, amount: number) => void,
+  onSetBalance: (id: string, amount: number) => void
+}> = ({ card, onEdit, onDelete, onAdjust, onSetBalance }) => {
+  const [amountInput, setAmountInput] = useState('');
+
   const handleAction = (isPositive: boolean) => {
-    const label = card.type === 'debito' 
-      ? (isPositive ? 'Ingreso' : 'Gasto') 
-      : (isPositive ? 'Gasto' : 'Pago');
-    onOpenActionModal(card.id, isPositive, label);
+    const val = parseFloat(amountInput);
+    if (isNaN(val) || val <= 0) return;
+    onAdjust(card.id, isPositive ? val : -val);
+    setAmountInput('');
   };
 
   const isCredit = card.type === 'credito';
   const isGreen = isCredit && card.balance < 0;
 
   return (
-    <div className="bg-zinc-900/80 border border-white/10 rounded-lg p-4 relative group overflow-hidden flex flex-col justify-between h-40">
+    <div className="bg-zinc-900/80 border border-white/10 rounded-lg p-4 relative group overflow-hidden flex flex-col justify-between h-[210px]">
       <div className={`absolute top-0 left-0 w-full h-1 ${isCredit ? 'bg-rose-500' : 'bg-emerald-500'}`}></div>
       
       <div>
         <div className="flex justify-between items-start mb-1">
-          <h3 className="font-bold text-lg text-white truncate">{card.name}</h3>
+          <h3 className="font-bold text-lg text-white truncate pr-14">{card.name}</h3>
           <span className={`text-xl font-black ${isGreen ? 'text-emerald-400' : (isCredit ? 'text-rose-400' : 'text-emerald-400')}`}>
             ${card.balance.toLocaleString('es-MX', { minimumFractionDigits: 0 })}
           </span>
         </div>
-        <div className="text-xs text-white/50 font-medium">
+        <div className="text-xs text-white/50 font-medium mb-3">
           {card.expirationDate} {isCredit && `| Corte: ${card.cutoffDate}`}
         </div>
       </div>
 
-      <div className="flex flex-col gap-1 absolute bottom-2 right-2">
-        <button onClick={() => handleAction(true)} className="px-3 py-1 bg-emerald-600/20 hover:bg-emerald-600/40 text-emerald-400 rounded text-xs font-bold">
-          {isCredit ? 'Gasto' : 'Ingreso'}
-        </button>
-        <button onClick={() => handleAction(false)} className="px-3 py-1 bg-rose-600/20 hover:bg-rose-600/40 text-rose-400 rounded text-xs font-bold">
-          {isCredit ? 'Pago' : 'Gasto'}
+      <div className="flex flex-col gap-2 mt-auto relative z-10">
+        <input 
+          type="number"
+          value={amountInput}
+          onChange={(e) => setAmountInput(e.target.value)}
+          placeholder="Cantidad..."
+          className="w-full bg-black/50 border border-white/10 rounded px-2 py-1.5 text-sm text-white focus:outline-none focus:border-emerald-500"
+        />
+        <div className="flex gap-1">
+          <button onClick={() => handleAction(true)} className="flex-1 px-2 py-1.5 bg-emerald-600/20 hover:bg-emerald-600/40 text-emerald-400 rounded text-xs font-bold transition-colors">
+            {isCredit ? 'Gasto' : 'Ingreso'}
+          </button>
+          <button onClick={() => handleAction(false)} className="flex-1 px-2 py-1.5 bg-rose-600/20 hover:bg-rose-600/40 text-rose-400 rounded text-xs font-bold transition-colors">
+            {isCredit ? 'Pago' : 'Gasto'}
+          </button>
+        </div>
+        <button onClick={() => onSetBalance(card.id, 0)} className="w-full mt-1 px-2 py-1.5 bg-white/5 hover:bg-white/10 text-white/60 hover:text-white rounded text-xs font-bold transition-colors">
+          Limpiar
         </button>
       </div>
       
-      <div className="absolute top-2 right-2 flex gap-1 opacity-0 group-hover:opacity-100 transition-opacity">
-        <button onClick={() => onEdit(card)} className="p-1 bg-white/10 hover:bg-white/20 rounded text-white/70 hover:text-white transition-colors">
+      <div className="absolute top-2 right-2 flex gap-1 opacity-0 group-hover:opacity-100 transition-opacity z-20">
+        <button onClick={() => onEdit(card)} className="p-1.5 bg-white/10 hover:bg-white/20 rounded text-white/70 hover:text-white transition-colors backdrop-blur-md">
           <Edit size={12} />
         </button>
-        <button onClick={() => onDelete(card.id)} className="p-1 bg-rose-500/10 hover:bg-rose-500/20 rounded text-rose-400 hover:text-rose-300 transition-colors">
+        <button onClick={() => onDelete(card.id)} className="p-1.5 bg-rose-500/20 hover:bg-rose-500/40 rounded text-rose-400 hover:text-rose-300 transition-colors backdrop-blur-md">
           <Trash2 size={12} />
         </button>
       </div>
@@ -119,19 +141,16 @@ const FinancialItemItem: React.FC<{ item: FinancialItem, onDelete: (id: string) 
 };
 
 const Finanzas: React.FC = () => {
-  const { config, updateConfig } = useLinks();
+  const { config } = useLinks();
   const [cards, setCards] = useState<FinanzasCard[]>(config.finanzasCards || []);
   const [financialItems, setFinancialItems] = useState<FinancialItem[]>(config.financialItems || []);
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [isItemModalOpen, setIsItemModalOpen] = useState(false);
-  const [actionModal, setActionModal] = useState<{ isOpen: boolean, cardId: string | null, isPositive: boolean, label: string }>({
-    isOpen: false,
-    cardId: null,
-    isPositive: true,
-    label: ''
-  });
-  const [actionAmount, setActionAmount] = useState('');
   const [editingCard, setEditingCard] = useState<FinanzasCard | null>(null);
+
+  const [profileName, setProfileName] = useState('rem');
+  const [isLoading, setIsLoading] = useState(false);
+  const [isSaving, setIsSaving] = useState(false);
 
   // Form state
   const [type, setType] = useState<'credito' | 'debito' | 'deuda' | 'ahorro'>('credito');
@@ -155,9 +174,59 @@ const Finanzas: React.FC = () => {
   const [editingItem, setEditingItem] = useState<FinancialItem | null>(null);
 
   useEffect(() => {
-    setCards(config.finanzasCards || []);
-    setFinancialItems(config.financialItems || []);
+    // Solo carga inicial desde la config si están vacíos.
+    if (cards.length === 0 && financialItems.length === 0) {
+      setCards(config.finanzasCards || []);
+      setFinancialItems(config.financialItems || []);
+    }
   }, [config.finanzasCards, config.financialItems]);
+
+  const fetchFinanzas = async () => {
+    if (!profileName) return;
+    setIsLoading(true);
+    try {
+      const fileName = `finanzas_${profileName}.json`;
+      const { data, error } = await supabase.storage.from('savejson').download(fileName);
+      if (error) {
+        if (error.message?.includes('Object not found') || error.name === 'StorageApiError') {
+           toast.error(`No se encontró el archivo ${fileName}`);
+        } else {
+           throw error;
+        }
+      } else if (data) {
+        const text = await data.text();
+        const json = JSON.parse(text);
+        setCards(json.finanzasCards || []);
+        setFinancialItems(json.financialItems || []);
+        toast.success(`Datos cargados de ${fileName}`);
+      }
+    } catch (err) {
+      console.error(err);
+      toast.error('Error al cargar finanzas');
+    } finally {
+      setIsLoading(false);
+    }
+  };
+
+  const saveFinanzas = async () => {
+    if (!profileName) return;
+    setIsSaving(true);
+    try {
+      const fileName = `finanzas_${profileName}.json`;
+      const dataToSave = { finanzasCards: cards, financialItems };
+      const { error } = await supabase.storage.from('savejson').upload(fileName, JSON.stringify(dataToSave), {
+         upsert: true,
+         contentType: 'application/json'
+      });
+      if (error) throw error;
+      toast.success(`Datos guardados en ${fileName}`);
+    } catch (err) {
+      console.error(err);
+      toast.error('Error al guardar finanzas');
+    } finally {
+      setIsSaving(false);
+    }
+  };
 
   const handleSaveCard = () => {
     if (!name) return;
@@ -180,7 +249,6 @@ const Finanzas: React.FC = () => {
     }
 
     setCards(updatedCards);
-    updateConfig({ ...config, finanzasCards: updatedCards });
     setIsModalOpen(false);
     setEditingCard(null);
   };
@@ -209,7 +277,6 @@ const Finanzas: React.FC = () => {
       updatedItems = [...financialItems, newItem];
     }
     setFinancialItems(updatedItems);
-    updateConfig({ ...config, financialItems: updatedItems });
     setIsItemModalOpen(false);
     setEditingItem(null);
   };
@@ -217,7 +284,6 @@ const Finanzas: React.FC = () => {
   const handleDeleteItem = (id: string) => {
     const updatedItems = financialItems.filter(i => i.id !== id);
     setFinancialItems(updatedItems);
-    updateConfig({ ...config, financialItems: updatedItems });
   };
 
   const creditoCards = cards.filter(c => c.type === 'credito');
@@ -233,13 +299,16 @@ const Finanzas: React.FC = () => {
   const adjustBalance = (id: string, amount: number) => {
     const updatedCards = cards.map(c => c.id === id ? { ...c, balance: c.balance + amount } : c);
     setCards(updatedCards);
-    updateConfig({ ...config, finanzasCards: updatedCards });
+  };
+
+  const setCardBalance = (id: string, balance: number) => {
+    const updatedCards = cards.map(c => c.id === id ? { ...c, balance } : c);
+    setCards(updatedCards);
   };
 
   const handleDeleteCard = (id: string) => {
     const updatedCards = cards.filter(c => c.id !== id);
     setCards(updatedCards);
-    updateConfig({ ...config, finanzasCards: updatedCards });
   };
 
   const openItemModal = (item?: FinancialItem) => {
@@ -292,25 +361,43 @@ const Finanzas: React.FC = () => {
     setIsModalOpen(true);
   };
 
-  const openActionModal = (cardId: string, isPositive: boolean, label: string) => {
-    setActionModal({ isOpen: true, cardId, isPositive, label });
-    setActionAmount('');
-  };
-
-  const handleActionConfirm = () => {
-    const amount = parseFloat(actionAmount || '0');
-    if (isNaN(amount) || !actionModal.cardId) return;
-    
-    adjustBalance(actionModal.cardId, actionModal.isPositive ? amount : -amount);
-    setActionModal({ isOpen: false, cardId: null, isPositive: true, label: '' });
-  };
-
   return (
     <div className="p-6 h-full flex flex-col space-y-6 overflow-y-auto custom-scrollbar">
       <div className="flex justify-between items-center">
-        <h2 className="text-2xl font-bold text-white flex items-center gap-2">
-          <Wallet className="text-emerald-400" /> Finanzas
-        </h2>
+        <div className="flex items-center gap-4">
+          <h2 className="text-2xl font-bold text-white flex items-center gap-2">
+            <Wallet className="text-emerald-400" /> Finanzas
+          </h2>
+          <div className="flex items-center gap-2 bg-black/30 px-3 py-1.5 rounded-lg border border-white/5">
+            <span className="text-sm text-white/50">finanzas_</span>
+            <input 
+              type="text"
+              value={profileName}
+              onChange={(e) => setProfileName(e.target.value)}
+              className="w-20 bg-transparent border-none text-white text-sm focus:outline-none focus:ring-0 p-0 text-center"
+              placeholder="rem"
+            />
+            <span className="text-sm text-white/50">.json</span>
+            <div className="flex gap-1 ml-2 pl-2 border-l border-white/10">
+              <button 
+                onClick={fetchFinanzas}
+                disabled={isLoading}
+                className="p-1 hover:bg-white/10 rounded text-blue-400 transition-colors disabled:opacity-50"
+                title="Cargar JSON"
+              >
+                <Download size={16} />
+              </button>
+              <button 
+                onClick={saveFinanzas}
+                disabled={isSaving}
+                className="p-1 hover:bg-white/10 rounded text-emerald-400 transition-colors disabled:opacity-50"
+                title="Guardar JSON en Supabase"
+              >
+                <Save size={16} />
+              </button>
+            </div>
+          </div>
+        </div>
         <div className="flex gap-2">
           <button 
             onClick={() => openItemModal()}
@@ -344,7 +431,7 @@ const Finanzas: React.FC = () => {
           </div>
           <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3">
             {creditoCards.map(card => (
-              <CardItem key={card.id} card={card} onEdit={openModal} onDelete={handleDeleteCard} onAdjust={adjustBalance} onOpenActionModal={openActionModal} />
+              <CardItem key={card.id} card={card} onEdit={openModal} onDelete={handleDeleteCard} onAdjust={adjustBalance} onSetBalance={setCardBalance} />
             ))}
           </div>
         </div>
@@ -364,7 +451,7 @@ const Finanzas: React.FC = () => {
           </div>
           <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3">
             {debitoCards.map(card => (
-              <CardItem key={card.id} card={card} onEdit={openModal} onDelete={handleDeleteCard} onAdjust={adjustBalance} onOpenActionModal={openActionModal} />
+              <CardItem key={card.id} card={card} onEdit={openModal} onDelete={handleDeleteCard} onAdjust={adjustBalance} onSetBalance={setCardBalance} />
             ))}
           </div>
         </div>
@@ -389,37 +476,6 @@ const Finanzas: React.FC = () => {
           </div>
         </div>
       </div>
-
-      {/* Action Modal */}
-      {actionModal.isOpen && (
-        <div className="fixed inset-0 bg-black/60 backdrop-blur-sm flex items-center justify-center z-50 p-4">
-          <div className="bg-zinc-900 border border-white/10 rounded-2xl p-6 w-full max-w-sm shadow-2xl">
-            <h3 className="text-xl font-bold text-white mb-4">{actionModal.label}</h3>
-            <input 
-              type="number" 
-              value={actionAmount} 
-              onChange={e => setActionAmount(e.target.value)}
-              className="w-full bg-black/50 border border-white/10 rounded-lg px-3 py-2 text-white focus:outline-none focus:border-emerald-500 mb-6"
-              placeholder="0.00"
-              autoFocus
-            />
-            <div className="flex justify-end gap-3">
-              <button 
-                onClick={() => setActionModal({ ...actionModal, isOpen: false })}
-                className="px-4 py-2 rounded-lg text-white/70 hover:text-white hover:bg-white/10 transition-colors"
-              >
-                Cancelar
-              </button>
-              <button 
-                onClick={handleActionConfirm}
-                className="px-4 py-2 rounded-lg bg-emerald-600 hover:bg-emerald-500 text-white transition-colors"
-              >
-                Confirmar
-              </button>
-            </div>
-          </div>
-        </div>
-      )}
 
       {/* Card Edit/Create Modal */}
       {isModalOpen && (

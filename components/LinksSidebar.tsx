@@ -41,9 +41,9 @@ const LinksSidebar: React.FC<LinksSidebarProps> = ({ onClose }) => {
                 </p>
                  <div className="grid grid-cols-[repeat(auto-fit,minmax(90px,1fr))] gap-2">
                     
-                    <LinkCard href="https://portal.javer.net/Paginas/Index.aspx" name="Javer" description="Portal Javer." hoverColor="hover:ring-2 hover:ring-red-600 focus:ring-red-600">
-                        <svg xmlns="http://www.w3.org/2000/svg" className="h-10 w-10 text-red-600 transition-transform group-hover:scale-110" viewBox="0 0 24 24" fill="currentColor">
-                            <path d="M15.5 3H19v13.5c0 2.48-2.02 4.5-4.5 4.5S10 18.98 10 16.5V15h3v1.5c0 .83.67 1.5 1.5 1.5s1.5-.67 1.5-1.5V3z" />
+                    <LinkCard href="https://www.mercadolibre.com.mx/" name="Mercado Libre" description="Compras online." hoverColor="hover:ring-2 hover:ring-yellow-400 focus:ring-yellow-400">
+                        <svg xmlns="http://www.w3.org/2000/svg" className="h-10 w-10 text-yellow-400 transition-transform group-hover:scale-110" viewBox="0 0 24 24" fill="currentColor">
+                            <path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm0 18c-4.41 0-8-3.59-8-8 0-1.48.41-2.86 1.12-4.06l10.94 10.94C14.86 19.59 13.48 20 12 20zm5.88-3.94L6.94 5.12C8.14 4.41 9.52 4 11 4c4.41 0 8 3.59 8 8 0 1.48-.41 2.86-1.12 4.06z"/>
                         </svg>
                     </LinkCard>
 

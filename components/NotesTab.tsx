@@ -569,7 +569,7 @@ const NotesTab: React.FC = () => {
             colorClass="bg-purple-900/20 border-purple-700"
             onAdd={() => toggleCategoryEditMode('estudios')}
             isEditMode={isEstudiosEditMode}
-            jsonFile="notas.json"
+            jsonFile="estudios.json"
           >
             {isEstudiosEditMode && (
               <div className="bg-gray-800 p-4 rounded-xl border border-purple-500 space-y-3 mb-3 shadow-xl">

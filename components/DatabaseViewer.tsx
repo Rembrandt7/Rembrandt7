@@ -6,6 +6,7 @@ import Spinner from './common/Spinner';
 import { SUPABASE_CONFIG } from '../utils/constants';
 import { createClient } from '@supabase/supabase-js';
 import { GoogleGenAI } from "@google/genai";
+import { useLinks } from '../contexts/LinkContext';
 
 interface DatabaseViewerProps {}
 
@@ -13,6 +14,8 @@ interface DatabaseViewerProps {}
 const PREDEFINED_TABLES = ['Contactos', 'Fraccionamientos', 'Arquitecturas', 'Trabajos', 'savesjson'];
 
 const DatabaseViewer: React.FC<DatabaseViewerProps> = () => {
+    const { googleApiConfig } = useLinks();
+
     // Config State (Starts closed per request)
     const [isConfigOpen, setIsConfigOpen] = useState(false);
     const [url, setUrl] = useState(SUPABASE_CONFIG.URL);
@@ -58,9 +61,13 @@ const DatabaseViewer: React.FC<DatabaseViewerProps> = () => {
         if (!selectedFile || !assistantPrompt) return;
         setIsAssistantLoading(true);
         try {
-            const ai = new GoogleGenAI({ apiKey: process.env.GEMINI_API_KEY });
+            const apiKey = googleApiConfig?.apiKey || process.env.GEMINI_API_KEY || '';
+            const ai = new GoogleGenAI({ 
+                apiKey: googleApiConfig?.apiKey || process.env.GEMINI_API_KEY || '',
+                baseUrl: `${window.location.origin}/api/proxy/google`
+            });
             const response = await ai.models.generateContent({
-                model: "gemini-3-flash-preview",
+                model: "gemini-2.5-flash",
                 contents: `Modify the following JSON content based on this prompt: "${assistantPrompt}". Return ONLY the modified JSON string.
                 Content:
                 ${fileContent}`,
@@ -239,6 +246,58 @@ const DatabaseViewer: React.FC<DatabaseViewerProps> = () => {
 
     // --- CRUD Operations ---
 
+    const checkDuplicateWithAI = async (newRecord: any, existingData: any[], table: string) => {
+        try {
+            // Preparar contexto reducido para la IA (primeros 40 registros para evitar sobrecarga)
+            const contextData = existingData.slice(0, 40).map(row => {
+                const { id, created_at, ...importantFields } = row;
+                return importantFields;
+            });
+
+            const prompt = `Analiza si el NUEVO REGISTRO es un duplicado o extremadamente similar a los REGISTROS EXISTENTES en la tabla "${table}".
+            
+NUEVO REGISTRO A INSERTAR:
+${JSON.stringify(newRecord, null, 2)}
+
+MUESTRA DE REGISTROS EXISTENTES:
+${JSON.stringify(contextData, null, 2)}
+
+REGLAS:
+1. Responde ÚNICAMENTE en formato JSON.
+2. Si el registro ya existe (mismo nombre, cliente o datos clave similares), pon "isDuplicate": true.
+3. Ignora diferencias menores de mayúsculas, acentos o espacios.
+
+Respuesta esperada:
+{
+    "isDuplicate": boolean,
+    "reason": "Explicación breve de por qué es duplicado o por qué no",
+    "similarityScore": 0.0 a 1.0
+}`;
+
+            const response = await fetch('http://localhost:11434/api/generate', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({
+                    model: 'gemma 4',
+                    prompt: prompt,
+                    stream: false,
+                    format: 'json'
+                })
+            });
+
+            if (!response.ok) throw new Error('Ollama no está respondiendo');
+            
+            const result = await response.json();
+            const aiResponse = typeof result.response === 'string' ? JSON.parse(result.response) : result.response;
+            return aiResponse;
+        } catch (error) {
+            console.error("Error en validación IA Local:", error);
+            // Si la IA falla, notificamos pero permitimos continuar si el usuario lo desea?
+            // El usuario pidió que SOLO funcione con gemma 4, así que seremos estrictos.
+            return { isDuplicate: false, error: "Servicio de IA Local (Gemma 4) no disponible" };
+        }
+    };
+
     const handleAddRecord = async () => {
         if (tableName === 'savesjson') {
             const fileName = newRecordData['name'];
@@ -285,26 +344,25 @@ const DatabaseViewer: React.FC<DatabaseViewerProps> = () => {
         setIsSaving(true);
         setError(null);
 
-        // --- DUPLICATE CHECK LOGIC ---
-        // Try to identify a "name" column to check for duplicates
-        const nameColumn = Object.keys(newRecordData).find(k => 
-            k.toLowerCase() === 'nombre' || 
-            k.toLowerCase() === 'name' || 
-            k.toLowerCase() === 'title' ||
-            k.toLowerCase() === 'cliente'
-        );
+        // --- VALIDACIÓN CON IA LOCAL (GEMMA 4) ---
+        toast.info("Validando duplicados con Gemma 4...");
+        const aiResult = await checkDuplicateWithAI(newRecordData, data, tableName);
+        
+        if (aiResult.isDuplicate) {
+            alert(`⚠️ POSIBLE DUPLICADO DETECTADO POR GEMMA 4:\n\n${aiResult.reason}\n\nPor favor, revisa el registro antes de continuar.`);
+            setIsSaving(false);
+            return;
+        }
 
-        if (nameColumn && newRecordData[nameColumn]) {
-            const newValue = String(newRecordData[nameColumn]).trim().toLowerCase();
-            const exists = data.some(row => String(row[nameColumn] || '').trim().toLowerCase() === newValue);
-            
-            if (exists) {
-                alert(`Error: El registro con ${nameColumn} "${newRecordData[nameColumn]}" ya existe en la base de datos. Por favor use otro nombre.`);
+        if (aiResult.error) {
+            toast.error(aiResult.error);
+            // Si hay error de conexión, el usuario decide si continuar sin validación.
+            if (!confirm("No se pudo conectar con Gemma 4 para verificar duplicados. ¿Deseas guardar el registro de todos modos?")) {
                 setIsSaving(false);
                 return;
             }
         }
-        // -----------------------------
+        // -----------------------------------------
 
         try {
             const baseUrl = url && url.endsWith('/') ? url.slice(0, -1) : url;

@@ -2,6 +2,7 @@
 import React from 'react';
 import { X } from 'lucide-react';
 import { motion } from 'motion/react';
+import { cn } from '../../utils/cn';
 
 interface TabButtonProps {
   label: string;
@@ -13,25 +14,19 @@ interface TabButtonProps {
 }
 
 const TabButton: React.FC<TabButtonProps> = ({ label, isActive, onClick, className, icon, onDelete }) => {
-  const baseClasses =
-    `px-4 py-2 text-sm md:text-base font-medium rounded-lg focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-offset-gray-900 transition-all duration-200 flex items-center gap-2 group relative ${onDelete ? 'pr-8' : ''}`;
-  
-  // Default styles
-  const activeClasses = 'bg-purple-600 text-white shadow-lg';
-  const inactiveClasses = 'bg-gray-700 text-gray-300 hover:bg-gray-600';
-
-  // If a custom className is provided, use it. Otherwise, toggle between active/inactive.
-  // We apply baseClasses regardless.
-  const appliedClasses = className 
-    ? className 
-    : (isActive ? activeClasses : inactiveClasses);
-
   return (
     <motion.button
-      whileHover={{ scale: 1.02 }}
-      whileTap={{ scale: 0.98 }}
+      whileHover={{ scale: 1.05, y: -2 }}
+      whileTap={{ scale: 0.95 }}
       onClick={onClick}
-      className={`${baseClasses} ${appliedClasses}`}
+      className={cn(
+        "px-4 py-2 text-sm md:text-base font-medium rounded-xl focus:outline-none transition-all duration-300 flex items-center gap-2 group relative backdrop-blur-md",
+        onDelete && "pr-[34px]",
+        isActive 
+          ? "bg-gradient-to-r from-purple-600 to-indigo-600 text-white shadow-[0_4px_20px_rgba(147,51,234,0.4)] border border-purple-400/30"
+          : "bg-white/5 text-gray-300 hover:bg-white/10 hover:text-white border border-white/5 shadow-sm",
+        className
+      )}
     >
       {icon && <span className="w-4 h-4">{icon}</span>}
       {label}

@@ -1,6 +1,7 @@
 
 import React, { useState, useRef, useEffect } from 'react';
 import { GoogleGenAI, Modality } from '@google/genai';
+import { useLinks } from '../contexts/LinkContext';
 import MarkdownRenderer from './common/MarkdownRenderer';
 import Spinner from './common/Spinner';
 import IconButton from './common/IconButton';
@@ -13,6 +14,7 @@ interface ChatMessage {
 }
 
 const Engineer: React.FC = () => {
+    const { googleApiConfig } = useLinks();
     const [query, setQuery] = useState('');
     const [chatHistory, setChatHistory] = useState<ChatMessage[]>([]);
     const [isLoading, setIsLoading] = useState(false);
@@ -36,8 +38,15 @@ const Engineer: React.FC = () => {
         setError(null);
 
         try {
-            if (!process.env.API_KEY) throw new Error("API_KEY no configurada.");
-            const ai = new GoogleGenAI({ apiKey: process.env.API_KEY });
+            const apiKey = googleApiConfig?.apiKey || process.env.API_KEY || process.env.GEMINI_API_KEY;
+            if (!apiKey) throw new Error("No se ha configurado la API Key de Gemini. Configúrala en los ajustes.");
+
+            const ai = new GoogleGenAI({ 
+                apiKey,
+                httpOptions: {
+                    baseUrl: `${window.location.origin}/api/proxy/google`
+                }
+            });
 
             // System instruction to act as an Engineer
             const systemInstruction = `Eres un Ingeniero Estructural Senior experto y consultor técnico. 
@@ -56,7 +65,7 @@ const Engineer: React.FC = () => {
                 }));
 
             const chat = ai.chats.create({
-                model: 'gemini-3.1-flash-lite-preview',
+                model: 'gemini-2.5-flash',
                 config: {
                     systemInstruction: systemInstruction,
                 },
@@ -90,7 +99,10 @@ const Engineer: React.FC = () => {
 
         try {
             if (!process.env.API_KEY) throw new Error("API_KEY no configurada.");
-            const ai = new GoogleGenAI({ apiKey: process.env.API_KEY });
+            const ai = new GoogleGenAI({ 
+                apiKey: googleApiConfig?.apiKey || process.env.API_KEY || process.env.GEMINI_API_KEY || '',
+                baseUrl: `${window.location.origin}/api/proxy/google`
+            });
 
             const prompt = `Genera un diagrama técnico estructural, esquema o visualización realista que explique el siguiente concepto o solución de ingeniería: "${lastModelMessage.text.substring(0, 500)}...". La imagen debe ser clara, profesional y educativa.`;
 

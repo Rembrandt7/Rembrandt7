@@ -1,6 +1,7 @@
 
 import React, { useState, useCallback, useRef, useEffect } from 'react';
 import { GoogleGenAI, Modality } from '@google/genai';
+import { useLinks } from '../contexts/LinkContext';
 import { decode, decodeAudioData, createWavBlob } from '../utils/audioUtils';
 import Spinner from './common/Spinner';
 import IconButton from './common/IconButton';
@@ -9,6 +10,7 @@ const voices = ['Kore', 'Puck', 'Charon', 'Fenrir', 'Zephyr'];
 type Voice = typeof voices[number];
 
 const TextToSpeech: React.FC = () => {
+  const { googleApiConfig } = useLinks();
   const [text, setText] = useState<string>('Hello! Have a wonderful day!');
   const [isLoading, setIsLoading] = useState<boolean>(false);
   const [error, setError] = useState<string | null>(null);
@@ -114,10 +116,18 @@ const TextToSpeech: React.FC = () => {
     setGeneratedAudioData(null);
 
     try {
-      if (!process.env.API_KEY) {
-        throw new Error("API_KEY environment variable is not set.");
+      const apiKey = googleApiConfig?.apiKey || process.env.API_KEY || process.env.GEMINI_API_KEY;
+      
+      if (!apiKey) {
+          throw new Error("No se ha configurado la API Key de Gemini. Por favor, revísala en los ajustes.");
       }
-      const ai = new GoogleGenAI({ apiKey: process.env.API_KEY });
+
+      const ai = new GoogleGenAI({ 
+          apiKey,
+          httpOptions: {
+              baseUrl: `${window.location.origin}/api/proxy/google`
+          }
+      });
       const prompt = selectedVoice === 'Kore' ? `Say cheerfully: ${text}` : text;
 
       const response = await ai.models.generateContent({

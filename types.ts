@@ -264,6 +264,13 @@ export interface AppNotification {
   type: 'ai_advice' | 'calendar_alert';
 }
 
+export interface MemoriaIA {
+  perfil: string;
+  estilo: string;
+  laboral: string;
+  personal: string;
+}
+
 export interface AppConfig {
   version?: number;
   linksBar: LinkItem[];
@@ -298,7 +305,7 @@ export interface AppConfig {
   estudios: Estudio[];
   news: NewsItem[];
   aiTutorials: TutorialItem[];
-  memoria_ia: string;
+  memoria_ia: MemoriaIA;
   grokEmail?: string;
   googleCalendarTokens?: any;
   notesMigrated?: boolean;
@@ -310,6 +317,12 @@ export interface AppConfig {
   notifications?: AppNotification[];
   lastNotificationCheck?: string; // YYYY-MM-DD
   updatedAt?: number; // Timestamp
+}
+
+export interface GoogleApiConfig {
+  clientId: string;
+  clientSecret: string;
+  apiKey: string;
 }
 
 export type Message = {

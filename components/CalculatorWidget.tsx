@@ -13,6 +13,8 @@ const CalculatorWidget: React.FC = () => {
   const [expression, setExpression] = useState('');
   const [history, setHistory] = useState<HistoryItem[]>([]);
   const [isNewNumber, setIsNewNumber] = useState(true);
+  const [isSubtractMode, setIsSubtractMode] = useState(false);
+  const [targetTotal, setTargetTotal] = useState<number | null>(null);
   
   const historyEndRef = useRef<HTMLDivElement>(null);
 
@@ -45,8 +47,42 @@ const CalculatorWidget: React.FC = () => {
   };
 
   const handleOperator = (op: string) => {
-    setExpression(display + ' ' + op + ' ');
-    setIsNewNumber(true);
+    if (op === 'Repetir') {
+      setExpression(display + ' ' + op + ' ');
+      setIsNewNumber(true);
+      return;
+    }
+
+    if (expression && !isNewNumber && !expression.includes('Repetir')) {
+      try {
+        const fullExpression = expression + display;
+        const evalExpression = fullExpression.replace(/×/g, '*').replace(/÷/g, '/');
+        // eslint-disable-next-line no-eval
+        const result = eval(evalExpression);
+        const formattedResult = Number.isInteger(result) ? result.toString() : parseFloat(result.toFixed(8)).toString();
+        
+        setHistory(prev => [...prev, { expression: fullExpression, result: formattedResult }]);
+        setDisplay(formattedResult);
+        setExpression(formattedResult + ' ' + op + ' ');
+        setIsNewNumber(true);
+      } catch (error) {
+        setDisplay('Error');
+        setExpression('');
+        setIsNewNumber(true);
+      }
+    } else if (expression && isNewNumber && !expression.includes('Repetir')) {
+      // User typed an operator right after another operator, just replace the last operator
+      const trimmed = expression.trim();
+      const lastSpaceIndex = trimmed.lastIndexOf(' ');
+      if (lastSpaceIndex !== -1) {
+         setExpression(trimmed.substring(0, lastSpaceIndex) + ' ' + op + ' ');
+      } else {
+         setExpression(display + ' ' + op + ' ');
+      }
+    } else {
+      setExpression(display + ' ' + op + ' ');
+      setIsNewNumber(true);
+    }
   };
 
   const calculate = () => {
@@ -80,6 +116,21 @@ const CalculatorWidget: React.FC = () => {
         return;
       }
 
+      if (isSubtractMode && targetTotal !== null) {
+        const val = parseFloat(display);
+        if (isNaN(val)) return;
+        
+        const newTotal = targetTotal - val;
+        const formattedResult = Number.isInteger(newTotal) ? newTotal.toString() : parseFloat(newTotal.toFixed(8)).toString();
+        
+        setHistory(prev => [...prev, { expression: `${targetTotal} - ${val}`, result: formattedResult }]);
+        setTargetTotal(newTotal);
+        setDisplay(formattedResult);
+        setExpression(`Restante: ${formattedResult}`);
+        setIsNewNumber(true);
+        return;
+      }
+
       const fullExpression = expression + display;
       if (!fullExpression || fullExpression.trim() === '') return;
 
@@ -106,6 +157,8 @@ const CalculatorWidget: React.FC = () => {
     setDisplay('0');
     setExpression('');
     setIsNewNumber(true);
+    setIsSubtractMode(false);
+    setTargetTotal(null);
   };
 
   const handleDelete = () => {
@@ -120,6 +173,21 @@ const CalculatorWidget: React.FC = () => {
       setIsNewNumber(false);
     } else if (!display.includes('.')) {
       setDisplay(display + '.');
+    }
+  };
+
+  const toggleSubtractMode = () => {
+    if (isSubtractMode) {
+      setIsSubtractMode(false);
+      setTargetTotal(null);
+      setExpression('');
+    } else {
+      const val = parseFloat(display);
+      if (isNaN(val) || val === 0) return;
+      setIsSubtractMode(true);
+      setTargetTotal(val);
+      setExpression(`Total inicial: ${val}`);
+      setIsNewNumber(true);
     }
   };
 
@@ -201,14 +269,12 @@ const CalculatorWidget: React.FC = () => {
           {history.length > 0 && (
             <button onClick={clearHistory} className="text-xs text-red-400 hover:text-red-300 px-2 transition-colors">Borrar Historial</button>
           )}
-          {!isDesktop && (
-            <button 
-              onClick={() => setIsOpen(false)}
-              className="p-2 text-gray-400 hover:text-white hover:bg-red-500/20 hover:text-red-400 rounded-md transition-colors"
-            >
-              <X size={18} />
-            </button>
-          )}
+          <button 
+            onClick={() => setIsOpen(false)}
+            className="p-2 text-gray-400 hover:text-white hover:bg-red-500/20 hover:text-red-400 rounded-md transition-colors"
+          >
+            <X size={18} />
+          </button>
         </div>
       </div>
 
@@ -268,7 +334,13 @@ const CalculatorWidget: React.FC = () => {
             <button onClick={() => handleNumber('3')} className="p-3 bg-gray-800 text-white hover:bg-gray-700 rounded-xl font-medium text-xl transition-colors">3</button>
             <button onClick={() => handleOperator('+')} className="p-3 bg-teal-500/10 text-teal-400 hover:bg-teal-500/20 rounded-xl font-medium text-xl transition-colors">+</button>
 
-            <button onClick={handlePercentage} className="p-3 bg-gray-800 text-white hover:bg-gray-700 rounded-xl font-medium text-xl transition-colors">%</button>
+            <button 
+              onClick={toggleSubtractMode} 
+              className={`p-3 rounded-xl font-medium text-xs transition-colors ${isSubtractMode ? 'bg-orange-500 text-white' : 'bg-gray-800 text-gray-300 hover:bg-gray-700'}`}
+              title="Modo Restar (Compara contra un total)"
+            >
+              Restar
+            </button>
             <button onClick={() => handleNumber('0')} className="p-3 bg-gray-800 text-white hover:bg-gray-700 rounded-xl font-medium text-xl transition-colors">0</button>
             <button onClick={handleDecimal} className="p-3 bg-gray-800 text-white hover:bg-gray-700 rounded-xl font-medium text-xl transition-colors">.</button>
             <button onClick={calculate} className="p-3 bg-teal-600 text-white hover:bg-teal-500 rounded-xl font-medium text-xl transition-colors shadow-lg shadow-teal-900/20">=</button>
@@ -278,9 +350,9 @@ const CalculatorWidget: React.FC = () => {
     </>
   );
 
-  if (isDesktop) {
+  if (isDesktop && isOpen) {
     return (
-      <div className="w-80 h-full bg-gray-900 border-l border-gray-800 flex-shrink-0 flex flex-col z-40">
+      <div className="w-80 h-full bg-gray-900 border-l border-gray-800 flex-shrink-0 flex flex-col z-[60] transition-all duration-300">
         {calculatorContent}
       </div>
     );
@@ -290,7 +362,7 @@ const CalculatorWidget: React.FC = () => {
     return (
       <button
         onClick={() => setIsOpen(true)}
-        className="fixed right-4 bottom-24 z-50 p-4 bg-gray-800 hover:bg-gray-700 text-white rounded-full shadow-xl border border-gray-700 transition-all duration-300 group"
+        className="fixed right-4 bottom-24 z-[60] p-4 bg-gray-800 hover:bg-gray-700 text-white rounded-full shadow-xl border border-gray-700 transition-all duration-300 group"
         title="Calculadora"
       >
         <Calculator size={28} className="group-hover:text-teal-400 transition-colors" />
@@ -299,7 +371,7 @@ const CalculatorWidget: React.FC = () => {
   }
 
   return (
-    <div className="fixed right-4 bottom-24 z-50 w-80 bg-gray-900 border border-gray-700 rounded-3xl shadow-2xl overflow-hidden flex flex-col animate-fade-in" style={{ height: '500px' }}>
+    <div className="fixed right-4 bottom-24 z-[60] w-80 bg-gray-900 border border-gray-700 rounded-3xl shadow-2xl overflow-hidden flex flex-col animate-fade-in" style={{ height: '500px' }}>
       {calculatorContent}
     </div>
   );

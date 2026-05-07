@@ -6,6 +6,16 @@ const ShortcutListener: React.FC = () => {
 
   useEffect(() => {
     const handleKeyDown = (event: KeyboardEvent) => {
+      // Ignorar si estamos escribiendo en un input, textarea, etc.
+      const target = event.target as HTMLElement;
+      if (
+        target.tagName === 'INPUT' ||
+        target.tagName === 'TEXTAREA' ||
+        target.isContentEditable
+      ) {
+        return;
+      }
+
       // System Shortcuts
       if (event.altKey && event.key.toLowerCase() === 'p') {
         event.preventDefault();
@@ -57,7 +67,7 @@ const ShortcutListener: React.FC = () => {
 
     window.addEventListener('keydown', handleKeyDown);
     return () => window.removeEventListener('keydown', handleKeyDown);
-  }, [config.commands]);
+  }, [config.commands, toggleEditing, saveToSupabase, isEditing]);
 
   return null;
 };

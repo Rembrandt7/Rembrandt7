@@ -1,12 +1,49 @@
 @import "tailwindcss";
+@import url('https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;500;600;700&display=swap');
+
+body {
+  margin: 0;
+  font-family: 'Outfit', sans-serif;
+  background: radial-gradient(circle at 15% 15%, #2a0a4a 0%, transparent 40%),
+              radial-gradient(circle at 85% 85%, #0d1a45 0%, transparent 40%),
+              radial-gradient(circle at 50% 50%, #1a0b2e 0%, transparent 60%);
+  background-color: #07050f;
+  background-size: 150% 150%;
+  animation: gradientShift 15s ease infinite;
+  color: #f3f4f6;
+}
+
+@keyframes gradientShift {
+  0% { background-position: 0% 50%; }
+  50% { background-position: 100% 50%; }
+  100% { background-position: 0% 50%; }
+}
 
 @keyframes fade-in { 
   0% { opacity: 0; transform: translateY(-10px); } 
   100% { opacity: 1; transform: translateY(0); } 
 }
 .animate-fade-in { 
-  animation: fade-in 0.3s ease-out forwards; 
+  animation: fade-in 0.4s cubic-bezier(0.16, 1, 0.3, 1) forwards; 
 }
+
+/* Glassmorphism utils */
+.glass-panel {
+  background: rgba(255, 255, 255, 0.03);
+  backdrop-filter: blur(16px);
+  -webkit-backdrop-filter: blur(16px);
+  border: 1px solid rgba(255, 255, 255, 0.08);
+  box-shadow: 0 8px 32px 0 rgba(0, 0, 0, 0.3);
+}
+
+.glass-panel-heavy {
+  background: rgba(10, 10, 15, 0.6);
+  backdrop-filter: blur(24px);
+  -webkit-backdrop-filter: blur(24px);
+  border: 1px solid rgba(255, 255, 255, 0.05);
+  box-shadow: 0 16px 40px 0 rgba(0, 0, 0, 0.5);
+}
+
 /* Chat bubble styles */
 .chat-bubble-user {
   background-color: #581c87; /* purple-900 */

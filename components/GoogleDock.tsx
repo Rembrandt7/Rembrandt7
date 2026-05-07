@@ -21,7 +21,7 @@ const ToolItem: React.FC<{
                 target="_blank" 
                 rel="noopener noreferrer" 
                 onClick={(e) => isEditing && e.preventDefault()}
-                className={`relative flex items-center justify-center w-12 h-12 rounded-2xl transition-all duration-300 hover:scale-110 group ${item.colorClass} ${isEditing ? 'opacity-100 cursor-default' : ''} ${isGemini ? 'bg-gradient-to-br from-[#6366f1] via-[#a855f7] to-[#ec4899] shadow-[0_0_20px_rgba(168,85,247,0.4)] border border-white/20' : 'bg-gray-800/50 hover:bg-gray-800'}`}
+                className={`relative flex items-center justify-center w-12 h-12 rounded-[1.25rem] transition-all duration-300 hover:scale-[1.15] hover:-translate-y-1 group ${item.colorClass} ${isEditing ? 'opacity-100 cursor-default' : ''} ${isGemini ? 'bg-gradient-to-br from-[#6366f1] via-[#a855f7] to-[#ec4899] shadow-[0_4px_20px_rgba(168,85,247,0.5)] border border-white/30' : 'bg-white/5 hover:bg-white/10 hover:shadow-[0_4px_15px_rgba(255,255,255,0.05)] border border-white/5'}`}
                 title={item.name}
             >
                 {isGemini && (
@@ -38,9 +38,9 @@ const ToolItem: React.FC<{
                 
                 {/* Tooltip - Positioned above to avoid horizontal clipping */}
                 {!isEditing && (
-                    <div className="absolute bottom-full mb-2 left-1/2 -translate-x-1/2 px-3 py-1.5 bg-gray-900 text-white text-xs font-bold rounded-lg opacity-0 group-hover:opacity-100 transition-all duration-200 pointer-events-none whitespace-nowrap z-[100] border border-gray-700 shadow-2xl translate-y-2 group-hover:translate-y-0">
+                    <div className="absolute bottom-full mb-3 left-1/2 -translate-x-1/2 px-3 py-1.5 bg-black/80 backdrop-blur border border-white/10 text-white text-xs font-bold rounded-xl opacity-0 group-hover:opacity-100 transition-all duration-300 pointer-events-none whitespace-nowrap z-[100] shadow-[0_10px_30px_rgba(0,0,0,0.5)] translate-y-2 group-hover:-translate-y-1">
                         {item.name}
-                        <div className="absolute left-1/2 top-full -translate-x-1/2 -translate-y-1 w-2 h-2 bg-gray-900 border-r border-b border-gray-700 transform rotate-45"></div>
+                        <div className="absolute left-1/2 top-full -translate-x-1/2 -translate-y-1 w-2 h-2 bg-black/80 border-r border-b border-white/10 transform rotate-45"></div>
                     </div>
                 )}
             </a>
@@ -128,7 +128,7 @@ const GoogleDock: React.FC = () => {
     };
 
     return (
-        <aside className={`bg-[#0B0F17] border-r border-gray-800 flex flex-col items-center py-4 h-full shrink-0 z-50 relative transition-all duration-300 ${isEditing ? 'w-32' : 'w-16'}`}>
+        <aside className={`glass-panel-heavy border-r border-white/5 flex flex-col items-center py-5 h-full shrink-0 z-50 relative transition-all duration-500 shadow-2xl ${isEditing ? 'w-32' : 'w-20'}`}>
             {/* Logo or Header - Google G Link */}
             <div className="relative group mb-6 flex justify-center w-full">
                 <a 
@@ -146,9 +146,9 @@ const GoogleDock: React.FC = () => {
                      </svg>
                 </a>
                 {/* Tooltip */}
-                <div className="absolute bottom-full mb-2 left-1/2 -translate-x-1/2 px-3 py-1.5 bg-gray-900 text-white text-xs font-bold rounded-lg opacity-0 group-hover:opacity-100 transition-all duration-200 pointer-events-none whitespace-nowrap z-[100] border border-gray-700 shadow-2xl translate-y-2 group-hover:translate-y-0">
+                <div className="absolute bottom-full mb-3 left-1/2 -translate-x-1/2 px-3 py-1.5 bg-black/80 backdrop-blur border border-white/10 text-white text-xs font-bold rounded-xl opacity-0 group-hover:opacity-100 transition-all duration-300 pointer-events-none whitespace-nowrap z-[100] shadow-[0_10px_30px_rgba(0,0,0,0.5)] translate-y-2 group-hover:-translate-y-1">
                     Google
-                    <div className="absolute left-1/2 top-full -translate-x-1/2 -translate-y-1 w-2 h-2 bg-gray-900 border-r border-b border-gray-700 transform rotate-45"></div>
+                    <div className="absolute left-1/2 top-full -translate-x-1/2 -translate-y-1 w-2 h-2 bg-black/80 border-r border-b border-white/10 transform rotate-45"></div>
                 </div>
             </div>
 

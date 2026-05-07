@@ -40,7 +40,7 @@ import { AnimatePresence, motion } from 'motion/react';
 import TabButton from './components/common/TabButton';
 import VideoGenerator from './components/VideoGenerator';
 import EmailGenerator from './components/EmailGenerator';
-import MessageImprover from './components/MessageImprover';
+// import MessageImprover from './components/MessageImprover'; // Integrated into EmailGenerator
 import TextToSpeech from './components/TextToSpeech';
 import Whiteboard from './components/Whiteboard';
 import Renders from './components/Renders';
@@ -61,10 +61,12 @@ import ReminderDisplay from './components/common/ReminderDisplay';
 import ShortcutListener from './components/ShortcutListener';
 import { EditModeBanner } from './components/common/EditModeBanner';
 import { ReferenceImage } from './components/common/ReferenceImageManager';
+import { GoogleApiConfigModal } from './components/common/GoogleApiConfigModal';
 import CustomTabContent from './components/CustomTabContent';
 import CalendarTab from './components/CalendarTab';
 import NotesTab from './components/NotesTab';
 import Nutricion from './components/Nutricion';
+import ThreeDPrinting from './components/ThreeDPrinting';
 import CalendarAiAssistant from './components/CalendarAiAssistant';
 import NotificationManager from './components/NotificationManager';
 import NotificationOverlay from './components/NotificationOverlay';
@@ -425,6 +427,13 @@ const MainLayout: React.FC = () => {
         );
         updateConfig({ ...config, tabs: newTabs });
       }
+
+      // Auto-add Impresión 3D tab if missing
+      const has3DTab = config.tabs.some(t => t.id === '3d-print' || t.componentKey === 'Impresión 3D');
+      if (!has3DTab) {
+        const newTab: TabConfig = { id: '3d-print', label: 'Impresión 3D', type: 'system', componentKey: 'Impresión 3D', isVisible: true, icon: 'Box' };
+        updateConfig({ ...config, tabs: [...config.tabs, newTab] });
+      }
     }
   }, [config.tabs, activeTabId, updateConfig]);
 
@@ -500,13 +509,8 @@ const MainLayout: React.FC = () => {
     switch (activeTab.componentKey) {
       case 'Generador de Email':
         return (
-          <div className="bg-gray-800 p-6 rounded-lg shadow-xl w-full flex flex-col lg:flex-row items-stretch gap-0 mt-8">
-            <div className="flex-1 min-w-0 pr-6">
-              <EmailGenerator attachedImages={imagesForEmail} onAttachmentsChange={setImagesForEmail} />
-            </div>
-            <div className="w-full lg:w-[450px] shrink-0 border-l border-gray-700 pl-6">
-              <MessageImprover />
-            </div>
+          <div className="glass-panel p-6 rounded-3xl shadow-2xl w-full mt-8">
+            <EmailGenerator attachedImages={imagesForEmail} onAttachmentsChange={setImagesForEmail} />
           </div>
         );
       case 'Renders':
@@ -531,15 +535,14 @@ const MainLayout: React.FC = () => {
         return <NotesTab />;
       case 'Nutricion':
         return <Nutricion />;
+      case 'Generador de Video':
+        return <VideoGenerator />;
+      case 'Impresión 3D':
+        return <ThreeDPrinting />;
       default:
         return (
-          <div className="bg-gray-800 p-6 rounded-lg shadow-xl w-full flex flex-col lg:flex-row items-stretch gap-0 mt-8">
-            <div className="flex-1 min-w-0 pr-6">
-              <EmailGenerator attachedImages={imagesForEmail} onAttachmentsChange={setImagesForEmail} />
-            </div>
-            <div className="w-full lg:w-[450px] shrink-0 border-l border-gray-700 pl-6">
-              <MessageImprover />
-            </div>
+          <div className="glass-panel p-6 rounded-3xl shadow-2xl w-full mt-8">
+            <EmailGenerator attachedImages={imagesForEmail} onAttachmentsChange={setImagesForEmail} />
           </div>
         );
     }
@@ -548,6 +551,7 @@ const MainLayout: React.FC = () => {
   const tabIcons: Record<string, React.ReactNode> = {
     'Generador de Email': <Mail />,
     'Generador de Imagen': <ImageIcon />,
+    'Generador de Video': <Video />,
     'Image Editor': <Edit />,
     'Crítico Cineasta': <Clapperboard />,
     'Renders': <Box />,
@@ -560,6 +564,7 @@ const MainLayout: React.FC = () => {
     'Finanzas': <TrendingUp />,
     'Notas': <Edit />,
     'Nutricion': <Heart />,
+    'Impresión 3D': <Box />,
   };
 
   const handleCloseNotification = (id: string) => {
@@ -575,13 +580,13 @@ const MainLayout: React.FC = () => {
       onDragOver={handleDragOver}
       onDragEnd={handleDragEnd}
     >
-      <div className="flex h-screen bg-gray-900 text-gray-100 font-sans overflow-hidden">
+      <div className="flex h-screen bg-transparent text-gray-100 font-sans overflow-hidden">
         <EditModeBanner />
         
         {/* Mobile overlay */}
         {leftSidebarOpen && (
           <div 
-            className="fixed inset-0 bg-black/50 z-40 lg:hidden"
+            className="fixed inset-0 bg-black/60 backdrop-blur-sm z-40 lg:hidden"
             onClick={() => setLeftSidebarOpen(false)}
           />
         )}
@@ -612,18 +617,21 @@ const MainLayout: React.FC = () => {
                     <Clock />
                   </div>
                   <div className="flex flex-row md:flex-col gap-1 ml-auto">
-                    <button onClick={() => setLeftSidebarOpen(!leftSidebarOpen)} className={`hidden lg:block p-1 rounded transition-colors ${leftSidebarOpen ? 'bg-purple-600 text-white' : 'hover:bg-gray-700'}`} title="Modo Zen (Colapsar Barras)">
-                      <LayoutDashboard size={16} />
-                    </button>
-                    <button onClick={toggleEditing} className="p-1 hover:bg-gray-700 rounded transition-colors" title="Personalizar">
-                      <Settings size={16} />
-                    </button>
-                    <button onClick={() => saveToSupabase()} className="p-1 hover:bg-gray-700 rounded transition-colors" title="Guardar Cambios">
-                      <Save size={16} />
-                    </button>
-                    <button onClick={fetchConfigFromSupabaseManual} className="p-1 hover:bg-gray-700 rounded transition-colors" title="Actualizar">
-                      <RefreshCw size={16} />
-                    </button>
+                    <motion.button whileHover={{ scale: 1.1 }} whileTap={{ scale: 0.9 }} onClick={() => setLeftSidebarOpen(!leftSidebarOpen)} className={`hidden lg:block p-1.5 rounded-lg transition-colors ${leftSidebarOpen ? 'bg-purple-600 shadow-[0_0_15px_rgba(147,51,234,0.5)] text-white' : 'hover:bg-white/10'}`} title="Modo Zen (Colapsar Barras)">
+                      <LayoutDashboard size={18} />
+                    </motion.button>
+                    <motion.button whileHover={{ scale: 1.1 }} whileTap={{ scale: 0.9 }} onClick={toggleEditing} className="p-1.5 hover:bg-white/10 rounded-lg transition-colors" title="Personalizar">
+                      <Settings size={18} />
+                    </motion.button>
+                    <motion.button whileHover={{ scale: 1.1 }} whileTap={{ scale: 0.9 }} onClick={() => window.dispatchEvent(new CustomEvent('open-google-config'))} className="p-1.5 hover:bg-blue-500/20 rounded-lg transition-colors text-blue-400" title="Configurar APIs (Google/Gemini)">
+                      <Database size={18} />
+                    </motion.button>
+                    <motion.button whileHover={{ scale: 1.1 }} whileTap={{ scale: 0.9 }} onClick={() => saveToSupabase()} className="p-1.5 hover:bg-white/10 rounded-lg transition-colors" title="Guardar Cambios">
+                      <Save size={18} />
+                    </motion.button>
+                    <motion.button whileHover={{ scale: 1.1 }} whileTap={{ scale: 0.9 }} onClick={fetchConfigFromSupabaseManual} className="p-1.5 hover:bg-white/10 rounded-lg transition-colors" title="Actualizar">
+                      <RefreshCw size={18} />
+                    </motion.button>
                   </div>
               </header>
               
@@ -686,26 +694,38 @@ const MainLayout: React.FC = () => {
           </div>
         </div>
 
-        <CalculatorWidget />
         
         {/* Floating Assistant Button */}
         {!isAssistantOpen && (
-          <button
+          <motion.button
+            whileHover={{ scale: 1.1, boxShadow: "0px 0px 20px rgba(147, 51, 234, 0.6)" }}
+            whileTap={{ scale: 0.9 }}
             onClick={() => setIsAssistantOpen(true)}
-            className="fixed bottom-6 right-6 p-4 bg-purple-600 hover:bg-purple-500 text-white rounded-full shadow-2xl z-50 transition-transform hover:scale-110"
+            className="fixed bottom-6 right-6 p-4 bg-gradient-to-r from-purple-600 to-pink-600 text-white rounded-full shadow-2xl z-50 pointer-events-auto"
             title="Abrir Asistente IA"
           >
             <MessageSquare size={24} />
-          </button>
+          </motion.button>
         )}
 
         {/* Assistant Component */}
-        {isAssistantOpen && (
-          <div className="fixed bottom-4 right-4 w-[450px] h-[650px] bg-gray-800 rounded-2xl shadow-2xl flex flex-col border border-gray-700 z-50 animate-fade-in overflow-hidden ring-1 ring-white/10">
-            <CalendarAiAssistant onClose={() => setIsAssistantOpen(false)} />
-          </div>
-        )}
+        <AnimatePresence>
+          {isAssistantOpen && (
+            <motion.div 
+              initial={{ opacity: 0, y: 50, scale: 0.9 }}
+              animate={{ opacity: 1, y: 0, scale: 1 }}
+              exit={{ opacity: 0, y: 50, scale: 0.9 }}
+              transition={{ type: 'spring', damping: 25, stiffness: 300 }}
+              className="fixed bottom-4 right-4 w-[450px] h-[650px] glass-panel-heavy rounded-3xl shadow-2xl flex flex-col z-40 overflow-hidden ring-1 ring-white/10"
+            >
+              <CalendarAiAssistant onClose={() => setIsAssistantOpen(false)} />
+            </motion.div>
+          )}
+        </AnimatePresence>
 
+        <CalculatorWidget />
+
+        <GoogleApiConfigModal />
         <NotificationManager />
         <NotificationOverlay 
           notifications={config.notifications || []} 

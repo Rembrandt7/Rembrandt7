@@ -19,7 +19,7 @@ const AiSidebarItem: React.FC<{
                 target="_blank" 
                 rel="noopener noreferrer" 
                 onClick={(e) => isEditing && e.preventDefault()}
-                className={`flex items-center gap-3 p-3 rounded-xl transition-all duration-200 hover:bg-gray-800 border border-transparent hover:border-gray-700 group ${item.colorClass} ${isEditing ? 'opacity-50 cursor-default' : ''}`}
+                className={`flex items-center gap-3 p-3 rounded-2xl transition-all duration-300 hover:bg-white/10 border border-transparent hover:border-white/10 hover:shadow-[0_0_15px_rgba(255,255,255,0.05)] group ${item.colorClass} ${isEditing ? 'opacity-50 cursor-default' : ''}`}
             >
                 <div 
                     className="w-8 h-8 flex-shrink-0 flex items-center justify-center transition-transform group-hover:scale-110" 
@@ -131,12 +131,12 @@ const AiSidebar: React.FC<AiSidebarProps> = ({ isOpen }) => {
     };
 
     return (
-        <aside className={`w-64 bg-gray-900 border-r border-gray-800 flex-col shrink-0 overflow-hidden relative z-40 transition-all duration-300 flex`}>
+        <aside className={`w-64 glass-panel-heavy border-r border-white/5 flex-col shrink-0 overflow-hidden relative z-40 transition-all duration-300 flex shadow-2xl`}>
             <div className="overflow-y-auto custom-scrollbar h-full flex flex-col">
                 
                 {/* Sección IAS */}
-                <div className="sticky top-0 z-10 bg-gray-900/95 backdrop-blur-sm border-b border-gray-800 p-3 mb-2 flex justify-between items-center">
-                    <h2 className="text-sm font-black uppercase tracking-widest text-transparent bg-clip-text bg-gradient-to-r from-blue-400 via-purple-500 to-pink-500">
+                <div className="sticky top-0 z-10 bg-black/40 backdrop-blur-xl border-b border-white/5 p-4 mb-2 flex justify-between items-center">
+                    <h2 className="text-xs font-black uppercase tracking-widest text-transparent bg-clip-text bg-gradient-to-r from-blue-400 via-purple-500 to-pink-500">
                         Modelos IA
                     </h2>
                     {isEditing && (
@@ -167,8 +167,8 @@ const AiSidebar: React.FC<AiSidebarProps> = ({ isOpen }) => {
                 </nav>
 
                 {/* Sección Más Útiles */}
-                <div className="sticky top-0 z-10 bg-gray-900/95 backdrop-blur-sm border-y border-gray-800 p-3 mt-2 mb-2 flex justify-between items-center">
-                    <h2 className="text-sm font-black uppercase tracking-widest text-transparent bg-clip-text bg-gradient-to-r from-green-400 to-emerald-500">
+                <div className="sticky top-0 z-10 bg-black/40 backdrop-blur-xl border-y border-white/5 p-4 mt-2 mb-2 flex justify-between items-center">
+                    <h2 className="text-xs font-black uppercase tracking-widest text-transparent bg-clip-text bg-gradient-to-r from-green-400 to-emerald-500">
                         Accesos Rápidos
                     </h2>
                     {isEditing && (

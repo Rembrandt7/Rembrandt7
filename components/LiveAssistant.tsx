@@ -1,12 +1,14 @@
 import React, { useState, useEffect, useRef } from 'react';
 import { GoogleGenAI, LiveServerMessage, Modality } from '@google/genai';
 import { Mic, MicOff, Loader2 } from 'lucide-react';
+import { useLinks } from '../contexts/LinkContext';
 
 interface LiveAssistantProps {
   onClose?: () => void;
 }
 
 const LiveAssistant: React.FC<LiveAssistantProps> = ({ onClose }) => {
+  const { config, googleApiConfig } = useLinks();
   const [isConnecting, setIsConnecting] = useState(false);
   const [isConnected, setIsConnected] = useState(false);
   
@@ -20,7 +22,11 @@ const LiveAssistant: React.FC<LiveAssistantProps> = ({ onClose }) => {
   const startLive = async () => {
     setIsConnecting(true);
     try {
-      const ai = new GoogleGenAI({ apiKey: process.env.GEMINI_API_KEY || '' });
+      const apiKey = googleApiConfig?.apiKey || process.env.GEMINI_API_KEY || '';
+      const ai = new GoogleGenAI({ 
+        apiKey: googleApiConfig?.apiKey || process.env.GEMINI_API_KEY || '',
+        baseUrl: `${window.location.origin}/api/proxy/google`
+      });
       
       const AudioContextClass = window.AudioContext || (window as any).webkitAudioContext;
       audioOutputContextRef.current = new AudioContextClass({ sampleRate: 24000 });
@@ -106,9 +112,14 @@ const LiveAssistant: React.FC<LiveAssistantProps> = ({ onClose }) => {
         config: {
           responseModalities: [Modality.AUDIO],
           speechConfig: {
-            voiceConfig: { prebuiltVoiceConfig: { voiceName: "Zephyr" } },
+            voiceConfig: { prebuiltVoiceConfig: { voiceName: "Puck" } },
           },
-          systemInstruction: "You are a helpful and friendly voice assistant.",
+          systemInstruction: `Eres Rembrandt, el asistente de IA personal. Estás hablando por voz. Procura ser conciso y conversacional. 
+          Aquí está el ADN del usuario:
+          ${config.memoria_ia?.perfil ? `- Perfil: ${config.memoria_ia.perfil}\n` : ''}
+          ${config.memoria_ia?.estilo ? `- Estilo de redacción/tono: ${config.memoria_ia.estilo}\n` : ''}
+          ${config.memoria_ia?.laboral ? `- Trabajo: ${config.memoria_ia.laboral}\n` : ''}
+          ${config.memoria_ia?.personal ? `- Personal/Objetivos: ${config.memoria_ia.personal}\n` : ''}`,
         },
       });
       

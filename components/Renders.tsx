@@ -1,7 +1,9 @@
 
 import React, { useState, useCallback } from 'react';
 import { GoogleGenAI, Modality } from '@google/genai';
+import { useLinks } from '../contexts/LinkContext';
 import Spinner from './common/Spinner';
+import { cn } from '../utils/cn';
 
 interface RenderItem {
     id: number;
@@ -18,7 +20,10 @@ const RenderLinkIcon: React.FC<{ href: string; name: string; colorClass: string;
             href={href} 
             target="_blank" 
             rel="noopener noreferrer" 
-            className={`group relative flex flex-col items-center justify-center w-16 h-16 rounded-lg bg-gray-800 hover:bg-gray-700 transition-all duration-200 border border-gray-700 hover:border-gray-500 ${colorClass}`}
+            className={cn(
+                "group relative flex flex-col items-center justify-center w-16 h-16 rounded-lg bg-gray-800 hover:bg-gray-700 transition-all duration-200 border border-gray-700 hover:border-gray-500",
+                colorClass
+            )}
             title={name}
         >
             {children}
@@ -28,6 +33,7 @@ const RenderLinkIcon: React.FC<{ href: string; name: string; colorClass: string;
 };
 
 const Renders: React.FC = () => {
+  const { googleApiConfig } = useLinks();
   // State for renders
   const [renders, setRenders] = useState<RenderItem[]>([
     { id: 1, title: "Sunset City", date: "2023-10-27", url: "https://picsum.photos/seed/city/400/300" },
@@ -96,8 +102,15 @@ const Renders: React.FC = () => {
       setError(null);
       
       try {
-          if (!process.env.API_KEY) throw new Error("API_KEY no configurada.");
-          const ai = new GoogleGenAI({ apiKey: process.env.API_KEY });
+          const apiKey = googleApiConfig?.apiKey || process.env.API_KEY || process.env.GEMINI_API_KEY;
+          if (!apiKey) throw new Error("No se ha configurado la API Key de Gemini. Configúrala en los ajustes.");
+
+          const ai = new GoogleGenAI({ 
+              apiKey,
+              httpOptions: {
+                  baseUrl: `${window.location.origin}/api/proxy/google`
+              }
+          });
           
           const prompt = `Edita esta imagen. ${editPrompt}. Mantén la estructura y el estilo visual original lo más posible, solo aplica el cambio solicitado.`;
           

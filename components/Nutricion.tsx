@@ -111,7 +111,7 @@ const getDayName = (dateStr: string) => {
 };
 
 const Nutricion: React.FC = () => {
-    const { nutritionData, updateNutritionData, saveNutritionDataToSupabase, fetchNutritionDataFromSupabase } = useLinks();
+    const { nutritionData, updateNutritionData, saveNutritionDataToSupabase, fetchNutritionDataFromSupabase, googleApiConfig } = useLinks();
     const profile = nutritionData?.profile || {};
     const logs = nutritionData?.logs || [];
     
@@ -276,7 +276,15 @@ const Nutricion: React.FC = () => {
 
         // Estimate calories using AI
         try {
-            const ai = new GoogleGenAI({ apiKey: process.env.GEMINI_API_KEY! });
+            const apiKey = googleApiConfig?.apiKey || process.env.GEMINI_API_KEY;
+            if (!apiKey) {
+                toast.error("API Key de Gemini no configurada. Haz clic en el icono de base de datos en la cabecera.");
+                return;
+            }
+            const ai = new GoogleGenAI({ 
+                apiKey,
+                baseUrl: `${window.location.origin}/api/proxy/google`
+            });
             const prompt = `Estima las calorías quemadas para la siguiente actividad física:
             Actividad: ${activityName}
             Tipo: ${type}
@@ -287,7 +295,7 @@ const Nutricion: React.FC = () => {
             Responde SOLO con el número estimado de calorías (un entero).`;
 
             const response = await ai.models.generateContent({
-                model: "gemini-3-flash-preview",
+                model: "gemini-2.5-flash",
                 contents: prompt,
             });
 
@@ -316,7 +324,15 @@ const Nutricion: React.FC = () => {
 
         // Recalculate calories
         try {
-            const ai = new GoogleGenAI({ apiKey: process.env.GEMINI_API_KEY! });
+            const apiKey = googleApiConfig?.apiKey || process.env.GEMINI_API_KEY;
+            if (!apiKey) {
+                toast.error("API Key de Gemini no configurada. Haz clic en el icono de base de datos en la cabecera.");
+                return;
+            }
+            const ai = new GoogleGenAI({ 
+                apiKey,
+                baseUrl: `${window.location.origin}/api/proxy/google`
+            });
             const prompt = `Estima las calorías quemadas para la siguiente actividad física:
             Actividad: ${act.name}
             Duración: ${act.duration} min
@@ -326,7 +342,7 @@ const Nutricion: React.FC = () => {
             Responde SOLO con el número estimado de calorías (un entero).`;
 
             const response = await ai.models.generateContent({
-                model: "gemini-3-flash-preview",
+                model: "gemini-2.5-flash",
                 contents: prompt,
             });
 
@@ -461,7 +477,15 @@ const Nutricion: React.FC = () => {
     const generateWeeklyMealPlan = async () => {
         setIsGeneratingMealPlan(true);
         try {
-            const ai = new GoogleGenAI({ apiKey: process.env.GEMINI_API_KEY });
+            const apiKey = googleApiConfig?.apiKey || process.env.GEMINI_API_KEY;
+            if (!apiKey) {
+                toast.error("API Key de Gemini no configurada. Haz clic en el icono de base de datos en la cabecera.");
+                return;
+            }
+            const ai = new GoogleGenAI({ 
+                apiKey,
+                baseUrl: `${window.location.origin}/api/proxy/google`
+            });
             const prompt = `
 Eres el Dr. Remy Sanisimo, médico deportivo especializado en salud preventiva, entrenamiento funcional y nutrición clínica. 
 
@@ -525,7 +549,7 @@ Responde estrictamente en formato JSON:
 }
 `;
             const response = await ai.models.generateContent({
-                model: 'gemini-3.1-flash-lite-preview',
+                model: 'gemini-2.5-flash',
                 contents: prompt,
                 config: { 
                     responseMimeType: 'application/json',
@@ -630,8 +654,18 @@ Responde estrictamente en formato JSON:
     const chatWithMealPlan = async () => {
         setIsMealPlanChatting(true);
         try {
-            if (!process.env.GEMINI_API_KEY) throw new Error("API_KEY no configurada.");
-            const ai = new GoogleGenAI({ apiKey: process.env.GEMINI_API_KEY });
+            const apiKey = googleApiConfig?.apiKey || process.env.GEMINI_API_KEY;
+            if (!apiKey) {
+                toast.error("API Key de Gemini no configurada.");
+                setIsAnalyzing?.(false);
+                return;
+            }
+            const ai = new GoogleGenAI({ 
+                apiKey,
+                httpOptions: {
+                    baseUrl: `${window.location.origin}/api/proxy/google`
+                }
+            });
             
             const history = nutritionData.mealPlanChatHistory || [];
             const historyText = history.map(h => `${h.role === 'user' ? 'Usuario' : 'IA'}: ${h.text}`).join('\n');
@@ -684,7 +718,7 @@ Si no hay cambios en el plan ni en las exclusiones, solo responde a su pregunta 
 `;
 
             const response = await ai.models.generateContent({
-                model: 'gemini-3.1-flash-lite-preview',
+                model: 'gemini-2.5-flash',
                 contents: prompt,
             });
 
@@ -752,8 +786,18 @@ Si no hay cambios en el plan ni en las exclusiones, solo responde a su pregunta 
     const analyzeNutrition = async () => {
         setIsAnalyzing(true);
         try {
-            if (!process.env.GEMINI_API_KEY) throw new Error("API_KEY no configurada.");
-            const ai = new GoogleGenAI({ apiKey: process.env.GEMINI_API_KEY });
+            const apiKey = googleApiConfig?.apiKey || process.env.GEMINI_API_KEY;
+            if (!apiKey) {
+                toast.error("API Key de Gemini no configurada.");
+                setIsAnalyzing?.(false);
+                return;
+            }
+            const ai = new GoogleGenAI({ 
+                apiKey,
+                httpOptions: {
+                    baseUrl: `${window.location.origin}/api/proxy/google`
+                }
+            });
             
             const history = nutritionData.aiChatHistory || [];
             const historyText = history.map(h => `${h.role === 'user' ? 'Usuario' : 'IA'}: ${h.text}`).join('\n');
@@ -815,7 +859,7 @@ Por favor, proporciona un análisis detallado, amigable y estructurado en Markdo
 `;
 
             const response = await ai.models.generateContent({
-                model: 'gemini-3.1-flash-lite-preview',
+                model: 'gemini-2.5-flash',
                 contents: prompt,
             });
 
@@ -886,9 +930,15 @@ Por favor, proporciona un análisis detallado, amigable y estructurado en Markdo
                 
                 toast.loading('Analizando imagen...', { id: 'image-analysis' });
                 
-                const ai = new GoogleGenAI({ apiKey: process.env.GEMINI_API_KEY });
+                const apiKey = googleApiConfig?.apiKey || process.env.GEMINI_API_KEY || '';
+                const ai = new GoogleGenAI({ 
+                    apiKey: googleApiConfig?.apiKey || process.env.GEMINI_API_KEY || '',
+                    httpOptions: {
+                        baseUrl: `${window.location.origin}/api/proxy/google`
+                    }
+                });
                 const response = await ai.models.generateContent({
-                    model: "gemini-3-flash-preview",
+                    model: "gemini-2.5-flash",
                     contents: {
                         parts: [
                             { inlineData: { data: base64Data, mimeType: file.type } },

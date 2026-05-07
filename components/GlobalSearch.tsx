@@ -143,16 +143,16 @@ export const GlobalSearch: React.FC = () => {
             initial={{ opacity: 0 }}
             animate={{ opacity: 1 }}
             exit={{ opacity: 0 }}
-            className="fixed inset-0 bg-black/60 backdrop-blur-sm z-[9999]"
+            className="fixed inset-0 bg-black/70 backdrop-blur-xl z-[9999]"
             onClick={() => setIsOpen(false)}
           />
           <motion.div
-            initial={{ opacity: 0, scale: 0.95, y: -20 }}
-            animate={{ opacity: 1, scale: 1, y: 0 }}
-            exit={{ opacity: 0, scale: 0.95, y: -20 }}
-            className="fixed top-[15%] left-1/2 -translate-x-1/2 w-full max-w-2xl bg-gray-900 border border-gray-700 rounded-2xl shadow-2xl z-[10000] overflow-hidden flex flex-col max-h-[70vh]"
+            initial={{ opacity: 0, scale: 0.95, y: -20, filter: 'blur(10px)' }}
+            animate={{ opacity: 1, scale: 1, y: 0, filter: 'blur(0px)' }}
+            exit={{ opacity: 0, scale: 0.95, y: -20, filter: 'blur(10px)' }}
+            className="fixed top-[15%] left-1/2 -translate-x-1/2 w-full max-w-3xl glass-panel-heavy rounded-3xl shadow-[0_0_50px_rgba(0,0,0,0.5)] border border-white/10 z-[10000] overflow-hidden flex flex-col max-h-[70vh]"
           >
-            <div className="flex items-center px-4 py-3 border-b border-gray-800">
+            <div className="flex items-center px-6 py-5 border-b border-white/10 bg-white/5">
               <Search className="text-gray-400 mr-3" size={20} />
               <input
                 ref={inputRef}
@@ -161,14 +161,18 @@ export const GlobalSearch: React.FC = () => {
                 onChange={(e) => setQuery(e.target.value)}
                 onKeyDown={handleKeyDown}
                 placeholder="Buscar enlaces, comandos, notas... (Cmd+K)"
-                className="flex-1 bg-transparent border-none outline-none text-white text-lg placeholder-gray-500"
+                className="flex-1 bg-transparent border-none outline-none text-white text-2xl placeholder-gray-400 font-light tracking-wide px-2"
               />
-              <button onClick={() => setIsOpen(false)} className="text-gray-500 hover:text-white p-1">
-                <kbd className="bg-gray-800 px-2 py-1 rounded text-xs font-mono">ESC</kbd>
+              <button 
+                onClick={() => setIsOpen(false)} 
+                className="text-gray-400 hover:text-white transition-colors"
+                title="Cerrar (ESC)"
+              >
+                <kbd className="bg-white/10 border border-white/10 backdrop-blur px-2.5 py-1.5 rounded-lg text-xs font-mono font-semibold">ESC</kbd>
               </button>
             </div>
-
-            <div className="overflow-y-auto custom-scrollbar flex-1 p-2">
+            
+            <div className="overflow-y-auto custom-scrollbar flex-1 p-3">
               {query.trim() === '' ? (
                 <div className="p-8 text-center text-gray-500">
                   <Search className="mx-auto mb-3 opacity-20" size={48} />
@@ -185,11 +189,11 @@ export const GlobalSearch: React.FC = () => {
                       key={result.id}
                       onClick={result.action}
                       onMouseEnter={() => setSelectedIndex(index)}
-                      className={`flex items-center gap-3 p-3 rounded-xl cursor-pointer transition-colors ${
-                        selectedIndex === index ? 'bg-purple-600/20 border border-purple-500/50' : 'hover:bg-gray-800 border border-transparent'
+                      className={`flex items-center gap-4 p-3.5 rounded-2xl cursor-pointer transition-all duration-200 ${
+                        selectedIndex === index ? 'bg-gradient-to-r from-purple-600/30 to-indigo-600/30 border border-purple-400/30 shadow-[0_0_15px_rgba(147,51,234,0.1)] scale-[1.01]' : 'hover:bg-white/5 border border-transparent'
                       }`}
                     >
-                      <div className="p-2 bg-gray-800 rounded-lg">
+                      <div className={`p-2.5 rounded-xl flex items-center justify-center transition-colors ${selectedIndex === index ? 'bg-purple-500/20 text-purple-300' : 'bg-white/5 text-gray-400'}`}>
                         {result.icon}
                       </div>
                       <div className="flex-1 overflow-hidden">

@@ -149,15 +149,7 @@ const Credenciales: React.FC = () => {
         <input type="color" className="w-full h-10 rounded cursor-pointer" value={color ?? '#3f3f46'} onChange={e => setColor(e.target.value)} />
         <button className="bg-blue-600 p-2 rounded font-bold" onClick={addCredencial}>{editingId ? 'Actualizar' : 'Agregar'}</button>
       </div>
-      <div className="bg-zinc-800 p-4 rounded-xl space-y-2">
-        <h3 className="font-bold text-lg">Memoria IA</h3>
-        <textarea 
-            className="w-full h-32 bg-zinc-700 p-2 rounded" 
-            placeholder="Información personal para la IA..." 
-            value={config.memoria_ia ?? ''} 
-            onChange={e => updateConfig({...config, memoria_ia: e.target.value})} 
-        />
-      </div>
+      {/* Nota: La Memoria ADN de la IA se administra ahora desde la pestaña de Comandos */}
       <DndContext collisionDetection={closestCenter} onDragEnd={handleDragEnd}>
         <SortableContext items={config.credenciales} strategy={rectSortingStrategy}>
           <div className="grid grid-cols-1 md:grid-cols-3 lg:grid-cols-5 gap-4">

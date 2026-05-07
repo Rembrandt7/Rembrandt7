@@ -4,12 +4,13 @@ import { google } from "googleapis";
 import cookieParser from "cookie-parser";
 import dotenv from "dotenv";
 import path from "path";
+import { Readable } from "stream";
 
 dotenv.config();
 
 async function startServer() {
   const app = express();
-  const PORT = 3000;
+  const PORT = 3005;
 
   app.use(express.json({ limit: '10mb' }));
   app.use(express.urlencoded({ limit: '10mb', extended: true }));
@@ -27,9 +28,16 @@ async function startServer() {
       ? `${process.env.APP_URL}/auth/callback`
       : `${protocol}://${host}/auth/callback`;
 
+    const clientId = req.headers["x-client-id"] || process.env.CLIENT_ID;
+    const clientSecret = req.headers["x-client-secret"] || process.env.CLIENT_SECRET;
+
+    if (!clientId || !clientSecret) {
+      throw new Error("Missing Google API credentials. Please set them in the app settings or .env file.");
+    }
+
     return new google.auth.OAuth2(
-      process.env.CLIENT_ID,
-      process.env.CLIENT_SECRET,
+      clientId.toString(),
+      clientSecret.toString(),
       redirectUri
     );
   };
@@ -38,11 +46,6 @@ async function startServer() {
   app.get(["/api/auth/url", "/api/auth/url/"], (req, res) => {
     console.log("GET /api/auth/url hit");
     try {
-      if (!process.env.CLIENT_ID || !process.env.CLIENT_SECRET) {
-        console.error("Missing Google credentials");
-        return res.status(500).json({ error: "Faltan las credenciales de Google (CLIENT_ID o CLIENT_SECRET) en las variables de entorno." });
-      }
-
       const oauth2Client = getOAuth2Client(req);
 
       const authUrl = oauth2Client.generateAuthUrl({
@@ -71,34 +74,44 @@ async function startServer() {
       return res.status(400).send("Missing code");
     }
 
+    // Send code back to the client via postMessage, client will exchange it
+    res.send(`
+      <html>
+        <body>
+          <script>
+            if (window.opener) {
+              window.opener.postMessage({ 
+                type: 'OAUTH_CODE_SUCCESS', 
+                code: '${code}' 
+              }, '*');
+              window.close();
+            } else {
+              window.location.href = '/';
+            }
+          </script>
+          <p>Authentication successful. This window should close automatically.</p>
+        </body>
+      </html>
+    `);
+  });
+
+  // 2b. Exchange Code for Tokens
+  app.post(["/api/auth/exchange", "/api/auth/exchange/"], async (req, res) => {
+    console.log("POST /api/auth/exchange hit");
     try {
+      const { code } = req.body;
+      if (!code) {
+        return res.status(400).json({ error: "Missing authorization code" });
+      }
+      
       const oauth2Client = getOAuth2Client(req);
-      
       const { tokens } = await oauth2Client.getToken(code);
-      console.log("Tokens received successfully");
+      console.log("Tokens exchanged successfully");
       
-      // Send tokens back to the client via postMessage
-      res.send(`
-        <html>
-          <body>
-            <script>
-              if (window.opener) {
-                window.opener.postMessage({ 
-                  type: 'OAUTH_AUTH_SUCCESS', 
-                  tokens: ${JSON.stringify(tokens)} 
-                }, '*');
-                window.close();
-              } else {
-                window.location.href = '/';
-              }
-            </script>
-            <p>Authentication successful. This window should close automatically.</p>
-          </body>
-        </html>
-      `);
+      res.json({ tokens });
     } catch (error) {
       console.error("Error exchanging code for tokens:", error);
-      res.status(500).send("Authentication failed");
+      res.status(500).json({ error: "Failed to exchange code" });
     }
   });
 
@@ -160,7 +173,7 @@ async function startServer() {
       });
 
       // Find local items that are not in Google Calendar (no googleEventId)
-      const itemsToPush = allLocalItems;
+      const itemsToPush = allLocalItems.filter(item => !item.googleEventId);
       console.log(`Pushing ${itemsToPush.length} local items to Google...`);
       
       for (const item of itemsToPush) {
@@ -257,9 +270,41 @@ async function startServer() {
       for (const li of allLocalItems) {
         if (mergedItemsMap.has(li.id)) {
           const existing = mergedItemsMap.get(li.id);
-          mergedItemsMap.set(li.id, { ...existing, ...li, googleEventId: existing.googleEventId || li.googleEventId });
+          // Extraemos type y color locales para no perderlos, y permitimos que la data de Google domine (title, date, desc)
+          mergedItemsMap.set(li.id, { 
+            ...li, 
+            ...existing, 
+            type: li.type || existing.type, 
+            color: li.color || existing.color,
+            isPaid: li.isPaid,
+            amount: li.amount,
+            isVariable: li.isVariable,
+            isFinished: li.isFinished,
+            recurrence: li.recurrence,
+            googleEventId: existing.googleEventId || li.googleEventId 
+          });
         } else {
-          mergedItemsMap.set(li.id, li);
+          // Si el evento local tiene un googleEventId, significa que alguna vez estuvo sincronizado.
+          // Si ya no está en mergedItemsMap (que se llenó con importedEvents de Google), indica que 
+          // probablemente fue eliminado en Google Calendar. Así que lo omitimos (borrado local).
+          if (!li.googleEventId) {
+            mergedItemsMap.set(li.id, li);
+          } else {
+             // Pero cuidado: Google Calendar API solo nos devolvió eventos del último año (timeMin).
+             // Si el evento es más antiguo de un año, no está borrado, simplemente no se devolvió. Lo conservamos.
+             if (li.date) {
+               const eventDate = new Date(li.date);
+               const oneYearAgo = new Date();
+               oneYearAgo.setFullYear(oneYearAgo.getFullYear() - 1);
+               if (eventDate < oneYearAgo) {
+                 mergedItemsMap.set(li.id, li);
+               }
+               // Si es del último año y no está, se asume borrado en Google Calendar (lo omitimos).
+             } else {
+               // Si no tiene fecha, lo conservamos por seguridad
+               mergedItemsMap.set(li.id, li);
+             }
+          }
         }
       }
 
@@ -421,7 +466,84 @@ async function startServer() {
     }
   });
 
-  app.post("*all", (req, res) => {
+  // 6. Gemini API Proxy (evade corporate firewalls)
+  app.all(/^\/api\/proxy\/google\/(.*)/, async (req, res) => {
+    console.log(`[PROXY] Intercepted request to: ${req.method} ${req.url}`);
+    try {
+      const targetUrl = req.originalUrl.replace('/api/proxy/google', 'https://generativelanguage.googleapis.com');
+      
+      const headers = new Headers();
+      const forbiddenHeaders = ['host', 'connection', 'content-length', 'origin', 'referer', 'accept-encoding'];
+      
+      for (const [key, value] of Object.entries(req.headers)) {
+        if (!forbiddenHeaders.includes(key.toLowerCase()) && typeof value === 'string') {
+          headers.set(key, value);
+        }
+      }
+      
+      const apiKey = process.env.GEMINI_API_KEY || process.env.VITE_GEMINI_API_KEY;
+      if (!headers.has('x-goog-api-key') && apiKey) {
+        headers.set('x-goog-api-key', apiKey);
+      }
+
+      // Reconstruct JSON body if applicable (since express.json() consumed it)
+      let bodyData;
+      if (req.method !== 'GET' && req.method !== 'HEAD' && req.body && Object.keys(req.body).length > 0) {
+          const parsedBody = req.body;
+          
+          // FIX: Tool use with responseMimeType: 'application/json' is unsupported in some models
+          if (parsedBody.generationConfig && parsedBody.tools && parsedBody.tools.length > 0) {
+              console.log("[PROXY] Tools detected, forcing responseMimeType to text/plain");
+              parsedBody.generationConfig.responseMimeType = 'text/plain';
+              delete parsedBody.generationConfig.responseSchema;
+          }
+          
+          bodyData = JSON.stringify(parsedBody);
+      }
+
+      const fetchRes = await fetch(targetUrl, {
+        method: req.method,
+        headers,
+        body: bodyData,
+      });
+
+      res.status(fetchRes.status);
+      
+      const restrictedResponseHeaders = [
+          'content-encoding', 
+          'content-length', 
+          'transfer-encoding', 
+          'connection', 
+          'keep-alive',
+          'access-control-allow-origin',
+          'access-control-allow-credentials'
+      ];
+
+      fetchRes.headers.forEach((value, key) => {
+         if (!restrictedResponseHeaders.includes(key.toLowerCase())) {
+            res.setHeader(key, value);
+         }
+      });
+
+      if (fetchRes.body) {
+         try {
+           const buffer = await fetchRes.arrayBuffer();
+           res.end(Buffer.from(buffer));
+         } catch(e) {
+           console.error("Error buffering response:", e);
+           res.end();
+         }
+      } else {
+         res.end();
+      }
+
+    } catch (error: any) {
+      console.error("[PROXY] Error:", error);
+      res.status(500).json({ error: "Proxy connection failed", details: error.message });
+    }
+  });
+
+  app.post(/(.*)/, (req, res) => {
     console.log(`POST ${req.url} not matched`);
     res.status(404).json({ error: `Route ${req.url} not found` });
   });
@@ -436,7 +558,7 @@ async function startServer() {
   } else {
     const distPath = path.join(process.cwd(), "dist");
     app.use(express.static(distPath));
-    app.get("*all", (req, res) => {
+    app.get(/(.*)/, (req, res) => {
       res.sendFile(path.join(distPath, "index.html"));
     });
   }

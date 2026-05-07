@@ -6,10 +6,12 @@ import IconButton from './common/IconButton';
 import { Sparkles, Copy, Check, History, Trash2 } from 'lucide-react';
 import { useLinks } from '../contexts/LinkContext';
 import { motion, AnimatePresence } from 'motion/react';
+import SmartTextarea from './common/SmartTextarea';
 
 const MessageImprover: React.FC = () => {
-    const { config, updateConfig } = useLinks();
+    const { config, updateConfig, googleApiConfig } = useLinks();
     const [text, setText] = useState('');
+    const [previousMessage, setPreviousMessage] = useState('');
     const [improvedText, setImprovedText] = useState('');
     const [isLoading, setIsLoading] = useState(false);
     const [error, setError] = useState<string | null>(null);
@@ -19,8 +21,8 @@ const MessageImprover: React.FC = () => {
     const history = config.aiHistory?.filter(h => h.type === 'improvement') || [];
 
     const handleImprove = async () => {
-        if (!text.trim()) {
-            setError('Por favor, pega el texto que deseas mejorar.');
+        if (!text.trim() && !previousMessage.trim()) {
+            setError('Por favor, ingresa el texto a mejorar o el mensaje al que quieres responder.');
             return;
         }
 
@@ -29,27 +31,68 @@ const MessageImprover: React.FC = () => {
         setImprovedText('');
 
         try {
-            if (!process.env.API_KEY) {
-                throw new Error("API_KEY environment variable is not set.");
+            const apiKey = googleApiConfig?.apiKey || process.env.API_KEY || process.env.GEMINI_API_KEY;
+            
+            if (!apiKey) {
+                throw new Error("No se ha configurado la API Key de Gemini. Configúrala en los ajustes (icono de engrane).");
             }
-            const ai = new GoogleGenAI({ apiKey: process.env.API_KEY });
+
+            const ai = new GoogleGenAI({ 
+                apiKey,
+                baseUrl: `${window.location.origin}/api/proxy/google`
+            });
             
-            const systemInstruction = `Eres un experto en redacción y comunicación clara. 
-            Tu tarea es MEJORAR el texto proporcionado por el usuario.
-            
-            REGLAS:
-            1. NO cambies la idea original.
-            2. Ordena las ideas para que sean más coherentes y fáciles de leer.
-            3. Corrige TODA la ortografía, gramática y puntuación.
-            4. Asegura el uso correcto de mayúsculas y minúsculas.
-            5. Haz que el lenguaje sea más claro y fluido.
-            6. Mantén un tono profesional pero directo.
-            7. Responde ÚNICAMENTE con el texto mejorado, sin introducciones ni explicaciones.
-            8. Genera la respuesta lo más rápido posible.`;
+            const isReplying = previousMessage.trim().length > 0;
+            const hasDraft = text.trim().length > 0;
+
+            let systemInstruction = "";
+            let userContent = "";
+
+            const memoryContext = `
+            ${config.memoria_ia?.estilo || config.memoria_ia?.laboral ? '**ADN DEL USUARIO:**' : ''}
+            ${config.memoria_ia?.estilo ? `- ESTILO DE REDACCIÓN: ${config.memoria_ia.estilo}` : ''}
+            ${config.memoria_ia?.laboral ? `- CONTEXTO LABORAL: ${config.memoria_ia.laboral}` : ''}`;
+
+            if (isReplying && hasDraft) {
+                systemInstruction = `Eres un experto en redacción corporativa.${memoryContext}
+                El usuario ha recibido este mensaje:
+                """
+                ${previousMessage}
+                """
+                Su borrador de respuesta o ideas son: "${text}"
+                
+                Tu tarea es TOMAR la idea/borrador del usuario y MEJORARLO reescribiendo una respuesta profesional, impecable, directa y coherente al mensaje recibido.
+                Responde ÚNICAMENTE con el texto final.`;
+                userContent = `Mejora y escribe esta respuesta: "${text}"`;
+            } else if (isReplying && !hasDraft) {
+                systemInstruction = `Eres un experto en redacción corporativa.${memoryContext}
+                El usuario ha recibido este mensaje:
+                """
+                ${previousMessage}
+                """
+                
+                Tu tarea es INFERIR la mejor respuesta profesional, amable y clara a este mensaje basándote solo en el contexto. Te darán propinas altísimas si resuelves el problema.
+                Responde ÚNICAMENTE con el texto final generado.`;
+                userContent = `Sugiéreme la mejor respuesta a este correo.`;
+            } else {
+                systemInstruction = `Eres un experto en redacción y comunicación clara.${memoryContext}
+                Tu tarea es MEJORAR el texto proporcionado por el usuario.
+                
+                REGLAS:
+                1. NO cambies la idea original.
+                2. Ordena las ideas para que sean más coherentes y fáciles de leer.
+                3. Corrige TODA la ortografía, gramática y puntuación.
+                4. Asegura el uso correcto de mayúsculas y minúsculas.
+                5. Haz que el lenguaje sea más claro y fluido.
+                6. Mantén un tono profesional pero directo.
+                7. Responde ÚNICAMENTE con el texto mejorado, sin introducciones ni explicaciones.
+                8. Genera la respuesta lo más rápido posible.`;
+                userContent = `Mejora este texto manteniendo la idea original: "${text}"`;
+            }
 
             const response = await ai.models.generateContent({
-                model: 'gemini-3.1-flash-lite-preview',
-                contents: [{ parts: [{ text: `Mejora este texto manteniendo la idea original: "${text}"` }] }],
+                model: 'gemini-2.5-flash',
+                contents: [{ parts: [{ text: userContent }] }],
                 config: {
                     systemInstruction,
                     temperature: 0.3, // Lower temperature for more consistent/clear results
@@ -181,14 +224,33 @@ const MessageImprover: React.FC = () => {
             </AnimatePresence>
 
             <div className="flex flex-col gap-6">
-                <div className="space-y-2">
-                    <label className="text-sm font-medium text-gray-300">Texto Original</label>
-                    <textarea
-                        value={text}
-                        onChange={(e) => setText(e.target.value)}
-                        placeholder="Pega aquí el texto que quieres mejorar..."
-                        className="w-full h-64 p-4 bg-gray-900 border border-gray-700 rounded-lg text-white focus:ring-2 focus:ring-purple-500 outline-none resize-none text-sm leading-relaxed"
-                    />
+                <div className="space-y-4">
+                    <div className="space-y-2">
+                        <label className="text-sm font-medium text-gray-300">
+                            {previousMessage.trim() ? "Tu borrador o ideas (Opcional)" : "Texto Original / Idea"}
+                        </label>
+                        <SmartTextarea
+                            value={text}
+                            onChange={(e) => setText(e.target.value)}
+                            placeholder={previousMessage.trim() ? "Escribe lo que le quieres responder..." : "Pega aquí el texto que quieres mejorar..."}
+                            className="w-full h-36 p-4 bg-gray-900 border border-gray-700 rounded-lg text-white focus:ring-2 focus:ring-purple-500 outline-none resize-none text-sm leading-relaxed"
+                        />
+                    </div>
+
+                    <details className="group border border-gray-700 rounded-lg bg-gray-900/50">
+                        <summary className="cursor-pointer font-medium text-sm text-purple-300 p-3 select-none flex items-center justify-between">
+                            Mensaje a Responder (RE:)
+                            <span className="text-purple-400 group-open:rotate-180 transition-transform">▼</span>
+                        </summary>
+                        <div className="p-3 pt-0">
+                            <SmartTextarea
+                                value={previousMessage}
+                                onChange={(e) => setPreviousMessage(e.target.value)}
+                                placeholder="Pega aquí el mensaje corporativo que recibiste (Opcional)..."
+                                className="w-full h-28 p-4 bg-gray-900 border border-gray-700 rounded-lg text-white focus:ring-2 focus:ring-purple-500 outline-none resize-none text-sm leading-relaxed"
+                            />
+                        </div>
+                    </details>
                 </div>
 
                 <div className="space-y-2">
@@ -223,11 +285,20 @@ const MessageImprover: React.FC = () => {
 
             <button
                 onClick={handleImprove}
-                disabled={isLoading || !text.trim()}
+                disabled={isLoading || (!text.trim() && !previousMessage.trim())}
                 className="w-full mt-6 px-6 py-3 font-semibold text-white bg-purple-600 rounded-md hover:bg-purple-700 disabled:bg-gray-700 disabled:text-gray-500 disabled:cursor-not-allowed transition-all flex items-center justify-center gap-2 shadow-lg shadow-purple-900/20"
             >
-                {isLoading ? <Spinner size="5" /> : <Sparkles size={18} />}
-                {isLoading ? 'Mejorando...' : 'Mejorar Claridad'}
+                {isLoading ? (
+                    <>
+                        <Spinner size="5" />
+                        <span>Generando...</span>
+                    </>
+                ) : (
+                    <>
+                        <Sparkles size={18} />
+                        <span>{previousMessage.trim() && !text.trim() ? 'Sugerir Respuesta' : 'Mejorar Claridad'}</span>
+                    </>
+                )}
             </button>
         </div>
     );

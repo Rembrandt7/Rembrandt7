@@ -2,8 +2,10 @@ import React, { useState } from 'react';
 import { GoogleGenAI } from "@google/genai";
 import { Loader2, Download, Image as ImageIcon } from 'lucide-react';
 import IconButton from './common/IconButton';
+import { useLinks } from '../contexts/LinkContext';
 
 const ImageGenerator: React.FC = () => {
+  const { googleApiConfig } = useLinks();
   const [prompt, setPrompt] = useState('');
   const [generatedImage, setGeneratedImage] = useState<string | null>(null);
   const [isLoading, setIsLoading] = useState(false);
@@ -18,7 +20,11 @@ const ImageGenerator: React.FC = () => {
     setGeneratedImage(null);
 
     try {
-      const ai = new GoogleGenAI({ apiKey: process.env.GEMINI_API_KEY });
+      const apiKey = googleApiConfig?.apiKey || process.env.GEMINI_API_KEY || '';
+      const ai = new GoogleGenAI({ 
+        apiKey: googleApiConfig?.apiKey || process.env.GEMINI_API_KEY || '',
+        baseUrl: `${window.location.origin}/api/proxy/google`
+      });
       const response = await ai.models.generateContent({
         model: 'gemini-2.5-flash-image',
         contents: {

@@ -6,46 +6,22 @@ import AiTutorials from './AiTutorials';
 import { decode, createWavBlob } from '../utils/audioUtils';
 import { cleanJsonResponse } from '../utils/jsonUtils';
 
-const getWeatherCardColor = (condition: string) => {
-  switch (condition.toLowerCase()) {
-    case 'sun': return 'bg-yellow-400';
-    case 'partially cloudy': return 'bg-yellow-100';
-    case 'cloud': return 'bg-white';
-    case 'rain': return 'bg-sky-300';
-    case 'shower': return 'bg-sky-700';
-    default: return 'bg-blue-400';
-  }
-};
-
-const WeatherIcon = ({ condition }: { condition: string }) => {
-  switch (condition.toLowerCase()) {
-    case 'sun': return <Sun className="text-black" size={24} />;
-    case 'partially cloudy': return <CloudSun className="text-black" size={24} />;
-    case 'cloud': return <Cloud className="text-black" size={24} />;
-    case 'rain': return <CloudRain className="text-white" size={24} />;
-    case 'shower': return <CloudDrizzle className="text-white" size={24} />;
-    default: return <CloudSun className="text-black" size={24} />;
-  }
-};
 
 const Dashboard: React.FC = () => {
-  const { config, updateConfig, saveToSupabase } = useLinks();
+  const { config, updateConfig, saveToSupabase, googleApiConfig } = useLinks();
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
-  const [weatherData, setWeatherData] = useState<any[]>(() => {
-    const cached = localStorage.getItem('weatherData');
-    return cached ? JSON.parse(cached) : [];
-  });
   const [playing, setPlaying] = useState<string | null>(null);
 
-  useEffect(() => {
-    localStorage.setItem('weatherData', JSON.stringify(weatherData));
-  }, [weatherData]);
 
   const speak = async (text: string, id: string) => {
     setPlaying(id);
     try {
-        const ai = new GoogleGenAI({ apiKey: process.env.GEMINI_API_KEY! });
+        const apiKey = googleApiConfig?.apiKey || process.env.GEMINI_API_KEY || '';
+        const ai = new GoogleGenAI({ 
+        apiKey: googleApiConfig?.apiKey || process.env.GEMINI_API_KEY || '',
+        baseUrl: `${window.location.origin}/api/proxy/google`
+      });
         const response = await ai.models.generateContent({
             model: "gemini-2.5-flash-preview-tts",
             contents: [{ parts: [{ text: text }] }],
@@ -111,26 +87,29 @@ const Dashboard: React.FC = () => {
     setLoading(true);
     setError(null);
     try {
-      const ai = new GoogleGenAI({ apiKey: process.env.GEMINI_API_KEY! });
+      const apiKey = googleApiConfig?.apiKey || process.env.GEMINI_API_KEY;
+      
+      if (!apiKey) {
+          setError("No se ha configurado la API Key de Gemini. Haz clic en el icono de engrane > APIs para configurarla.");
+          setLoading(false);
+          return;
+      }
+
+      const ai = new GoogleGenAI({ 
+        apiKey,
+        baseUrl: `${window.location.origin}/api/proxy/google`
+      });
       
       const mtyQuery = encodeURIComponent('"Monterrey" OR "Nuevo León"');
       const finQuery = encodeURIComponent('finanzas OR economía OR negocios México');
       
-      const [mtyNewsData, finNewsData, weatherResponse] = await Promise.all([
+      const [mtyNewsData, finNewsData] = await Promise.all([
         fetch(`https://gnews.io/api/v4/search?q=${mtyQuery}&lang=es&country=mx&max=10&token=a4830994e2cabc9a042ef52cbbcb25ee`)
             .then(res => res.ok ? res.json() : Promise.reject(res))
             .catch(() => null),
         fetch(`https://gnews.io/api/v4/search?q=${finQuery}&lang=es&country=mx&max=10&token=a4830994e2cabc9a042ef52cbbcb25ee`)
             .then(res => res.ok ? res.json() : Promise.reject(res))
-            .catch(() => null),
-        ai.models.generateContent({
-            model: "gemini-3-flash-preview",
-            contents: "Dame el pronóstico del tiempo para Monterrey, Nuevo León, para los próximos 7 días (incluyendo hoy). Devuelve un JSON: [{day: string, weather: string, temp: string, condition: 'sun' | 'partially cloudy' | 'cloud' | 'rain' | 'shower'}]. Asegúrate de incluir la temperatura promedio (ej. '25°C') en el campo 'temp'.",
-            config: { 
-                tools: [{ googleSearch: {} }], 
-                responseMimeType: "application/json",
-            }
-        })
+            .catch(() => null)
       ]);
 
       const processArticles = (articles: any[]) => {
@@ -152,9 +131,9 @@ const Dashboard: React.FC = () => {
       if (mtyNews.length === 0) {
         try {
           const newsResponse = await ai.models.generateContent({
-              model: "gemini-3-flash-preview",
-              contents: "Busca 4 noticias REALES y recientes de Monterrey, NL. Devuelve JSON array con title, source, url, audioSummary, thumbnail.",
-              config: { tools: [{ googleSearch: {} }], responseMimeType: "application/json" },
+              model: "gemini-2.5-flash",
+              contents: "Busca 4 noticias REALES y recientes de Monterrey, NL. Devuelve EXCLUSIVAMENTE un JSON array plano con title, source, url, audioSummary, thumbnail.",
+              config: { tools: [{ googleSearch: {} }] },
           });
           if (newsResponse.text) {
             const fallback = JSON.parse(cleanJsonResponse(newsResponse.text));
@@ -171,19 +150,6 @@ const Dashboard: React.FC = () => {
         finanzasNews: finNews 
       });
 
-      if (weatherResponse.text) {
-        try {
-          const weather = JSON.parse(cleanJsonResponse(weatherResponse.text));
-          // Ensure first day is marked as 'Hoy' if not already
-          if (weather.length > 0 && !weather[0].day.toLowerCase().includes('hoy')) {
-              weather[0].day = 'Hoy';
-          }
-          setWeatherData(weather);
-          localStorage.setItem('weatherData', JSON.stringify(weather));
-        } catch (e) {
-          console.error("Error parsing weather data:", e);
-        }
-      }
       localStorage.setItem('lastFetchedData', now.toString());
       localStorage.removeItem('lastErrorTime');
       setError(null);
@@ -282,7 +248,7 @@ const Dashboard: React.FC = () => {
 
   useEffect(() => {
     // Only fetch if data is missing, but respect cooldown
-    if (!config.news || config.news.length === 0 || weatherData.length === 0) {
+    if (!config.news || config.news.length === 0) {
         fetchData();
     }
     if (!config.grokEmail) {
@@ -304,39 +270,6 @@ const Dashboard: React.FC = () => {
           <p>{error}</p>
         </div>
       )}
-      {/* Weather Section */}
-      <div className="bg-zinc-900/50 rounded-2xl border border-white/10 p-4">
-        <div className="flex justify-between items-center mb-4">
-            <h2 className="text-lg font-bold text-white">Pronóstico Monterrey</h2>
-            <button onClick={() => fetchData(true)} disabled={loading} className="p-1.5 rounded-lg bg-amber-600/20 text-amber-400">
-                <RefreshCw size={16} className={loading ? 'animate-spin' : ''} />
-            </button>
-        </div>
-        <div className="grid grid-cols-2 md:grid-cols-7 gap-4">
-            {weatherData.slice(0, 7).map((w, i) => {
-                const isToday = w.day.toLowerCase().includes('hoy');
-                return (
-                    <div 
-                        key={i} 
-                        className={`
-                            ${getWeatherCardColor(w.condition || 'sun')} 
-                            p-3 rounded-xl border border-white/5 flex flex-col items-center text-center relative
-                            ${isToday ? 'ring-4 ring-amber-400 shadow-[0_0_20px_rgba(251,191,36,0.5)] z-10 scale-105' : ''}
-                            transition-all duration-300
-                        `}
-                    >
-                        <span className="font-bold text-black mb-2 text-sm uppercase tracking-wider">{w.day || 'Hoy'}</span>
-                        <div className="flex items-center justify-center gap-2 mb-1">
-                            <WeatherIcon condition={w.condition || 'sun'} />
-                            <span className="text-2xl font-black text-black leading-none">{w.temp || '--°'}</span>
-                        </div>
-                        <span className="text-[10px] text-black/80 font-bold uppercase mt-1 line-clamp-1">{w.weather || 'N/A'}</span>
-                    </div>
-                );
-            })}
-        </div>
-        <a href="https://weather.com/es-MX/tiempo/hoy/l/c73fb09690eebac96043e45dcf3da6bf05d064c32d087ab3a4eff9989e59dd61" target="_blank" rel="noreferrer" className="block mt-4 text-blue-300 hover:text-blue-200 underline text-xs text-center transition-colors">Ver pronóstico detallado</a>
-      </div>
 
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
         <div className="bg-zinc-900/50 rounded-2xl border border-white/10 p-4">

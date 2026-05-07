@@ -1,5 +1,5 @@
 import React, { createContext, useContext, useState, useEffect, useRef } from 'react';
-import { AppConfig, LinkItem, LinkSection, TabConfig, NutritionData, Note, AppNotification } from '../types';
+import { AppConfig, LinkItem, LinkSection, TabConfig, NutritionData, Note, AppNotification, GoogleApiConfig } from '../types';
 import { supabase } from '../services/supabaseClient';
 import { toast } from 'sonner';
 
@@ -14,6 +14,8 @@ const INITIAL_TABS: TabConfig[] = [
   { id: 'finanzas', label: 'Finanzas', type: 'system', componentKey: 'Finanzas', isVisible: true, icon: 'TrendingUp' },
   { id: 'notas', label: 'Notas', type: 'system', componentKey: 'Notas', isVisible: true, icon: 'Edit' },
   { id: 'nutricion', label: 'Nutrición', type: 'system', componentKey: 'Nutricion', isVisible: true, icon: 'Heart' },
+  { id: 'video-gen', label: 'Generador de Video', type: 'system', componentKey: 'Generador de Video', isVisible: true, icon: 'Video' },
+  { id: '3d-print', label: 'Impresión 3D', type: 'system', componentKey: 'Impresión 3D', isVisible: true, icon: 'Box' },
 ];
 
 const INITIAL_CONFIG: AppConfig = {
@@ -38,14 +40,18 @@ const INITIAL_CONFIG: AppConfig = {
   news: [],
   finanzasNews: [],
   aiTutorials: [],
-  memoria_ia: "",
-  linksBar: [
+  memoria_ia: {
+    perfil: "",
+    estilo: "",
+    laboral: "",
+    personal: ""
+  },
     {
         id: '1',
-        href: "https://portal.javer.net/Paginas/Index.aspx",
-        name: "Javer",
-        colorClass: "text-red-600 hover:text-red-500",
-        iconSvg: `<svg xmlns="http://www.w3.org/2000/svg" className="h-6 w-6" viewBox="0 0 24 24" fill="currentColor"><path d="M15.5 3H19v13.5c0 2.48-2.02 4.5-4.5 4.5S10 18.98 10 16.5V15h3v1.5c0 .83.67 1.5 1.5 1.5s1.5-.67 1.5-1.5V3z" /></svg>`
+        href: "https://www.mercadolibre.com.mx/",
+        name: "Mercado Libre",
+        colorClass: "text-yellow-400 hover:text-yellow-300",
+        iconSvg: `<svg viewBox="0 0 45 32" className="h-7 w-7" fill="none" xmlns="http://www.w3.org/2000/svg"><path d="M30.707 19.34c-1.467-1.444-3.52-2.316-5.834-2.316-2.315 0-4.368.872-5.834 2.316C17.572 20.784 16.7 22.837 16.7 25.152c0 2.315.872 4.368 2.316 5.834a8.196 8.196 0 005.834 2.316c2.315 0 4.368-.872 5.834-2.316 1.444-1.466 2.316-3.52 2.316-5.834s-.872-4.368-2.316-5.834zM7.3 19.34c-1.467-1.444-3.52-2.316-5.834-2.316C.851 17.024 0 17.875 0 18.924c0 1.049.851 1.9 1.9 1.9.957 0 1.777.636 2.062 1.514.053.16.14.3.26.417a2.535 2.535 0 001.62.593c.31 0 .61-.057.887-.16l.166-.067c.725-.308 1.23-.974 1.23-1.742 0-.904-.516-1.683-1.264-2.035l-.014-.006c-.19-.089-.396-.14-.614-.14s-.424.051-.614.14l-.013.006c-.753.354-1.272 1.137-1.272 2.046 0 .768.505 1.434 1.23 1.742l.166.067c.277.103.577.16.887.16.685 0 1.282-.284 1.706-.738.16-.17.283-.375.353-.604.285-.878 1.105-1.514 2.062-1.514 1.049 0 1.9-.851 1.9-1.9s-.851-1.9-1.9-1.9c-2.315 0-4.368.872-5.834 2.316z" fill="#FFE600"/><path d="M24.873 18.024c-1.84 0-3.486.697-4.717 1.843a6.764 6.764 0 00-2.056 4.785c0 1.84.697 3.486 1.843 4.717 1.23 1.231 2.924 1.986 4.785 1.986 1.84 0 3.486-.697 4.717-1.843 1.146-1.23 1.843-2.924 1.843-4.785 0-1.84-.697-3.486-1.843-4.717-1.23-1.231-2.924-1.986-4.785-1.986zM8.347 18.024c-1.84 0-3.486.697-4.717 1.843-1.146 1.23-1.843 2.924-1.843 4.785 0 1.84.697 3.486 1.843 4.717a6.764 6.764 0 004.785 1.986c1.84 0 3.486-.697 4.717-1.843 1.146-1.23 1.843-2.924 1.843-4.785 0-1.84-.697-3.486-1.843-4.717-1.23-1.231-2.924-1.986-4.785-1.986z" fill="#FFF"/><path d="M24.873 19.34c-1.467 0-2.837.55-3.87 1.488a5.525 5.525 0 00-1.682 3.916c0 1.467.55 2.837 1.488 3.87a5.525 5.525 0 003.916 1.682c1.467 0 2.837-.55 3.87-1.488.938-1.033 1.488-2.403 1.488-3.87 0-1.467-.55-2.837-1.488-3.87-1.033-.938-2.403-1.488-3.87-1.488zM8.347 19.34c-1.467 0-2.837.55-3.87 1.488-.938 1.033-1.488 2.403-1.488 3.87 0 1.467.55 2.837 1.488 3.87a5.525 5.525 0 003.916 1.682c1.467 0 2.837-.55 3.87-1.488a5.525 5.525 0 001.682-3.916c0-1.467-.55-2.837-1.488-3.87a5.525 5.525 0 00-3.916-1.488z" fill="#2D3277"/><path d="M22.003 24.364l5.74 5.74m-5.74 0l5.74-5.74M5.477 24.364l5.74 5.74m-5.74 0l5.74-5.74" stroke="#2D3277" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg>`
     },
     {
         id: '2',
@@ -67,8 +73,44 @@ const INITIAL_CONFIG: AppConfig = {
         name: "Flow",
         colorClass: "text-blue-500 hover:text-blue-400",
         iconSvg: `<svg xmlns="http://www.w3.org/2000/svg" className="h-6 w-6" viewBox="0 0 24 24" fill="currentColor"><path d="M12 2L2 7l10 5 10-5-10-5zM2 17l10 5 10-5M2 12l10 5 10-5"/></svg>`
+    },
+    {
+        id: '5',
+        href: "https://www.pinterest.com.mx/Rembrandtro/pines-creados/",
+        name: "Pinterest",
+        colorClass: "text-red-500 hover:text-red-400",
+        iconSvg: `<svg xmlns="http://www.w3.org/2000/svg" className="h-6 w-6" viewBox="0 0 24 24" fill="currentColor"><path d="M12.017 0C5.396 0 .029 5.367.029 11.987c0 5.079 3.158 9.417 7.618 11.162-.105-.949-.199-2.403.041-3.439.219-.937 1.406-5.965 1.406-5.965s-.359-.719-.359-1.782c0-1.668.967-2.914 2.171-2.914 1.023 0 1.518.769 1.518 1.69 0 1.029-.655 2.568-.994 3.995-.283 1.194.599 2.169 1.777 2.169 2.133 0 3.772-2.249 3.772-5.495 0-2.873-2.064-4.882-5.012-4.882-3.414 0-5.418 2.561-5.418 5.207 0 1.031.397 2.138.893 2.738.098.119.112.224.083.345l-.333 1.36c-.053.22-.174.267-.402.161-1.499-.698-2.436-2.889-2.436-4.649 0-3.785 2.75-7.259 7.929-7.259 4.164 0 7.399 2.965 7.399 6.931 0 4.135-2.607 7.462-6.233 7.462-1.214 0-2.354-.629-2.758-1.379l-.749 2.848c-.269 1.045-1.004 2.352-1.498 3.146 1.123.345 2.306.535 3.55.535 6.607 0 11.985-5.365 11.985-11.987C23.992 5.367 18.623 0 12.017 0z"/></svg>`
+    },
+    {
+        id: '6',
+        href: "https://www.facebook.com/",
+        name: "Facebook",
+        colorClass: "text-blue-600 hover:text-blue-500",
+        iconSvg: `<svg xmlns="http://www.w3.org/2000/svg" className="h-6 w-6" viewBox="0 0 24 24" fill="currentColor"><path d="M24 12.073c0-6.627-5.373-12-12-12s-12 5.373-12 12c0 5.99 4.388 10.954 10.125 11.854v-8.385H7.078v-3.47h3.047V9.43c0-3.007 1.792-4.669 4.533-4.669 1.312 0 2.686.235 2.686.235v2.953H15.83c-1.491 0-1.956.925-1.956 1.874v2.25h3.328l-.532 3.47h-2.796v8.385C19.612 23.027 24 18.062 24 12.073z"/></svg>`
+    },
+    {
+        id: '7',
+        href: "https://www.instagram.com/",
+        name: "Instagram",
+        colorClass: "text-pink-500 hover:text-pink-400",
+        iconSvg: `<svg xmlns="http://www.w3.org/2000/svg" className="h-6 w-6" viewBox="0 0 24 24" fill="currentColor"><path d="M12 2.163c3.204 0 3.584.012 4.85.07 3.252.148 4.771 1.691 4.919 4.919.058 1.265.069 1.645.069 4.849 0 3.205-.012 3.584-.069 4.849-.149 3.225-1.664 4.771-4.919 4.919-1.266.058-1.644.07-4.85.07-3.204 0-3.584-.012-4.849-.07-3.26-.149-4.771-1.699-4.919-4.92-.058-1.265-.07-1.644-.07-4.849 0-3.204.013-3.583.07-4.849.149-3.227 1.664-4.771 4.919-4.919 1.266-.057 1.645-.069 4.849-.069zM12 0C8.741 0 8.333.014 7.053.072 2.695.272.273 2.69.073 7.052.014 8.333 0 8.741 0 12c0 3.259.014 3.668.072 4.948.2 4.358 2.618 6.78 6.98 6.98 1.281.058 1.689.072 4.948.072 3.259 0 3.668-.014 4.948-.072 4.354-.2 6.782-2.618 6.979-6.98.059-1.28.073-1.689.073-4.948 0-3.259-.014-3.667-.072-4.947-.196-4.354-2.617-6.78-6.979-6.98C15.668.014 15.259 0 12 0zm0 5.838a6.162 6.162 0 100 12.324 6.162 6.162 0 000-12.324zM12 16a4 4 0 110-8 4 4 0 010 8zm6.406-11.845a1.44 1.44 0 100 2.881 1.44 1.44 0 000-2.881z"/></svg>`
+    },
+    {
+        id: '8',
+        href: "https://x.com/",
+        name: "X",
+        colorClass: "text-white hover:text-gray-300",
+        iconSvg: `<svg xmlns="http://www.w3.org/2000/svg" className="h-6 w-6" viewBox="0 0 24 24" fill="currentColor"><path d="M18.244 2.25h3.308l-7.227 7.688 8.502 11.25h-6.657l-5.214-6.817L4.99 21.188H1.68l7.73-8.235L1.254 2.25H8.08l4.713 6.231zm-1.161 17.52h1.833L7.084 4.126H5.117z"/></svg>`
+    },
+    {
+        id: '9',
+        href: "https://portal.javer.net/Paginas/Index.aspx",
+        name: "Portal Javer",
+        colorClass: "text-red-600 hover:text-red-500",
+        iconSvg: `<svg xmlns="http://www.w3.org/2000/svg" className="h-6 w-6" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M3 9l9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"></path><polyline points="9 22 9 12 15 12 15 22"></polyline></svg>`
     }
   ],
+
   aiSidebar: {
     models: [
         { id: 'ai-1', name: 'ChatGPT', href: 'https://chatgpt.com/', colorClass: 'text-teal-400 hover:text-teal-300', iconSvg: '<svg class="w-full h-full fill-current" viewBox="0 0 24 24"><path d="M18,4H6A2,2 0 0,0 4,6V18A2,2 0 0,0 6,20H18A2,2 0 0,0 20,18V6A2,2 0 0,0 18,4M9,8H11V10H9V8M13,8H15V10H13V8M9,12H15V16H9V12Z" /></svg>' },
@@ -280,6 +322,8 @@ interface LinkContextType {
   setNotesEditMode: (val: boolean) => void;
   isEstudiosEditMode: boolean;
   setEstudiosEditMode: (val: boolean) => void;
+  googleApiConfig: GoogleApiConfig | null;
+  updateGoogleApiConfig: (config: GoogleApiConfig | null) => void;
 }
 
 const LinkContext = createContext<LinkContextType | undefined>(undefined);
@@ -395,6 +439,25 @@ export const LinkProvider: React.FC<{ children: React.ReactNode }> = ({ children
   const [isShoppingEditMode, setShoppingEditMode] = useState(false);
   const [isNotesEditMode, setNotesEditMode] = useState(false);
   const [isEstudiosEditMode, setEstudiosEditMode] = useState(false);
+
+  const [googleApiConfig, setGoogleApiConfigState] = useState<GoogleApiConfig | null>(() => {
+    try {
+      const stored = localStorage.getItem('googleApiConfig');
+      return stored ? JSON.parse(stored) : null;
+    } catch {
+      return null;
+    }
+  });
+
+  const updateGoogleApiConfig = (config: GoogleApiConfig | null) => {
+    setGoogleApiConfigState(config);
+    if (config) {
+      localStorage.setItem('googleApiConfig', JSON.stringify(config));
+    } else {
+      localStorage.removeItem('googleApiConfig');
+    }
+  };
+
   const [configFilename, setConfigFilenameState] = useState(() => {
     return localStorage.getItem('supabaseConfigFilename') || 'rembrandt_config.json';
   });
@@ -525,12 +588,23 @@ export const LinkProvider: React.FC<{ children: React.ReactNode }> = ({ children
         // Migration: Tabs
         if (!finalConfig.tabs || !Array.isArray(finalConfig.tabs)) {
           finalConfig.tabs = INITIAL_TABS;
+        } else {
+          if (!finalConfig.tabs.find((t: any) => t.componentKey === 'Generador de Video')) {
+            const videoTab = INITIAL_TABS.find(t => t.componentKey === 'Generador de Video');
+            if (videoTab) {
+              finalConfig.tabs.push(videoTab);
+            }
+          }
         }
 
-        if (finalConfig.linksBar && Array.isArray(finalConfig.linksBar) && !finalConfig.linksBar.find((l: any) => l.name === 'Flow')) {
-          const flowLink = INITIAL_CONFIG.linksBar.find(l => l.name === 'Flow');
-          if (flowLink) {
-            finalConfig.linksBar.push(flowLink);
+        // Restored linksBar items migration
+        if (finalConfig.linksBar && Array.isArray(finalConfig.linksBar)) {
+          const missingLinks = INITIAL_CONFIG.linksBar.filter(initialLink => 
+            !finalConfig.linksBar.find((l: any) => l.name === initialLink.name)
+          );
+          
+          if (missingLinks.length > 0) {
+            finalConfig.linksBar = [...finalConfig.linksBar, ...missingLinks];
           }
         }
 
@@ -556,13 +630,24 @@ export const LinkProvider: React.FC<{ children: React.ReactNode }> = ({ children
         if (!finalConfig.lastNotificationCheck) {
           finalConfig.lastNotificationCheck = '';
         }
+        if (typeof finalConfig.memoria_ia === 'string') {
+          finalConfig.memoria_ia = {
+            perfil: "",
+            estilo: "",
+            laboral: "",
+            personal: finalConfig.memoria_ia
+          };
+        } else if (!finalConfig.memoria_ia) {
+          finalConfig.memoria_ia = INITIAL_CONFIG.memoria_ia;
+        }
 
         // Migration for notes into config
         console.log('Checking for notes in separate files...');
         try {
-          const [remoteNotesData, remoteShoppingData] = await Promise.all([
+          const [remoteNotesData, remoteShoppingData, remoteEstudiosData] = await Promise.all([
             fetchNotesFromSupabase().catch(() => null),
-            fetchShoppingFromSupabase().catch(() => null)
+            fetchShoppingFromSupabase().catch(() => null),
+            fetchEstudiosFromSupabase().catch(() => null)
           ]);
 
           let currentNotes: Note[] = finalConfig.notes || [];
@@ -588,8 +673,9 @@ export const LinkProvider: React.FC<{ children: React.ReactNode }> = ({ children
             needsUpdate = true;
           };
 
-          mergeNotes(remoteNotesData, ['notas', 'recientes', 'estudios']);
+          mergeNotes(remoteNotesData, ['notas', 'recientes']);
           mergeNotes(remoteShoppingData, ['compras']);
+          mergeNotes(remoteEstudiosData, ['estudios']);
 
           if (needsUpdate || !finalConfig.notesMigrated) {
             finalConfig.notes = currentNotes;
@@ -639,6 +725,13 @@ export const LinkProvider: React.FC<{ children: React.ReactNode }> = ({ children
           // Ensure tabs exist
           if (!parsed.tabs || !Array.isArray(parsed.tabs)) {
             parsed.tabs = INITIAL_TABS;
+          } else {
+            if (!parsed.tabs.find((t: any) => t.componentKey === 'Generador de Video')) {
+              const videoTab = INITIAL_TABS.find(t => t.componentKey === 'Generador de Video');
+              if (videoTab) {
+                parsed.tabs.push(videoTab);
+              }
+            }
           }
           // Ensure usefulTools exist and have the new sections
           if (!parsed.usefulTools || !Array.isArray(parsed.usefulTools)) {
@@ -675,11 +768,14 @@ export const LinkProvider: React.FC<{ children: React.ReactNode }> = ({ children
             parsed.notes = parsed.notes.map((n: any) => ({ ...n, category: n.category || 'notas' }));
           }
           
-          // Add Flow to linksBar if not exists
-          if (parsed.linksBar && Array.isArray(parsed.linksBar) && !parsed.linksBar.find((l: any) => l.name === 'Flow')) {
-            const flowLink = INITIAL_CONFIG.linksBar.find(l => l.name === 'Flow');
-            if (flowLink) {
-              parsed.linksBar.push(flowLink);
+          // Add missing links to linksBar
+          if (parsed.linksBar && Array.isArray(parsed.linksBar)) {
+            const missingLinks = INITIAL_CONFIG.linksBar.filter(initialLink => 
+              !parsed.linksBar.find((l: any) => l.name === initialLink.name)
+            );
+
+            if (missingLinks.length > 0) {
+              parsed.linksBar = [...parsed.linksBar, ...missingLinks];
             }
           }
 
@@ -701,6 +797,16 @@ export const LinkProvider: React.FC<{ children: React.ReactNode }> = ({ children
           }
           if (!parsed.lastNotificationCheck) {
             parsed.lastNotificationCheck = '';
+          }
+          if (typeof parsed.memoria_ia === 'string') {
+             parsed.memoria_ia = {
+               perfil: "",
+               estilo: "",
+               laboral: "",
+               personal: parsed.memoria_ia
+             };
+          } else if (!parsed.memoria_ia) {
+             parsed.memoria_ia = INITIAL_CONFIG.memoria_ia;
           }
 
           setConfig(parsed);
@@ -753,21 +859,10 @@ export const LinkProvider: React.FC<{ children: React.ReactNode }> = ({ children
           return true;
         })
         .map(note => {
-          if (note.category === 'estudios') {
-            return {
-              id: note.id,
-              title: note.title || '',
-              text: note.text || '',
-              category: 'estudios' as const,
-              progress: note.progress || 0,
-              link: note.link || '',
-              completed: !!note.completed
-            };
-          }
           return {
             id: note.id,
             text: note.text || '',
-            category: 'notas' as const,
+            category: note.category === 'recientes' ? 'recientes' : 'notas',
             completed: !!note.completed
           };
         });
@@ -996,12 +1091,14 @@ export const LinkProvider: React.FC<{ children: React.ReactNode }> = ({ children
   // Sync notes to separate files whenever config.notes changes
   useEffect(() => {
     if (config.notes) {
-      const notasAndEstudiosNotes = config.notes.filter(n => ['recientes', 'notas', 'estudios'].includes(n.category));
+      const notasNotes = config.notes.filter(n => ['recientes', 'notas'].includes(n.category));
       const shoppingNotes = config.notes.filter(n => n.category === 'compras');
+      const estudiosNotes = config.notes.filter(n => n.category === 'estudios');
       
       // Save to local storage as fallback (immediate)
-      localStorage.setItem('notas_json', JSON.stringify(notasAndEstudiosNotes));
+      localStorage.setItem('notas_json', JSON.stringify(notasNotes));
       localStorage.setItem('compras_json', JSON.stringify(shoppingNotes));
+      localStorage.setItem('estudios_json', JSON.stringify(estudiosNotes));
       
       // Debounce saving to Supabase
       if (saveTimeoutRef.current) {
@@ -1009,12 +1106,10 @@ export const LinkProvider: React.FC<{ children: React.ReactNode }> = ({ children
       }
 
       saveTimeoutRef.current = setTimeout(() => {
-        if (isNotesEditMode || isEstudiosEditMode) {
-          saveNotesToSupabase(notasAndEstudiosNotes, config.updatedAt);
-        }
-        if (isShoppingEditMode) {
-          saveShoppingToSupabase(shoppingNotes, config.updatedAt);
-        }
+        // Siempre guardar para no perder cambios, como marcar casillas sin entrar en modo edición
+        saveNotesToSupabase(notasNotes, config.updatedAt);
+        saveShoppingToSupabase(shoppingNotes, config.updatedAt);
+        saveEstudiosToSupabase(estudiosNotes, config.updatedAt);
       }, 2000); // 2 second debounce
     }
 
@@ -1033,9 +1128,10 @@ export const LinkProvider: React.FC<{ children: React.ReactNode }> = ({ children
       let currentNotes = [...(configRef.current.notes || [])];
 
       try {
-        const [remoteNotesData, remoteShoppingData] = await Promise.all([
-          (!isNotesEditMode && !isEstudiosEditMode) ? fetchNotesFromSupabase().catch(() => null) : Promise.resolve(null),
-          !isShoppingEditMode ? fetchShoppingFromSupabase().catch(() => null) : Promise.resolve(null)
+        const [remoteNotesData, remoteShoppingData, remoteEstudiosData] = await Promise.all([
+          !isNotesEditMode ? fetchNotesFromSupabase().catch(() => null) : Promise.resolve(null),
+          !isShoppingEditMode ? fetchShoppingFromSupabase().catch(() => null) : Promise.resolve(null),
+          !isEstudiosEditMode ? fetchEstudiosFromSupabase().catch(() => null) : Promise.resolve(null)
         ]);
 
         const mergeNotes = (remoteData: { notes: Note[], updatedAt?: number } | null, categories: string[]) => {
@@ -1054,8 +1150,9 @@ export const LinkProvider: React.FC<{ children: React.ReactNode }> = ({ children
           }
         };
 
-        if (!isNotesEditMode && !isEstudiosEditMode) mergeNotes(remoteNotesData, ['notas', 'recientes', 'estudios']);
+        if (!isNotesEditMode) mergeNotes(remoteNotesData, ['notas', 'recientes']);
         if (!isShoppingEditMode) mergeNotes(remoteShoppingData, ['compras']);
+        if (!isEstudiosEditMode) mergeNotes(remoteEstudiosData, ['estudios']);
 
         if (needsUpdate) {
           console.log('Polling: Merging remote notes into local state');
@@ -1448,8 +1545,10 @@ export const LinkProvider: React.FC<{ children: React.ReactNode }> = ({ children
     isNotesEditMode,
     setNotesEditMode,
     isEstudiosEditMode,
-    setEstudiosEditMode
-  }), [config, isEditing, updateConfig, toggleEditing, configFilename, nutritionData, updateNutritionData, saveNutritionDataToSupabase, fetchNutritionDataFromSupabase, saveNotesToSupabase, fetchNotesFromSupabase, saveShoppingToSupabase, fetchShoppingFromSupabase, saveEstudiosToSupabase, fetchEstudiosFromSupabase, updateNotifications, isShoppingEditMode, isNotesEditMode, isEstudiosEditMode]);
+    setEstudiosEditMode,
+    googleApiConfig,
+    updateGoogleApiConfig
+  }), [config, isEditing, updateConfig, toggleEditing, configFilename, nutritionData, updateNutritionData, saveNutritionDataToSupabase, fetchNutritionDataFromSupabase, saveNotesToSupabase, fetchNotesFromSupabase, saveShoppingToSupabase, fetchShoppingFromSupabase, saveEstudiosToSupabase, fetchEstudiosFromSupabase, updateNotifications, isShoppingEditMode, isNotesEditMode, isEstudiosEditMode, googleApiConfig]);
 
   return (
     <LinkContext.Provider value={value}>

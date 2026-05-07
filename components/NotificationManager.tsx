@@ -15,7 +15,7 @@ const TARGET_TIMES = [
 ];
 
 const NotificationManager: React.FC = () => {
-  const { config, updateNotifications, updateConfig } = useLinks();
+  const { config, updateNotifications, updateConfig, googleApiConfig } = useLinks();
   const lastCheckRef = useRef<string | null>(null);
 
   useEffect(() => {
@@ -60,8 +60,12 @@ const NotificationManager: React.FC = () => {
 
     const generateNotification = async (slotLabel: string) => {
       try {
-        const ai = new GoogleGenAI({ apiKey: process.env.GEMINI_API_KEY || '' });
-        const model = "gemini-3-flash-preview";
+        const apiKey = googleApiConfig?.apiKey || process.env.GEMINI_API_KEY || '';
+        const ai = new GoogleGenAI({ 
+            apiKey: googleApiConfig?.apiKey || process.env.API_KEY || process.env.GEMINI_API_KEY || '',
+            baseUrl: `${window.location.origin}/api/proxy/google`
+        });
+        const model = "gemini-2.5-flash";
         
         const prompt = `Eres el Estratega Rembrandt (Chief of Staff). Es el momento de la ${slotLabel}. 
         Genera un consejo corto, motivador y estratégico para Rembrandt. 

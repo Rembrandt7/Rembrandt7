@@ -28,7 +28,7 @@ const LinkIcon: React.FC<{
                 target="_blank" 
                 rel="noopener noreferrer" 
                 onClick={(e) => isEditing && e.preventDefault()}
-                className={`flex items-center justify-center w-12 h-12 rounded-full transition-colors duration-200 flex-shrink-0 ${item.colorClass} ${isEditing ? 'opacity-100 cursor-default' : ''} ${hasBg ? 'bg-gray-800 hover:bg-gray-700' : ''}`}
+                className={`flex items-center justify-center w-[52px] h-[52px] rounded-[1.25rem] transition-all duration-300 flex-shrink-0 group ${item.colorClass} hover:scale-[1.15] hover:-translate-y-1 ${isEditing ? 'opacity-100 cursor-default' : ''} ${hasBg ? 'bg-white/5 hover:bg-white/10 hover:shadow-[0_4px_15px_rgba(255,255,255,0.05)] border border-white/5' : ''}`}
                 title={item.name}
                 style={{
                     filter: item.outlineColor && item.outlineWidth ? `drop-shadow(0 0 ${item.outlineWidth}px ${item.outlineColor})` : undefined
@@ -146,7 +146,7 @@ const LinksBar: React.FC = () => {
     };
 
     return (
-        <div className="w-full bg-gray-900/50 border-t border-b border-gray-800 p-6 mb-6 relative group/bar">
+        <div className="w-full bg-black/30 backdrop-blur-xl border-b border-white/5 p-6 mb-6 relative group/bar shadow-2xl">
             {/* Edit Controls - Always visible for better discovery */}
             <div className="absolute top-4 right-4 flex flex-col gap-2 z-50">
             </div>

@@ -24,14 +24,25 @@ import {
   StickyNote,
   Sparkles,
   Zap,
-  RefreshCw
+  RefreshCw,
+  AlertTriangle
 } from 'lucide-react';
 import CalendarAiAssistant from './CalendarAiAssistant';
+import WeatherForecast from './WeatherForecast';
 
 const CalendarTab: React.FC = () => {
-  const { config, updateConfig, saveToSupabase, isEditing } = useLinks();
+  const { config, updateConfig, saveToSupabase, isEditing, googleApiConfig } = useLinks();
+
+  const formatDate = (date: Date) => {
+    const year = date.getFullYear();
+    const month = String(date.getMonth() + 1).padStart(2, '0');
+    const day = String(date.getDate()).padStart(2, '0');
+    return `${year}-${month}-${day}`;
+  };
+
+  const todayStr = useMemo(() => formatDate(new Date()), []);
   const [currentDate, setCurrentDate] = useState(new Date());
-  const [selectedDate, setSelectedDate] = useState<string>(new Date().toISOString().split('T')[0]);
+  const [selectedDate, setSelectedDate] = useState<string>(todayStr);
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [editingEvent, setEditingEvent] = useState<CalendarEvent | null>(null);
   const [isAiOpen, setIsAiOpen] = useState(false);
@@ -116,11 +127,11 @@ const CalendarTab: React.FC = () => {
     if (!ignoreFilters && event.type && !visibleTypes.includes(event.type)) return false;
 
     const eventDate = new Date(event.date + 'T00:00:00');
-    const targetDateStr = targetDate.toISOString().split('T')[0];
+    const targetDateStr = formatDate(targetDate);
     const eventDateStr = event.date;
     const today = new Date();
     today.setHours(0, 0, 0, 0);
-    const todayStr = today.toISOString().split('T')[0];
+    // todayStr is defined at component level
 
     // Special case for unpaid payments: carry forward to today
     if (event.type === 'payment' && !event.isPaid) {
@@ -170,16 +181,25 @@ const CalendarTab: React.FC = () => {
   };
 
   const isTokenOnDate = (token: any, targetDate: Date) => {
-    const targetDateStr = targetDate.toISOString().split('T')[0];
+    const targetDateStr = formatDate(targetDate);
     const activeDateStr = token.currentActiveDate;
     
+    // Direct match with active date
     if (targetDateStr === activeDateStr) return true;
     
-    // Also show the next occurrence
-    const activeDate = new Date(activeDateStr + 'T00:00:00');
-    const nextDate = new Date(activeDate);
-    nextDate.setDate(nextDate.getDate() + token.intervalDays);
-    const nextDateStr = nextDate.toISOString().split('T')[0];
+    // Logic for "Pending" tokens: If the token's active date is in the past,
+    // show it on TODAY so the user sees they have a pending task.
+    const today = new Date();
+    const todayStr = formatDate(today);
+    
+    if (targetDateStr === todayStr && activeDateStr < todayStr) {
+        return true;
+    }
+    
+    // Also show the next occurrence for planning purposes
+    const nextDate = new Date(activeDateStr + 'T00:00:00');
+    nextDate.setDate(nextDate.getDate() + (token.intervalDays || 1));
+    const nextDateStr = formatDate(nextDate);
     
     return targetDateStr === nextDateStr;
   };
@@ -187,7 +207,7 @@ const CalendarTab: React.FC = () => {
   const REFERENCE_OFF_SATURDAY = new Date('2026-03-07T00:00:00');
 
   const getDayStatus = (date: Date, events: CalendarEvent[]) => {
-    const dateStr = date.toISOString().split('T')[0];
+    const dateStr = formatDate(date);
     
     // Check for custom off days (vacation/holiday)
     const customOff = events.find(e => e.date === dateStr && (e.type === 'holiday' || e.type === 'vacation' || e.type === 'off'));
@@ -270,7 +290,7 @@ const CalendarTab: React.FC = () => {
         e.preventDefault();
         const date = new Date(selectedDate + 'T00:00:00');
         date.setDate(date.getDate() + (e.key === 'ArrowLeft' ? -1 : 1));
-        const newDateStr = date.toISOString().split('T')[0];
+        const newDateStr = formatDate(date);
         setSelectedDate(newDateStr);
         
         // If the new date is in a different month, update currentDate
@@ -299,10 +319,15 @@ const CalendarTab: React.FC = () => {
       
       if (!tokens) {
         // 1. Fetch the OAuth URL from your server
-        const response = await fetch('/api/auth/url');
+        const response = await fetch('/api/auth/url', {
+          headers: {
+            'x-client-id': googleApiConfig?.clientId || '',
+            'x-client-secret': googleApiConfig?.clientSecret || ''
+          }
+        });
         if (!response.ok) {
           const errorData = await response.json().catch(() => ({}));
-          throw new Error(errorData.error || 'Error al obtener la URL de autenticación. Verifica que las variables de entorno estén configuradas.');
+          throw new Error(errorData.error || 'Error al obtener la URL de autenticación. Verifica la configuración de Google API en tu perfil.');
         }
         const { url } = await response.json();
 
@@ -319,17 +344,19 @@ const CalendarTab: React.FC = () => {
           return;
         }
 
-        // Wait for the popup to send the tokens back
-        tokens = await new Promise((resolve, reject) => {
+        // Wait for the popup to send the code back
+        const code = await new Promise((resolve, reject) => {
           const handleMessage = (event: MessageEvent) => {
             const origin = event.origin;
-            if (!origin || (!origin.endsWith('.run.app') && !origin.includes('localhost'))) {
-              return;
+            if (origin !== window.location.origin) {
+              if (!origin.endsWith('.run.app') && !origin.endsWith('.vercel.app') && !origin.includes('localhost')) {
+                return;
+              }
             }
-            if (event.data?.type === 'OAUTH_AUTH_SUCCESS') {
+            if (event.data?.type === 'OAUTH_CODE_SUCCESS') {
               window.removeEventListener('message', handleMessage);
               clearInterval(checkClosed);
-              resolve(event.data.tokens);
+              resolve(event.data.code);
             }
           };
           window.addEventListener('message', handleMessage);
@@ -342,13 +369,30 @@ const CalendarTab: React.FC = () => {
             }
           }, 1000);
 
-          // Timeout after 5 minutes
           setTimeout(() => {
             window.removeEventListener('message', handleMessage);
             clearInterval(checkClosed);
             reject(new Error('Tiempo de espera agotado para la autenticación'));
           }, 5 * 60 * 1000);
         });
+
+        // Use the code to get tokens
+        const exchangeResponse = await fetch('/api/auth/exchange', {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+            'x-client-id': googleApiConfig?.clientId || '',
+            'x-client-secret': googleApiConfig?.clientSecret || ''
+          },
+          body: JSON.stringify({ code })
+        });
+        
+        if (!exchangeResponse.ok) {
+           throw new Error('Error al intercambiar el código. Verifica tus credenciales de Google API en tu perfil.');
+        }
+        
+        const exchangeData = await exchangeResponse.json();
+        tokens = exchangeData.tokens;
 
         // Save tokens
         const updatedConfigWithTokens = { ...config, googleCalendarTokens: tokens };
@@ -360,7 +404,9 @@ const CalendarTab: React.FC = () => {
       const syncResponse = await fetch('/api/calendar/sync', {
         method: 'POST',
         headers: {
-          'Content-Type': 'application/json'
+          'Content-Type': 'application/json',
+          'x-client-id': googleApiConfig?.clientId || '',
+          'x-client-secret': googleApiConfig?.clientSecret || ''
         },
         body: JSON.stringify({
           tokens,
@@ -396,7 +442,7 @@ const CalendarTab: React.FC = () => {
       if (!error.message?.includes('Sesión expirada')) {
         console.error('Sync error:', error);
       }
-      alert(error.message || 'Error al sincronizar con Google Calendar');
+      alert(error.message || 'Error al sincronizar con Google Calendar. Revisa que tu dominio esté autorizado en Google Cloud Console.');
     } finally {
       setIsSyncing(false);
     }
@@ -448,7 +494,7 @@ const CalendarTab: React.FC = () => {
   };
 
   const handleDayClick = (date: Date) => {
-    const dateStr = date.toISOString().split('T')[0];
+    const dateStr = formatDate(date);
     setSelectedDate(dateStr);
     setNewEvent(prev => ({ ...prev, date: dateStr }));
     setNewToken(prev => ({ ...prev, startDate: dateStr }));
@@ -549,7 +595,7 @@ const CalendarTab: React.FC = () => {
           // Move to tomorrow
           activeDate.setDate(activeDate.getDate() + 1);
         }
-        return { ...t, currentActiveDate: activeDate.toISOString().split('T')[0] };
+        return { ...t, currentActiveDate: formatDate(activeDate) };
       }
       return t;
     });
@@ -571,9 +617,7 @@ const CalendarTab: React.FC = () => {
   };
 
   const handleTogglePaid = (id: string) => {
-    const today = new Date();
-    today.setHours(0, 0, 0, 0);
-    const todayStr = today.toISOString().split('T')[0];
+    // todayStr is defined at component level
 
     const updatedEvents = events.map(e => {
       if (e.id === id && e.type === 'payment') {
@@ -591,7 +635,7 @@ const CalendarTab: React.FC = () => {
               case 'yearly': nextDate.setFullYear(nextDate.getFullYear() + 1); break;
             }
             // Keep it unpaid for the next occurrence
-            return { ...e, date: nextDate.toISOString().split('T')[0], isPaid: false };
+            return { ...e, date: formatDate(nextDate), isPaid: false };
           } else {
             // Non-recurring: move to today and mark as paid
             return { ...e, date: todayStr, isPaid: true };
@@ -610,7 +654,7 @@ const CalendarTab: React.FC = () => {
 
   const handleToggleFinished = (id: string) => {
     const today = new Date();
-    const todayStr = today.toISOString().split('T')[0];
+    // todayStr is defined at component level
 
     const updatedEvents = events.map(e => {
       if (e.id === id && e.type === 'trabajo') {
@@ -1021,8 +1065,7 @@ const CalendarTab: React.FC = () => {
           </div>
           <div className="flex flex-col gap-2">
             {weeks.map((week, weekIdx) => {
-              const todayStr = new Date().toISOString().split('T')[0];
-              const isPastWeek = week.every(date => !date || date.toISOString().split('T')[0] < todayStr);
+              const isPastWeek = week.every(date => !date || formatDate(date) < todayStr);
               
               return (
                 <div 
@@ -1036,7 +1079,7 @@ const CalendarTab: React.FC = () => {
                   {week.map((date, idx) => {
                     if (!date) return <div key={`empty-${weekIdx}-${idx}`} className={`${isPastWeek ? 'h-full' : 'aspect-square'}`} />;
                     
-                    const dateStr = date.toISOString().split('T')[0];
+                    const dateStr = formatDate(date);
                     const isSelected = dateStr === selectedDate;
                     const isToday = dateStr === todayStr;
                     const isPast = dateStr < todayStr;
@@ -1052,7 +1095,7 @@ const CalendarTab: React.FC = () => {
                     const hasPayment = dayEvents.some(e => e.type === 'payment');
                     
                     const dayTokens = (config.calendarTokens || []).filter((t: any) => isTokenOnDate(t, date));
-                    const activeTokens = dayTokens.filter((t: any) => t.currentActiveDate === dateStr);
+                    const activeTokens = dayTokens.filter((t: any) => t.currentActiveDate === dateStr || (isToday && t.currentActiveDate < dateStr));
 
                     const hasUnpaidPastPayment = dayEvents.some(e => {
                       if (e.type !== 'payment' || e.isPaid) return false;
@@ -1233,7 +1276,8 @@ const CalendarTab: React.FC = () => {
                       Tokens de Recuerdo
                     </h4>
                     {selectedDayTokens.map((token: any) => {
-                      const isActiveToday = token.currentActiveDate === selectedDate;
+                      const isActiveToday = token.currentActiveDate === selectedDate || 
+                                           (selectedDate === todayStr && token.currentActiveDate < todayStr);
                       return (
                         <div 
                           key={token.id} 
@@ -1300,89 +1344,140 @@ const CalendarTab: React.FC = () => {
                   </div>
                 )}
 
-                {financialObligations.length > 0 && (
-                  <div className="space-y-3">
-                    <h4 className="text-xs font-black text-green-500 uppercase tracking-widest flex items-center gap-2 mb-2">
-                      <DollarSign size={14} />
-                      Obligaciones Financieras
-                    </h4>
-                    {financialObligations.map(event => (
-                      <div 
-                        key={event.id} 
-                        className={`bg-gray-800/80 rounded-lg p-3 border-l-4 group relative hover:bg-gray-750 transition-all ${event.isPaid ? 'opacity-40 grayscale-[0.5]' : 'opacity-100'}`}
-                        style={{ borderLeftColor: event.color || '#10b981' }}
-                      >
-                        <div className="flex justify-between items-center">
-                          <div className="flex flex-col flex-1 min-w-0">
-                            <div className="flex items-center gap-2">
-                              <h4 className="font-bold text-white truncate text-sm">{event.title}</h4>
-                              {event.amount && (
-                                <span className="text-[10px] font-black bg-green-500/20 text-green-400 px-1.5 py-0.5 rounded border border-green-500/30">
-                                  ${event.amount}{event.isVariable ? ' (Var)' : ''}
-                                </span>
-                              )}
-                              {(() => {
-                                const eventDate = new Date(event.date + 'T00:00:00');
-                                const targetDate = new Date(selectedDate + 'T00:00:00');
-                                if (eventDate < targetDate && !event.isPaid) {
-                                  return (
-                                    <span className="text-[8px] font-black bg-red-500 text-white px-1 rounded animate-pulse">
-                                      RETRASADO
-                                    </span>
-                                  );
-                                }
-                                return null;
-                              })()}
-                            </div>
-                            {event.time && (
-                              <div className="flex items-center gap-1 text-[10px] text-gray-500">
-                                <Clock size={10} />
-                                {event.time}
+                {(() => {
+                  const { delayedPayments, normalPayments } = useMemo(() => {
+                    const delayed: CalendarEvent[] = [];
+                    const normal: CalendarEvent[] = [];
+                    const targetDate = new Date(selectedDate + 'T00:00:00');
+                    
+                    financialObligations.forEach(e => {
+                      const eventDate = new Date(e.date + 'T00:00:00');
+                      if (eventDate < targetDate && !e.isPaid) {
+                        delayed.push(e);
+                      } else {
+                        normal.push(e);
+                      }
+                    });
+                    return { delayedPayments: delayed, normalPayments: normal };
+                  }, [financialObligations, selectedDate]);
+
+                  return (
+                    <>
+                      {delayedPayments.length > 0 && (
+                        <div className="space-y-3 p-3 bg-red-500/5 border border-red-500/20 rounded-2xl mb-6">
+                          <h4 className="text-[10px] font-black text-red-500 uppercase tracking-[0.2em] flex items-center gap-2 mb-2">
+                            <AlertTriangle size={14} className="animate-bounce" />
+                            PAGOS ATRASADOS
+                          </h4>
+                          <div className="space-y-2">
+                            {delayedPayments.map(event => (
+                              <div 
+                                key={event.id} 
+                                className="bg-gray-800/90 rounded-lg p-3 border-l-4 border-red-500 group relative hover:bg-gray-750 transition-all shadow-lg"
+                              >
+                                <div className="flex justify-between items-center">
+                                  <div className="flex flex-col flex-1 min-w-0">
+                                    <div className="flex items-center gap-2">
+                                      <h4 className="font-bold text-white truncate text-sm">{event.title}</h4>
+                                      <span className="text-[8px] font-black bg-red-500 text-white px-1 rounded">VENCIDO</span>
+                                    </div>
+                                    <div className="flex items-center gap-2 mt-1">
+                                      {event.amount && (
+                                        <span className="text-[10px] font-black text-red-400 bg-red-500/10 px-1.5 py-0.5 rounded border border-red-500/30">
+                                          ${event.amount}
+                                        </span>
+                                      )}
+                                      <span className="text-[9px] text-gray-500 font-medium italic">Venció: {event.date}</span>
+                                    </div>
+                                  </div>
+                                  
+                                  <button
+                                    onClick={() => handleTogglePaid(event.id)}
+                                    className="px-3 py-1.5 bg-red-600 hover:bg-red-500 text-white rounded-md text-[10px] font-black transition-all shadow-lg shadow-red-600/20"
+                                  >
+                                    PAGAR AHORA
+                                  </button>
+                                </div>
                               </div>
-                            )}
-                          </div>
-                          
-                            <div className="flex items-center gap-3">
-                              <button
-                                onClick={() => openEditModal(event)}
-                                className="p-1 text-gray-500 hover:text-blue-400 transition-colors"
-                                title="Editar pago"
-                              >
-                                <AlignLeft size={12} />
-                              </button>
-                              
-                              <button
-                                onClick={() => handleTogglePaid(event.id)}
-                              className={`flex items-center gap-1.5 px-2 py-1 rounded-md text-[10px] font-black transition-all border ${
-                                event.isPaid 
-                                  ? 'bg-green-500/20 text-green-400 border-green-500/30' 
-                                  : 'bg-gray-700 text-gray-400 border-gray-600 hover:bg-gray-600 hover:text-white'
-                              }`}
-                            >
-                              {event.isPaid ? <CheckCircle2 size={12} /> : <DollarSign size={12} />}
-                              {event.isPaid ? 'PAGADO' : 'PAGAR'}
-                            </button>
-                            
-                            <div className="flex gap-1 opacity-0 group-hover:opacity-100 transition-opacity">
-                              <button 
-                                onClick={(e) => {
-                                  e.stopPropagation();
-                                  handleDeleteEvent(event.id, e);
-                                }} 
-                                className="p-1 text-gray-500 hover:text-red-400 transition-colors"
-                              >
-                                <Trash2 size={12} />
-                              </button>
-                            </div>
+                            ))}
                           </div>
                         </div>
-                        {event.description && (
-                          <p className="text-[11px] text-gray-500 mt-1 line-clamp-1 italic">{event.description}</p>
-                        )}
-                      </div>
-                    ))}
-                  </div>
-                )}
+                      )}
+
+                      {normalPayments.length > 0 && (
+                        <div className="space-y-3">
+                          <h4 className="text-xs font-black text-green-500 uppercase tracking-widest flex items-center gap-2 mb-2">
+                            <DollarSign size={14} />
+                            Obligaciones Financieras
+                          </h4>
+                          {normalPayments.map(event => (
+                            <div 
+                              key={event.id} 
+                              className={`bg-gray-800/80 rounded-lg p-3 border-l-4 group relative hover:bg-gray-750 transition-all ${event.isPaid ? 'opacity-40 grayscale-[0.5]' : 'opacity-100'}`}
+                              style={{ borderLeftColor: event.color || '#10b981' }}
+                            >
+                              <div className="flex justify-between items-center">
+                                <div className="flex flex-col flex-1 min-w-0">
+                                  <div className="flex items-center gap-2">
+                                    <h4 className="font-bold text-white truncate text-sm">{event.title}</h4>
+                                    {event.amount && (
+                                      <span className="text-[10px] font-black bg-green-500/20 text-green-400 px-1.5 py-0.5 rounded border border-green-500/30">
+                                        ${event.amount}{event.isVariable ? ' (Var)' : ''}
+                                      </span>
+                                    )}
+                                  </div>
+                                  {event.time && (
+                                    <div className="flex items-center gap-1 text-[10px] text-gray-500">
+                                      <Clock size={10} />
+                                      {event.time}
+                                    </div>
+                                  )}
+                                </div>
+                                
+                                <div className="flex items-center gap-3">
+                                  <button
+                                    onClick={() => openEditModal(event)}
+                                    className="p-1 text-gray-500 hover:text-blue-400 transition-colors"
+                                    title="Editar pago"
+                                  >
+                                    <AlignLeft size={12} />
+                                  </button>
+                                  
+                                  <button
+                                    onClick={() => handleTogglePaid(event.id)}
+                                    className={`flex items-center gap-1.5 px-2 py-1 rounded-md text-[10px] font-black transition-all border ${
+                                      event.isPaid 
+                                        ? 'bg-green-500/20 text-green-400 border-green-500/30' 
+                                        : 'bg-gray-700 text-gray-400 border-gray-600 hover:bg-gray-600 hover:text-white'
+                                    }`}
+                                  >
+                                    {event.isPaid ? <CheckCircle2 size={12} /> : <DollarSign size={12} />}
+                                    {event.isPaid ? 'PAGADO' : 'PAGAR'}
+                                  </button>
+                                  
+                                  <div className="flex gap-1 opacity-0 group-hover:opacity-100 transition-opacity">
+                                    <button 
+                                      onClick={(e) => {
+                                        e.stopPropagation();
+                                        handleDeleteEvent(event.id, e);
+                                      }} 
+                                      className="p-1 text-gray-500 hover:text-red-400 transition-colors"
+                                    >
+                                      <Trash2 size={12} />
+                                    </button>
+                                  </div>
+                                </div>
+                              </div>
+                              {event.description && (
+                                <p className="text-[11px] text-gray-500 mt-1 line-clamp-1 italic">{event.description}</p>
+                              )}
+                            </div>
+                          ))}
+                        </div>
+                      )}
+                    </>
+                  );
+                })()}
 
                 {jobEvents.length > 0 && (
                   <div className="space-y-3">
@@ -1557,6 +1652,10 @@ const CalendarTab: React.FC = () => {
             )}
           </div>
         </div>
+      </div>
+      
+      <div className="mt-8">
+        <WeatherForecast />
       </div>
 
       {/* AI Assistant Drawer */}

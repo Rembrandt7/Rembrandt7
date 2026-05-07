@@ -16,6 +16,7 @@ import {
 import Spinner from './common/Spinner';
 import IconButton from './common/IconButton';
 import TextToolbar from './common/TextToolbar';
+import { useLinks } from '../contexts/LinkContext';
 import { Tab } from '../types';
 
 // ... (keep existing interfaces and types)
@@ -59,6 +60,7 @@ interface ImageEditorProps {
 }
 
 const ImageEditor: React.FC<ImageEditorProps> = ({ onAttachToEmail, onSwitchTab }) => {
+    const { googleApiConfig } = useLinks();
     // Canvas Refs
     const canvasRef = useRef<HTMLCanvasElement>(null);
     const interactionCanvasRef = useRef<HTMLCanvasElement>(null);
@@ -319,8 +321,15 @@ const ImageEditor: React.FC<ImageEditorProps> = ({ onAttachToEmail, onSwitchTab 
         setIsLoading(true);
         setError(null);
         try {
-            if (!process.env.API_KEY) throw new Error("API_KEY not configured");
-            const ai = new GoogleGenAI({ apiKey: process.env.API_KEY });
+            const apiKey = googleApiConfig?.apiKey || process.env.API_KEY || process.env.GEMINI_API_KEY;
+            if (!apiKey) throw new Error("No se ha configurado la API Key de Gemini. Configúrala en los ajustes.");
+
+            const ai = new GoogleGenAI({ 
+                apiKey,
+                httpOptions: {
+                    baseUrl: `${window.location.origin}/api/proxy/google`
+                }
+            });
             
             const response = await ai.models.generateContent({
                 model: 'gemini-2.5-flash-image',

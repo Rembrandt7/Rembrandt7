@@ -1,7 +1,8 @@
 import React, { useState, useEffect, useCallback } from 'react';
 import { LinkItem } from '../../types';
-import { X } from 'lucide-react';
+import { X, Save, ArrowLeft, Layout, Type, Link as LinkIcon, Palette, Image as ImageIcon, Box } from 'lucide-react';
 import { useLinks } from '../../contexts/LinkContext';
+import { motion, AnimatePresence } from 'motion/react';
 
 interface LinkEditorModalProps {
     isOpen: boolean;
@@ -76,152 +77,229 @@ export const LinkEditorModal: React.FC<LinkEditorModalProps> = ({ isOpen, onClos
         }
     }, []);
 
-    if (!isOpen) return null;
-
     return (
-        <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-[100]">
-            <div className="bg-gray-800 p-6 rounded-lg shadow-xl w-full max-w-md border border-gray-700 max-h-[90vh] overflow-y-auto">
-                <div className="flex justify-between items-center mb-4">
-                    <h2 className="text-xl font-bold text-white">{initialItem ? 'Editar Enlace' : 'Nuevo Enlace'}</h2>
-                    <button onClick={onClose} className="text-gray-400 hover:text-white"><X size={20} /></button>
-                </div>
-                
-                <div className="space-y-4">
-                    {showSectionSelector && (
-                        <div>
-                            <label className="block text-sm font-medium text-gray-400 mb-1">Sección</label>
-                            <select 
-                                value={targetSection}
-                                onChange={e => setTargetSection(e.target.value)}
-                                className="w-full bg-gray-700 border border-gray-600 rounded px-3 py-2 text-white focus:outline-none focus:border-blue-500"
+        <AnimatePresence>
+            {isOpen && (
+                <>
+                    {/* Backdrop / Overlay */}
+                    <motion.div 
+                        initial={{ opacity: 0 }}
+                        animate={{ opacity: 1 }}
+                        exit={{ opacity: 0 }}
+                        onClick={onClose}
+                        className="fixed inset-0 bg-black/60 backdrop-blur-sm z-[90] cursor-pointer"
+                    />
+
+                    {/* Right Side Panel (Drawer) */}
+                    <motion.div 
+                        initial={{ x: '100%' }}
+                        animate={{ x: 0 }}
+                        exit={{ x: '100%' }}
+                        transition={{ type: 'spring', damping: 25, stiffness: 200 }}
+                        className="fixed top-0 right-0 h-full w-full max-w-[480px] glass-panel-heavy z-[100] shadow-[0_0_50px_rgba(0,0,0,0.5)] border-l border-white/10 flex flex-col overflow-hidden"
+                    >
+                        {/* Header Panel */}
+                        <div className="p-6 border-b border-white/5 bg-white/2 flex justify-between items-center shrink-0">
+                            <div className="flex items-center gap-3">
+                                <div className="p-2 bg-blue-600/20 rounded-xl text-blue-400">
+                                    <Layout size={20} />
+                                </div>
+                                <h2 className="text-xl font-bold text-white tracking-tight">
+                                    {initialItem ? 'Editar Acceso' : 'Nuevo Acceso'}
+                                </h2>
+                            </div>
+                            <button 
+                                onClick={onClose} 
+                                className="p-2 text-gray-400 hover:text-white hover:bg-white/10 rounded-full transition-all"
                             >
-                                {sections.map(s => (
-                                    <option key={s.id} value={s.id}>{s.name}</option>
-                                ))}
-                            </select>
+                                <X size={20} />
+                            </button>
                         </div>
-                    )}
+                        
+                        {/* Form Body */}
+                        <div className="flex-1 p-8 overflow-y-auto custom-scrollbar space-y-8 pb-32">
+                            {/* Section Selector */}
+                            {showSectionSelector && (
+                                <div className="space-y-2">
+                                    <label className="flex items-center gap-2 text-xs font-bold text-gray-400 uppercase tracking-widest px-1">
+                                        <ArrowLeft size={12} className="text-blue-500" />
+                                        Destino del Acceso
+                                    </label>
+                                    <select 
+                                        value={targetSection}
+                                        onChange={e => setTargetSection(e.target.value)}
+                                        className="w-full bg-white/5 border border-white/10 rounded-xl px-4 py-3 text-white focus:outline-none focus:ring-2 focus:ring-blue-500/50 focus:border-blue-500/50 transition-all appearance-none cursor-pointer"
+                                    >
+                                        {sections.map(s => (
+                                            <option key={s.id} value={s.id} className="bg-gray-900">{s.name}</option>
+                                        ))}
+                                    </select>
+                                </div>
+                            )}
 
-                    <div>
-                        <label className="block text-sm font-medium text-gray-400 mb-1">Nombre</label>
-                        <input 
-                            type="text" 
-                            value={formData.name}
-                            onChange={e => setFormData({...formData, name: e.target.value})}
-                            className="w-full bg-gray-700 border border-gray-600 rounded px-3 py-2 text-white focus:outline-none focus:border-blue-500"
-                        />
-                    </div>
-                    
-                    <div>
-                        <label className="block text-sm font-medium text-gray-400 mb-1">URL</label>
-                        <input 
-                            type="text" 
-                            value={formData.href}
-                            onChange={e => setFormData({...formData, href: e.target.value})}
-                            className="w-full bg-gray-700 border border-gray-600 rounded px-3 py-2 text-white focus:outline-none focus:border-blue-500"
-                        />
-                    </div>
+                            {/* Nombre y URL */}
+                            <div className="grid grid-cols-1 gap-6">
+                                <div className="space-y-2">
+                                    <label className="flex items-center gap-2 text-xs font-bold text-gray-400 uppercase tracking-widest px-1">
+                                        <Type size={12} className="text-purple-500" />
+                                        Nombre del Acceso
+                                    </label>
+                                    <input 
+                                        type="text" 
+                                        value={formData.name}
+                                        onChange={e => setFormData({...formData, name: e.target.value})}
+                                        placeholder="Ej: Google Drive"
+                                        className="w-full bg-white/5 border border-white/10 rounded-xl px-4 py-3 text-white focus:outline-none focus:ring-2 focus:ring-purple-500/50 focus:border-purple-500/50 transition-all placeholder:text-gray-600"
+                                    />
+                                </div>
+                                
+                                <div className="space-y-2">
+                                    <label className="flex items-center gap-2 text-xs font-bold text-gray-400 uppercase tracking-widest px-1">
+                                        <LinkIcon size={12} className="text-pink-500" />
+                                        URL de Destino
+                                    </label>
+                                    <input 
+                                        type="text" 
+                                        value={formData.href}
+                                        onChange={e => setFormData({...formData, href: e.target.value})}
+                                        placeholder="https://..."
+                                        className="w-full bg-white/5 border border-white/10 rounded-xl px-4 py-3 text-white focus:outline-none focus:ring-2 focus:ring-pink-500/50 focus:border-pink-500/50 transition-all placeholder:text-gray-600 font-mono text-sm"
+                                    />
+                                </div>
+                            </div>
 
-                    <div>
-                        <label className="block text-sm font-medium text-gray-400 mb-1">Descripción (Opcional)</label>
-                        <input 
-                            type="text" 
-                            value={formData.description || ''}
-                            onChange={e => setFormData({...formData, description: e.target.value})}
-                            className="w-full bg-gray-700 border border-gray-600 rounded px-3 py-2 text-white focus:outline-none focus:border-blue-500"
-                        />
-                    </div>
-
-                    <div>
-                        <label className="block text-sm font-medium text-gray-400 mb-1">Clases de Color (Tailwind)</label>
-                        <input 
-                            type="text" 
-                            value={formData.colorClass || ''}
-                            onChange={e => setFormData({...formData, colorClass: e.target.value})}
-                            className="w-full bg-gray-700 border border-gray-600 rounded px-3 py-2 text-white focus:outline-none focus:border-blue-500"
-                            placeholder="Ej: text-red-500 hover:text-red-400"
-                        />
-                    </div>
-
-                    <div className="flex items-center gap-2 mt-2">
-                        <input 
-                            type="checkbox" 
-                            id="hasBackground"
-                            checked={formData.hasBackground !== false}
-                            onChange={e => setFormData({...formData, hasBackground: e.target.checked})}
-                            className="w-4 h-4 text-blue-600 bg-gray-700 border-gray-600 rounded focus:ring-blue-500"
-                        />
-                        <label htmlFor="hasBackground" className="text-sm font-medium text-gray-400">
-                            Mostrar fondo circular/cuadrado (desmarcar para imágenes transparentes)
-                        </label>
-                    </div>
-
-                    <div className="grid grid-cols-2 gap-4">
-                        <div>
-                            <label className="block text-sm font-medium text-gray-400 mb-1">Color Contorno</label>
-                            <div className="flex gap-2">
-                                <input 
-                                    type="color" 
-                                    value={formData.outlineColor || '#ffffff'}
-                                    onChange={e => setFormData({...formData, outlineColor: e.target.value})}
-                                    className="h-10 w-10 bg-transparent border-0 cursor-pointer"
-                                />
+                            <div className="space-y-2">
+                                <label className="flex items-center gap-2 text-xs font-bold text-gray-400 uppercase tracking-widest px-1">
+                                    Descripción
+                                </label>
                                 <input 
                                     type="text" 
-                                    value={formData.outlineColor || ''}
-                                    onChange={e => setFormData({...formData, outlineColor: e.target.value})}
-                                    className="flex-1 bg-gray-700 border border-gray-600 rounded px-3 py-2 text-white focus:outline-none focus:border-blue-500"
-                                    placeholder="#ffffff"
+                                    value={formData.description || ''}
+                                    onChange={e => setFormData({...formData, description: e.target.value})}
+                                    placeholder="Opcional..."
+                                    className="w-full bg-white/5 border border-white/10 rounded-xl px-4 py-3 text-white focus:outline-none focus:ring-2 focus:ring-blue-500/30 transition-all"
                                 />
                             </div>
-                        </div>
-                        <div>
-                            <label className="block text-sm font-medium text-gray-400 mb-1">Ancho Contorno (px)</label>
-                            <input 
-                                type="number" 
-                                min="0"
-                                max="20"
-                                value={formData.outlineWidth || 0}
-                                onChange={e => setFormData({...formData, outlineWidth: parseInt(e.target.value) || 0})}
-                                className="w-full bg-gray-700 border border-gray-600 rounded px-3 py-2 text-white focus:outline-none focus:border-blue-500"
-                            />
-                        </div>
-                    </div>
 
-                    <div>
-                        <label className="block text-sm font-medium text-gray-400 mb-1">Icono (Arrastra una imagen o SVG aquí)</label>
-                        <div 
-                            onDrop={handleDrop}
-                            onDragOver={e => e.preventDefault()}
-                            className="w-full bg-gray-700 border-2 border-dashed border-gray-600 rounded px-3 py-4 text-center cursor-pointer hover:border-blue-500 transition-colors flex flex-col items-center justify-center gap-2"
-                        >
-                            <div className="w-12 h-12 mb-2" dangerouslySetInnerHTML={{ __html: formData.iconSvg }} />
-                            <span className="text-xs text-gray-400">Arrastra y suelta un archivo aquí</span>
-                        </div>
-                        <textarea 
-                            value={formData.iconSvg}
-                            onChange={e => setFormData({...formData, iconSvg: e.target.value})}
-                            className="w-full bg-gray-700 border border-gray-600 rounded px-3 py-2 text-white font-mono text-xs h-24 focus:outline-none focus:border-blue-500 mt-2"
-                            placeholder="O pega el código SVG aquí..."
-                        />
-                    </div>
-                </div>
+                            {/* Estilos */}
+                            <div className="space-y-6 pt-4 border-t border-white/5">
+                                <h3 className="text-sm font-bold text-white flex items-center gap-2">
+                                    <Palette size={16} className="text-yellow-500" />
+                                    Personalización Visual
+                                </h3>
+                                
+                                <div className="space-y-2">
+                                    <label className="block text-[10px] font-black text-gray-500 uppercase tracking-[0.2em] px-1">
+                                        Clases de Color (Tailwind)
+                                    </label>
+                                    <input 
+                                        type="text" 
+                                        value={formData.colorClass || ''}
+                                        onChange={e => setFormData({...formData, colorClass: e.target.value})}
+                                        className="w-full bg-white/5 border border-white/10 rounded-xl px-4 py-3 text-white focus:outline-none focus:border-blue-500/50 transition-all font-mono text-xs"
+                                        placeholder="Ej: text-blue-500 hover:text-blue-400"
+                                    />
+                                </div>
 
-                <div className="flex justify-end gap-3 mt-6">
-                    <button 
-                        onClick={onClose}
-                        className="px-4 py-2 rounded bg-gray-700 text-gray-300 hover:bg-gray-600"
-                    >
-                        Cancelar
-                    </button>
-                    <button 
-                        onClick={() => onSave(formData, targetSection)}
-                        className="px-4 py-2 rounded bg-blue-600 text-white hover:bg-blue-500"
-                    >
-                        Guardar
-                    </button>
-                </div>
-            </div>
-        </div>
+                                <div className="flex items-center gap-3 p-4 bg-white/2 rounded-2xl border border-white/5">
+                                    <input 
+                                        type="checkbox" 
+                                        id="hasBackground"
+                                        checked={formData.hasBackground !== false}
+                                        onChange={e => setFormData({...formData, hasBackground: e.target.checked})}
+                                        className="w-5 h-5 rounded-lg border-white/20 bg-gray-800 text-blue-600 focus:ring-blue-500/50"
+                                    />
+                                    <label htmlFor="hasBackground" className="text-sm text-gray-300 font-medium cursor-pointer">
+                                        Mostrar contenedor de fondo
+                                    </label>
+                                </div>
+
+                                <div className="grid grid-cols-2 gap-6">
+                                    <div className="space-y-2">
+                                        <label className="block text-[10px] font-black text-gray-500 uppercase tracking-[0.2em] px-1">Color Contorno</label>
+                                        <div className="flex gap-2">
+                                            <div className="relative w-12 h-12 rounded-xl overflow-hidden border border-white/10">
+                                                <input 
+                                                    type="color" 
+                                                    value={formData.outlineColor || '#ffffff'}
+                                                    onChange={e => setFormData({...formData, outlineColor: e.target.value})}
+                                                    className="absolute inset-0 w-full h-full scale-[2] cursor-pointer"
+                                                />
+                                            </div>
+                                            <input 
+                                                type="text" 
+                                                value={formData.outlineColor || ''}
+                                                onChange={e => setFormData({...formData, outlineColor: e.target.value})}
+                                                className="flex-1 bg-white/5 border border-white/10 rounded-xl px-3 py-2 text-white focus:outline-none text-xs font-mono"
+                                                placeholder="#ffffff"
+                                            />
+                                        </div>
+                                    </div>
+                                    <div className="space-y-2">
+                                        <label className="block text-[10px] font-black text-gray-500 uppercase tracking-[0.2em] px-1">Ancho (px)</label>
+                                        <input 
+                                            type="number" 
+                                            min="0"
+                                            max="20"
+                                            value={formData.outlineWidth || 0}
+                                            onChange={e => setFormData({...formData, outlineWidth: parseInt(e.target.value) || 0})}
+                                            className="w-full bg-white/5 border border-white/10 rounded-xl px-4 py-2.5 text-white focus:outline-none"
+                                        />
+                                    </div>
+                                </div>
+                            </div>
+
+                            {/* Icono */}
+                            <div className="space-y-4 pt-4 border-t border-white/5">
+                                <h3 className="text-sm font-bold text-white flex items-center gap-2">
+                                    <ImageIcon size={16} className="text-emerald-500" />
+                                    Iconografía o Imagen
+                                </h3>
+                                
+                                <div 
+                                    onDrop={handleDrop}
+                                    onDragOver={e => e.preventDefault()}
+                                    className="w-full bg-white/2 border-2 border-dashed border-white/10 rounded-3xl p-8 text-center cursor-pointer hover:border-blue-500/50 hover:bg-blue-500/5 transition-all flex flex-col items-center justify-center gap-4 group"
+                                >
+                                    <div className="w-16 h-16 p-2 bg-gray-900 rounded-2xl shadow-xl transition-transform group-hover:scale-110 flex items-center justify-center" dangerouslySetInnerHTML={{ __html: formData.iconSvg }} />
+                                    <div className="space-y-1">
+                                        <p className="text-sm font-bold text-gray-300">Arrastra archivos aquí</p>
+                                        <p className="text-[10px] text-gray-500 uppercase tracking-wider font-semibold">SVG / PNG / JPG</p>
+                                    </div>
+                                </div>
+                                <div className="space-y-2">
+                                    <label className="block text-[10px] font-black text-gray-500 uppercase tracking-[0.2em] px-1 flex items-center gap-2">
+                                        <Box size={10} /> Código SVG
+                                    </label>
+                                    <textarea 
+                                        value={formData.iconSvg}
+                                        onChange={e => setFormData({...formData, iconSvg: e.target.value})}
+                                        className="w-full bg-gray-950/50 border border-white/10 rounded-xl px-4 py-4 text-white font-mono text-[10px] h-32 focus:outline-none focus:ring-1 focus:ring-blue-500 transition-all"
+                                        placeholder="<svg>...</svg>"
+                                    />
+                                </div>
+                            </div>
+                        </div>
+
+                        {/* Footer Panel */}
+                        <div className="p-6 bg-black/40 backdrop-blur-3xl border-t border-white/5 flex gap-4 shrink-0">
+                            <button 
+                                onClick={onClose}
+                                className="flex-1 px-4 py-4 rounded-2xl bg-white/5 text-gray-300 font-bold hover:bg-white/10 transition-all border border-white/5"
+                            >
+                                Cancelar
+                            </button>
+                            <button 
+                                onClick={() => onSave(formData, targetSection)}
+                                className="flex-[2] flex items-center justify-center gap-2 px-6 py-4 rounded-2xl bg-gradient-to-r from-blue-600 to-indigo-600 text-white font-bold hover:from-blue-500 hover:to-indigo-500 shadow-[0_10px_25px_rgba(37,99,235,0.4)] transition-all active:scale-[0.98]"
+                            >
+                                <Save size={18} />
+                                Guardar Cambios
+                            </button>
+                        </div>
+                    </motion.div>
+                </>
+            )}
+        </AnimatePresence>
     );
 };

@@ -1,0 +1,17 @@
+{
+  "version": 2,
+  "framework": "vite",
+  "rewrites": [
+    { "source": "/api/health", "destination": "/api/health.ts" },
+    { "source": "/api/diagnostic", "destination": "/api/diagnostic.ts" },
+    { "source": "/api/ping", "destination": "/api/ping.ts" },
+    { "source": "/api/proxy/google/(.*)", "destination": "/api/proxy/google.ts" },
+    { "source": "/api/auth/(.*)", "destination": "/api/auth.ts" },
+    { "source": "/auth/callback", "destination": "/api/auth.ts" },
+    { "source": "/api/calendar/sync", "destination": "/api/calendar.ts" },
+    { "source": "/api/gmail/emails", "destination": "/api/gmail.ts" },
+    { "source": "/api/gmail/delete", "destination": "/api/gmail.ts" },
+    { "source": "/api/remotion/render", "destination": "/api/remotion.ts" },
+    { "source": "/((?!api/).*)", "destination": "/index.html" }
+  ]
+}

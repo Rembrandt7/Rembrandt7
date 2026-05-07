@@ -1,6 +1,7 @@
 
 import React, { useState, useRef, useEffect } from 'react';
 import { GoogleGenAI, Modality, Type } from '@google/genai';
+import { useLinks } from '../contexts/LinkContext';
 import Spinner from './common/Spinner';
 import IconButton from './common/IconButton';
 import MarkdownRenderer from './common/MarkdownRenderer';
@@ -20,6 +21,7 @@ interface CinematicConcept {
 }
 
 const StickerModal: React.FC<{ isOpen: boolean; onClose: () => void }> = ({ isOpen, onClose }) => {
+    const { googleApiConfig } = useLinks();
     const [image, setImage] = useState<AnalyzedImage | null>(null);
     const [generatedSticker, setGeneratedSticker] = useState<string | null>(null);
     const [isGenerating, setIsGenerating] = useState(false);
@@ -42,8 +44,15 @@ const StickerModal: React.FC<{ isOpen: boolean; onClose: () => void }> = ({ isOp
         setIsGenerating(true);
         setError(null);
         try {
-            if (!process.env.API_KEY) throw new Error("API_KEY no configurada.");
-            const ai = new GoogleGenAI({ apiKey: process.env.API_KEY });
+            const apiKey = googleApiConfig?.apiKey || process.env.API_KEY || process.env.GEMINI_API_KEY;
+            if (!apiKey) throw new Error("No se ha configurado la API Key de Gemini. Configúrala en los ajustes.");
+
+            const ai = new GoogleGenAI({ 
+                apiKey,
+                httpOptions: {
+                    baseUrl: `${window.location.origin}/api/proxy/google`
+                }
+            });
             
             const prompt = "Generate a high-quality die-cut sticker of the main subject in this image. Isolate the subject and add a thick white border contour around it. Place it on a plain solid black background for easy extraction.";
             
@@ -116,6 +125,7 @@ const StickerModal: React.FC<{ isOpen: boolean; onClose: () => void }> = ({ isOp
 };
 
 const FilmCritic: React.FC = () => {
+    const { googleApiConfig } = useLinks();
     const [selectedImage, setSelectedImage] = useState<AnalyzedImage | null>(null);
     const [analysisText, setAnalysisText] = useState<string | null>(null);
     const [availableConcepts, setAvailableConcepts] = useState<CinematicConcept[]>([]);
@@ -145,11 +155,18 @@ const FilmCritic: React.FC = () => {
         setStatus('analyzing');
         setError(null);
         try {
-            if (!process.env.API_KEY) throw new Error("API_KEY no configurada.");
-            const ai = new GoogleGenAI({ apiKey: process.env.API_KEY });
+            const apiKey = googleApiConfig?.apiKey || process.env.API_KEY || process.env.GEMINI_API_KEY;
+            if (!apiKey) throw new Error("No se ha configurado la API Key de Gemini. Configúrala en los ajustes.");
+
+            const ai = new GoogleGenAI({ 
+                apiKey,
+                httpOptions: {
+                    baseUrl: `${window.location.origin}/api/proxy/google`
+                }
+            });
 
             const analysisRes = await ai.models.generateContent({
-                model: 'gemini-3.1-flash-lite-preview',
+                model: 'gemini-2.5-flash',
                 contents: {
                     parts: [
                         { inlineData: { mimeType: selectedImage.mimeType, data: selectedImage.base64 } },
@@ -160,7 +177,7 @@ const FilmCritic: React.FC = () => {
             setAnalysisText(analysisRes.text);
 
             const conceptsRes = await ai.models.generateContent({
-                model: 'gemini-3-flash-preview',
+                model: 'gemini-2.5-flash',
                 contents: {
                     parts: [
                         { inlineData: { mimeType: selectedImage.mimeType, data: selectedImage.base64 } },
@@ -197,7 +214,15 @@ const FilmCritic: React.FC = () => {
         if (!selectedImage || selectedConcepts.length === 0) return;
         setStatus('generating_prompt');
         try {
-            const ai = new GoogleGenAI({ apiKey: process.env.API_KEY });
+            const apiKey = googleApiConfig?.apiKey || process.env.API_KEY || process.env.GEMINI_API_KEY;
+            if (!apiKey) throw new Error("No se ha configurado la API Key de Gemini. Configúrala en los ajustes.");
+
+            const ai = new GoogleGenAI({ 
+                apiKey,
+                httpOptions: {
+                    baseUrl: `${window.location.origin}/api/proxy/google`
+                }
+            });
             const technicalTerms = selectedConcepts.map(c => `${c.category}: ${c.value_en}`).join(', ');
             const instruction = `
                 Generate a MASTER CINEMATIC PROMPT in English for "NanoBanana Pro" (high-fidelity image generator).
@@ -212,7 +237,7 @@ const FilmCritic: React.FC = () => {
                 Make explicit reference to the original subject. Devuelve SOLO el prompt en inglés.
             `;
             const response = await ai.models.generateContent({
-                model: 'gemini-3-flash-preview',
+                model: 'gemini-2.5-flash',
                 contents: {
                     parts: [
                         { inlineData: { mimeType: selectedImage.mimeType, data: selectedImage.base64 } },
