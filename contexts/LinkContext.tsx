@@ -582,6 +582,16 @@ export const LinkProvider: React.FC<{ children: React.ReactNode }> = ({ children
         if (!finalConfig.tabs || !Array.isArray(finalConfig.tabs)) {
           finalConfig.tabs = INITIAL_TABS;
         } else {
+          // Remove Noticias tab if present
+          finalConfig.tabs = finalConfig.tabs.filter((t: any) => t.id !== 'dashboard');
+          
+          // Force new labels
+          finalConfig.tabs = finalConfig.tabs.map((t: any) => {
+            if (t.id === 'email-gen') return { ...t, label: 'Email' };
+            if (t.id === 'video-gen') return { ...t, label: 'Video' };
+            return t;
+          });
+
           if (!finalConfig.tabs.find((t: any) => t.componentKey === 'Generador de Video')) {
             const videoTab = INITIAL_TABS.find(t => t.componentKey === 'Generador de Video');
             if (videoTab) {
@@ -1470,6 +1480,16 @@ export const LinkProvider: React.FC<{ children: React.ReactNode }> = ({ children
       }
       
       if (json.tabs && Array.isArray(json.tabs)) {
+        // Remove Noticias tab if present
+        json.tabs = json.tabs.filter((t: any) => t.id !== 'dashboard');
+        
+        // Force new labels
+        json.tabs = json.tabs.map((t: any) => {
+          if (t.id === 'email-gen') return { ...t, label: 'Email' };
+          if (t.id === 'video-gen') return { ...t, label: 'Video' };
+          return t;
+        });
+
         // Add missing system tabs
         const existingTabIds = new Set(json.tabs.map((t: any) => t.id));
         INITIAL_TABS.forEach(systemTab => {
