@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { Calculator, DollarSign, Zap, Clock, Tool, TrendingUp, Download, RefreshCw } from 'lucide-react';
+import { Calculator, DollarSign, Zap, Clock, Wrench, TrendingUp, Download, RefreshCw } from 'lucide-react';
 import { motion } from 'motion/react';
 
 interface CalculationResults {
@@ -153,7 +153,7 @@ const ThreeDCalculator: React.FC = () => {
             {/* Rates */}
             <div className="space-y-3">
               <label className="flex items-center gap-2 text-sm font-medium text-gray-300">
-                <Tool size={14} className="text-red-400" /> Costo de Mantenimiento
+                <Wrench size={14} className="text-red-400" /> Costo de Mantenimiento
               </label>
               <div className="relative">
                 <input 
