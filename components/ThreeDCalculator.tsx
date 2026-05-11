@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
-import { Calculator, DollarSign, Zap, Clock, Wrench, TrendingUp, Download, RefreshCw, UserCheck, ShoppingBag, Info, Copy, CheckCircle2 } from 'lucide-react';
-import { motion, AnimatePresence } from 'motion/react';
+import { Calculator, DollarSign, Zap, Clock, Wrench, TrendingUp, RefreshCw, UserCheck, ShoppingBag, Copy, CheckCircle2 } from 'lucide-react';
+import { motion } from 'motion/react';
 import { toast } from 'sonner';
 
 interface CalculationResults {
@@ -21,17 +21,15 @@ const MATERIAL_POWER = {
 };
 
 const ThreeDCalculator: React.FC = () => {
-  // Inputs
   const [pieceName, setPieceName] = useState('');
+  const [material, setMaterial] = useState<keyof typeof MATERIAL_POWER>('PLA');
   const [filamentPrice, setFilamentPrice] = useState(400);
   const [weightUsed, setWeightUsed] = useState(100);
   const [printHours, setPrintHours] = useState(5);
   const [printMinutes, setPrintMinutes] = useState(0);
-  const [material, setMaterial] = useState<keyof typeof MATERIAL_POWER>('PLA');
-  const [electricityRate, setElectricityRate] = useState(2.5);
   const [laborCostManual, setLaborCostManual] = useState(0);
-  const [maintenanceRate, setMaintenanceRate] = useState(5);
   const [markup, setMarkup] = useState(30);
+  const [copiedType, setCopiedType] = useState<string | null>(null);
 
   const [results, setResults] = useState<CalculationResults>({
     filamentCost: 0,
@@ -44,14 +42,12 @@ const ThreeDCalculator: React.FC = () => {
     profit: 0,
   });
 
-  const [copiedType, setCopiedType] = useState<string | null>(null);
-
   useEffect(() => {
     const totalHours = printHours + (printMinutes / 60);
     const fCost = (filamentPrice / 1000) * weightUsed;
     const power = MATERIAL_POWER[material];
-    const eCost = (power / 1000) * totalHours * electricityRate;
-    const mCost = totalHours * maintenanceRate;
+    const eCost = (power / 1000) * totalHours * 2.5; // Fixed rate 2.5 MXN/kWh
+    const mCost = totalHours * 5; // Fixed maintenance 5 MXN/hr
     const baseCost = fCost + eCost + mCost + laborCostManual;
     
     const friendPrice = baseCost * 1.15; 
@@ -68,233 +64,150 @@ const ThreeDCalculator: React.FC = () => {
       commercialPrice,
       profit,
     });
-  }, [filamentPrice, weightUsed, printHours, printMinutes, material, electricityRate, laborCostManual, maintenanceRate, markup]);
+  }, [filamentPrice, weightUsed, printHours, printMinutes, material, laborCostManual, markup]);
 
   const formatCurrency = (val: number) => 
     new Intl.NumberFormat('es-MX', { style: 'currency', currency: 'MXN' }).format(val);
 
-  const generateSalesText = (price: number, type: 'amigo' | 'comercial') => {
-    const name = pieceName.trim() || `Pieza de ${material}`;
-    const timeText = `${printHours}h ${printMinutes}m`;
-    const priceText = formatCurrency(price);
-    
-    if (type === 'amigo') {
-      return `¡Qué onda! Te paso la cotización de tu ${name}: El costo neto por los materiales, energía y el tiempo de impresión (${timeText}) queda en ${priceText}. ¡Es precio especial! Quedo a tus órdenes.`;
-    }
-    return `¡Hola! Con gusto te comparto la cotización de tu ${name}. Realizada en material ${material} con un tiempo de impresión de ${timeText}, el total sería de ${priceText}. ¡Quedo a tus órdenes para iniciar tu proyecto!`;
-  };
-
   const handleCopy = (price: number, type: 'amigo' | 'comercial') => {
-    const text = generateSalesText(price, type);
+    const name = pieceName.trim() || `Pieza de ${material}`;
+    const time = `${printHours}h ${printMinutes}m`;
+    const priceText = formatCurrency(price);
+    const text = type === 'amigo' 
+      ? `¡Qué onda! Te paso la cotización de tu ${name}: El costo neto por los materiales, energía y el tiempo de impresión (${time}) queda en ${priceText}. ¡Es precio especial! Quedo a tus órdenes.`
+      : `¡Hola! Con gusto te comparto la cotización de tu ${name}. Realizada en material ${material} con un tiempo de impresión de ${time}, el total sería de ${priceText}. ¡Quedo a tus órdenes para iniciar tu proyecto!`;
+    
     navigator.clipboard.writeText(text);
     setCopiedType(type);
-    toast.success('¡Texto de venta copiado!');
+    toast.success('¡Copiado!');
     setTimeout(() => setCopiedType(null), 2000);
   };
 
   return (
-    <div className="bg-slate-900/60 backdrop-blur-2xl border border-white/10 rounded-[2.5rem] overflow-hidden shadow-2xl">
-      {/* Header */}
-      <div className="p-8 border-b border-white/10 bg-gradient-to-r from-blue-600/20 via-indigo-600/10 to-purple-600/20 flex items-center justify-between">
-        <div className="flex items-center gap-4">
-          <div className="p-3 bg-blue-500/20 rounded-2xl border border-blue-500/30">
-            <Calculator className="text-blue-400" size={28} />
-          </div>
-          <div>
-            <h3 className="text-2xl font-black text-white tracking-tight italic uppercase">Costeador 3D Pro</h3>
-            <p className="text-xs text-blue-300/60 uppercase tracking-[0.2em] font-bold">Monterrey • Cotizador Inteligente</p>
-          </div>
+    <div className="bg-slate-950/80 backdrop-blur-3xl border border-white/10 rounded-[2rem] overflow-hidden shadow-2xl max-w-4xl mx-auto">
+      {/* Header Compact */}
+      <div className="px-6 py-4 border-b border-white/10 bg-white/[0.02] flex items-center justify-between">
+        <div className="flex items-center gap-3">
+          <Calculator className="text-blue-400" size={20} />
+          <h3 className="text-sm font-black text-white uppercase tracking-widest italic">Calculadora Express 3D</h3>
         </div>
-        <button 
-          onClick={() => {
-            setPieceName('');
-            setFilamentPrice(400);
-            setWeightUsed(100);
-            setPrintHours(5);
-            setPrintMinutes(0);
-            setMaterial('PLA');
-            setLaborCostManual(0);
-            setMarkup(30);
-          }}
-          className="p-3 hover:bg-white/5 rounded-2xl transition-all text-gray-400 hover:text-white border border-transparent hover:border-white/10"
-        >
-          <RefreshCw size={20} />
+        <button onClick={() => { setPieceName(''); setFilamentPrice(400); setWeightUsed(100); setPrintHours(5); setPrintMinutes(0); setLaborCostManual(0); setMarkup(30); }} className="text-gray-500 hover:text-white transition-colors">
+          <RefreshCw size={14} />
         </button>
       </div>
 
-      <div className="grid grid-cols-1 xl:grid-cols-12 gap-0">
-        {/* Inputs Section */}
-        <div className="xl:col-span-7 p-8 space-y-8 border-r border-white/5 bg-white/[0.01]">
+      <div className="grid grid-cols-1 md:grid-cols-2 gap-0">
+        {/* Left: Inputs */}
+        <div className="p-6 space-y-5 border-r border-white/5">
           
-          {/* Piece Name */}
-          <div className="space-y-3">
-            <label className="text-[10px] font-black text-gray-400 uppercase tracking-widest block">Nombre de la Pieza (Opcional)</label>
-            <input 
-              type="text" 
-              placeholder="Ej: Casco Iron Man, Engrane, Maceta..."
-              value={pieceName}
-              onChange={(e) => setPieceName(e.target.value)}
-              className="w-full bg-white/5 border border-white/10 rounded-2xl px-5 py-4 text-white font-bold text-lg focus:outline-none focus:ring-2 focus:ring-blue-500/50 transition-all placeholder:text-gray-600"
-            />
+          {/* Row 1: Name and Material */}
+          <div className="flex gap-4">
+            <div className="flex-[2] space-y-1.5">
+              <label className="text-[9px] font-black text-gray-500 uppercase tracking-widest">Nombre Pieza</label>
+              <input type="text" value={pieceName} onChange={e => setPieceName(e.target.value)} placeholder="Ej: Casco..." className="w-full bg-white/5 border border-white/10 rounded-xl px-3 py-2 text-white text-sm focus:outline-none focus:ring-1 focus:ring-blue-500/50" />
+            </div>
+            <div className="flex-1 space-y-1.5">
+              <label className="text-[9px] font-black text-gray-500 uppercase tracking-widest">Material</label>
+              <select value={material} onChange={e => setMaterial(e.target.value as any)} className="w-full bg-white/5 border border-white/10 rounded-xl px-2 py-2 text-white text-sm focus:outline-none">
+                <option value="PLA">PLA</option>
+                <option value="PETG">PETG</option>
+                <option value="TPU">TPU</option>
+              </select>
+            </div>
           </div>
 
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
-            
-            {/* Filament Price */}
-            <div className="space-y-3">
-              <label className="flex items-center gap-2 text-xs font-black text-gray-400 uppercase tracking-widest">
-                <DollarSign size={14} className="text-green-400" /> Filamento (kg)
-              </label>
-              <div className="flex items-center bg-white/5 border border-white/10 rounded-2xl overflow-hidden focus-within:ring-2 focus-within:ring-blue-500/50 transition-all">
-                <button onClick={() => setFilamentPrice(prev => Math.max(0, prev - 50))} className="px-4 py-4 hover:bg-white/10 text-white font-bold transition-colors">-</button>
-                <input 
-                  type="number" 
-                  value={filamentPrice === 0 ? '' : filamentPrice} 
-                  onChange={(e) => setFilamentPrice(Number(e.target.value))}
-                  placeholder="0"
-                  className="w-full bg-transparent text-center text-white font-bold text-xl focus:outline-none"
-                />
-                <button onClick={() => setFilamentPrice(prev => prev + 50)} className="px-4 py-4 hover:bg-white/10 text-white font-bold transition-colors">+</button>
+          {/* Row 2: Price, Weight, Time */}
+          <div className="flex gap-3">
+            <div className="w-20 space-y-1.5">
+              <label className="text-[9px] font-black text-gray-500 uppercase tracking-widest">Filamento</label>
+              <input type="number" value={filamentPrice || ''} onChange={e => setFilamentPrice(Number(e.target.value))} className="w-full bg-white/5 border border-white/10 rounded-xl px-2 py-2 text-white text-sm text-center focus:outline-none" />
+            </div>
+            <div className="w-24 space-y-1.5">
+              <label className="text-[9px] font-black text-gray-500 uppercase tracking-widest">Gramos</label>
+              <input type="number" value={weightUsed || ''} onChange={e => setWeightUsed(Number(e.target.value))} className="w-full bg-white/5 border border-white/10 rounded-xl px-2 py-2 text-white text-sm text-center focus:outline-none" />
+            </div>
+            <div className="flex-1 space-y-1.5">
+              <label className="text-[9px] font-black text-gray-500 uppercase tracking-widest">Tiempo (hh:mm)</label>
+              <div className="flex items-center bg-white/5 border border-white/10 rounded-xl px-2 py-2">
+                <input type="number" value={printHours || ''} onChange={e => setPrintHours(Number(e.target.value))} className="w-full bg-transparent text-white text-sm text-right focus:outline-none pr-1" placeholder="0" />
+                <span className="text-gray-600">:</span>
+                <input type="number" value={printMinutes || ''} onChange={e => setPrintMinutes(Math.min(59, Number(e.target.value)))} className="w-full bg-transparent text-white text-sm text-left focus:outline-none pl-1" placeholder="00" />
               </div>
             </div>
+          </div>
 
-            {/* Model Weight */}
-            <div className="space-y-3">
-              <label className="flex items-center gap-2 text-xs font-black text-gray-400 uppercase tracking-widest">
-                <TrendingUp size={14} className="text-blue-400" /> Peso (Gramos)
-              </label>
-              <div className="relative">
-                <input 
-                  type="number" 
-                  value={weightUsed === 0 ? '' : weightUsed} 
-                  onChange={(e) => setWeightUsed(Number(e.target.value))}
-                  placeholder="0"
-                  className="w-full bg-white/5 border border-white/10 rounded-2xl px-5 py-4 text-white font-bold text-xl focus:outline-none focus:ring-2 focus:ring-blue-500/50 transition-all"
-                />
-                <span className="absolute right-5 top-1/2 -translate-y-1/2 text-gray-500 font-bold">g</span>
+          {/* Row 3: Labor and Markup */}
+          <div className="flex gap-4">
+            <div className="flex-1 space-y-1.5">
+              <label className="text-[9px] font-black text-gray-500 uppercase tracking-widest">Labor (+/- 10)</label>
+              <div className="flex items-center bg-white/5 border border-white/10 rounded-xl overflow-hidden">
+                <button onClick={() => setLaborCostManual(p => Math.max(0, p-10))} className="px-2 py-2 hover:bg-white/5 text-gray-400">-</button>
+                <input type="number" value={laborCostManual || ''} onChange={e => setLaborCostManual(Number(e.target.value))} className="w-full bg-transparent text-white text-sm text-center focus:outline-none" />
+                <button onClick={() => setLaborCostManual(p => p+10)} className="px-2 py-2 hover:bg-white/5 text-gray-400">+</button>
               </div>
             </div>
-
-            {/* Labor Cost Stepper */}
-            <div className="space-y-3">
-              <label className="flex items-center gap-2 text-xs font-black text-gray-400 uppercase tracking-widest">
-                <UserCheck size={14} className="text-purple-400" /> Labor / Post-proceso
-              </label>
-              <div className="flex items-center bg-white/5 border border-white/10 rounded-2xl overflow-hidden focus-within:ring-2 focus-within:ring-blue-500/50 transition-all">
-                <button onClick={() => setLaborCostManual(prev => Math.max(0, prev - 10))} className="px-4 py-4 hover:bg-white/10 text-white font-bold transition-colors">-</button>
-                <input 
-                  type="number" 
-                  value={laborCostManual === 0 ? '' : laborCostManual} 
-                  onChange={(e) => setLaborCostManual(Number(e.target.value))}
-                  placeholder="0"
-                  className="w-full bg-transparent text-center text-white font-bold text-xl focus:outline-none"
-                />
-                <button onClick={() => setLaborCostManual(prev => prev + 10)} className="px-4 py-4 hover:bg-white/10 text-white font-bold transition-colors">+</button>
-              </div>
-            </div>
-
-            {/* Time Split */}
-            <div className="space-y-3">
-              <label className="flex items-center gap-2 text-xs font-black text-gray-400 uppercase tracking-widest">
-                <Clock size={14} className="text-orange-400" /> Tiempo de Impresión
-              </label>
-              <div className="flex gap-2">
-                <div className="relative flex-1">
-                  <input 
-                    type="number" 
-                    value={printHours === 0 ? '' : printHours} 
-                    onChange={(e) => setPrintHours(Number(e.target.value))}
-                    placeholder="0"
-                    className="w-full bg-white/5 border border-white/10 rounded-2xl px-4 py-4 text-white font-bold text-lg focus:outline-none focus:ring-2 focus:ring-blue-500/50 transition-all"
-                  />
-                  <span className="absolute right-3 top-1/2 -translate-y-1/2 text-[10px] text-gray-500 font-bold uppercase">hrs</span>
-                </div>
-                <div className="relative flex-1">
-                  <input 
-                    type="number" 
-                    value={printMinutes === 0 ? '' : printMinutes} 
-                    onChange={(e) => setPrintMinutes(Math.min(59, Number(e.target.value)))}
-                    placeholder="0"
-                    className="w-full bg-white/5 border border-white/10 rounded-2xl px-4 py-4 text-white font-bold text-lg focus:outline-none focus:ring-2 focus:ring-blue-500/50 transition-all"
-                  />
-                  <span className="absolute right-3 top-1/2 -translate-y-1/2 text-[10px] text-gray-500 font-bold uppercase">min</span>
-                </div>
-              </div>
-            </div>
-
-            {/* Material & Markup remain same but refined styles */}
-            <div className="space-y-3">
-              <label className="flex items-center gap-2 text-xs font-black text-gray-400 uppercase tracking-widest">
-                <Zap size={14} className="text-yellow-400" /> Material
-              </label>
-              <div className="grid grid-cols-3 gap-2 p-1.5 bg-white/5 rounded-2xl border border-white/10">
-                {(['PLA', 'PETG', 'TPU'] as const).map((m) => (
-                  <button key={m} onClick={() => setMaterial(m)} className={`py-2 px-3 rounded-xl text-xs font-black transition-all ${material === m ? 'bg-blue-600 text-white shadow-lg shadow-blue-900/40' : 'text-gray-500 hover:text-white hover:bg-white/5'}`}>{m}</button>
+            <div className="flex-1 space-y-1.5">
+              <label className="text-[9px] font-black text-gray-500 uppercase tracking-widest">Margen Ganancia</label>
+              <div className="grid grid-cols-3 gap-1 p-1 bg-white/5 rounded-xl">
+                {[15, 20, 30].map(m => (
+                  <button key={m} onClick={() => setMarkup(m)} className={`py-1 text-[10px] font-black rounded-lg transition-all ${markup === m ? 'bg-blue-600 text-white' : 'text-gray-500 hover:text-white'}`}>{m}%</button>
                 ))}
               </div>
             </div>
+          </div>
 
-            <div className="space-y-3">
-              <label className="flex items-center gap-2 text-xs font-black text-gray-400 uppercase tracking-widest">
-                <TrendingUp size={14} className="text-cyan-400" /> Margen
-              </label>
-              <div className="grid grid-cols-3 gap-2 p-1.5 bg-white/5 rounded-2xl border border-white/10">
-                {([10, 20, 30] as const).map((m) => (
-                  <button key={m} onClick={() => setMarkup(m)} className={`py-2 px-3 rounded-xl text-xs font-black transition-all ${markup === m ? 'bg-cyan-600 text-white shadow-lg shadow-cyan-900/40' : 'text-gray-500 hover:text-white hover:bg-white/5'}`}>{m}%</button>
-                ))}
-              </div>
+          {/* Breakdown Internal (My Costs) */}
+          <div className="pt-4 mt-4 border-t border-white/5 space-y-3">
+            <div className="flex justify-between items-center text-[10px]">
+              <span className="text-gray-500 font-bold uppercase">Costo Luz (Mty)</span>
+              <span className="text-yellow-400 font-mono font-bold">{formatCurrency(results.energyCost)}</span>
             </div>
-
+            <div className="flex justify-between items-center text-[10px]">
+              <span className="text-gray-500 font-bold uppercase">Costo Filamento</span>
+              <span className="text-green-400 font-mono font-bold">{formatCurrency(results.filamentCost)}</span>
+            </div>
+            <div className="flex justify-between items-center p-2 bg-blue-500/5 rounded-lg border border-blue-500/10">
+              <span className="text-blue-400 text-xs font-black uppercase tracking-tighter italic">Mi Costo Base</span>
+              <span className="text-white font-black text-sm">{formatCurrency(results.baseCost)}</span>
+            </div>
           </div>
         </div>
 
-        {/* Results Section */}
-        <div className="xl:col-span-5 p-10 bg-gradient-to-br from-white/[0.03] to-white/[0.01] flex flex-col justify-between space-y-8">
+        {/* Right: Selling Prices */}
+        <div className="p-8 bg-white/[0.02] flex flex-col justify-center space-y-8">
           
           <div className="space-y-6">
-            <div className="flex justify-between items-center p-4 bg-white/5 rounded-2xl border border-white/5">
-               <span className="text-gray-400 text-[10px] font-black uppercase tracking-widest italic italic leading-none">Mi Costo Base</span>
-               <span className="text-white font-black text-xl leading-none">{formatCurrency(results.baseCost)}</span>
-            </div>
-
             {/* Friend Price */}
-            <div className="relative p-6 bg-white/[0.03] border border-white/5 rounded-3xl space-y-4 group transition-all">
-               <div>
-                  <p className="text-xs font-black text-green-400 uppercase tracking-widest">Precio Amigo</p>
-                  <span className="text-4xl font-black text-white tracking-tighter">{formatCurrency(results.friendPrice)}</span>
-               </div>
-               <button 
-                  onClick={() => handleCopy(results.friendPrice, 'amigo')}
-                  className="w-full flex items-center justify-center gap-2 py-3 bg-green-500/10 hover:bg-green-500/20 text-green-400 rounded-2xl text-[10px] font-black uppercase tracking-widest transition-all border border-green-500/20"
-                >
-                  {copiedType === 'amigo' ? <CheckCircle2 size={14} /> : <Copy size={14} />}
-                  {copiedType === 'amigo' ? '¡Copiado!' : 'Copiar Texto Amigo'}
-               </button>
+            <div className="space-y-2">
+              <div className="flex justify-between items-end">
+                <span className="text-[10px] font-black text-green-500 uppercase tracking-widest">Precio Amigo</span>
+                <span className="text-2xl font-black text-white leading-none">{formatCurrency(results.friendPrice)}</span>
+              </div>
+              <button onClick={() => handleCopy(results.friendPrice, 'amigo')} className="w-full flex items-center justify-center gap-2 py-2 bg-green-500/10 hover:bg-green-500/20 text-green-500 rounded-xl text-[9px] font-black uppercase tracking-widest transition-all border border-green-500/20">
+                {copiedType === 'amigo' ? <CheckCircle2 size={12} /> : <Copy size={12} />}
+                {copiedType === 'amigo' ? '¡Copiado!' : 'Copiar Texto'}
+              </button>
             </div>
 
             {/* Commercial Price */}
-            <div className="relative p-8 bg-blue-600/10 border border-blue-500/30 rounded-[2rem] space-y-5 transition-all ring-1 ring-blue-500/20 shadow-xl shadow-blue-900/20">
-               <div>
-                  <p className="text-sm font-black text-blue-400 uppercase tracking-[0.2em]">Precio Comercial</p>
-                  <div className="flex items-baseline gap-2">
-                    <span className="text-6xl font-black text-white tracking-tighter">{formatCurrency(results.commercialPrice)}</span>
-                    <span className="text-blue-500 font-bold uppercase text-xs tracking-widest">MXN</span>
-                  </div>
-               </div>
-               <button 
-                  onClick={() => handleCopy(results.commercialPrice, 'comercial')}
-                  className="w-full flex items-center justify-center gap-2 py-4 bg-blue-500 hover:bg-blue-400 text-white rounded-2xl text-[10px] font-black uppercase tracking-[0.2em] transition-all shadow-lg shadow-blue-900/40"
-                >
-                  {copiedType === 'comercial' ? <CheckCircle2 size={16} /> : <Copy size={16} />}
-                  {copiedType === 'comercial' ? '¡Copiado!' : 'Copiar Texto Comercial'}
-               </button>
+            <div className="space-y-3 pt-4 border-t border-white/5">
+              <div className="flex justify-between items-end">
+                <div>
+                  <span className="text-[10px] font-black text-blue-400 uppercase tracking-widest block mb-1">Precio Comercial</span>
+                  <span className="text-5xl font-black text-white tracking-tighter leading-none">{formatCurrency(results.commercialPrice)}</span>
+                </div>
+                <div className="text-right">
+                  <span className="text-[9px] text-green-400 font-black">+{formatCurrency(results.profit)}</span>
+                </div>
+              </div>
+              <button onClick={() => handleCopy(results.commercialPrice, 'comercial')} className="w-full flex items-center justify-center gap-2 py-3 bg-blue-600 hover:bg-blue-500 text-white rounded-xl text-[10px] font-black uppercase tracking-[0.2em] transition-all shadow-lg shadow-blue-900/40">
+                {copiedType === 'comercial' ? <CheckCircle2 size={14} /> : <Copy size={14} />}
+                {copiedType === 'comercial' ? '¡Copiado!' : 'Copiar Texto Comercial'}
+              </button>
             </div>
           </div>
 
-          <p className="text-[9px] text-center text-gray-600 font-bold uppercase tracking-widest leading-relaxed">
-            Consumos calculados: {MATERIAL_POWER[material]}W ({material})<br/>
-            Rembrandt Studio Monterrey
-          </p>
+          <p className="text-[8px] text-center text-gray-700 font-bold uppercase tracking-[0.3em]">Rembrandt Studio Monterrey</p>
         </div>
       </div>
     </div>
