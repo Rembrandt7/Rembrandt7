@@ -3,24 +3,24 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Calculadora 3D | Monterrey Edition</title>
+    <title>Costeador 3D Pro | Monterrey</title>
     <script src="https://cdn.tailwindcss.com"></script>
     <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&display=swap" rel="stylesheet">
     <script src="https://unpkg.com/lucide@latest"></script>
     <style>
         body {
             font-family: 'Plus Jakarta Sans', sans-serif;
-            background: #0f172a;
+            background: #020617;
             color: white;
             min-height: 100vh;
             display: flex;
             align-items: center;
             justify-content: center;
-            padding: 2rem;
+            padding: 1.5rem;
         }
         .glass {
-            background: rgba(30, 41, 59, 0.7);
-            backdrop-filter: blur(20px);
+            background: rgba(15, 23, 42, 0.8);
+            backdrop-filter: blur(24px);
             border: 1px solid rgba(255, 255, 255, 0.1);
         }
         input::-webkit-outer-spin-button,
@@ -28,190 +28,276 @@
             -webkit-appearance: none;
             margin: 0;
         }
+        .active-btn {
+            background: #2563eb !important;
+            color: white !important;
+            box-shadow: 0 10px 15px -3px rgba(37, 99, 235, 0.4);
+        }
     </style>
 </head>
 <body>
-    <div class="max-w-4xl w-full glass rounded-[2.5rem] overflow-hidden shadow-2xl animate-in fade-in zoom-in duration-700">
+    <div class="max-w-5xl w-full glass rounded-[3rem] overflow-hidden shadow-2xl animate-in fade-in duration-700">
         <!-- Header -->
-        <div class="p-8 border-b border-white/10 bg-gradient-to-r from-blue-600/20 to-purple-600/20 flex items-center justify-between">
+        <div class="p-8 border-b border-white/10 bg-gradient-to-r from-blue-600/20 via-indigo-600/10 to-purple-600/20 flex items-center justify-between">
             <div class="flex items-center gap-4">
                 <div class="p-3 bg-blue-500/20 rounded-2xl">
                     <i data-lucide="calculator" class="text-blue-400 w-8 h-8"></i>
                 </div>
                 <div>
-                    <h1 class="text-2xl font-extrabold tracking-tight">Calculadora de Costos 3D</h1>
-                    <p class="text-xs text-blue-300/60 uppercase tracking-widest font-bold">Monterrey, MXN • Herramienta de Productividad</p>
+                    <h1 class="text-2xl font-black tracking-tight italic uppercase">Costeador 3D Pro</h1>
+                    <p class="text-xs text-blue-300/60 uppercase tracking-widest font-bold">Monterrey • Estrategia de Precios MXN</p>
                 </div>
             </div>
-            <button onclick="resetValues()" class="p-2 hover:bg-white/10 rounded-full transition-all text-gray-400 hover:text-white">
-                <i data-lucide="refresh-cw" class="w-5 h-5"></i>
+            <button onclick="resetValues()" class="p-3 hover:bg-white/10 rounded-2xl transition-all text-gray-400 hover:text-white border border-transparent hover:border-white/10">
+                <i data-lucide="refresh-cw" class="w-6 h-6"></i>
             </button>
         </div>
 
-        <div class="grid grid-cols-1 lg:grid-cols-2">
+        <div class="grid grid-cols-1 lg:grid-cols-12">
             <!-- Inputs -->
-            <div class="p-10 space-y-8 border-r border-white/5">
+            <div class="lg:col-span-7 p-10 space-y-8 border-r border-white/5 bg-white/[0.01]">
                 <div class="grid grid-cols-1 md:grid-cols-2 gap-8">
+                    
+                    <!-- Filament Price -->
                     <div class="space-y-3">
-                        <label class="flex items-center gap-2 text-sm font-semibold text-gray-400 uppercase tracking-wider">
+                        <label class="flex items-center gap-2 text-[10px] font-black text-gray-400 uppercase tracking-widest">
                             <i data-lucide="dollar-sign" class="w-4 h-4 text-green-400"></i> Filamento (kg)
                         </label>
-                        <div class="relative">
-                            <input type="number" id="filamentPrice" value="450" oninput="calculate()"
-                                class="w-full bg-white/5 border border-white/10 rounded-2xl px-5 py-4 text-white font-bold focus:outline-none focus:ring-2 focus:ring-blue-500/50 transition-all text-lg">
-                            <span class="absolute right-5 top-1/2 -translate-y-1/2 text-gray-500 font-bold">$</span>
+                        <div class="flex items-center bg-white/5 border border-white/10 rounded-2xl overflow-hidden focus-within:ring-2 focus-within:ring-blue-500/50 transition-all">
+                            <button onclick="adjustFilament(-50)" class="px-5 py-4 hover:bg-white/10 text-white font-bold transition-colors text-xl">-</button>
+                            <input type="number" id="filamentPrice" value="400" oninput="calculate()"
+                                class="w-full bg-transparent text-center text-white font-bold text-2xl focus:outline-none">
+                            <button onclick="adjustFilament(50)" class="px-5 py-4 hover:bg-white/10 text-white font-bold transition-colors text-xl">+</button>
                         </div>
                     </div>
 
+                    <!-- Weight -->
                     <div class="space-y-3">
-                        <label class="flex items-center gap-2 text-sm font-semibold text-gray-400 uppercase tracking-wider">
+                        <label class="flex items-center gap-2 text-[10px] font-black text-gray-400 uppercase tracking-widest">
                             <i data-lucide="weight" class="w-4 h-4 text-blue-400"></i> Peso Modelo (g)
                         </label>
                         <div class="relative">
                             <input type="number" id="weightUsed" value="100" oninput="calculate()"
-                                class="w-full bg-white/5 border border-white/10 rounded-2xl px-5 py-4 text-white font-bold focus:outline-none focus:ring-2 focus:ring-blue-500/50 transition-all text-lg">
-                            <span class="absolute right-5 top-1/2 -translate-y-1/2 text-gray-500 font-bold">g</span>
+                                class="w-full bg-white/5 border border-white/10 rounded-2xl px-6 py-4 text-white font-bold text-2xl focus:outline-none focus:ring-2 focus:ring-blue-500/50 transition-all">
+                            <span class="absolute right-6 top-1/2 -translate-y-1/2 text-gray-500 font-bold text-lg">g</span>
                         </div>
                     </div>
 
+                    <!-- Material -->
                     <div class="space-y-3">
-                        <label class="flex items-center gap-2 text-sm font-semibold text-gray-400 uppercase tracking-wider">
-                            <i data-lucide="clock" class="w-4 h-4 text-orange-400"></i> Tiempo (hrs)
+                        <label class="flex items-center gap-2 text-[10px] font-black text-gray-400 uppercase tracking-widest">
+                            <i data-lucide="zap" class="w-4 h-4 text-yellow-400"></i> Material / Energía
                         </label>
-                        <div class="relative">
-                            <input type="number" id="printTime" value="5" oninput="calculate()"
-                                class="w-full bg-white/5 border border-white/10 rounded-2xl px-5 py-4 text-white font-bold focus:outline-none focus:ring-2 focus:ring-blue-500/50 transition-all text-lg">
-                            <span class="absolute right-5 top-1/2 -translate-y-1/2 text-gray-500 font-bold">h</span>
+                        <div class="grid grid-cols-3 gap-2 p-1.5 bg-white/5 rounded-2xl border border-white/10">
+                            <button onclick="setMaterial('PLA')" id="btn-PLA" class="py-2.5 rounded-xl text-xs font-black transition-all active-btn">PLA</button>
+                            <button onclick="setMaterial('PETG')" id="btn-PETG" class="py-2.5 rounded-xl text-xs font-black transition-all text-gray-500 hover:text-white">PETG</button>
+                            <button onclick="setMaterial('TPU')" id="btn-TPU" class="py-2.5 rounded-xl text-xs font-black transition-all text-gray-500 hover:text-white">TPU</button>
                         </div>
                     </div>
 
+                    <!-- Time -->
                     <div class="space-y-3">
-                        <label class="flex items-center gap-2 text-sm font-semibold text-gray-400 uppercase tracking-wider">
-                            <i data-lucide="zap" class="w-4 h-4 text-yellow-400"></i> Consumo (W)
+                        <label class="flex items-center gap-2 text-[10px] font-black text-gray-400 uppercase tracking-widest">
+                            <i data-lucide="clock" class="w-4 h-4 text-orange-400"></i> Tiempo de Impresión
                         </label>
-                        <div class="relative">
-                            <input type="number" id="powerConsumption" value="200" oninput="calculate()"
-                                class="w-full bg-white/5 border border-white/10 rounded-2xl px-5 py-4 text-white font-bold focus:outline-none focus:ring-2 focus:ring-blue-500/50 transition-all text-lg">
-                            <span class="absolute right-5 top-1/2 -translate-y-1/2 text-gray-500 font-bold">W</span>
+                        <div class="flex gap-3">
+                            <div class="relative flex-1">
+                                <input type="number" id="printHours" value="5" oninput="calculate()"
+                                    class="w-full bg-white/5 border border-white/10 rounded-2xl px-4 py-4 text-white font-bold text-xl focus:outline-none focus:ring-2 focus:ring-blue-500/50 transition-all text-center">
+                                <span class="absolute right-3 top-1/2 -translate-y-1/2 text-[9px] text-gray-500 font-black uppercase">h</span>
+                            </div>
+                            <div class="relative flex-1">
+                                <input type="number" id="printMinutes" value="0" oninput="calculateMinutes()"
+                                    class="w-full bg-white/5 border border-white/10 rounded-2xl px-4 py-4 text-white font-bold text-xl focus:outline-none focus:ring-2 focus:ring-blue-500/50 transition-all text-center">
+                                <span class="absolute right-3 top-1/2 -translate-y-1/2 text-[9px] text-gray-500 font-black uppercase">m</span>
+                            </div>
                         </div>
                     </div>
 
+                    <!-- Labor -->
                     <div class="space-y-3">
-                        <label class="flex items-center gap-2 text-sm font-semibold text-gray-400 uppercase tracking-wider">
-                            <i data-lucide="wrench" class="w-4 h-4 text-red-400"></i> Mantenimiento
+                        <label class="flex items-center gap-2 text-[10px] font-black text-gray-400 uppercase tracking-widest">
+                            <i data-lucide="user-check" class="w-4 h-4 text-purple-400"></i> Labor y Monitoreo
                         </label>
                         <div class="relative">
-                            <input type="number" id="maintenanceRate" value="5" oninput="calculate()"
-                                class="w-full bg-white/5 border border-white/10 rounded-2xl px-5 py-4 text-white font-bold focus:outline-none focus:ring-2 focus:ring-blue-500/50 transition-all text-lg">
-                            <span class="absolute right-5 top-1/2 -translate-y-1/2 text-gray-500 font-bold">$/h</span>
+                            <input type="number" id="laborManual" value="0" oninput="calculate()"
+                                class="w-full bg-white/5 border border-white/10 rounded-2xl px-6 py-4 text-white font-bold text-2xl focus:outline-none focus:ring-2 focus:ring-blue-500/50 transition-all">
+                            <span class="absolute right-6 top-1/2 -translate-y-1/2 text-gray-500 font-bold text-lg">$</span>
                         </div>
                     </div>
 
+                    <!-- Markup -->
                     <div class="space-y-3">
-                        <label class="flex items-center gap-2 text-sm font-semibold text-gray-400 uppercase tracking-wider">
-                            <i data-lucide="trending-up" class="w-4 h-4 text-purple-400"></i> Utilidad (%)
+                        <label class="flex items-center gap-2 text-[10px] font-black text-gray-400 uppercase tracking-widest">
+                            <i data-lucide="trending-up" class="w-4 h-4 text-cyan-400"></i> Margen Comercial
                         </label>
-                        <div class="relative">
-                            <input type="number" id="markup" value="30" oninput="calculate()"
-                                class="w-full bg-white/5 border border-white/10 rounded-2xl px-5 py-4 text-white font-bold focus:outline-none focus:ring-2 focus:ring-blue-500/50 transition-all text-lg">
-                            <span class="absolute right-5 top-1/2 -translate-y-1/2 text-gray-500 font-bold">%</span>
+                        <div class="grid grid-cols-3 gap-2 p-1.5 bg-white/5 rounded-2xl border border-white/10">
+                            <button onclick="setMarkup(10)" id="btn-10" class="py-2.5 rounded-xl text-xs font-black transition-all text-gray-500 hover:text-white">10%</button>
+                            <button onclick="setMarkup(20)" id="btn-20" class="py-2.5 rounded-xl text-xs font-black transition-all text-gray-500 hover:text-white">20%</button>
+                            <button onclick="setMarkup(30)" id="btn-30" class="py-2.5 rounded-xl text-xs font-black transition-all active-btn">30%</button>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- My Cost Card -->
+                <div class="mt-10 p-8 bg-blue-500/5 border border-blue-500/20 rounded-[2rem] space-y-5">
+                    <div class="flex justify-between items-center">
+                        <div>
+                            <p class="text-blue-400/60 text-[10px] font-black uppercase tracking-[0.2em] mb-1">Costo Directo de Producción</p>
+                            <h3 class="text-gray-400 text-sm font-bold uppercase italic">"¿Cuánto me cuesta a mi?"</h3>
+                        </div>
+                        <span id="resBase" class="text-white font-black text-4xl tracking-tighter">$0.00</span>
+                    </div>
+                    <div class="grid grid-cols-4 gap-4 pt-4 border-t border-white/5">
+                        <div class="text-center">
+                            <p class="text-[9px] text-gray-500 uppercase font-black tracking-widest mb-1">Filamento</p>
+                            <p id="resFilament" class="text-sm text-white font-bold">$0.00</p>
+                        </div>
+                        <div class="text-center">
+                            <p id="labelEnergy" class="text-[9px] text-gray-500 uppercase font-black tracking-widest mb-1">Energía (PLA)</p>
+                            <p id="resEnergy" class="text-sm text-white font-bold">$0.00</p>
+                        </div>
+                        <div class="text-center">
+                            <p class="text-[9px] text-gray-500 uppercase font-black tracking-widest mb-1">Manto.</p>
+                            <p id="resMaint" class="text-sm text-white font-bold">$0.00</p>
+                        </div>
+                        <div class="text-center">
+                            <p class="text-[9px] text-gray-500 uppercase font-black tracking-widest mb-1">Labor</p>
+                            <p id="resLabor" class="text-sm text-white font-bold">$0.00</p>
                         </div>
                     </div>
                 </div>
             </div>
 
-            <!-- Summary -->
-            <div class="p-10 bg-white/[0.02] flex flex-col justify-between">
-                <div class="space-y-6">
-                    <h2 class="text-gray-400 text-sm font-bold uppercase tracking-[0.2em]">Resumen Financiero</h2>
+            <!-- Strategy -->
+            <div class="lg:col-span-5 p-12 bg-white/[0.03] flex flex-col justify-between space-y-10">
+                <div class="space-y-10">
+                    <h2 class="text-gray-400 text-xs font-black uppercase tracking-[0.4em] text-center">Estrategia de Venta</h2>
                     
-                    <div class="space-y-4">
-                        <div class="flex justify-between items-center p-4 bg-white/5 rounded-2xl border border-white/5 transition-all hover:bg-white/10">
-                            <span class="text-gray-400 font-medium">Costo Material</span>
-                            <span id="resFilament" class="text-white font-mono font-bold">$0.00</span>
+                    <!-- Friend -->
+                    <div class="relative p-8 bg-white/[0.04] border border-white/5 rounded-[2rem] space-y-3 group hover:bg-white/10 transition-all">
+                        <div class="absolute top-6 right-8 p-3 bg-green-500/10 rounded-2xl">
+                            <i data-lucide="user-check" class="text-green-400 w-6 h-6"></i>
                         </div>
-                        <div class="flex justify-between items-center p-4 bg-white/5 rounded-2xl border border-white/5 transition-all hover:bg-white/10">
-                            <span class="text-gray-400 font-medium">Costo Energía</span>
-                            <span id="resEnergy" class="text-white font-mono font-bold">$0.00</span>
+                        <p class="text-sm font-black text-green-400 uppercase tracking-[0.2em]">Precio Amigo</p>
+                        <div class="flex items-baseline gap-2">
+                            <span id="resFriend" class="text-5xl font-black text-white tracking-tighter">$0.00</span>
                         </div>
-                        <div class="flex justify-between items-center p-4 bg-white/5 rounded-2xl border border-white/5 transition-all hover:bg-white/10">
-                            <span class="text-gray-400 font-medium">Mantenimiento</span>
-                            <span id="resMaint" class="text-white font-mono font-bold">$0.00</span>
-                        </div>
+                        <p class="text-[11px] text-gray-500 leading-relaxed font-medium">Margen del 15% para cubrir depreciación sin fines comerciales.</p>
                     </div>
 
-                    <div class="pt-8 border-t border-white/10">
-                        <div class="flex justify-between items-center mb-4">
-                            <span class="text-gray-400 font-bold">GANANCIA (<span id="markupDisplay">30</span>%)</span>
-                            <span id="resProfit" class="text-green-400 font-black text-xl">+$0.00</span>
+                    <!-- Commercial -->
+                    <div class="relative p-10 bg-blue-600/10 border border-blue-500/30 rounded-[2.5rem] space-y-4 group hover:bg-blue-600/20 transition-all ring-1 ring-blue-500/20 shadow-2xl shadow-blue-900/40">
+                        <div class="absolute top-8 right-10 p-4 bg-blue-500/20 rounded-2xl">
+                            <i data-lucide="shopping-bag" class="text-blue-400 w-8 h-8"></i>
                         </div>
-                        <div class="space-y-2">
-                            <p class="text-blue-300/40 text-[10px] font-black uppercase tracking-[0.3em]">Precio de Venta Sugerido</p>
-                            <div class="flex items-baseline gap-2">
-                                <span id="resFinal" class="text-6xl font-black text-white tracking-tighter">$0.00</span>
-                                <span class="text-blue-500 font-bold">MXN</span>
-                            </div>
+                        <p class="text-sm font-black text-blue-400 uppercase tracking-[0.3em]">Precio Comercial</p>
+                        <div class="flex items-baseline gap-3">
+                            <span id="resCommercial" class="text-7xl font-black text-white tracking-tighter">$0.00</span>
+                            <span class="text-blue-500 font-black text-lg">MXN</span>
+                        </div>
+                        <div class="flex justify-between items-center pt-4 border-t border-blue-500/10">
+                            <span class="text-xs text-gray-400 font-black uppercase tracking-widest">GANANCIA (<span id="resMarkupLabel">30</span>%)</span>
+                            <span id="resProfit" class="text-green-400 font-black text-xl">+$0.00</span>
                         </div>
                     </div>
                 </div>
 
-                <button onclick="window.print()" class="w-full mt-12 bg-blue-600 hover:bg-blue-500 text-white font-black py-5 rounded-[1.5rem] shadow-xl shadow-blue-900/40 flex items-center justify-center gap-3 transition-all hover:scale-[1.02] active:scale-95 uppercase tracking-widest text-sm">
-                    <i data-lucide="download" class="w-5 h-5"></i>
-                    Generar Cotización
-                </button>
+                <div class="space-y-5">
+                    <button onclick="window.print()" class="w-full bg-white text-slate-900 font-black py-6 rounded-[1.5rem] shadow-2xl hover:bg-gray-200 transition-all flex items-center justify-center gap-4 uppercase tracking-[0.2em] text-sm">
+                        <i data-lucide="download" class="w-6 h-6"></i>
+                        Exportar Ticket
+                    </button>
+                    <p class="text-[10px] text-center text-gray-600 font-black uppercase tracking-widest">Monterrey, NL • Rembrandt Studio 2026</p>
+                </div>
             </div>
         </div>
     </div>
 
     <script>
-        // Initialize Icons
         lucide.createIcons();
 
+        let currentMaterial = 'PLA';
+        let currentMarkup = 30;
+        const MATERIAL_POWER = { PLA: 120, PETG: 180, TPU: 140 };
+
         function formatMXN(val) {
-            return new Intl.NumberFormat('es-MX', {
-                style: 'currency',
-                currency: 'MXN'
-            }).format(val);
+            return new Intl.NumberFormat('es-MX', { style: 'currency', currency: 'MXN' }).format(val);
+        }
+
+        function adjustFilament(amount) {
+            const el = document.getElementById('filamentPrice');
+            el.value = Math.max(0, parseInt(el.value || 0) + amount);
+            calculate();
+        }
+
+        function setMaterial(m) {
+            currentMaterial = m;
+            ['PLA', 'PETG', 'TPU'].forEach(mat => {
+                document.getElementById('btn-' + mat).classList.toggle('active-btn', mat === m);
+                document.getElementById('btn-' + mat).classList.toggle('text-gray-500', mat !== m);
+            });
+            document.getElementById('labelEnergy').innerText = `Energía (${m})`;
+            calculate();
+        }
+
+        function setMarkup(m) {
+            currentMarkup = m;
+            [10, 20, 30].forEach(mark => {
+                document.getElementById('btn-' + mark).classList.toggle('active-btn', mark === m);
+                document.getElementById('btn-' + mark).classList.toggle('text-gray-500', mark !== m);
+            });
+            document.getElementById('resMarkupLabel').innerText = m;
+            calculate();
+        }
+
+        function calculateMinutes() {
+            const el = document.getElementById('printMinutes');
+            if (el.value > 59) el.value = 59;
+            calculate();
         }
 
         function calculate() {
             const filamentPrice = parseFloat(document.getElementById('filamentPrice').value) || 0;
             const weightUsed = parseFloat(document.getElementById('weightUsed').value) || 0;
-            const printTime = parseFloat(document.getElementById('printTime').value) || 0;
-            const powerConsumption = parseFloat(document.getElementById('powerConsumption').value) || 0;
-            const maintenanceRate = parseFloat(document.getElementById('maintenanceRate').value) || 0;
-            const markup = parseFloat(document.getElementById('markup').value) || 0;
-            const electricityRate = 2.5; // Monterrey Default CFE
+            const printHours = parseFloat(document.getElementById('printHours').value) || 0;
+            const printMinutes = parseFloat(document.getElementById('printMinutes').value) || 0;
+            const laborManual = parseFloat(document.getElementById('laborManual').value) || 0;
+            const electricityRate = 2.5;
+            const maintenanceRate = 5;
 
-            // Calculations
+            const totalHours = printHours + (printMinutes / 60);
             const filamentCost = (filamentPrice / 1000) * weightUsed;
-            const energyCost = (powerConsumption / 1000) * printTime * electricityRate;
-            const maintenanceCost = printTime * maintenanceRate;
+            const energyCost = (MATERIAL_POWER[currentMaterial] / 1000) * totalHours * electricityRate;
+            const maintenanceCost = totalHours * maintenanceRate;
             
-            const totalCost = filamentCost + energyCost + maintenanceCost;
-            const profit = totalCost * (markup / 100);
-            const finalPrice = totalCost + profit;
+            const baseCost = filamentCost + energyCost + maintenanceCost + laborManual;
+            const friendPrice = baseCost * 1.15;
+            const commercialPrice = baseCost * (1 + currentMarkup / 100);
+            const profit = commercialPrice - baseCost;
 
-            // Update UI
+            // UI
+            document.getElementById('resBase').innerText = formatMXN(baseCost);
             document.getElementById('resFilament').innerText = formatMXN(filamentCost);
             document.getElementById('resEnergy').innerText = formatMXN(energyCost);
             document.getElementById('resMaint').innerText = formatMXN(maintenanceCost);
+            document.getElementById('resLabor').innerText = formatMXN(laborManual);
+            document.getElementById('resFriend').innerText = formatMXN(friendPrice);
+            document.getElementById('resCommercial').innerText = formatMXN(commercialPrice);
             document.getElementById('resProfit').innerText = '+' + formatMXN(profit);
-            document.getElementById('resFinal').innerText = formatMXN(finalPrice);
-            document.getElementById('markupDisplay').innerText = markup;
         }
 
         function resetValues() {
-            document.getElementById('filamentPrice').value = 450;
+            document.getElementById('filamentPrice').value = 400;
             document.getElementById('weightUsed').value = 100;
-            document.getElementById('printTime').value = 5;
-            document.getElementById('powerConsumption').value = 200;
-            document.getElementById('maintenanceRate').value = 5;
-            document.getElementById('markup').value = 30;
+            document.getElementById('printHours').value = 5;
+            document.getElementById('printMinutes').value = 0;
+            document.getElementById('laborManual').value = 0;
+            setMaterial('PLA');
+            setMarkup(30);
             calculate();
         }
 
-        // Initial Calculation
         calculate();
     </script>
 </body>

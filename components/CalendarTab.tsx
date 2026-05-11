@@ -1348,7 +1348,8 @@ const CalendarTab: React.FC = () => {
                   const { delayedPayments, normalPayments } = useMemo(() => {
                     const delayed: CalendarEvent[] = [];
                     const normal: CalendarEvent[] = [];
-                    const targetDate = new Date(selectedDate + 'T00:00:00');
+                    const targetDate = new Date();
+                    targetDate.setHours(0, 0, 0, 0);
                     
                     financialObligations.forEach(e => {
                       const eventDate = new Date(e.date + 'T00:00:00');
@@ -1359,7 +1360,7 @@ const CalendarTab: React.FC = () => {
                       }
                     });
                     return { delayedPayments: delayed, normalPayments: normal };
-                  }, [financialObligations, selectedDate]);
+                  }, [financialObligations]);
 
                   return (
                     <>
