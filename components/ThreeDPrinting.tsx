@@ -56,10 +56,10 @@ const groups = [
     title: '🐭 Pokémon World',
     color: 'border-yellow-500/30 bg-yellow-500/5',
     items: [
-      { name: 'Generación 1', href: driveFolder('1GbL3HUWAVo1wRmxFKR4Yyv_eO3gWpW1S'), type: 'pokemon' },
-      { name: 'Generación 2', href: driveFolder('1zhcF-OuiwGbsH93p180J4ZhmmLF0NqmA'), type: 'pokemon' },
-      { name: 'Generación 3', href: driveFolder('1wLUCqQZMt2uMUJj_pn31Qflns8ybqm0M'), type: 'pokemon' },
-      { name: 'Generación 4', href: driveFolder('1AbtOC6nvDcPKO2LcD8I-1E6vhpWSVbhz'), type: 'pokemon' },
+      { name: 'Gen 1', href: driveFolder('1GbL3HUWAVo1wRmxFKR4Yyv_eO3gWpW1S'), type: 'pokemon' },
+      { name: 'Gen 2', href: driveFolder('1zhcF-OuiwGbsH93p180J4ZhmmLF0NqmA'), type: 'pokemon' },
+      { name: 'Gen 3', href: driveFolder('1wLUCqQZMt2uMUJj_pn31Qflns8ybqm0M'), type: 'pokemon' },
+      { name: 'Gen 4', href: driveFolder('1AbtOC6nvDcPKO2LcD8I-1E6vhpWSVbhz'), type: 'pokemon' },
     ]
   },
   {
@@ -111,7 +111,7 @@ const groups = [
       { name: 'Baby Yoda', href: driveFolder('1J03z6Wab-j_Mu-T3rMOOTo5bucGtUdcW'), type: 'starwars', index: 1 },
       { name: 'C3PO', href: driveFolder('1CvLUJ-69FM3Fz-BOp8yvBINLiut--Fo0'), type: 'starwars', index: 2 },
       { name: 'Darth Vader', href: driveFolder('1sB-4bp4j7Izyg5_ozgiPFVXjk-L71BAG'), type: 'vader' },
-      { name: 'Luke Skywalker', href: driveFolder('1aqVl_a4emHGoZAR4lpF-jsXTXIEdNSZ9'), type: 'starwars', index: 2 },
+      { name: 'Luke', href: driveFolder('1aqVl_a4emHGoZAR4lpF-jsXTXIEdNSZ9'), type: 'starwars', index: 2 },
       { name: 'Han Solo', href: driveFolder('1cm6C-LBHTevB_qpVzSO1v34g1aSWE8SE'), type: 'vader' },
       { name: 'R2D2', href: driveFolder('1ZFrWg9cQZT4K6feIsG92YpwOUOZqV-cF'), type: 'starwars', index: 1 },
       { name: 'Colección', href: driveFolder('15xPZcN7zhffGztwl9YWKmi0vVK6z0YSi'), type: 'vader' },
@@ -170,6 +170,37 @@ const CustomIcon = ({ type, src, index = 0 }: { type: keyof typeof ICONS, src?: 
   );
 };
 
+const GroupCard = ({ group, className }: { group: typeof groups[0], className?: string }) => (
+  <div className={`p-5 rounded-2xl border ${group.color} transition-all ${className}`}>
+    <div className="flex items-center justify-between mb-6">
+      <h3 className="font-bold text-lg text-white flex items-center gap-2 uppercase tracking-tighter">
+        {group.title}
+        <div className="h-px flex-1 bg-white/10 min-w-[20px] ml-4" />
+      </h3>
+    </div>
+    <div className="grid grid-cols-2 sm:grid-cols-4 md:grid-cols-6 lg:grid-cols-8 xl:grid-cols-10 gap-4">
+      {group.items.map((item, iIdx) => (
+        <motion.a
+          key={iIdx}
+          href={item.href}
+          target="_blank"
+          rel="noopener noreferrer"
+          whileHover={{ scale: 1.05, backgroundColor: 'rgba(255,255,255,0.05)' }}
+          className="flex flex-col items-center p-3 bg-white/5 border border-white/5 rounded-2xl group transition-all text-center h-full relative overflow-hidden"
+        >
+          <CustomIcon type={item.type as any} index={item.index} />
+          <span className="text-[10px] font-bold text-gray-400 group-hover:text-white uppercase tracking-wider line-clamp-2 mt-1 px-1">
+            {item.name}
+          </span>
+          <div className="absolute top-2 right-2 opacity-0 group-hover:opacity-100 transition-opacity">
+            <ExternalLink size={10} className="text-blue-400" />
+          </div>
+        </motion.a>
+      ))}
+    </div>
+  </div>
+);
+
 const ThreeDPrinting: React.FC = () => {
   return (
     <div className="p-4 space-y-6 animate-in fade-in slide-in-from-bottom-4 duration-500 max-w-[1600px] mx-auto pb-20">
@@ -181,7 +212,7 @@ const ThreeDPrinting: React.FC = () => {
           </div>
           <div>
             <h2 className="text-2xl font-bold text-white">Estudio 3D</h2>
-            <p className="text-sm text-gray-400">Enlaces corregidos mediante auditoría de PDF.</p>
+            <p className="text-sm text-gray-400">Modelos 3D categorizados y optimizados.</p>
           </div>
         </div>
         
@@ -204,47 +235,48 @@ const ThreeDPrinting: React.FC = () => {
       {/* Calculator Section */}
       <ThreeDCalculator />
 
-      {/* Main Grid */}
-      <div className="grid grid-cols-1 gap-6">
-        {groups.map((group, gIdx) => (
-          <div 
-            key={gIdx} 
-            className={`p-5 rounded-2xl border ${group.color} transition-all`}
-          >
-            <div className="flex items-center justify-between mb-6">
-              <h3 className="font-bold text-lg text-white flex items-center gap-2 uppercase tracking-tighter">
-                {group.title}
-                <div className="h-px flex-1 bg-white/10 min-w-[20px] ml-4" />
-              </h3>
-            </div>
-            
-            <div className="grid grid-cols-2 sm:grid-cols-4 md:grid-cols-6 lg:grid-cols-8 xl:grid-cols-10 gap-4">
-              {group.items.map((item, iIdx) => (
-                <motion.a
-                  key={iIdx}
-                  href={item.href}
-                  target="_blank"
-                  rel="noopener noreferrer"
-                  whileHover={{ scale: 1.05, backgroundColor: 'rgba(255,255,255,0.05)' }}
-                  className="flex flex-col items-center p-3 bg-white/5 border border-white/5 rounded-2xl group transition-all text-center h-full relative overflow-hidden"
-                >
-                  <CustomIcon type={item.type as any} index={item.index} />
-                  <span className="text-[10px] font-bold text-gray-400 group-hover:text-white uppercase tracking-wider line-clamp-2 mt-1 px-1">
-                    {item.name}
-                  </span>
-                  <div className="absolute top-2 right-2 opacity-0 group-hover:opacity-100 transition-opacity">
-                    <ExternalLink size={10} className="text-blue-400" />
-                  </div>
-                </motion.a>
-              ))}
-            </div>
-          </div>
-        ))}
+      {/* Main Grid Reorganized */}
+      <div className="space-y-6">
+        {/* Mega Pack - Full Width */}
+        <GroupCard group={groups[0]} />
+
+        {/* Anime + Articulados - Row 2 */}
+        <div className="grid grid-cols-1 lg:grid-cols-12 gap-6">
+           <div className="lg:col-span-8">
+              <GroupCard group={groups[1]} />
+           </div>
+           <div className="lg:col-span-4">
+              <GroupCard group={groups[5]} />
+           </div>
+        </div>
+
+        {/* Pokemon + Marvel/DC - Row 3 */}
+        <div className="grid grid-cols-1 lg:grid-cols-12 gap-6">
+           <div className="lg:col-span-5"> {/* Pokémon narrower, 5 cols instead of 6 or 8 */}
+              <GroupCard group={groups[2]} />
+           </div>
+           <div className="lg:col-span-7">
+              <GroupCard group={groups[4]} />
+           </div>
+        </div>
+
+        {/* Máscaras + Llaveros - Row 4 */}
+        <div className="grid grid-cols-1 lg:grid-cols-12 gap-6">
+           <div className="lg:col-span-6">
+              <GroupCard group={groups[3]} />
+           </div>
+           <div className="lg:col-span-6">
+              <GroupCard group={groups[6]} />
+           </div>
+        </div>
+
+        {/* Star Wars - Full Width */}
+        <GroupCard group={groups[7]} />
       </div>
       
       <div className="p-6 bg-gradient-to-r from-purple-600/10 to-blue-600/10 rounded-3xl border border-white/10 text-center">
         <p className="text-sm text-gray-400">
-          Enlaces actualizados según stl_pack.pdf. Verificado por IA.
+          Recursos 3D optimizados para alta densidad de información.
         </p>
       </div>
     </div>

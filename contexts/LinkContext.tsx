@@ -54,13 +54,6 @@ const INITIAL_CONFIG: AppConfig = {
         iconSvg: `<img src="/mercadolibre_premium.png" class="w-10 h-10 object-contain" />`
     },
     {
-        id: 'javer-main',
-        href: "https://www.javer.com.mx/",
-        name: "Portal Javer",
-        colorClass: "text-blue-400 hover:text-blue-300",
-        iconSvg: `<img src="/javer_premium.png" class="w-10 h-10 object-contain" />`
-    },
-    {
         id: '2',
         href: "https://web.whatsapp.com/",
         name: "WhatsApp",
