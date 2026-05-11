@@ -1,5 +1,5 @@
 import React, { useState, useEffect, useCallback } from 'react';
-import { Calculator, DollarSign, Zap, Clock, TrendingUp, RefreshCw, UserCheck, ShoppingBag, Copy, CheckCircle2, Plus, Trash2, Save, Download, ListChecks, Database, Palette, PlusCircle, Edit3 } from 'lucide-react';
+import { Calculator, DollarSign, Zap, Clock, TrendingUp, RefreshCw, UserCheck, ShoppingBag, Copy, CheckCircle2, Plus, Trash2, Save, Download, ListChecks, Database, Palette, PlusCircle, Edit3, AlertCircle } from 'lucide-react';
 import { motion, AnimatePresence } from 'motion/react';
 import { toast } from 'sonner';
 import { supabase } from '../services/supabaseClient';
@@ -8,6 +8,7 @@ interface PrintItem {
   id: string;
   name: string;
   material?: string;
+  filamentId?: string; // Links to a specific stock filament
   time?: string;
   cost?: number;
 }
@@ -39,6 +40,7 @@ const MATERIAL_POWER = {
 const ThreeDCalculator: React.FC = () => {
   const [pieceName, setPieceName] = useState('');
   const [material, setMaterial] = useState<keyof typeof MATERIAL_POWER>('PLA');
+  const [selectedFilamentId, setSelectedFilamentId] = useState<string>(''); // For stock selection
   const [filamentPrice, setFilamentPrice] = useState(400);
   const [weightUsed, setWeightUsed] = useState(100);
   const [printHours, setPrintHours] = useState(5);
@@ -52,6 +54,7 @@ const ThreeDCalculator: React.FC = () => {
   const [isSaving, setIsSaving] = useState(false);
   const [isLoading, setIsLoading] = useState(false);
   const [editingQueueId, setEditingQueueId] = useState<string | null>(null);
+  const [editingFilamentId, setEditingFilamentId] = useState<string | null>(null);
 
   const [newQueueItemName, setNewQueueItemName] = useState('');
   const [newFilament, setNewFilament] = useState<Partial<FilamentInventory>>({ material: 'PLA', color: '#ffffff', customName: '' });
@@ -127,38 +130,33 @@ const ThreeDCalculator: React.FC = () => {
   useEffect(() => { loadData(); }, []);
 
   const addToQueueFromCalc = () => {
+    const itemData = {
+      name: pieceName.trim() || `Pieza ${material}`,
+      material: material,
+      filamentId: selectedFilamentId || undefined,
+      time: `${printHours}h ${printMinutes.toString().padStart(2, '0')}m`,
+      cost: results.baseCost
+    };
+
     if (editingQueueId) {
-      const updated = printQueue.map(item => 
-        item.id === editingQueueId 
-          ? { ...item, name: pieceName.trim(), material, time: `${printHours}h ${printMinutes}m`, cost: results.baseCost }
-          : item
-      );
+      const updated = printQueue.map(item => item.id === editingQueueId ? { ...item, ...itemData } : item);
       setPrintQueue(updated);
       syncData(updated, myFilaments);
       setEditingQueueId(null);
       toast.success('Item actualizado');
     } else {
-      const item: PrintItem = {
-        id: Date.now().toString(),
-        name: pieceName.trim() || `Pieza ${material}`,
-        material,
-        time: `${printHours}h ${printMinutes}m`,
-        cost: results.baseCost
-      };
-      const updated = [...printQueue, item];
+      const updated = [...printQueue, { id: Date.now().toString(), ...itemData }];
       setPrintQueue(updated);
       syncData(updated, myFilaments);
       toast.success('Agregado al lote');
     }
+    setPieceName('');
+    setSelectedFilamentId('');
   };
 
   const addManualQueueItem = () => {
     if (!newQueueItemName) return;
-    const item: PrintItem = {
-      id: Date.now().toString(),
-      name: newQueueItemName,
-    };
-    const updated = [...printQueue, item];
+    const updated = [...printQueue, { id: Date.now().toString(), name: newQueueItemName }];
     setPrintQueue(updated);
     setNewQueueItemName('');
     syncData(updated, myFilaments);
@@ -167,63 +165,56 @@ const ThreeDCalculator: React.FC = () => {
   const loadToCalculator = (item: PrintItem) => {
     setPieceName(item.name);
     if (item.material) setMaterial(item.material as any);
+    if (item.filamentId) setSelectedFilamentId(item.filamentId);
     if (item.time) {
       const parts = item.time.split('h ');
       setPrintHours(parseInt(parts[0]) || 0);
       setPrintMinutes(parseInt(parts[1]) || 0);
     }
     setEditingQueueId(item.id);
-    toast.info(`Editando: ${item.name}`);
   };
 
-  const addFilament = () => {
+  const saveFilament = () => {
     if (!newFilament.color) return;
-    const item: FilamentInventory = { 
-      id: Date.now().toString(), 
-      material: newFilament.material || 'PLA', 
-      color: newFilament.color || '#ffffff',
-      customName: newFilament.customName
-    };
-    const updated = [...myFilaments, item];
+    let updated;
+    if (editingFilamentId) {
+      updated = myFilaments.map(f => f.id === editingFilamentId ? { ...f, ...newFilament } : f);
+      setEditingFilamentId(null);
+      toast.success('Filamento actualizado');
+    } else {
+      updated = [...myFilaments, { id: Date.now().toString(), ...newFilament as FilamentInventory }];
+      toast.success('Filamento agregado');
+    }
     setMyFilaments(updated);
     setNewFilament({ material: 'PLA', color: '#ffffff', customName: '' });
     syncData(printQueue, updated);
   };
 
-  const formatCurrency = (val: number) => new Intl.NumberFormat('es-MX', { style: 'currency', currency: 'MXN' }).format(val);
-
-  const handleCopy = (price: number, type: 'amigo' | 'comercial') => {
-    const name = pieceName.trim() || `Pieza de ${material}`;
-    const time = `${printHours}h ${printMinutes}m`;
-    const priceText = formatCurrency(price);
-    const text = type === 'amigo' 
-      ? `Cotización ${name}: Costo neto ${priceText} (${time}).`
-      : `Cotización ${name}: Material ${material}, Tiempo ${time}, Total ${priceText}.`;
-    navigator.clipboard.writeText(text);
-    setCopiedType(type);
-    toast.success('Copiado');
-    setTimeout(() => setCopiedType(null), 2000);
+  const editFilament = (fil: FilamentInventory) => {
+    setNewFilament(fil);
+    setEditingFilamentId(fil.id);
   };
+
+  const formatCurrency = (val: number) => new Intl.NumberFormat('es-MX', { style: 'currency', currency: 'MXN' }).format(val);
 
   return (
     <div className="w-full h-full p-2 flex flex-col">
       <div className="grid grid-cols-1 lg:grid-cols-12 gap-4 h-full min-h-[650px] max-w-[1600px] mx-auto w-full">
         
-        {/* COL 1: CALCULADORA (50% / 6 cols) */}
+        {/* COL 1: CALCULADORA */}
         <div className="lg:col-span-6 bg-slate-950/80 backdrop-blur-3xl border border-white/10 rounded-3xl flex flex-col overflow-hidden shadow-2xl">
           <div className="px-6 py-4 border-b border-white/10 flex items-center justify-between bg-white/[0.02]">
             <div className="flex items-center gap-3">
               <Calculator className={`text-blue-400 ${editingQueueId ? 'animate-pulse text-yellow-400' : ''}`} size={20} />
               <h3 className="text-sm font-black text-white uppercase tracking-widest italic leading-none">
-                {editingQueueId ? 'Editando Item' : 'Calculadora Studio'}
+                {editingQueueId ? 'Modificando Idea' : 'Calculadora Studio'}
               </h3>
             </div>
             <div className="flex items-center gap-3">
                <button onClick={addToQueueFromCalc} className={`flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-[10px] font-black uppercase tracking-widest transition-all ${editingQueueId ? 'bg-yellow-600 hover:bg-yellow-500 text-white' : 'bg-indigo-600 hover:bg-indigo-500 text-white'}`}>
                   {editingQueueId ? <Save size={14} /> : <Plus size={14} />} {editingQueueId ? 'Guardar' : 'Lote'}
                </button>
-               {editingQueueId && <button onClick={() => setEditingQueueId(null)} className="text-rose-400 hover:text-rose-300 text-[9px] font-black uppercase tracking-widest">Cancelar</button>}
-               <button onClick={() => { setPieceName(''); setFilamentPrice(400); setWeightUsed(100); setPrintHours(5); setPrintMinutes(0); setLaborCostManual(0); setMarkup(30); setEditingQueueId(null); }} className="text-gray-500 hover:text-white p-1"><RefreshCw size={14} /></button>
+               <button onClick={() => { setPieceName(''); setFilamentPrice(400); setWeightUsed(100); setPrintHours(5); setPrintMinutes(0); setEditingQueueId(null); setSelectedFilamentId(''); }} className="text-gray-500 hover:text-white p-1"><RefreshCw size={14} /></button>
             </div>
           </div>
 
@@ -235,9 +226,35 @@ const ThreeDCalculator: React.FC = () => {
                      <input type="text" value={pieceName} onChange={e => setPieceName(e.target.value)} placeholder="Ej: Casco Iron Man..." className="w-full bg-white/5 border border-white/10 rounded-xl px-4 py-2 text-white text-sm focus:outline-none focus:ring-1 focus:ring-blue-500/50 h-[44px] font-bold" />
                   </div>
                   <div className="flex-1 space-y-1.5">
-                     <label className="text-[10px] font-black text-gray-500 uppercase tracking-widest ml-1">Material</label>
-                     <select value={material} onChange={e => setMaterial(e.target.value as any)} className="w-full bg-slate-800 border border-white/10 rounded-xl px-3 py-2 text-white text-sm font-bold appearance-none cursor-pointer h-[44px]">
-                        <option value="PLA">PLA</option><option value="PETG">PETG</option><option value="TPU">TPU</option>
+                     <label className="text-[10px] font-black text-gray-500 uppercase tracking-widest ml-1">Material / Stock</label>
+                     <select 
+                        value={selectedFilamentId ? `stock:${selectedFilamentId}` : material} 
+                        onChange={e => {
+                           const val = e.target.value;
+                           if (val.startsWith('stock:')) {
+                              const id = val.split(':')[1];
+                              const fil = myFilaments.find(f => f.id === id);
+                              setSelectedFilamentId(id);
+                              if (fil) setMaterial(fil.material as any);
+                           } else {
+                              setSelectedFilamentId('');
+                              setMaterial(val as any);
+                           }
+                        }} 
+                        className="w-full bg-slate-800 border border-white/10 rounded-xl px-3 py-2 text-white text-sm font-bold appearance-none h-[44px]"
+                     >
+                        <optgroup label="Genéricos">
+                           <option value="PLA">PLA Estándar</option>
+                           <option value="PETG">PETG Estándar</option>
+                           <option value="TPU">TPU Estándar</option>
+                        </optgroup>
+                        {myFilaments.length > 0 && (
+                          <optgroup label="En mi Stock">
+                             {myFilaments.map(f => (
+                               <option key={f.id} value={`stock:${f.id}`}>{f.material} - {f.customName || f.color}</option>
+                             ))}
+                          </optgroup>
+                        )}
                      </select>
                   </div>
                </div>
@@ -246,25 +263,25 @@ const ThreeDCalculator: React.FC = () => {
                   <div className="space-y-1.5">
                      <label className="text-[10px] font-black text-gray-500 uppercase tracking-widest ml-1">Precio/kg</label>
                      <div className="flex items-center bg-white/5 border border-white/10 rounded-xl overflow-hidden h-[44px]">
-                        <button onClick={() => setFilamentPrice(p => Math.max(0, p-50))} className="px-3 text-white font-black text-lg">-</button>
+                        <button onClick={() => setFilamentPrice(p => Math.max(0, p-50))} className="px-3 text-white font-black">-</button>
                         <input type="number" value={filamentPrice || ''} onChange={e => setFilamentPrice(Number(e.target.value))} className="w-full bg-transparent text-white text-center font-bold text-sm focus:outline-none" />
-                        <button onClick={() => setFilamentPrice(p => p+50)} className="px-3 text-white font-black text-lg">+</button>
+                        <button onClick={() => setFilamentPrice(p => p+50)} className="px-3 text-white font-black">+</button>
                      </div>
                   </div>
                   <div className="space-y-1.5">
                      <label className="text-[10px] font-black text-gray-500 uppercase tracking-widest ml-1">Gramos</label>
                      <div className="flex items-center bg-white/5 border border-white/10 rounded-xl overflow-hidden h-[44px]">
-                        <button onClick={() => setWeightUsed(p => Math.max(0, p-10))} className="px-3 text-white font-black text-lg">-</button>
+                        <button onClick={() => setWeightUsed(p => Math.max(0, p-10))} className="px-3 text-white font-black">-</button>
                         <input type="number" value={weightUsed || ''} onChange={e => setWeightUsed(Number(e.target.value))} className="w-full bg-transparent text-white text-center font-bold text-sm focus:outline-none" />
-                        <button onClick={() => setWeightUsed(p => p+10)} className="px-3 text-white font-black text-lg">+</button>
+                        <button onClick={() => setWeightUsed(p => p+10)} className="px-3 text-white font-black">+</button>
                      </div>
                   </div>
                   <div className="space-y-1.5">
                      <label className="text-[10px] font-black text-gray-500 uppercase tracking-widest ml-1">Tiempo</label>
                      <div className="flex items-center bg-white/5 border border-white/10 rounded-xl px-2 h-[44px]">
-                        <input type="number" value={printHours || ''} onChange={e => setPrintHours(Number(e.target.value))} className="w-full bg-transparent text-white font-bold text-right focus:outline-none pr-1 text-sm" placeholder="0h" />
+                        <input type="number" value={printHours || ''} onChange={e => setPrintHours(Number(e.target.value))} className="w-full bg-transparent text-white font-bold text-right focus:outline-none pr-1 text-sm" placeholder="0" />
                         <span className="text-gray-600 font-bold">:</span>
-                        <input type="number" value={printMinutes || ''} onChange={e => setPrintMinutes(Math.min(59, Number(e.target.value)))} className="w-full bg-transparent text-white font-bold text-left focus:outline-none pl-1 text-sm" placeholder="0m" />
+                        <input type="number" value={printMinutes.toString().padStart(2, '0')} onChange={e => setPrintMinutes(Math.min(59, Number(e.target.value)))} className="w-full bg-transparent text-white font-bold text-left focus:outline-none pl-1 text-sm" placeholder="00" />
                      </div>
                   </div>
                </div>
@@ -273,9 +290,9 @@ const ThreeDCalculator: React.FC = () => {
                   <div className="flex-1 space-y-1.5">
                      <label className="text-[10px] font-black text-gray-500 uppercase tracking-widest ml-1">Labor (+/- 10)</label>
                      <div className="flex items-center bg-white/5 border border-white/10 rounded-xl overflow-hidden h-[44px]">
-                        <button onClick={() => setLaborCostManual(p => Math.max(0, p-10))} className="px-4 text-white font-black text-lg">-</button>
+                        <button onClick={() => setLaborCostManual(p => Math.max(0, p-10))} className="px-4 text-white font-black">-</button>
                         <input type="number" value={laborCostManual || ''} onChange={e => setLaborCostManual(Number(e.target.value))} className="w-full bg-transparent text-white text-center font-bold text-sm focus:outline-none" />
-                        <button onClick={() => setLaborCostManual(p => p+10)} className="px-4 text-white font-black text-lg">+</button>
+                        <button onClick={() => setLaborCostManual(p => p+10)} className="px-4 text-white font-black">+</button>
                      </div>
                   </div>
                   <div className="flex-1 space-y-1.5">
@@ -299,7 +316,7 @@ const ThreeDCalculator: React.FC = () => {
                   <p className="text-2xl font-black text-white italic">{formatCurrency(results.filamentCost)}</p>
                </div>
                <div className="p-4 bg-blue-500/5 border border-blue-500/10 rounded-2xl flex flex-col items-center justify-center">
-                  <p className="text-[10px] text-blue-500 font-black uppercase tracking-widest mb-1">Costo Base (Mío)</p>
+                  <p className="text-[10px] text-blue-500 font-black uppercase tracking-widest mb-1">Costo Base</p>
                   <p className="text-2xl font-black text-white italic">{formatCurrency(results.baseCost)}</p>
                </div>
             </div>
@@ -307,26 +324,26 @@ const ThreeDCalculator: React.FC = () => {
             <div className="flex gap-4 pt-4 border-t border-white/5">
                <div className="flex-1 p-4 bg-white/[0.03] border border-white/5 rounded-2xl flex items-center justify-between">
                   <div>
-                     <p className="text-[10px] font-black text-green-400 uppercase tracking-widest mb-1">Precio Amigo</p>
+                     <p className="text-[10px] font-black text-green-400 uppercase tracking-widest mb-1">Amigo</p>
                      <span className="text-2xl font-black text-white">{formatCurrency(results.friendPrice)}</span>
                   </div>
                   <button onClick={() => handleCopy(results.friendPrice, 'amigo')} className="p-3 bg-green-500/10 hover:bg-green-500/20 text-green-400 rounded-xl transition-all"><Copy size={18}/></button>
                </div>
                <div className="flex-[1.2] p-4 bg-blue-600/10 border border-blue-500/20 rounded-2xl flex items-center justify-between">
                   <div>
-                     <p className="text-[10px] font-black text-blue-400 uppercase tracking-widest mb-1">Precio Comercial</p>
+                     <p className="text-[10px] font-black text-blue-400 uppercase tracking-widest mb-1">Comercial</p>
                      <div className="flex items-center gap-2">
                         <span className="text-3xl font-black text-white">{formatCurrency(results.commercialPrice)}</span>
-                        <span className="text-xs text-green-400 font-black leading-none">+{formatCurrency(results.profit)}</span>
+                        <span className="text-xs text-green-400 font-black">+{formatCurrency(results.profit)}</span>
                      </div>
                   </div>
-                  <button onClick={() => handleCopy(results.commercialPrice, 'comercial')} className="px-4 py-3 bg-blue-600 hover:bg-blue-500 text-white rounded-xl text-xs font-black uppercase tracking-widest transition-all shadow-xl"><Copy size={18}/></button>
+                  <button onClick={() => handleCopy(results.commercialPrice, 'comercial')} className="px-4 py-3 bg-blue-600 hover:bg-blue-500 text-white rounded-xl text-xs font-black uppercase tracking-widest transition-all"><Copy size={18}/></button>
                </div>
             </div>
           </div>
         </div>
 
-        {/* COL 2: QUIERO IMPRIMIR (33% / 4 cols) */}
+        {/* COL 2: QUIERO IMPRIMIR */}
         <div className="lg:col-span-4 bg-slate-900/40 backdrop-blur-2xl border border-white/10 rounded-3xl flex flex-col overflow-hidden">
           <div className="px-5 py-4 border-b border-white/10 flex items-center justify-between bg-white/[0.02]">
             <div className="flex items-center gap-2">
@@ -341,40 +358,51 @@ const ThreeDCalculator: React.FC = () => {
           
           <div className="p-5 flex flex-col gap-4 flex-1 overflow-y-auto custom-scrollbar">
              <div className="flex gap-2 pb-3 border-b border-white/5">
-                <input type="text" value={newQueueItemName} onChange={e => setNewQueueItemName(e.target.value)} placeholder="Nueva idea (nombre)..." className="flex-1 bg-white/5 border border-white/10 rounded-lg px-3 py-2 text-xs text-white focus:outline-none font-bold" />
+                <input type="text" value={newQueueItemName} onChange={e => setNewQueueItemName(e.target.value)} placeholder="Nombre..." className="flex-1 bg-white/5 border border-white/10 rounded-lg px-3 py-2 text-xs text-white focus:outline-none font-bold" />
                 <button onClick={addManualQueueItem} className="bg-indigo-600 hover:bg-indigo-500 text-white rounded-lg px-4 flex items-center justify-center font-black text-[10px]">AGREGAR</button>
              </div>
 
              <div className="space-y-3">
-                {printQueue.map(item => (
-                  <div key={item.id} className="p-4 bg-white/[0.03] border border-white/5 rounded-2xl flex flex-col gap-2 group hover:bg-white/5 transition-all relative">
-                     <div className="flex justify-between items-start">
-                        <h4 className="text-sm font-black text-white uppercase italic break-words pr-12">{item.name}</h4>
-                        <div className="flex gap-1 absolute top-3 right-3 opacity-0 group-hover:opacity-100 transition-opacity">
-                           <button onClick={() => loadToCalculator(item)} className="p-1.5 text-blue-400 hover:bg-blue-400/10 rounded-lg" title="Editar en Calculadora"><Edit3 size={16}/></button>
-                           <button onClick={() => { const n = printQueue.filter(i => i.id !== item.id); setPrintQueue(n); syncData(n, myFilaments); }} className="p-1.5 text-rose-500 hover:bg-rose-500/10 rounded-lg"><Trash2 size={16}/></button>
-                        </div>
-                     </div>
-                     {item.material && (
-                       <div className="flex items-center justify-between pt-1 border-t border-white/5">
-                          <div className="flex gap-2">
-                             <span className="text-[9px] px-2 py-0.5 bg-blue-500/10 text-blue-400 rounded-full font-black uppercase">{item.material}</span>
-                             <span className="text-[9px] px-2 py-0.5 bg-orange-500/10 text-orange-400 rounded-full font-black uppercase">{item.time}</span>
+                {printQueue.map(item => {
+                  const isInStock = item.filamentId ? myFilaments.some(f => f.id === item.filamentId) : false;
+                  const stockRef = item.filamentId ? myFilaments.find(f => f.id === item.filamentId) : null;
+                  
+                  return (
+                    <div key={item.id} className="p-4 bg-white/[0.03] border border-white/5 rounded-2xl flex flex-col gap-2 group hover:bg-white/5 transition-all relative">
+                       <div className="flex justify-between items-start">
+                          <div className="flex items-center gap-2 pr-12">
+                             <div className={`w-2 h-2 rounded-full shrink-0 ${item.filamentId ? (isInStock ? 'bg-green-500 shadow-[0_0_8px_rgba(34,197,94,0.5)]' : 'bg-red-500 shadow-[0_0_8px_rgba(239,68,68,0.5)]') : 'bg-gray-700'}`}></div>
+                             <h4 className="text-sm font-black text-white uppercase italic break-words">{item.name}</h4>
                           </div>
-                          <span className="text-sm font-black text-white">{formatCurrency(item.cost || 0)}</span>
+                          <div className="flex gap-1 absolute top-3 right-3 opacity-0 group-hover:opacity-100 transition-opacity">
+                             <button onClick={() => loadToCalculator(item)} className="p-1.5 text-blue-400 hover:bg-blue-400/10 rounded-lg"><Edit3 size={16}/></button>
+                             <button onClick={() => { const n = printQueue.filter(i => i.id !== item.id); setPrintQueue(n); syncData(n, myFilaments); }} className="p-1.5 text-rose-500 hover:bg-rose-500/10 rounded-lg"><Trash2 size={16}/></button>
+                          </div>
                        </div>
-                     )}
-                  </div>
-                ))}
+                       {item.material && (
+                         <div className="flex items-center justify-between pt-1 border-t border-white/5">
+                            <div className="flex gap-2">
+                               <span className="text-[9px] px-2 py-0.5 bg-blue-500/10 text-blue-400 rounded-full font-black uppercase flex items-center gap-1">
+                                  {stockRef?.color && <div className="w-1.5 h-1.5 rounded-full" style={{ backgroundColor: stockRef.color }}></div>}
+                                  {item.material}
+                               </span>
+                               <span className="text-[9px] px-2 py-0.5 bg-orange-500/10 text-orange-400 rounded-full font-black uppercase">{item.time}</span>
+                            </div>
+                            <span className="text-sm font-black text-white">{formatCurrency(item.cost || 0)}</span>
+                         </div>
+                       )}
+                    </div>
+                  );
+                })}
              </div>
           </div>
           <div className="px-6 py-4 border-t border-white/5 bg-white/[0.02] flex justify-between items-center">
-             <span className="text-xs text-gray-500 font-black uppercase tracking-widest">Total Ideas (Mío)</span>
+             <span className="text-xs text-gray-500 font-black uppercase tracking-widest">Inversión Lote</span>
              <span className="text-xl font-black text-white italic">{formatCurrency(printQueue.reduce((a,c) => a + (c.cost || 0), 0))}</span>
           </div>
         </div>
 
-        {/* COL 3: STOCK FILAMENTOS (17% / 2 cols) */}
+        {/* COL 3: STOCK */}
         <div className="lg:col-span-2 bg-slate-900/40 backdrop-blur-2xl border border-white/10 rounded-3xl flex flex-col overflow-hidden">
           <div className="px-4 py-4 border-b border-white/10 flex items-center justify-between bg-white/[0.02]">
             <div className="flex items-center gap-2">
@@ -390,21 +418,26 @@ const ThreeDCalculator: React.FC = () => {
                    </select>
                    <input type="color" value={newFilament.color} onChange={e => setNewFilament({...newFilament, color: e.target.value})} className="w-10 h-10 bg-transparent border-none cursor-pointer rounded-lg overflow-hidden shrink-0" />
                 </div>
-                <input type="text" value={newFilament.customName} onChange={e => setNewFilament({...newFilament, customName: e.target.value})} placeholder="Nombre (opcional)..." className="w-full bg-white/5 border border-white/10 rounded-lg px-3 py-2 text-[10px] text-white focus:outline-none font-bold" />
-                <button onClick={addFilament} className="w-full bg-pink-600 hover:bg-pink-500 text-white rounded-lg py-2 flex items-center justify-center font-black text-[10px]">AGREGAR</button>
+                <input type="text" value={newFilament.customName} onChange={e => setNewFilament({...newFilament, customName: e.target.value})} placeholder="Nombre/Marca..." className="w-full bg-white/5 border border-white/10 rounded-lg px-3 py-2 text-[10px] text-white focus:outline-none font-bold" />
+                <button onClick={saveFilament} className={`w-full ${editingFilamentId ? 'bg-yellow-600' : 'bg-pink-600'} text-white rounded-lg py-2 flex items-center justify-center font-black text-[10px]`}>
+                   {editingFilamentId ? 'GUARDAR' : 'AGREGAR'}
+                </button>
              </div>
              
              <div className="space-y-2">
                 {myFilaments.map(fil => (
-                  <div key={fil.id} className="p-2 bg-white/[0.03] border border-white/5 rounded-xl flex items-center justify-between group hover:border-pink-500/30 transition-all">
+                  <div key={fil.id} style={{ borderColor: `${fil.color}44`, backgroundColor: `${fil.color}08` }} className="p-2.5 border rounded-2xl flex items-center justify-between group transition-all">
                      <div className="flex items-center gap-2 overflow-hidden">
                         <div className="w-3 h-3 rounded-full shrink-0 border border-white/20" style={{ backgroundColor: fil.color }}></div>
-                        <div className="flex items-center gap-1.5 truncate">
-                           <span className="text-[10px] font-black text-white uppercase">{fil.material}</span>
-                           {fil.customName && <span className="text-[8px] text-gray-500 font-bold italic truncate">({fil.customName})</span>}
+                        <div className="flex flex-col">
+                           <span className="text-[10px] font-black text-white uppercase leading-none">{fil.material}</span>
+                           {fil.customName && <span className="text-[8px] text-gray-400 font-bold italic truncate max-w-[80px]">({fil.customName})</span>}
                         </div>
                      </div>
-                     <button onClick={() => { const n = myFilaments.filter(i => i.id !== fil.id); setMyFilaments(n); syncData(printQueue, n); }} className="text-gray-700 hover:text-rose-500 opacity-0 group-hover:opacity-100 transition-all p-1"><Trash2 size={14}/></button>
+                     <div className="flex items-center gap-1 opacity-0 group-hover:opacity-100 transition-opacity">
+                        <button onClick={() => editFilament(fil)} className="text-blue-400 p-1"><Edit3 size={14}/></button>
+                        <button onClick={() => { const n = myFilaments.filter(i => i.id !== fil.id); setMyFilaments(n); syncData(printQueue, n); }} className="text-rose-500 p-1"><Trash2 size={14}/></button>
+                     </div>
                   </div>
                 ))}
              </div>
