@@ -156,7 +156,7 @@ const CustomIcon = ({ type, src, index = 0 }: { type: keyof typeof ICONS, src?: 
   }
 
   return (
-    <div className="w-16 h-16 rounded-2xl mb-2 bg-no-repeat shadow-lg border border-white/10 overflow-hidden flex items-center justify-center bg-gray-900/50">
+    <div className="w-12 h-12 rounded-xl bg-no-repeat shadow-md border border-white/10 overflow-hidden flex items-center justify-center bg-gray-900/50 shrink-0">
       <div 
         className="w-full h-full transition-transform duration-500 group-hover:scale-110"
         style={{
@@ -171,29 +171,29 @@ const CustomIcon = ({ type, src, index = 0 }: { type: keyof typeof ICONS, src?: 
 };
 
 const GroupCard = ({ group, className }: { group: typeof groups[0], className?: string }) => (
-  <div className={`p-4 rounded-2xl border ${group.color} transition-all ${className}`}>
-    <div className="flex items-center justify-between mb-4">
-      <h3 className="font-bold text-sm text-white flex items-center gap-2 uppercase tracking-tighter">
+  <div className={`p-3 rounded-2xl border ${group.color} transition-all ${className}`}>
+    <div className="flex items-center justify-between mb-2">
+      <h3 className="font-bold text-[10px] text-white flex items-center gap-2 uppercase tracking-widest opacity-70">
         {group.title}
-        <div className="h-px flex-1 bg-white/10 min-w-[10px] ml-4" />
+        <div className="h-px flex-1 bg-white/5 min-w-[5px] ml-2" />
       </h3>
     </div>
-    <div className="grid grid-cols-3 sm:grid-cols-5 md:grid-cols-6 lg:grid-cols-8 xl:grid-cols-10 gap-2">
+    <div className="grid grid-cols-4 sm:grid-cols-6 md:grid-cols-8 lg:grid-cols-10 xl:grid-cols-12 gap-1.5">
       {group.items.map((item, iIdx) => (
         <motion.a
           key={iIdx}
           href={item.href}
           target="_blank"
           rel="noopener noreferrer"
-          whileHover={{ scale: 1.05, backgroundColor: 'rgba(255,255,255,0.05)' }}
-          className="flex flex-col items-center p-1.5 bg-white/5 border border-white/5 rounded-xl group transition-all text-center relative overflow-hidden"
+          whileHover={{ scale: 1.05, backgroundColor: 'rgba(255,255,255,0.08)' }}
+          className="flex flex-col items-center p-1 bg-white/5 border border-white/5 rounded-xl group transition-all text-center relative"
         >
           <CustomIcon type={item.type as any} index={item.index} />
-          <span className="text-[9px] font-bold text-gray-400 group-hover:text-white uppercase tracking-tight line-clamp-1 mt-1 px-0.5">
+          <span className="text-[8px] font-bold text-gray-500 group-hover:text-white uppercase tracking-tighter line-clamp-1 mt-1 w-full px-0.5">
             {item.name}
           </span>
-          <div className="absolute top-1 right-1 opacity-0 group-hover:opacity-100 transition-opacity">
-            <ExternalLink size={8} className="text-blue-400" />
+          <div className="absolute top-0.5 right-0.5 opacity-0 group-hover:opacity-100 transition-opacity">
+            <ExternalLink size={6} className="text-blue-400" />
           </div>
         </motion.a>
       ))}
