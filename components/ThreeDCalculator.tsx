@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { Calculator, DollarSign, Zap, Clock, Wrench, TrendingUp, Download, RefreshCw, UserCheck, ShoppingBag } from 'lucide-react';
+import { Calculator, DollarSign, Zap, Clock, Wrench, TrendingUp, Download, RefreshCw, UserCheck, ShoppingBag, Info } from 'lucide-react';
 import { motion } from 'motion/react';
 
 interface CalculationResults {
@@ -14,9 +14,9 @@ interface CalculationResults {
 }
 
 const MATERIAL_POWER = {
-  PLA: 120, // Watts (Average: Nozzle 200, Bed 60)
-  PETG: 180, // Watts (Average: Nozzle 240, Bed 80)
-  TPU: 140, // Watts (Average: Nozzle 230, Bed 50)
+  PLA: 125, // Watts (0.125 kWh)
+  TPU: 125, // Watts (0.125 kWh)
+  PETG: 155, // Watts (0.155 kWh)
 };
 
 const ThreeDCalculator: React.FC = () => {
@@ -28,8 +28,8 @@ const ThreeDCalculator: React.FC = () => {
   const [material, setMaterial] = useState<keyof typeof MATERIAL_POWER>('PLA');
   const [electricityRate, setElectricityRate] = useState(2.5); // MXN per kWh
   const [laborCostManual, setLaborCostManual] = useState(0); // Manual labor addition
-  const [maintenanceRate, setMaintenanceRate] = useState(5); // MXN per hour (Wear and tear)
-  const [markup, setMarkup] = useState(30); // percentage (10, 20, 30)
+  const [maintenanceRate, setMaintenanceRate] = useState(5); // MXN per hour
+  const [markup, setMarkup] = useState(30); // percentage
 
   const [results, setResults] = useState<CalculationResults>({
     filamentCost: 0,
@@ -51,8 +51,7 @@ const ThreeDCalculator: React.FC = () => {
     
     const baseCost = fCost + eCost + mCost + laborCostManual;
     
-    // Pricing strategies
-    const friendPrice = baseCost * 1.15; // 15% margin to cover risks without loss
+    const friendPrice = baseCost * 1.15; 
     const commercialPrice = baseCost * (1 + markup / 100);
     const profit = commercialPrice - baseCost;
 
@@ -81,7 +80,7 @@ const ThreeDCalculator: React.FC = () => {
           </div>
           <div>
             <h3 className="text-2xl font-black text-white tracking-tight italic uppercase">Costeador 3D Pro</h3>
-            <p className="text-xs text-blue-300/60 uppercase tracking-[0.2em] font-bold">Monterrey • Estrategia de Precios</p>
+            <p className="text-xs text-blue-300/60 uppercase tracking-[0.2em] font-bold">Monterrey • MXN • Consumos Reales</p>
           </div>
         </div>
         <button 
@@ -105,7 +104,7 @@ const ThreeDCalculator: React.FC = () => {
         <div className="xl:col-span-7 p-8 space-y-8 border-r border-white/5 bg-white/[0.01]">
           <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
             
-            {/* Filament Price Stepper */}
+            {/* Filament Price */}
             <div className="space-y-3">
               <label className="flex items-center gap-2 text-xs font-black text-gray-400 uppercase tracking-widest">
                 <DollarSign size={14} className="text-green-400" /> Precio Filamento (kg)
@@ -138,7 +137,6 @@ const ThreeDCalculator: React.FC = () => {
                   type="number" 
                   value={weightUsed} 
                   onChange={(e) => setWeightUsed(Number(e.target.value))}
-                  placeholder="Manual..."
                   className="w-full bg-white/5 border border-white/10 rounded-2xl px-5 py-4 text-white font-bold text-xl focus:outline-none focus:ring-2 focus:ring-blue-500/50 transition-all"
                 />
                 <span className="absolute right-5 top-1/2 -translate-y-1/2 text-gray-500 font-bold">g</span>
@@ -148,7 +146,7 @@ const ThreeDCalculator: React.FC = () => {
             {/* Material Selector */}
             <div className="space-y-3">
               <label className="flex items-center gap-2 text-xs font-black text-gray-400 uppercase tracking-widest">
-                <Zap size={14} className="text-yellow-400" /> Material / Energía
+                <Zap size={14} className="text-yellow-400" /> Material (Consumo Eléctrico)
               </label>
               <div className="grid grid-cols-3 gap-2 p-1.5 bg-white/5 rounded-2xl border border-white/10">
                 {(['PLA', 'PETG', 'TPU'] as const).map((m) => (
@@ -164,6 +162,12 @@ const ThreeDCalculator: React.FC = () => {
                     {m}
                   </button>
                 ))}
+              </div>
+              <div className="flex items-center gap-2 px-3 py-2 bg-yellow-500/5 border border-yellow-500/20 rounded-xl">
+                 <Info size={12} className="text-yellow-500 shrink-0" />
+                 <p className="text-[9px] text-yellow-500/80 font-bold leading-tight uppercase">
+                    Promedio: {MATERIAL_POWER[material]}W ({MATERIAL_POWER[material]/1000} kWh) para {material}
+                 </p>
               </div>
             </div>
 
@@ -234,28 +238,17 @@ const ThreeDCalculator: React.FC = () => {
 
           </div>
 
-          <div className="p-6 bg-blue-500/5 border border-blue-500/20 rounded-3xl space-y-4">
-             <div className="flex justify-between items-center">
-                <span className="text-gray-400 text-xs font-bold uppercase tracking-widest">Tu Costo Directo (Base)</span>
-                <span className="text-white font-black text-2xl">{formatCurrency(results.baseCost)}</span>
+          {/* Detailed Breakdown */}
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mt-8">
+             <div className="p-6 bg-green-500/5 border border-green-500/20 rounded-3xl space-y-2">
+                <p className="text-[10px] text-green-400 font-black uppercase tracking-widest">Costo Filamento</p>
+                <p className="text-2xl font-black text-white">{formatCurrency(results.filamentCost)}</p>
+                <p className="text-[9px] text-gray-500 font-bold uppercase">{weightUsed}g de material</p>
              </div>
-             <div className="grid grid-cols-4 gap-4 pt-2 border-t border-white/5">
-                <div className="text-center">
-                   <p className="text-[10px] text-gray-500 uppercase font-bold">Filamento</p>
-                   <p className="text-xs text-white font-bold">{formatCurrency(results.filamentCost)}</p>
-                </div>
-                <div className="text-center">
-                   <p className="text-[10px] text-gray-500 uppercase font-bold">Energía ({material})</p>
-                   <p className="text-xs text-white font-bold">{formatCurrency(results.energyCost)}</p>
-                </div>
-                <div className="text-center">
-                   <p className="text-[10px] text-gray-500 uppercase font-bold">Manto.</p>
-                   <p className="text-xs text-white font-bold">{formatCurrency(results.maintenanceCost)}</p>
-                </div>
-                <div className="text-center">
-                   <p className="text-[10px] text-gray-500 uppercase font-bold">Labor</p>
-                   <p className="text-xs text-white font-bold">{formatCurrency(results.laborCost)}</p>
-                </div>
+             <div className="p-6 bg-yellow-500/5 border border-yellow-500/20 rounded-3xl space-y-2">
+                <p className="text-[10px] text-yellow-400 font-black uppercase tracking-widest">Consumo Eléctrico</p>
+                <p className="text-2xl font-black text-white">{formatCurrency(results.energyCost)}</p>
+                <p className="text-[9px] text-gray-500 font-bold uppercase">{MATERIAL_POWER[material]}W Avg • {material}</p>
              </div>
           </div>
         </div>
@@ -266,6 +259,11 @@ const ThreeDCalculator: React.FC = () => {
           <div className="space-y-8">
             <h4 className="text-gray-400 text-xs font-black uppercase tracking-[0.3em] text-center">Estrategia de Venta</h4>
             
+            <div className="flex justify-between items-center p-4 bg-white/5 rounded-2xl border border-white/5 mb-4">
+               <span className="text-gray-400 text-[10px] font-black uppercase tracking-widest italic">"¿Cuánto me cuesta a mi?"</span>
+               <span className="text-white font-black text-lg">{formatCurrency(results.baseCost)}</span>
+            </div>
+
             {/* Friend Price */}
             <div className="relative p-6 bg-white/[0.03] border border-white/5 rounded-3xl space-y-2 group hover:bg-white/5 transition-all">
                <div className="absolute top-4 right-6 p-2 bg-green-500/10 rounded-full">
@@ -275,7 +273,7 @@ const ThreeDCalculator: React.FC = () => {
                <div className="flex items-baseline gap-2">
                   <span className="text-4xl font-black text-white tracking-tighter">{formatCurrency(results.friendPrice)}</span>
                </div>
-               <p className="text-[10px] text-gray-500 leading-tight">Ganancia mínima para cubrir riesgos y desgaste sin pérdida operativa.</p>
+               <p className="text-[10px] text-gray-500 leading-tight">Margen del 15%. Protege tu máquina y cubre la luz sin perder.</p>
             </div>
 
             {/* Commercial Price */}
@@ -289,7 +287,7 @@ const ThreeDCalculator: React.FC = () => {
                   <span className="text-blue-500 font-bold">MXN</span>
                </div>
                <div className="flex justify-between items-center pt-2">
-                  <span className="text-xs text-gray-400 font-bold">GANANCIA ({markup}%)</span>
+                  <span className="text-xs text-gray-400 font-bold uppercase">GANANCIA ({markup}%)</span>
                   <span className="text-green-400 font-black">+{formatCurrency(results.profit)}</span>
                </div>
             </div>
@@ -298,9 +296,9 @@ const ThreeDCalculator: React.FC = () => {
           <div className="space-y-4">
             <button className="w-full bg-white text-slate-900 font-black py-5 rounded-2xl shadow-xl hover:bg-gray-200 transition-all flex items-center justify-center gap-3 uppercase tracking-widest text-sm">
               <Download size={18} />
-              Exportar Ticket
+              Generar Ticket de Venta
             </button>
-            <p className="text-[10px] text-center text-gray-600 font-medium">Cálculos optimizados para eficiencia en Monterrey, NL.</p>
+            <p className="text-[10px] text-center text-gray-600 font-medium uppercase tracking-widest">Rembrandt Studio • Monterrey 2026</p>
           </div>
 
         </div>
