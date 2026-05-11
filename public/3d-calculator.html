@@ -8,31 +8,10 @@
     <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&display=swap" rel="stylesheet">
     <script src="https://unpkg.com/lucide@latest"></script>
     <style>
-        body {
-            font-family: 'Plus Jakarta Sans', sans-serif;
-            background: #020617;
-            color: white;
-            min-height: 100vh;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            padding: 1.5rem;
-        }
-        .glass {
-            background: rgba(15, 23, 42, 0.8);
-            backdrop-filter: blur(24px);
-            border: 1px solid rgba(255, 255, 255, 0.1);
-        }
-        input::-webkit-outer-spin-button,
-        input::-webkit-inner-spin-button {
-            -webkit-appearance: none;
-            margin: 0;
-        }
-        .active-btn {
-            background: #2563eb !important;
-            color: white !important;
-            box-shadow: 0 10px 15px -3px rgba(37, 99, 235, 0.4);
-        }
+        body { font-family: 'Plus Jakarta Sans', sans-serif; background: #020617; color: white; min-height: 100vh; display: flex; align-items: center; justify-content: center; padding: 1.5rem; }
+        .glass { background: rgba(15, 23, 42, 0.8); backdrop-filter: blur(24px); border: 1px solid rgba(255, 255, 255, 0.1); }
+        input::-webkit-outer-spin-button, input::-webkit-inner-spin-button { -webkit-appearance: none; margin: 0; }
+        .active-btn { background: #2563eb !important; color: white !important; box-shadow: 0 10px 15px -3px rgba(37, 99, 235, 0.4); }
     </style>
 </head>
 <body>
@@ -40,155 +19,108 @@
         <!-- Header -->
         <div class="p-8 border-b border-white/10 bg-gradient-to-r from-blue-600/20 via-indigo-600/10 to-purple-600/20 flex items-center justify-between">
             <div class="flex items-center gap-4">
-                <div class="p-3 bg-blue-500/20 rounded-2xl">
-                    <i data-lucide="calculator" class="text-blue-400 w-8 h-8"></i>
-                </div>
+                <div class="p-3 bg-blue-500/20 rounded-2xl"><i data-lucide="calculator" class="text-blue-400 w-8 h-8"></i></div>
                 <div>
                     <h1 class="text-2xl font-black tracking-tight italic uppercase">Costeador 3D Pro</h1>
-                    <p class="text-xs text-blue-300/60 uppercase tracking-widest font-bold">Monterrey • Consumos Reales MXN</p>
+                    <p class="text-xs text-blue-300/60 uppercase tracking-widest font-bold">Monterrey • Cotizador Inteligente</p>
                 </div>
             </div>
-            <button onclick="resetValues()" class="p-3 hover:bg-white/10 rounded-2xl transition-all text-gray-400 hover:text-white border border-transparent hover:border-white/10">
-                <i data-lucide="refresh-cw" class="w-6 h-6"></i>
-            </button>
+            <button onclick="resetValues()" class="p-3 hover:bg-white/10 rounded-2xl transition-all text-gray-400 hover:text-white"><i data-lucide="refresh-cw" class="w-6 h-6"></i></button>
         </div>
 
         <div class="grid grid-cols-1 lg:grid-cols-12">
             <!-- Inputs -->
             <div class="lg:col-span-7 p-10 space-y-8 border-r border-white/5 bg-white/[0.01]">
-                <div class="grid grid-cols-1 md:grid-cols-2 gap-8">
-                    
-                    <div class="space-y-3">
-                        <label class="flex items-center gap-2 text-[10px] font-black text-gray-400 uppercase tracking-widest">
-                            <i data-lucide="dollar-sign" class="w-4 h-4 text-green-400"></i> Filamento (kg)
-                        </label>
-                        <div class="flex items-center bg-white/5 border border-white/10 rounded-2xl overflow-hidden focus-within:ring-2 focus-within:ring-blue-500/50 transition-all">
-                            <button onclick="adjustFilament(-50)" class="px-5 py-4 hover:bg-white/10 text-white font-bold transition-colors text-xl">-</button>
-                            <input type="number" id="filamentPrice" value="400" oninput="calculate()"
-                                class="w-full bg-transparent text-center text-white font-bold text-2xl focus:outline-none">
-                            <button onclick="adjustFilament(50)" class="px-5 py-4 hover:bg-white/10 text-white font-bold transition-colors text-xl">+</button>
-                        </div>
-                    </div>
-
-                    <div class="space-y-3">
-                        <label class="flex items-center gap-2 text-[10px] font-black text-gray-400 uppercase tracking-widest">
-                            <i data-lucide="weight" class="w-4 h-4 text-blue-400"></i> Peso Modelo (g)
-                        </label>
-                        <div class="relative">
-                            <input type="number" id="weightUsed" value="100" oninput="calculate()"
-                                class="w-full bg-white/5 border border-white/10 rounded-2xl px-6 py-4 text-white font-bold text-2xl focus:outline-none focus:ring-2 focus:ring-blue-500/50 transition-all">
-                            <span class="absolute right-6 top-1/2 -translate-y-1/2 text-gray-500 font-bold text-lg">g</span>
-                        </div>
-                    </div>
-
-                    <div class="space-y-3">
-                        <label class="flex items-center gap-2 text-[10px] font-black text-gray-400 uppercase tracking-widest">
-                            <i data-lucide="zap" class="w-4 h-4 text-yellow-400"></i> Material / Consumo
-                        </label>
-                        <div class="grid grid-cols-3 gap-2 p-1.5 bg-white/5 rounded-2xl border border-white/10">
-                            <button onclick="setMaterial('PLA')" id="btn-PLA" class="py-2.5 rounded-xl text-xs font-black transition-all active-btn">PLA</button>
-                            <button onclick="setMaterial('PETG')" id="btn-PETG" class="py-2.5 rounded-xl text-xs font-black transition-all text-gray-500 hover:text-white">PETG</button>
-                            <button onclick="setMaterial('TPU')" id="btn-TPU" class="py-2.5 rounded-xl text-xs font-black transition-all text-gray-500 hover:text-white">TPU</button>
-                        </div>
-                    </div>
-
-                    <div class="space-y-3">
-                        <label class="flex items-center gap-2 text-[10px] font-black text-gray-400 uppercase tracking-widest">
-                            <i data-lucide="clock" class="w-4 h-4 text-orange-400"></i> Tiempo de Impresión
-                        </label>
-                        <div class="flex gap-3">
-                            <div class="relative flex-1">
-                                <input type="number" id="printHours" value="5" oninput="calculate()"
-                                    class="w-full bg-white/5 border border-white/10 rounded-2xl px-4 py-4 text-white font-bold text-xl focus:outline-none focus:ring-2 focus:ring-blue-500/50 transition-all text-center">
-                                <span class="absolute right-3 top-1/2 -translate-y-1/2 text-[9px] text-gray-500 font-black uppercase">h</span>
-                            </div>
-                            <div class="relative flex-1">
-                                <input type="number" id="printMinutes" value="0" oninput="calculateMinutes()"
-                                    class="w-full bg-white/5 border border-white/10 rounded-2xl px-4 py-4 text-white font-bold text-xl focus:outline-none focus:ring-2 focus:ring-blue-500/50 transition-all text-center">
-                                <span class="absolute right-3 top-1/2 -translate-y-1/2 text-[9px] text-gray-500 font-black uppercase">m</span>
-                            </div>
-                        </div>
-                    </div>
+                
+                <div class="space-y-3">
+                    <label class="text-[10px] font-black text-gray-400 uppercase tracking-widest block">Nombre de la Pieza (Opcional)</label>
+                    <input type="text" id="pieceName" placeholder="Ej: Casco Iron Man, Engrane..." oninput="calculate()"
+                        class="w-full bg-white/5 border border-white/10 rounded-2xl px-6 py-4 text-white font-bold text-lg focus:outline-none focus:ring-2 focus:ring-blue-500/50 transition-all placeholder:text-gray-600">
                 </div>
 
-                <!-- Specific Breakdowns -->
-                <div class="grid grid-cols-1 md:grid-cols-2 gap-6 mt-10">
-                    <div class="p-8 bg-green-500/5 border border-green-500/20 rounded-[2rem] space-y-3">
-                        <p class="text-green-400 text-[10px] font-black uppercase tracking-[0.2em]">Costo Filamento</p>
-                        <h3 id="resFilament" class="text-white font-black text-3xl tracking-tighter">$0.00</h3>
-                        <p id="labelFilament" class="text-[10px] text-gray-500 font-bold uppercase tracking-widest">100g de material</p>
+                <div class="grid grid-cols-1 md:grid-cols-2 gap-8">
+                    <!-- Filament -->
+                    <div class="space-y-3">
+                        <label class="flex items-center gap-2 text-[10px] font-black text-gray-400 uppercase tracking-widest"><i data-lucide="dollar-sign" class="w-4 h-4 text-green-400"></i> Filamento (kg)</label>
+                        <div class="flex items-center bg-white/5 border border-white/10 rounded-2xl overflow-hidden focus-within:ring-2 focus-within:ring-blue-500/50 transition-all">
+                            <button onclick="adjustInput('filamentPrice', -50)" class="px-5 py-4 hover:bg-white/10 text-white font-bold transition-colors text-xl">-</button>
+                            <input type="number" id="filamentPrice" value="400" oninput="calculate()" class="w-full bg-transparent text-center text-white font-bold text-2xl focus:outline-none">
+                            <button onclick="adjustInput('filamentPrice', 50)" class="px-5 py-4 hover:bg-white/10 text-white font-bold transition-colors text-xl">+</button>
+                        </div>
                     </div>
-                    <div class="p-8 bg-yellow-500/5 border border-yellow-500/20 rounded-[2rem] space-y-3">
-                        <p class="text-yellow-400 text-[10px] font-black uppercase tracking-[0.2em]">Consumo Eléctrico</p>
-                        <h3 id="resEnergy" class="text-white font-black text-3xl tracking-tighter">$0.00</h3>
-                        <p id="labelEnergyInfo" class="text-[10px] text-gray-500 font-bold uppercase tracking-widest">125W (PLA/TPU)</p>
+
+                    <!-- Weight -->
+                    <div class="space-y-3">
+                        <label class="flex items-center gap-2 text-[10px] font-black text-gray-400 uppercase tracking-widest"><i data-lucide="weight" class="w-4 h-4 text-blue-400"></i> Peso (g)</label>
+                        <input type="number" id="weightUsed" value="100" oninput="calculate()" class="w-full bg-white/5 border border-white/10 rounded-2xl px-6 py-4 text-white font-bold text-2xl focus:outline-none">
+                    </div>
+
+                    <!-- Labor -->
+                    <div class="space-y-3">
+                        <label class="flex items-center gap-2 text-[10px] font-black text-gray-400 uppercase tracking-widest"><i data-lucide="user-check" class="w-4 h-4 text-purple-400"></i> Labor / Post-proceso</label>
+                        <div class="flex items-center bg-white/5 border border-white/10 rounded-2xl overflow-hidden focus-within:ring-2 focus-within:ring-blue-500/50 transition-all">
+                            <button onclick="adjustInput('laborManual', -10)" class="px-5 py-4 hover:bg-white/10 text-white font-bold transition-colors text-xl">-</button>
+                            <input type="number" id="laborManual" value="0" oninput="calculate()" class="w-full bg-transparent text-center text-white font-bold text-2xl focus:outline-none">
+                            <button onclick="adjustInput('laborManual', 10)" class="px-5 py-4 hover:bg-white/10 text-white font-bold transition-colors text-xl">+</button>
+                        </div>
+                    </div>
+
+                    <!-- Time -->
+                    <div class="space-y-3">
+                        <label class="flex items-center gap-2 text-[10px] font-black text-gray-400 uppercase tracking-widest"><i data-lucide="clock" class="w-4 h-4 text-orange-400"></i> Tiempo</label>
+                        <div class="flex gap-3">
+                            <input type="number" id="printHours" value="5" oninput="calculate()" class="flex-1 bg-white/5 border border-white/10 rounded-2xl px-4 py-4 text-white font-bold text-xl focus:outline-none text-center">
+                            <input type="number" id="printMinutes" value="0" oninput="calculateMinutes()" class="flex-1 bg-white/5 border border-white/10 rounded-2xl px-4 py-4 text-white font-bold text-xl focus:outline-none text-center">
+                        </div>
                     </div>
                 </div>
             </div>
 
             <!-- Strategy -->
-            <div class="lg:col-span-5 p-12 bg-white/[0.03] flex flex-col justify-between space-y-10">
-                <div class="space-y-10">
+            <div class="lg:col-span-5 p-12 bg-white/[0.03] flex flex-col justify-between space-y-8">
+                <div class="space-y-6">
                     <h2 class="text-gray-400 text-xs font-black uppercase tracking-[0.4em] text-center">Estrategia de Venta</h2>
                     
-                    <div class="flex justify-between items-center p-5 bg-white/5 rounded-2xl border border-white/5">
-                        <span class="text-gray-400 text-[10px] font-black uppercase tracking-widest italic">¿Cuánto me cuesta a mi?</span>
-                        <span id="resBase" class="text-white font-black text-xl tracking-tighter">$0.00</span>
-                    </div>
-
                     <!-- Friend -->
-                    <div class="relative p-8 bg-white/[0.04] border border-white/5 rounded-[2rem] space-y-3">
+                    <div class="p-8 bg-white/[0.04] border border-white/5 rounded-[2rem] space-y-4">
                         <p class="text-sm font-black text-green-400 uppercase tracking-[0.2em]">Precio Amigo</p>
-                        <div class="flex items-baseline gap-2">
-                            <span id="resFriend" class="text-5xl font-black text-white tracking-tighter">$0.00</span>
-                        </div>
-                        <p class="text-[11px] text-gray-500 leading-relaxed font-medium">Margen del 15% (Recuperación y riesgos).</p>
+                        <span id="resFriend" class="text-5xl font-black text-white tracking-tighter block">$0.00</span>
+                        <button onclick="copyToClipboard('amigo')" class="w-full py-3 bg-green-500/10 hover:bg-green-500/20 text-green-400 rounded-2xl text-[10px] font-black uppercase tracking-widest transition-all border border-green-500/20 flex items-center justify-center gap-2">
+                            <i data-lucide="copy" class="w-4 h-4"></i> Copiar Cotización
+                        </button>
                     </div>
 
                     <!-- Commercial -->
-                    <div class="relative p-10 bg-blue-600/10 border border-blue-500/30 rounded-[2.5rem] space-y-4 ring-1 ring-blue-500/20 shadow-2xl shadow-blue-900/40">
+                    <div class="p-10 bg-blue-600/10 border border-blue-500/30 rounded-[2.5rem] space-y-5 ring-1 ring-blue-500/20 shadow-2xl">
                         <p class="text-sm font-black text-blue-400 uppercase tracking-[0.3em]">Precio Comercial</p>
-                        <div class="flex items-baseline gap-3">
-                            <span id="resCommercial" class="text-7xl font-black text-white tracking-tighter">$0.00</span>
-                        </div>
-                        <div class="flex justify-between items-center pt-4 border-t border-blue-500/10">
-                            <span class="text-xs text-gray-400 font-black uppercase">GANANCIA</span>
-                            <span id="resProfit" class="text-green-400 font-black text-xl">+$0.00</span>
-                        </div>
+                        <span id="resCommercial" class="text-7xl font-black text-white tracking-tighter block">$0.00</span>
+                        <button onclick="copyToClipboard('comercial')" class="w-full py-4 bg-blue-500 hover:bg-blue-400 text-white rounded-2xl text-[10px] font-black uppercase tracking-[0.2em] transition-all flex items-center justify-center gap-2">
+                            <i data-lucide="copy" class="w-5 h-5"></i> Copiar Texto de Venta
+                        </button>
                     </div>
                 </div>
-
-                <button onclick="window.print()" class="w-full bg-white text-slate-900 font-black py-6 rounded-[1.5rem] shadow-2xl uppercase tracking-[0.2em] text-sm">
-                    Generar Ticket
-                </button>
+                <p class="text-[9px] text-center text-gray-600 font-black uppercase tracking-widest">Rembrandt Studio • Monterrey 2026</p>
             </div>
         </div>
     </div>
 
     <script>
         lucide.createIcons();
-
         let currentMaterial = 'PLA';
+        let currentMarkup = 30;
         const MATERIAL_POWER = { PLA: 125, PETG: 155, TPU: 125 };
 
-        function formatMXN(val) {
-            return new Intl.NumberFormat('es-MX', { style: 'currency', currency: 'MXN' }).format(val);
-        }
+        function formatMXN(val) { return new Intl.NumberFormat('es-MX', { style: 'currency', currency: 'MXN' }).format(val); }
 
-        function adjustFilament(amount) {
-            const el = document.getElementById('filamentPrice');
+        function adjustInput(id, amount) {
+            const el = document.getElementById(id);
             el.value = Math.max(0, parseInt(el.value || 0) + amount);
             calculate();
         }
 
-        function setMaterial(m) {
-            currentMaterial = m;
-            ['PLA', 'PETG', 'TPU'].forEach(mat => {
-                document.getElementById('btn-' + mat).classList.toggle('active-btn', mat === m);
-                document.getElementById('btn-' + mat).classList.toggle('text-gray-500', mat !== m);
-            });
-            const info = m === 'PETG' ? '155W (PETG)' : '125W (PLA/TPU)';
-            document.getElementById('labelEnergyInfo').innerText = info;
+        function calculateMinutes() {
+            const el = document.getElementById('printMinutes');
+            if (el.value > 59) el.value = 59;
             calculate();
         }
 
@@ -197,26 +129,49 @@
             const weightUsed = parseFloat(document.getElementById('weightUsed').value) || 0;
             const printHours = parseFloat(document.getElementById('printHours').value) || 0;
             const printMinutes = parseFloat(document.getElementById('printMinutes').value) || 0;
+            const laborManual = parseFloat(document.getElementById('laborManual').value) || 0;
             const electricityRate = 2.5;
             const maintenanceRate = 5;
 
             const totalHours = printHours + (printMinutes / 60);
             const filamentCost = (filamentPrice / 1000) * weightUsed;
-            const energyCost = (MATERIAL_POWER[currentMaterial] / 1000) * totalHours * electricityRate;
+            const energyCost = (MATERIAL_POWER['PLA'] / 1000) * totalHours * electricityRate; // Default for standalone simplified
             const maintenanceCost = totalHours * maintenanceRate;
             
-            const baseCost = filamentCost + energyCost + maintenanceCost;
+            const baseCost = filamentCost + energyCost + maintenanceCost + laborManual;
             const friendPrice = baseCost * 1.15;
-            const commercialPrice = baseCost * 1.30; // Default 30%
-            const profit = commercialPrice - baseCost;
+            const commercialPrice = baseCost * (1 + currentMarkup / 100);
 
-            document.getElementById('resBase').innerText = formatMXN(baseCost);
-            document.getElementById('resFilament').innerText = formatMXN(filamentCost);
-            document.getElementById('resEnergy').innerText = formatMXN(energyCost);
-            document.getElementById('labelFilament').innerText = weightUsed + 'g de material';
             document.getElementById('resFriend').innerText = formatMXN(friendPrice);
             document.getElementById('resCommercial').innerText = formatMXN(commercialPrice);
-            document.getElementById('resProfit').innerText = '+' + formatMXN(profit);
+            
+            // Storing for copy
+            window.lastPrices = { amigo: friendPrice, comercial: commercialPrice };
+        }
+
+        function copyToClipboard(type) {
+            const name = document.getElementById('pieceName').value.trim() || ("Pieza de " + currentMaterial);
+            const time = document.getElementById('printHours').value + "h " + document.getElementById('printMinutes').value + "m";
+            const price = formatMXN(window.lastPrices[type]);
+            
+            let text = "";
+            if (type === 'amigo') {
+                text = `¡Qué onda! Te paso la cotización de tu ${name}: El costo neto por los materiales, energía y el tiempo de impresión (${time}) queda en ${price}. ¡Es precio especial! Quedo a tus órdenes.`;
+            } else {
+                text = `¡Hola! Con gusto te comparto la cotización de tu ${name}. Realizada con un tiempo de impresión de ${time}, el total sería de ${price}. ¡Quedo a tus órdenes para iniciar tu proyecto!`;
+            }
+            
+            navigator.clipboard.writeText(text).then(() => {
+                alert("¡Texto de venta copiado!");
+            });
+        }
+
+        function resetValues() {
+            document.getElementById('pieceName').value = "";
+            document.getElementById('filamentPrice').value = 400;
+            document.getElementById('weightUsed').value = 100;
+            document.getElementById('laborManual').value = 0;
+            calculate();
         }
 
         calculate();
