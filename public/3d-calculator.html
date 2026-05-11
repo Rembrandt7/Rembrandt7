@@ -1,0 +1,218 @@
+<!DOCTYPE html>
+<html lang="es-MX">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Calculadora 3D | Monterrey Edition</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+    <script src="https://unpkg.com/lucide@latest"></script>
+    <style>
+        body {
+            font-family: 'Plus Jakarta Sans', sans-serif;
+            background: #0f172a;
+            color: white;
+            min-height: 100vh;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            padding: 2rem;
+        }
+        .glass {
+            background: rgba(30, 41, 59, 0.7);
+            backdrop-filter: blur(20px);
+            border: 1px solid rgba(255, 255, 255, 0.1);
+        }
+        input::-webkit-outer-spin-button,
+        input::-webkit-inner-spin-button {
+            -webkit-appearance: none;
+            margin: 0;
+        }
+    </style>
+</head>
+<body>
+    <div class="max-w-4xl w-full glass rounded-[2.5rem] overflow-hidden shadow-2xl animate-in fade-in zoom-in duration-700">
+        <!-- Header -->
+        <div class="p-8 border-b border-white/10 bg-gradient-to-r from-blue-600/20 to-purple-600/20 flex items-center justify-between">
+            <div class="flex items-center gap-4">
+                <div class="p-3 bg-blue-500/20 rounded-2xl">
+                    <i data-lucide="calculator" class="text-blue-400 w-8 h-8"></i>
+                </div>
+                <div>
+                    <h1 class="text-2xl font-extrabold tracking-tight">Calculadora de Costos 3D</h1>
+                    <p class="text-xs text-blue-300/60 uppercase tracking-widest font-bold">Monterrey, MXN • Herramienta de Productividad</p>
+                </div>
+            </div>
+            <button onclick="resetValues()" class="p-2 hover:bg-white/10 rounded-full transition-all text-gray-400 hover:text-white">
+                <i data-lucide="refresh-cw" class="w-5 h-5"></i>
+            </button>
+        </div>
+
+        <div class="grid grid-cols-1 lg:grid-cols-2">
+            <!-- Inputs -->
+            <div class="p-10 space-y-8 border-r border-white/5">
+                <div class="grid grid-cols-1 md:grid-cols-2 gap-8">
+                    <div class="space-y-3">
+                        <label class="flex items-center gap-2 text-sm font-semibold text-gray-400 uppercase tracking-wider">
+                            <i data-lucide="dollar-sign" class="w-4 h-4 text-green-400"></i> Filamento (kg)
+                        </label>
+                        <div class="relative">
+                            <input type="number" id="filamentPrice" value="450" oninput="calculate()"
+                                class="w-full bg-white/5 border border-white/10 rounded-2xl px-5 py-4 text-white font-bold focus:outline-none focus:ring-2 focus:ring-blue-500/50 transition-all text-lg">
+                            <span class="absolute right-5 top-1/2 -translate-y-1/2 text-gray-500 font-bold">$</span>
+                        </div>
+                    </div>
+
+                    <div class="space-y-3">
+                        <label class="flex items-center gap-2 text-sm font-semibold text-gray-400 uppercase tracking-wider">
+                            <i data-lucide="weight" class="w-4 h-4 text-blue-400"></i> Peso Modelo (g)
+                        </label>
+                        <div class="relative">
+                            <input type="number" id="weightUsed" value="100" oninput="calculate()"
+                                class="w-full bg-white/5 border border-white/10 rounded-2xl px-5 py-4 text-white font-bold focus:outline-none focus:ring-2 focus:ring-blue-500/50 transition-all text-lg">
+                            <span class="absolute right-5 top-1/2 -translate-y-1/2 text-gray-500 font-bold">g</span>
+                        </div>
+                    </div>
+
+                    <div class="space-y-3">
+                        <label class="flex items-center gap-2 text-sm font-semibold text-gray-400 uppercase tracking-wider">
+                            <i data-lucide="clock" class="w-4 h-4 text-orange-400"></i> Tiempo (hrs)
+                        </label>
+                        <div class="relative">
+                            <input type="number" id="printTime" value="5" oninput="calculate()"
+                                class="w-full bg-white/5 border border-white/10 rounded-2xl px-5 py-4 text-white font-bold focus:outline-none focus:ring-2 focus:ring-blue-500/50 transition-all text-lg">
+                            <span class="absolute right-5 top-1/2 -translate-y-1/2 text-gray-500 font-bold">h</span>
+                        </div>
+                    </div>
+
+                    <div class="space-y-3">
+                        <label class="flex items-center gap-2 text-sm font-semibold text-gray-400 uppercase tracking-wider">
+                            <i data-lucide="zap" class="w-4 h-4 text-yellow-400"></i> Consumo (W)
+                        </label>
+                        <div class="relative">
+                            <input type="number" id="powerConsumption" value="200" oninput="calculate()"
+                                class="w-full bg-white/5 border border-white/10 rounded-2xl px-5 py-4 text-white font-bold focus:outline-none focus:ring-2 focus:ring-blue-500/50 transition-all text-lg">
+                            <span class="absolute right-5 top-1/2 -translate-y-1/2 text-gray-500 font-bold">W</span>
+                        </div>
+                    </div>
+
+                    <div class="space-y-3">
+                        <label class="flex items-center gap-2 text-sm font-semibold text-gray-400 uppercase tracking-wider">
+                            <i data-lucide="tool" class="w-4 h-4 text-red-400"></i> Mantenimiento
+                        </label>
+                        <div class="relative">
+                            <input type="number" id="maintenanceRate" value="5" oninput="calculate()"
+                                class="w-full bg-white/5 border border-white/10 rounded-2xl px-5 py-4 text-white font-bold focus:outline-none focus:ring-2 focus:ring-blue-500/50 transition-all text-lg">
+                            <span class="absolute right-5 top-1/2 -translate-y-1/2 text-gray-500 font-bold">$/h</span>
+                        </div>
+                    </div>
+
+                    <div class="space-y-3">
+                        <label class="flex items-center gap-2 text-sm font-semibold text-gray-400 uppercase tracking-wider">
+                            <i data-lucide="trending-up" class="w-4 h-4 text-purple-400"></i> Utilidad (%)
+                        </label>
+                        <div class="relative">
+                            <input type="number" id="markup" value="30" oninput="calculate()"
+                                class="w-full bg-white/5 border border-white/10 rounded-2xl px-5 py-4 text-white font-bold focus:outline-none focus:ring-2 focus:ring-blue-500/50 transition-all text-lg">
+                            <span class="absolute right-5 top-1/2 -translate-y-1/2 text-gray-500 font-bold">%</span>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Summary -->
+            <div class="p-10 bg-white/[0.02] flex flex-col justify-between">
+                <div class="space-y-6">
+                    <h2 class="text-gray-400 text-sm font-bold uppercase tracking-[0.2em]">Resumen Financiero</h2>
+                    
+                    <div class="space-y-4">
+                        <div class="flex justify-between items-center p-4 bg-white/5 rounded-2xl border border-white/5 transition-all hover:bg-white/10">
+                            <span class="text-gray-400 font-medium">Costo Material</span>
+                            <span id="resFilament" class="text-white font-mono font-bold">$0.00</span>
+                        </div>
+                        <div class="flex justify-between items-center p-4 bg-white/5 rounded-2xl border border-white/5 transition-all hover:bg-white/10">
+                            <span class="text-gray-400 font-medium">Costo Energía</span>
+                            <span id="resEnergy" class="text-white font-mono font-bold">$0.00</span>
+                        </div>
+                        <div class="flex justify-between items-center p-4 bg-white/5 rounded-2xl border border-white/5 transition-all hover:bg-white/10">
+                            <span class="text-gray-400 font-medium">Mantenimiento</span>
+                            <span id="resMaint" class="text-white font-mono font-bold">$0.00</span>
+                        </div>
+                    </div>
+
+                    <div class="pt-8 border-t border-white/10">
+                        <div class="flex justify-between items-center mb-4">
+                            <span class="text-gray-400 font-bold">GANANCIA (<span id="markupDisplay">30</span>%)</span>
+                            <span id="resProfit" class="text-green-400 font-black text-xl">+$0.00</span>
+                        </div>
+                        <div class="space-y-2">
+                            <p class="text-blue-300/40 text-[10px] font-black uppercase tracking-[0.3em]">Precio de Venta Sugerido</p>
+                            <div class="flex items-baseline gap-2">
+                                <span id="resFinal" class="text-6xl font-black text-white tracking-tighter">$0.00</span>
+                                <span class="text-blue-500 font-bold">MXN</span>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <button onclick="window.print()" class="w-full mt-12 bg-blue-600 hover:bg-blue-500 text-white font-black py-5 rounded-[1.5rem] shadow-xl shadow-blue-900/40 flex items-center justify-center gap-3 transition-all hover:scale-[1.02] active:scale-95 uppercase tracking-widest text-sm">
+                    <i data-lucide="download" class="w-5 h-5"></i>
+                    Generar Cotización
+                </button>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        // Initialize Icons
+        lucide.createIcons();
+
+        function formatMXN(val) {
+            return new Intl.NumberFormat('es-MX', {
+                style: 'currency',
+                currency: 'MXN'
+            }).format(val);
+        }
+
+        function calculate() {
+            const filamentPrice = parseFloat(document.getElementById('filamentPrice').value) || 0;
+            const weightUsed = parseFloat(document.getElementById('weightUsed').value) || 0;
+            const printTime = parseFloat(document.getElementById('printTime').value) || 0;
+            const powerConsumption = parseFloat(document.getElementById('powerConsumption').value) || 0;
+            const maintenanceRate = parseFloat(document.getElementById('maintenanceRate').value) || 0;
+            const markup = parseFloat(document.getElementById('markup').value) || 0;
+            const electricityRate = 2.5; // Monterrey Default CFE
+
+            // Calculations
+            const filamentCost = (filamentPrice / 1000) * weightUsed;
+            const energyCost = (powerConsumption / 1000) * printTime * electricityRate;
+            const maintenanceCost = printTime * maintenanceRate;
+            
+            const totalCost = filamentCost + energyCost + maintenanceCost;
+            const profit = totalCost * (markup / 100);
+            const finalPrice = totalCost + profit;
+
+            // Update UI
+            document.getElementById('resFilament').innerText = formatMXN(filamentCost);
+            document.getElementById('resEnergy').innerText = formatMXN(energyCost);
+            document.getElementById('resMaint').innerText = formatMXN(maintenanceCost);
+            document.getElementById('resProfit').innerText = '+' + formatMXN(profit);
+            document.getElementById('resFinal').innerText = formatMXN(finalPrice);
+            document.getElementById('markupDisplay').innerText = markup;
+        }
+
+        function resetValues() {
+            document.getElementById('filamentPrice').value = 450;
+            document.getElementById('weightUsed').value = 100;
+            document.getElementById('printTime').value = 5;
+            document.getElementById('powerConsumption').value = 200;
+            document.getElementById('maintenanceRate').value = 5;
+            document.getElementById('markup').value = 30;
+            calculate();
+        }
+
+        // Initial Calculation
+        calculate();
+    </script>
+</body>
+</html>
