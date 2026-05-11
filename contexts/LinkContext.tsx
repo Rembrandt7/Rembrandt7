@@ -4,18 +4,17 @@ import { supabase } from '../services/supabaseClient';
 import { toast } from 'sonner';
 
 const INITIAL_TABS: TabConfig[] = [
-  { id: 'email-gen', label: 'Generador de Email', type: 'system', componentKey: 'Generador de Email', isVisible: true, icon: 'Mail' },
-  { id: 'commands', label: 'Comandos', type: 'system', componentKey: 'Comandos', isVisible: true, icon: 'Terminal' },
-  { id: 'database', label: 'Base de Datos', type: 'system', componentKey: 'Base de Datos', isVisible: true, icon: 'Database' },
-  { id: 'useful-tools', label: 'Herramientas Útiles', type: 'system', componentKey: 'Herramientas Útiles', isVisible: true, icon: 'Briefcase' },
-  { id: 'calendar', label: 'Calendario', type: 'system', componentKey: 'Calendario', isVisible: true, icon: 'Calendar' },
-  { id: 'credenciales', label: 'Credenciales', type: 'system', componentKey: 'Credenciales', isVisible: true, icon: 'Lock' },
-  { id: 'dashboard', label: 'Noticias', type: 'system', componentKey: 'Dashboard', isVisible: true, icon: 'LayoutDashboard' },
-  { id: 'finanzas', label: 'Finanzas', type: 'system', componentKey: 'Finanzas', isVisible: true, icon: 'TrendingUp' },
-  { id: 'notas', label: 'Notas', type: 'system', componentKey: 'Notas', isVisible: true, icon: 'Edit' },
-  { id: 'nutricion', label: 'Nutrición', type: 'system', componentKey: 'Nutricion', isVisible: true, icon: 'Heart' },
-  { id: 'video-gen', label: 'Generador de Video', type: 'system', componentKey: 'Generador de Video', isVisible: true, icon: 'Video' },
-  { id: '3d-print', label: 'Impresión 3D', type: 'system', componentKey: 'Impresión 3D', isVisible: true, icon: 'Box' },
+    { id: 'email-gen', label: 'Email', type: 'system', componentKey: 'Generador de Email', isVisible: true, icon: 'Mail' },
+    { id: 'commands', label: 'Comandos', type: 'system', componentKey: 'Comandos', isVisible: true, icon: 'Terminal' },
+    { id: 'database', label: 'Base de Datos', type: 'system', componentKey: 'Base de Datos', isVisible: true, icon: 'Database' },
+    { id: 'useful-tools', label: 'Herramientas Útiles', type: 'system', componentKey: 'Herramientas Útiles', isVisible: true, icon: 'Briefcase' },
+    { id: 'calendar', label: 'Calendario', type: 'system', componentKey: 'Calendario', isVisible: true, icon: 'Calendar' },
+    { id: 'credenciales', label: 'Credenciales', type: 'system', componentKey: 'Credenciales', isVisible: true, icon: 'Lock' },
+    { id: 'finanzas', label: 'Finanzas', type: 'system', componentKey: 'Finanzas', isVisible: true, icon: 'TrendingUp' },
+    { id: 'notas', label: 'Notas', type: 'system', componentKey: 'Notas', isVisible: true, icon: 'Edit' },
+    { id: 'nutricion', label: 'Nutrición', type: 'system', componentKey: 'Nutricion', isVisible: true, icon: 'Heart' },
+    { id: 'video-gen', label: 'Video', type: 'system', componentKey: 'Generador de Video', isVisible: true, icon: 'Video' },
+    { id: '3d-print', label: 'Impresión 3D', type: 'system', componentKey: 'Impresión 3D', isVisible: true, icon: 'Box' },
 ];
 
 const INITIAL_CONFIG: AppConfig = {

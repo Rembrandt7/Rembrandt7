@@ -171,14 +171,14 @@ const CustomIcon = ({ type, src, index = 0 }: { type: keyof typeof ICONS, src?: 
 };
 
 const GroupCard = ({ group, className }: { group: typeof groups[0], className?: string }) => (
-  <div className={`p-5 rounded-2xl border ${group.color} transition-all ${className}`}>
-    <div className="flex items-center justify-between mb-6">
-      <h3 className="font-bold text-lg text-white flex items-center gap-2 uppercase tracking-tighter">
+  <div className={`p-4 rounded-2xl border ${group.color} transition-all ${className}`}>
+    <div className="flex items-center justify-between mb-4">
+      <h3 className="font-bold text-sm text-white flex items-center gap-2 uppercase tracking-tighter">
         {group.title}
-        <div className="h-px flex-1 bg-white/10 min-w-[20px] ml-4" />
+        <div className="h-px flex-1 bg-white/10 min-w-[10px] ml-4" />
       </h3>
     </div>
-    <div className="grid grid-cols-2 sm:grid-cols-4 md:grid-cols-6 lg:grid-cols-8 xl:grid-cols-10 gap-4">
+    <div className="grid grid-cols-3 sm:grid-cols-5 md:grid-cols-6 lg:grid-cols-8 xl:grid-cols-10 gap-2">
       {group.items.map((item, iIdx) => (
         <motion.a
           key={iIdx}
@@ -186,14 +186,14 @@ const GroupCard = ({ group, className }: { group: typeof groups[0], className?: 
           target="_blank"
           rel="noopener noreferrer"
           whileHover={{ scale: 1.05, backgroundColor: 'rgba(255,255,255,0.05)' }}
-          className="flex flex-col items-center p-3 bg-white/5 border border-white/5 rounded-2xl group transition-all text-center h-full relative overflow-hidden"
+          className="flex flex-col items-center p-1.5 bg-white/5 border border-white/5 rounded-xl group transition-all text-center relative overflow-hidden"
         >
           <CustomIcon type={item.type as any} index={item.index} />
-          <span className="text-[10px] font-bold text-gray-400 group-hover:text-white uppercase tracking-wider line-clamp-2 mt-1 px-1">
+          <span className="text-[9px] font-bold text-gray-400 group-hover:text-white uppercase tracking-tight line-clamp-1 mt-1 px-0.5">
             {item.name}
           </span>
-          <div className="absolute top-2 right-2 opacity-0 group-hover:opacity-100 transition-opacity">
-            <ExternalLink size={10} className="text-blue-400" />
+          <div className="absolute top-1 right-1 opacity-0 group-hover:opacity-100 transition-opacity">
+            <ExternalLink size={8} className="text-blue-400" />
           </div>
         </motion.a>
       ))}

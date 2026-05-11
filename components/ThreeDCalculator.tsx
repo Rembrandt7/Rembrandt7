@@ -251,7 +251,9 @@ const ThreeDCalculator: React.FC = () => {
                         {myFilaments.length > 0 && (
                           <optgroup label="En mi Stock">
                              {myFilaments.map(f => (
-                               <option key={f.id} value={`stock:${f.id}`}>{f.material} - {f.customName || f.color}</option>
+                               <option key={f.id} value={`stock:${f.id}`}>
+                                 📦 {f.material} {f.customName ? `- ${f.customName}` : `(${f.color})`}
+                               </option>
                              ))}
                           </optgroup>
                         )}
@@ -379,18 +381,18 @@ const ThreeDCalculator: React.FC = () => {
                              <button onClick={() => { const n = printQueue.filter(i => i.id !== item.id); setPrintQueue(n); syncData(n, myFilaments); }} className="p-1.5 text-rose-500 hover:bg-rose-500/10 rounded-lg"><Trash2 size={16}/></button>
                           </div>
                        </div>
-                       {item.material && (
-                         <div className="flex items-center justify-between pt-1 border-t border-white/5">
-                            <div className="flex gap-2">
-                               <span className="text-[9px] px-2 py-0.5 bg-blue-500/10 text-blue-400 rounded-full font-black uppercase flex items-center gap-1">
-                                  {stockRef?.color && <div className="w-1.5 h-1.5 rounded-full" style={{ backgroundColor: stockRef.color }}></div>}
-                                  {item.material}
-                               </span>
-                               <span className="text-[9px] px-2 py-0.5 bg-orange-500/10 text-orange-400 rounded-full font-black uppercase">{item.time}</span>
-                            </div>
-                            <span className="text-sm font-black text-white">{formatCurrency(item.cost || 0)}</span>
-                         </div>
-                       )}
+                        {item.material && (
+                          <div className="flex items-center justify-between pt-1 border-t border-white/5">
+                             <div className="flex gap-2">
+                                <span className="text-[9px] px-2 py-0.5 bg-blue-500/10 text-blue-400 rounded-full font-black uppercase flex items-center gap-1">
+                                   {stockRef?.color && <div className="w-1.5 h-1.5 rounded-full" style={{ backgroundColor: stockRef.color }}></div>}
+                                   {item.material} {stockRef?.customName ? `- ${stockRef.customName}` : ''}
+                                </span>
+                                <span className="text-[9px] px-2 py-0.5 bg-orange-500/10 text-orange-400 rounded-full font-black uppercase">{item.time}</span>
+                             </div>
+                             <span className="text-sm font-black text-white">{formatCurrency(item.cost || 0)}</span>
+                          </div>
+                        )}
                     </div>
                   );
                 })}
