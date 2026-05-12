@@ -76,18 +76,18 @@ const ThreeDCalculator: React.FC = () => {
     const power = MATERIAL_POWER[material];
     const eCost = (power / 1000) * totalHours * 2.5;
     const mCost = totalHours * 5;
-    const baseCost = fCost + eCost + mCost + laborCostManual;
+    const totalProductionCost = fCost + eCost + mCost + laborCostManual;
     
-    const friendPrice = baseCost * 1.15; 
-    const commercialPrice = baseCost * (1 + markup / 100);
-    const profit = commercialPrice - baseCost;
+    const friendPrice = totalProductionCost * 1.15; 
+    const commercialPrice = totalProductionCost * (1 + markup / 100);
+    const profit = commercialPrice - totalProductionCost;
 
     setResults({
       filamentCost: fCost,
       energyCost: eCost,
       laborCost: laborCostManual,
       maintenanceCost: mCost,
-      baseCost,
+      baseCost: fCost + eCost,
       friendPrice,
       commercialPrice,
       profit,
@@ -373,16 +373,19 @@ const ThreeDCalculator: React.FC = () => {
                   </div>
                   <button onClick={() => handleCopy(results.friendPrice, 'amigo')} className="p-3 bg-green-500/10 hover:bg-green-500/20 text-green-400 rounded-xl transition-all"><Copy size={18}/></button>
                </div>
-               <div className="flex-[1.2] p-4 bg-blue-600/10 border border-blue-500/20 rounded-2xl flex items-center justify-between">
-                  <div>
-                     <p className="text-[10px] font-black text-blue-400 uppercase tracking-widest mb-1">Comercial</p>
-                     <div className="flex items-center gap-2">
-                        <span className="text-3xl font-black text-white">{formatCurrency(results.commercialPrice)}</span>
-                        <span className="text-xs text-green-400 font-black">+{formatCurrency(results.profit)}</span>
-                     </div>
-                  </div>
-                  <button onClick={() => handleCopy(results.commercialPrice, 'comercial')} className="px-4 py-3 bg-blue-600 hover:bg-blue-500 text-white rounded-xl text-xs font-black uppercase tracking-widest transition-all"><Copy size={18}/></button>
-               </div>
+               <div className="flex-[1.2] p-4 bg-blue-600/10 border border-blue-500/20 rounded-2xl flex items-center justify-between relative overflow-hidden">
+                   <div className="absolute top-0 right-0 p-1 px-2 bg-blue-500/20 text-[8px] font-black text-blue-300 rounded-bl-lg uppercase tracking-tighter">
+                      Incluye Mantenimiento y Labor
+                   </div>
+                   <div>
+                      <p className="text-[10px] font-black text-blue-400 uppercase tracking-widest mb-1">Comercial</p>
+                      <div className="flex items-center gap-2">
+                         <span className="text-3xl font-black text-white">{formatCurrency(results.commercialPrice)}</span>
+                         <span className="text-xs text-green-400 font-black">+{formatCurrency(results.profit)}</span>
+                      </div>
+                   </div>
+                   <button onClick={() => handleCopy(results.commercialPrice, 'comercial')} className="px-4 py-3 bg-blue-600 hover:bg-blue-500 text-white rounded-xl text-xs font-black uppercase tracking-widest transition-all"><Copy size={18}/></button>
+                </div>
             </div>
           </div>
         </div>
