@@ -110,6 +110,30 @@ const ThreeDCalculator: React.FC = () => {
     } finally { setIsSaving(false); }
   };
 
+  const proposedName = useMemo(() => {
+    const hours = printHours;
+    const mins = printMinutes;
+    let timeStr = "";
+    if (hours > 0) {
+      timeStr = `${hours}h`;
+    } else {
+      timeStr = `${mins}m`;
+    }
+    
+    const matShort = material;
+    const cleanName = pieceName.trim() || 'Pieza';
+    return `${timeStr} ${matShort} ${cleanName}`;
+  }, [printHours, printMinutes, material, pieceName]);
+
+  const copyProposedName = () => {
+    navigator.clipboard.writeText(proposedName);
+    toast.success('Nombre copiado: ' + proposedName);
+  };
+
+  const applyProposedName = () => {
+    setPieceName(proposedName);
+  };
+
   const loadData = async () => {
     setIsLoading(true);
     try {
@@ -223,7 +247,25 @@ const ThreeDCalculator: React.FC = () => {
                <div className="flex gap-4">
                   <div className="flex-[2] space-y-1.5">
                      <label className="text-[10px] font-black text-gray-500 uppercase tracking-widest ml-1">Nombre Pieza</label>
-                     <input type="text" value={pieceName} onChange={e => setPieceName(e.target.value)} placeholder="Ej: Casco Iron Man..." className="w-full bg-white/5 border border-white/10 rounded-xl px-4 py-2 text-white text-sm focus:outline-none focus:ring-1 focus:ring-blue-500/50 h-[44px] font-bold" />
+                     <div className="relative group">
+                        <input type="text" value={pieceName} onChange={e => setPieceName(e.target.value)} placeholder="Ej: Casco Iron Man..." className="w-full bg-white/5 border border-white/10 rounded-xl px-4 py-2 text-white text-sm focus:outline-none focus:ring-1 focus:ring-blue-500/50 h-[44px] font-bold" />
+                        
+                        {(pieceName || printHours > 0 || printMinutes > 0) && (
+                          <div className="absolute -bottom-10 left-0 right-0 flex items-center justify-between px-3 py-2 bg-slate-900 border border-blue-500/30 rounded-lg shadow-xl z-10 animate-in fade-in slide-in-from-top-2 opacity-0 group-hover:opacity-100 transition-opacity pointer-events-none group-hover:pointer-events-auto">
+                             <p className="text-[10px] font-black text-blue-400 uppercase tracking-tighter truncate max-w-[70%]">
+                               Sugerencia: <span className="text-white italic">{proposedName}</span>
+                             </p>
+                             <div className="flex gap-1">
+                               <button onClick={applyProposedName} className="p-1 hover:bg-blue-500/20 text-blue-400 rounded transition-all" title="Aplicar">
+                                  <PlusCircle size={14} />
+                               </button>
+                               <button onClick={copyProposedName} className="p-1 hover:bg-emerald-500/20 text-emerald-400 rounded transition-all" title="Copiar">
+                                  <Copy size={14} />
+                               </button>
+                             </div>
+                          </div>
+                        )}
+                     </div>
                   </div>
                   <div className="flex-1 space-y-1.5">
                      <label className="text-[10px] font-black text-gray-500 uppercase tracking-widest ml-1">Material / Stock</label>
