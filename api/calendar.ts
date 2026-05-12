@@ -125,7 +125,11 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
       }
     });
 
-    res.json(Array.from(merged.values()));
+    const syncedItems = Array.from(merged.values());
+    const syncedEvents = syncedItems.filter(item => !item.id.toString().startsWith('token-'));
+    const syncedTokens = localTokens; // We don't really modify tokens in this sync yet, but we keep them for consistency
+
+    res.json({ events: syncedEvents, tokens: syncedTokens });
 
   } catch (error: any) {
     console.error("Calendar sync error:", error);

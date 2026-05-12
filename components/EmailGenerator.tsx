@@ -9,7 +9,7 @@ import SmartTextarea from './common/SmartTextarea';
 import { SUPABASE_CONFIG } from '../utils/constants';
 import { useLinks } from '../contexts/LinkContext';
 import { cleanJsonResponse } from '../utils/jsonUtils';
-import { History, Trash2, Mail, MessageSquare, Star, Sparkles, Send, Check } from 'lucide-react';
+import { History, Trash2, Mail, MessageSquare, Star, Sparkles, Send, Check, RefreshCw, Pencil } from 'lucide-react';
 import { motion, AnimatePresence } from 'motion/react';
 
 type Tone = 'Profesional' | 'Casual';
@@ -21,6 +21,7 @@ interface GeneratedContent {
   emailSubject: string;
   emailBody: string;
   whatsappMessage: string;
+  improvedIdea?: string;
 }
 
 interface EmailGeneratorProps {
@@ -124,12 +125,30 @@ const EmailGenerator: React.FC<EmailGeneratorProps> = ({ attachedImages, onAttac
     const [recipientEmailTld, setRecipientEmailTld] = useState(emailTlds[0]);
 
     const [isLoading, setIsLoading] = useState(false);
-    const [isImproving, setIsImproving] = useState<boolean>(false);
-    const [selectedImproveStyles, setSelectedImproveStyles] = useState<string[]>(['email', 'whatsapp', 'direct']);
     const [error, setError] = useState<string | null>(null);
     const [generatedContent, setGeneratedContent] = useState<GeneratedContent | null>(null);
     const [copied, setCopied] = useState<CopiedState>(null);
     const [isDraggingOver, setIsDraggingOver] = useState(false);
+
+
+    // Context Menu State
+    const [contextMenu, setContextMenu] = useState<{
+        visible: boolean;
+        x: number;
+        y: number;
+        selectedText: string;
+        targetType: 'email' | 'whatsapp' | 'improvedIdea';
+        field: 'emailBody' | 'emailSubject' | 'whatsappMessage' | 'improvedIdea';
+    }>({
+        visible: false,
+        x: 0,
+        y: 0,
+        selectedText: '',
+        targetType: 'email',
+        field: 'emailBody'
+    });
+
+    const [isProcessingSelection, setIsProcessingSelection] = useState(false);
 
     // --- Fetch Contacts & Fraccionamientos from Supabase ---
     const fetchContacts = useCallback(async () => {
@@ -318,7 +337,6 @@ const EmailGenerator: React.FC<EmailGeneratorProps> = ({ attachedImages, onAttac
         const domainPart = recipientEmailDomain === 'Personalizado' ? `@${customDomain}` : recipientEmailDomain;
         return `${recipientEmailUser}${domainPart}${recipientEmailTld}`;
     }, [recipientEmailUser, recipientEmailDomain, customDomain, recipientEmailTld]);
-
     const handleGenerate = useCallback(async () => {
         if (!idea.trim() && !previousEmail.trim()) {
             setError('Por favor, introduce la idea principal del mensaje o pega un Correo Anterior para responder.');
@@ -342,27 +360,18 @@ const EmailGenerator: React.FC<EmailGeneratorProps> = ({ attachedImages, onAttac
                 }
             });
             
-            // --- Determine Context and Greeting ---
-            // Re-fetch selected contact from state just in case, though we used inputs
             const idx = parseInt(selectedContactIndex, 10);
             const selectedContact = (!isNaN(idx) && idx >= 0 && idx < contacts.length) ? contacts[idx] : undefined;
             
-            // Use state values to allow user editing after auto-population
             const dataName = recipientName;
             const dataTitle = recipientTitle;
             const dataGender = recipientGender === 'H' ? 'Hombre' : 'Mujer';
-            
-            // Apodo is not in UI state, fetch from DB if contact selected
             const dataApodo = selectedContact ? getDBValue(selectedContact, ['apodo', 'nickname', 'alias']) : null;
             
-            // Gender Logic for Grammar
             let isMale = true;
             if (dataGender.toLowerCase().startsWith('m') && !dataGender.toLowerCase().includes('masc')) isMale = false;
 
-            // Greeting Logic
             let greetingInstruction = "";
-            let nameForContext = dataName || "";
-
             if (selectedContact && dataApodo && String(dataApodo).trim() !== '') {
                 greetingInstruction = `El destinatario tiene el apodo "${dataApodo}". ÚSALO en el saludo (ej. "Hola ${dataApodo}").`;
             } else if (dataName && String(dataName).trim()) {
@@ -370,10 +379,8 @@ const EmailGenerator: React.FC<EmailGeneratorProps> = ({ attachedImages, onAttac
                 if(dataTitle) greetingInstruction += ` Incluye el título "${dataTitle}" si es formal.`;
             } else {
                 greetingInstruction = "No hay nombre específico, usa un saludo general.";
-                nameForContext = "Cliente";
             }
 
-            // Time Greeting
             const hour = new Date().getHours();
             let timeGreeting = "Hola";
             if (hour >= 5 && hour < 12) timeGreeting = "Buenos días";
@@ -384,33 +391,32 @@ const EmailGenerator: React.FC<EmailGeneratorProps> = ({ attachedImages, onAttac
                 ? "Destinatario HOMBRE (gramática masculina: 'invitarlo', 'bienvenido')." 
                 : "Destinatario MUJER (gramática femenina: 'invitarla', 'bienvenida').";
 
-            const systemInstruction = `Eres un experto en comunicación corporativa y relaciones públicas de alto nivel.
+            const memoryContext = `
+            ${config.memoria_ia?.estilo ? `- ESTILO DE REDACCIÓN: ${config.memoria_ia.estilo}` : ''}
+            ${config.memoria_ia?.laboral ? `- CONTEXTO LABORAL: ${config.memoria_ia.laboral}` : ''}`;
+
+            const systemInstruction = `Eres un experto en comunicación corporativa y relaciones públicas.
             
             **ADN DEL USUARIO:**
-            ${config.memoria_ia?.estilo ? `- ESTILO DE REDACCIÓN: ${config.memoria_ia.estilo}` : ''}
+            ${memoryContext}
 
             **CONTEXTO SITUACIONAL:**
             ${previousEmail.trim() ? `El usuario ha recibido un mensaje anterior que dice:\n"""\n${previousEmail}\n"""\n\n` : ''}
 
             **REGLAS CRÍTICAS:**
-            1. Saludo inicial: Profesional y acorde a la hora del día (${timeGreeting}).
+            1. Saludo inicial: Profesional (${timeGreeting}).
             2. Nombre/Trato: ${greetingInstruction}
             3. Gramática: ${genderContextInstruction}
-            4. Objetivo Principal: Tu objetivo es redactar un mensaje IMPECABLE, PROFESIONAL y DIRECTO basado estrictamente en la idea proporcionada por el usuario. 
-            5. Formato Email: Usa HTML básico (<b>, <i>, <br>). Firma siempre como "<b>Arq. Rembrandt Blanco Arrambide</b>".
-            6. Formato WhatsApp: Sin firma, directo, amable y con emojis profesionales si el tono es casual, pero siempre manteniendo la seriedad corporativa.
-            7. Idioma: Español.
-            8. Proyecto: Si se menciona un proyecto o fraccionamiento, asegúrate de que esté correctamente integrado en el contexto del mensaje.`;
+            4. Objetivo: Generar 3 formatos a la vez:
+               - Un CORREO formal e impecable (HTML básico). Firma: "<b>Arq. Rembrandt Blanco Arrambide</b>".
+               - Un WHATSAPP directo con emojis.
+               - Una MEJORA DIRECTA del borrador original (más claro y pulido).
+            5. Proyecto: "${project || 'General'}".`;
 
-            const userPrompt = `Genera los mensajes de comunicación profesional considerando lo siguiente:
-            - Tono: "${tone}"
-            - Longitud: "${messageLength}"
-            - Proyecto: "${project || 'General'}"
-            ${attachedImages.length > 0 ? `- Adjuntos: Se han incluido ${attachedImages.length} imágenes.` : ''}
-            
-            Idea / Inspiración adicional: "${idea}"
-            
-            Recuerda: El objetivo final es comunicar el mensaje de forma clara, profesional y efectiva.`;
+            const userPrompt = `Idea / Inspiración: "${idea}"
+            Tono: "${tone}"
+            Longitud: "${messageLength}"
+            ${attachedImages.length > 0 ? `- Adjuntos: ${attachedImages.length} imágenes.` : ''}`;
 
             const parts: any[] = [];
             if (attachedImages.length > 0) {
@@ -431,119 +437,6 @@ const EmailGenerator: React.FC<EmailGeneratorProps> = ({ attachedImages, onAttac
                     responseSchema: {
                         type: Type.OBJECT,
                         properties: {
-                            emailSubject: { type: Type.STRING, description: "Asunto del correo" },
-                            emailBody: { type: Type.STRING, description: "Cuerpo del correo en HTML" },
-                            whatsappMessage: { type: Type.STRING, description: "Mensaje de WhatsApp" }
-                        },
-                        required: ["emailSubject", "emailBody", "whatsappMessage"],
-                    },
-                },
-            });
-
-            const jsonString = response.text.trim();
-            try {
-                const parsedContent = JSON.parse(cleanJsonResponse(jsonString)) as GeneratedContent;
-                setGeneratedContent(parsedContent);
-
-                // Save to history
-                const historyItem = {
-                    id: Date.now().toString(),
-                    type: 'email' as const,
-                    original: idea,
-                    result: JSON.stringify(parsedContent),
-                    timestamp: Date.now()
-                };
-
-                updateConfig(prev => ({
-                    ...prev,
-                    aiHistory: [historyItem, ...(prev.aiHistory || [])].slice(0, 50)
-                }));
-            } catch (parseError) {
-                console.error("Error parsing JSON response:", jsonString);
-                throw new Error("La respuesta de la IA no fue un JSON válido. Intenta de nuevo.");
-            }
-
-        } catch (e: any) {
-            console.error(e);
-            let msg = e.message || String(e);
-            if (msg.includes('429') || msg.includes('RESOURCE_EXHAUSTED')) {
-                msg = "⚠️ Has excedido tu cuota de API (Error 429). El modelo 'gemini-3-flash' está saturado o tu límite gratuito se agotó. Intenta de nuevo en unos minutos.";
-            } else if (msg.includes('503')) {
-                msg = "⚠️ El servicio de IA está temporalmente no disponible (Error 503). Intenta de nuevo.";
-            }
-            setError(msg);
-        } finally {
-            setIsLoading(false);
-        }
-    }, [idea, previousEmail, tone, messageLength, attachedImages, recipientTitle, recipientName, recipientGender, project, selectedContactIndex, contacts]);
-
-    const handleImproveWithStyle = useCallback(async () => {
-        if (!idea.trim() && !previousEmail.trim()) {
-            setError('Introduce un borrador o idea para mejorar.');
-            return;
-        }
-
-        if (selectedImproveStyles.length === 0) {
-            setError('Selecciona al menos un estilo para mejorar.');
-            return;
-        }
-
-        setIsImproving(true);
-        setError(null);
-
-        try {
-            const apiKey = googleApiConfig?.apiKey || process.env.API_KEY || process.env.GEMINI_API_KEY;
-            if (!apiKey) throw new Error("API Key no configurada.");
-
-            const ai = new GoogleGenAI({ 
-                apiKey,
-                httpOptions: { baseUrl: `${window.location.origin}/api/proxy/google` }
-            });
-
-            // Context from existing fields
-            const dataName = recipientName;
-            const dataTitle = recipientTitle;
-            const hour = new Date().getHours();
-            let timeGreeting = "Hola";
-            if (hour >= 5 && hour < 12) timeGreeting = "Buenos días";
-            else if (hour >= 12 && hour < 20) timeGreeting = "Buenas tardes";
-            else timeGreeting = "Buenas noches";
-
-            const memoryContext = `
-            ${config.memoria_ia?.estilo ? `- ESTILO DE REDACCIÓN: ${config.memoria_ia.estilo}` : ''}
-            ${config.memoria_ia?.laboral ? `- CONTEXTO LABORAL: ${config.memoria_ia.laboral}` : ''}`;
-
-            let instructions = [];
-            if (selectedImproveStyles.includes('email')) {
-                instructions.push(`- CORREO: Genera un correo profesional con HTML básico. Firma: "<b>Arq. Rembrandt Blanco Arrambide</b>". Destinatario: ${dataTitle} ${dataName}. Saludo: ${timeGreeting}.`);
-            }
-            if (selectedImproveStyles.includes('whatsapp')) {
-                instructions.push(`- WHATSAPP: Genera un mensaje directo y amable con emojis. Destinatario: ${dataName}.`);
-            }
-            if (selectedImproveStyles.includes('direct')) {
-                instructions.push(`- MEJORA DIRECTA: Mejora el texto original corrigiendo ortografía, gramática y claridad, manteniendo el formato de idea pero más pulido.`);
-            }
-
-            const systemInstruction = `Eres un experto en comunicación corporativa.
-            ${memoryContext}
-            Genera las versiones solicitadas basándote en la idea del usuario:
-            ${instructions.join('\n')}
-            
-            Responde ÚNICAMENTE con JSON según el esquema, dejando campos vacíos "" si no fueron seleccionados.`;
-
-            const userPrompt = `Texto/Idea actual: "${idea}"
-            ${previousEmail.trim() ? `Contexto (mensaje anterior): "${previousEmail}"` : ''}
-            Proyecto: "${project || 'General'}"`;
-
-            const response = await ai.models.generateContent({
-                model: 'gemini-2.5-flash',
-                contents: { parts: [{ text: userPrompt }] },
-                config: {
-                    systemInstruction,
-                    responseMimeType: 'application/json',
-                    responseSchema: {
-                        type: Type.OBJECT,
-                        properties: {
                             emailSubject: { type: Type.STRING },
                             emailBody: { type: Type.STRING },
                             whatsappMessage: { type: Type.STRING },
@@ -554,33 +447,29 @@ const EmailGenerator: React.FC<EmailGeneratorProps> = ({ attachedImages, onAttac
                 },
             });
 
-            const parsed = JSON.parse(cleanJsonResponse(response.text.trim()));
-            setGeneratedContent(parsed);
-            
-            // Add to history
+            const parsedContent = JSON.parse(cleanJsonResponse(response.text.trim())) as GeneratedContent & { improvedIdea: string };
+            setGeneratedContent(parsedContent);
+
             const historyItem = {
                 id: Date.now().toString(),
                 type: 'email' as const,
-                original: `[Mejora Lote: ${selectedImproveStyles.join(', ')}] ${idea}`,
-                result: JSON.stringify(parsed),
+                original: idea,
+                result: JSON.stringify(parsedContent),
                 timestamp: Date.now()
             };
-            updateConfig(prev => ({ ...prev, aiHistory: [historyItem, ...(prev.aiHistory || [])].slice(0, 50) }));
+
+            updateConfig(prev => ({
+                ...prev,
+                aiHistory: [historyItem, ...(prev.aiHistory || [])].slice(0, 50)
+            }));
 
         } catch (e: any) {
-            setError(e.message || "Error al mejorar el mensaje.");
+            console.error(e);
+            setError(e.message || "Error al generar los mensajes.");
         } finally {
-            setIsImproving(false);
+            setIsLoading(false);
         }
-    }, [idea, previousEmail, recipientName, recipientTitle, project, googleApiConfig, config, updateConfig, selectedImproveStyles]);
-
-    const toggleStyle = (style: string) => {
-        setSelectedImproveStyles(prev => 
-            prev.includes(style) 
-                ? prev.filter(s => s !== style) 
-                : [...prev, style]
-        );
-    };
+    }, [idea, previousEmail, tone, messageLength, attachedImages, recipientTitle, recipientName, recipientGender, project, selectedContactIndex, contacts, googleApiConfig, config, updateConfig]);
   
     const handleCopyToClipboard = async (text: string, type: CopiedState) => {
         if (type === 'email' && generatedContent?.emailBody) {
@@ -706,6 +595,72 @@ const EmailGenerator: React.FC<EmailGeneratorProps> = ({ attachedImages, onAttac
             aiHistory: (prev.aiHistory || []).filter(h => h.id !== id)
         }));
     };
+
+    const handleContextMenu = (e: React.MouseEvent, type: 'email' | 'whatsapp' | 'improvedIdea', field: 'emailBody' | 'emailSubject' | 'whatsappMessage' | 'improvedIdea') => {
+        const selection = window.getSelection()?.toString().trim();
+        if (selection) {
+            e.preventDefault();
+            setContextMenu({
+                visible: true,
+                x: e.clientX,
+                y: e.clientY,
+                selectedText: selection,
+                targetType: type,
+                field: field
+            });
+        }
+    };
+
+    const handleSelectionAction = async (action: 'variation' | 'delete' | 'replace' | 'regenerate', payload?: string) => {
+        if (!generatedContent) return;
+
+        setIsProcessingSelection(true);
+        setContextMenu(prev => ({ ...prev, visible: false }));
+
+        try {
+            const apiKey = googleApiConfig?.apiKey || config.googleApiConfig?.apiKey;
+            if (!apiKey) throw new Error("API Key no configurada");
+
+            const ai = new GoogleGenAI({ 
+                apiKey,
+                baseUrl: `${window.location.origin}/api/proxy/google`
+            });
+            const model = ai.getGenerativeModel({ model: "gemini-2.5-flash" });
+
+            const currentText = generatedContent[contextMenu.field];
+            let prompt = "";
+
+            if (action === 'variation') {
+                prompt = `Tengo el siguiente mensaje:\n"${currentText}"\n\nHe seleccionado esta parte: "${contextMenu.selectedText}".\nDame una opción alternativa para esa selección que mantenga el tono del resto del mensaje. Responde ÚNICAMENTE con el mensaje completo actualizado. No incluyas explicaciones.`;
+            } else if (action === 'delete') {
+                prompt = `Tengo el siguiente mensaje:\n"${currentText}"\n\nBorra esta parte: "${contextMenu.selectedText}" y ajusta el resto del texto para que no se note el corte y fluya bien. Responde ÚNICAMENTE con el mensaje completo actualizado. No incluyas explicaciones.`;
+            } else if (action === 'replace') {
+                prompt = `Tengo el siguiente mensaje:\n"${currentText}"\n\nQuiero cambiar esta parte: "${contextMenu.selectedText}" por algo que incluya o se refiera a "${payload}". Ajusta el mensaje para que quede perfecto. Responde ÚNICAMENTE con el mensaje completo actualizado. No incluyas explicaciones.`;
+            } else if (action === 'regenerate') {
+                // For regenerate, we ignore the selection and re-run the prompt for this block
+                prompt = `Genera nuevamente este mensaje manteniendo la misma idea pero con diferentes palabras: "${currentText}". Responde ÚNICAMENTE con el nuevo mensaje.`;
+            }
+
+            const result = await model.generateContent(prompt);
+            const newText = result.response.text().trim().replace(/^"|"$/g, ''); // Remove quotes if any
+
+            setGeneratedContent(prev => prev ? ({
+                ...prev,
+                [contextMenu.field]: newText
+            }) : null);
+
+        } catch (err: any) {
+            setError("Error al modificar el texto: " + err.message);
+        } finally {
+            setIsProcessingSelection(false);
+        }
+    };
+
+    useEffect(() => {
+        const handleClick = () => setContextMenu(prev => ({ ...prev, visible: false }));
+        window.addEventListener('click', handleClick);
+        return () => window.removeEventListener('click', handleClick);
+    }, []);
 
     const clearHistory = () => {
         if (window.confirm('¿Borrar todo el historial de correos?')) {
@@ -972,90 +927,21 @@ const EmailGenerator: React.FC<EmailGeneratorProps> = ({ attachedImages, onAttac
                 </div>
 
                 <div className="flex flex-col gap-3">
-                    <button onClick={handleGenerate} disabled={isLoading || !!isImproving}
-                        className="w-full px-6 py-3 font-semibold text-white bg-purple-600 rounded-md hover:bg-purple-700 disabled:bg-gray-700 disabled:cursor-not-allowed transition-all flex items-center justify-center gap-2 shadow-lg shadow-purple-900/20"
+                    <button onClick={handleGenerate} disabled={isLoading}
+                        className="w-full px-6 py-4 font-bold text-white bg-gradient-to-r from-purple-600 to-indigo-600 rounded-xl hover:from-purple-700 hover:to-indigo-700 disabled:from-gray-700 disabled:to-gray-800 disabled:cursor-not-allowed transition-all flex items-center justify-center gap-3 shadow-xl shadow-purple-900/20 active:scale-[0.98]"
                     >
                         {isLoading ? (
                             <>
-                                <Spinner size="5" />
-                                <span>Generando...</span>
+                                <Spinner size="6" />
+                                <span className="tracking-wide">Generando Mensajes...</span>
                             </>
                         ) : (
                             <>
-                                <Send size={18} />
-                                <span>Generar Mensajes (Ambos)</span>
+                                <Sparkles size={20} className="text-purple-200" />
+                                <span className="tracking-wide text-lg">GENERAR</span>
                             </>
                         )}
                     </button>
-
-                    <button 
-                        onClick={handleImproveWithStyle} 
-                        disabled={isLoading || isImproving || !idea.trim() || selectedImproveStyles.length === 0}
-                        className="w-full px-6 py-3 font-semibold text-white bg-indigo-600 rounded-md hover:bg-indigo-700 disabled:bg-gray-700 disabled:cursor-not-allowed transition-all flex items-center justify-center gap-2 shadow-lg shadow-indigo-900/20"
-                    >
-                        {isImproving ? (
-                            <>
-                                <Spinner size="5" />
-                                <span>Mejorando...</span>
-                            </>
-                        ) : (
-                            <>
-                                <Sparkles size={18} />
-                                <span>Mejorar con IA ({selectedImproveStyles.length})</span>
-                            </>
-                        )}
-                    </button>
-
-                    <div className="grid grid-cols-3 gap-2">
-                        <button 
-                            onClick={() => toggleStyle('email')}
-                            className={`flex flex-col items-center justify-center p-3 rounded-xl border transition-all group relative ${
-                                selectedImproveStyles.includes('email') 
-                                ? 'bg-blue-900/30 border-blue-500 text-blue-100 shadow-[0_0_15px_rgba(59,130,246,0.2)]' 
-                                : 'bg-gray-800 border-gray-700 text-gray-400 opacity-60'
-                            }`}
-                        >
-                            {selectedImproveStyles.includes('email') && (
-                                <div className="absolute top-1 right-1 bg-blue-500 rounded-full p-0.5">
-                                    <Check size={8} className="text-white" />
-                                </div>
-                            )}
-                            <Mail size={18} className={selectedImproveStyles.includes('email') ? 'text-blue-400' : ''} />
-                            <span className="text-[9px] mt-1 font-bold">Correo</span>
-                        </button>
-                        <button 
-                            onClick={() => toggleStyle('whatsapp')}
-                            className={`flex flex-col items-center justify-center p-3 rounded-xl border transition-all group relative ${
-                                selectedImproveStyles.includes('whatsapp') 
-                                ? 'bg-green-900/30 border-green-500 text-green-100 shadow-[0_0_15px_rgba(34,197,94,0.2)]' 
-                                : 'bg-gray-800 border-gray-700 text-gray-400 opacity-60'
-                            }`}
-                        >
-                            {selectedImproveStyles.includes('whatsapp') && (
-                                <div className="absolute top-1 right-1 bg-green-500 rounded-full p-0.5">
-                                    <Check size={8} className="text-white" />
-                                </div>
-                            )}
-                            <MessageSquare size={18} className={selectedImproveStyles.includes('whatsapp') ? 'text-green-400' : ''} />
-                            <span className="text-[9px] mt-1 font-bold">WhatsApp</span>
-                        </button>
-                        <button 
-                            onClick={() => toggleStyle('direct')}
-                            className={`flex flex-col items-center justify-center p-3 rounded-xl border transition-all group relative ${
-                                selectedImproveStyles.includes('direct') 
-                                ? 'bg-purple-900/30 border-purple-500 text-purple-100 shadow-[0_0_15px_rgba(168,85,247,0.2)]' 
-                                : 'bg-gray-800 border-gray-700 text-gray-400 opacity-60'
-                            }`}
-                        >
-                            {selectedImproveStyles.includes('direct') && (
-                                <div className="absolute top-1 right-1 bg-purple-500 rounded-full p-0.5">
-                                    <Check size={8} className="text-white" />
-                                </div>
-                            )}
-                            <Sparkles size={18} className={selectedImproveStyles.includes('direct') ? 'text-purple-400' : ''} />
-                            <span className="text-[9px] mt-1 font-bold">Mejorar</span>
-                        </button>
-                    </div>
                 </div>
             </div>
 
@@ -1092,7 +978,9 @@ const EmailGenerator: React.FC<EmailGeneratorProps> = ({ attachedImages, onAttac
                             <div className="bg-gray-800 p-3 rounded-md space-y-2">
                                 <p className="text-sm"><strong className="text-gray-400">Asunto:</strong> {generatedContent.emailSubject}</p>
                                 <div className="border-t border-gray-700 my-1"></div>
-                                <div className="text-sm leading-relaxed text-gray-200"><MarkdownRenderer content={generatedContent.emailBody} /></div>
+                                <div className="text-sm leading-relaxed text-gray-200" onContextMenu={(e) => handleContextMenu(e, 'email', 'emailBody')}>
+                                    <MarkdownRenderer content={generatedContent.emailBody} />
+                                </div>
                             </div>
                         </div>
 
@@ -1109,7 +997,7 @@ const EmailGenerator: React.FC<EmailGeneratorProps> = ({ attachedImages, onAttac
                                     </IconButton>
                                 </div>
                             </div>
-                             <div className="bg-gray-800 p-3 rounded-md text-sm leading-relaxed text-gray-200">
+                             <div className="bg-gray-800 p-3 rounded-md text-sm leading-relaxed text-gray-200" onContextMenu={(e) => handleContextMenu(e, 'whatsapp', 'whatsappMessage')}>
                                 {generatedContent.whatsappMessage}
                             </div>
                         </div>
@@ -1122,7 +1010,7 @@ const EmailGenerator: React.FC<EmailGeneratorProps> = ({ attachedImages, onAttac
                                     Mejora Directa del Borrador
                                 </h3>
                                 <div className="p-4 bg-gray-800/40 rounded-2xl border border-purple-500/30 shadow-[0_0_20px_rgba(168,85,247,0.1)]">
-                                    <div className="text-sm text-gray-300 leading-relaxed whitespace-pre-wrap italic">
+                                    <div className="text-sm text-gray-300 leading-relaxed whitespace-pre-wrap italic" onContextMenu={(e) => handleContextMenu(e, 'improvedIdea', 'improvedIdea')}>
                                         "{generatedContent.improvedIdea}"
                                     </div>
                                     <button 
@@ -1144,6 +1032,79 @@ const EmailGenerator: React.FC<EmailGeneratorProps> = ({ attachedImages, onAttac
             </div>
         </div>
         {error && <p className="text-red-400 mt-4 text-center bg-red-900/20 p-2 rounded-md font-medium text-sm">{error}</p>}
+
+        {/* AI Processing Overlay */}
+        <AnimatePresence>
+            {isProcessingSelection && (
+                <motion.div 
+                    initial={{ opacity: 0 }}
+                    animate={{ opacity: 1 }}
+                    exit={{ opacity: 0 }}
+                    className="fixed inset-0 bg-black/40 backdrop-blur-[2px] z-[60] flex items-center justify-center"
+                >
+                    <div className="bg-gray-900/90 border border-purple-500/50 p-6 rounded-2xl shadow-2xl flex flex-col items-center gap-4">
+                        <Spinner size="8" />
+                        <p className="text-purple-400 font-bold animate-pulse">Ajustando con IA...</p>
+                    </div>
+                </motion.div>
+            )}
+        </AnimatePresence>
+
+        {/* Context Menu */}
+        <AnimatePresence>
+            {contextMenu.visible && (
+                <motion.div
+                    initial={{ opacity: 0, scale: 0.95, y: -10 }}
+                    animate={{ opacity: 1, scale: 1, y: 0 }}
+                    exit={{ opacity: 0, scale: 0.95, y: -10 }}
+                    style={{ top: contextMenu.y, left: contextMenu.x }}
+                    className="fixed z-[100] bg-gray-900/95 backdrop-blur-xl border border-white/10 rounded-xl shadow-2xl p-1.5 w-64 overflow-hidden"
+                    onClick={(e) => e.stopPropagation()}
+                >
+                    <div className="px-3 py-2 border-b border-white/5 mb-1">
+                        <p className="text-[10px] font-black text-gray-500 uppercase tracking-widest">IA Editor de Selección</p>
+                        <p className="text-xs text-purple-400 truncate mt-0.5 italic">"{contextMenu.selectedText}"</p>
+                    </div>
+                    
+                    <button 
+                        onClick={() => handleSelectionAction('variation')}
+                        className="w-full flex items-center gap-3 px-3 py-2.5 text-sm text-gray-300 hover:bg-purple-600/20 hover:text-purple-300 rounded-lg transition-all group"
+                    >
+                        <Sparkles size={16} className="text-purple-500 group-hover:scale-110 transition-transform" />
+                        Pedir otra opción
+                    </button>
+                    
+                    <button 
+                        onClick={() => {
+                            const newWord = window.prompt("¿Qué palabra o concepto quieres integrar?", "");
+                            if (newWord) handleSelectionAction('replace', newWord);
+                        }}
+                        className="w-full flex items-center gap-3 px-3 py-2.5 text-sm text-gray-300 hover:bg-blue-600/20 hover:text-blue-300 rounded-lg transition-all group"
+                    >
+                        <Pencil size={16} className="text-blue-500 group-hover:scale-110 transition-transform" />
+                        Cambiar palabra / ajustar
+                    </button>
+                    
+                    <button 
+                        onClick={() => handleSelectionAction('delete')}
+                        className="w-full flex items-center gap-3 px-3 py-2.5 text-sm text-gray-300 hover:bg-red-600/20 hover:text-red-300 rounded-lg transition-all group"
+                    >
+                        <Trash2 size={16} className="text-red-500 group-hover:scale-110 transition-transform" />
+                        Borrar y ajustar flujo
+                    </button>
+
+                    <div className="h-[1px] bg-white/5 my-1" />
+
+                    <button 
+                        onClick={() => handleSelectionAction('regenerate')}
+                        className="w-full flex items-center gap-3 px-3 py-2.5 text-sm text-gray-400 hover:bg-gray-800 hover:text-white rounded-lg transition-all group"
+                    >
+                        <RefreshCw size={16} className="group-hover:rotate-180 transition-transform duration-500" />
+                        Generar nuevamente bloque
+                    </button>
+                </motion.div>
+            )}
+        </AnimatePresence>
     </div>
   );
 };

@@ -800,6 +800,23 @@ const CalendarTab: React.FC = () => {
     return (config.calendarTokens || []).filter((t: any) => isTokenOnDate(t, targetDate));
   }, [config.calendarTokens, selectedDate]);
 
+  const { delayedPayments, normalPayments } = useMemo(() => {
+    const delayed: CalendarEvent[] = [];
+    const normal: CalendarEvent[] = [];
+    const targetDate = new Date();
+    targetDate.setHours(0, 0, 0, 0);
+    
+    financialObligations.forEach(e => {
+      const eventDate = new Date(e.date + 'T00:00:00');
+      if (eventDate < targetDate && !e.isPaid) {
+        delayed.push(e);
+      } else {
+        normal.push(e);
+      }
+    });
+    return { delayedPayments: delayed, normalPayments: normal };
+  }, [financialObligations]);
+
   return (
     <div className="max-w-6xl mx-auto p-6 bg-gray-800 rounded-xl shadow-2xl min-h-[80vh] flex flex-col border border-gray-700">
       <div className="flex justify-between items-start mb-8">
@@ -1344,26 +1361,7 @@ const CalendarTab: React.FC = () => {
                   </div>
                 )}
 
-                {(() => {
-                  const { delayedPayments, normalPayments } = useMemo(() => {
-                    const delayed: CalendarEvent[] = [];
-                    const normal: CalendarEvent[] = [];
-                    const targetDate = new Date();
-                    targetDate.setHours(0, 0, 0, 0);
-                    
-                    financialObligations.forEach(e => {
-                      const eventDate = new Date(e.date + 'T00:00:00');
-                      if (eventDate < targetDate && !e.isPaid) {
-                        delayed.push(e);
-                      } else {
-                        normal.push(e);
-                      }
-                    });
-                    return { delayedPayments: delayed, normalPayments: normal };
-                  }, [financialObligations]);
-
-                  return (
-                    <>
+                <>
                       {delayedPayments.length > 0 && (
                         <div className="space-y-3 p-3 bg-red-500/5 border border-red-500/20 rounded-2xl mb-6">
                           <h4 className="text-[10px] font-black text-red-500 uppercase tracking-[0.2em] flex items-center gap-2 mb-2">
@@ -1476,9 +1474,7 @@ const CalendarTab: React.FC = () => {
                           ))}
                         </div>
                       )}
-                    </>
-                  );
-                })()}
+                </>
 
                 {jobEvents.length > 0 && (
                   <div className="space-y-3">
