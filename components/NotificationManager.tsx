@@ -6,12 +6,12 @@ import { AppNotification } from '../types';
 import { toast } from 'sonner';
 
 const TARGET_TIMES = [
-  { hour: 8, minute: 30, label: 'Mañana' },
+  { hour: 7, minute: 0, label: 'Mañana' },
   { hour: 12, minute: 0, label: 'Mediodía' },
   { hour: 15, minute: 0, label: 'Tarde' },
-  { hour: 17, minute: 50, label: 'Tarde-Noche' },
+  { hour: 17, minute: 50, label: 'Salir' },
   { hour: 20, minute: 30, label: 'Noche' },
-  { hour: 23, minute: 20, label: 'Descanso' }
+  { hour: 23, minute: 30, label: 'Dormir' }
 ];
 
 const NotificationManager: React.FC = () => {
@@ -60,17 +60,32 @@ const NotificationManager: React.FC = () => {
 
     const generateNotification = async (slotLabel: string) => {
       try {
-        const apiKey = googleApiConfig?.apiKey || process.env.GEMINI_API_KEY || '';
         const ai = new GoogleGenAI({ 
             apiKey: googleApiConfig?.apiKey || process.env.API_KEY || process.env.GEMINI_API_KEY || '',
             baseUrl: `${window.location.origin}/api/proxy/google`
         });
         const model = "gemini-2.5-flash";
         
-        const prompt = `Eres el Estratega Rembrandt (Chief of Staff). Es el momento de la ${slotLabel}. 
+        let context = "";
+        if (slotLabel === 'Mañana') {
+            const today = new Date().toISOString().split('T')[0];
+            const todayEvents = (config.calendarEvents || [])
+                .filter(e => e.date === today)
+                .map(e => `- ${e.title}${e.time ? ' a las ' + e.time : ''}`)
+                .join('\n');
+            context = todayEvents 
+                ? `Hoy tienes los siguientes pendientes:\n${todayEvents}\nComenta sobre ellos de forma motivadora.`
+                : "No hay eventos programados para hoy. Da un consejo para empezar el día con fuerza.";
+        } else if (slotLabel === 'Salir') {
+            context = "Ya son las 5:50 PM. Es casi hora de salir y cerrar el día laboral. Aconséjame desconectar y descansar.";
+        } else if (slotLabel === 'Dormir') {
+            context = "Son las 11:30 PM. Es hora de dormir para recuperar energías. Dame un consejo de descanso profundo.";
+        }
+
+        const prompt = `Eres el Estratega Rembrandt (Chief of Staff). Es el momento de: ${slotLabel}. 
+        ${context}
         Genera un consejo corto, motivador y estratégico para Rembrandt. 
-        Puede ser sobre salud (tomar agua, comer algo, estirarse), productividad o mentalidad.
-        Sé directo, elegante y usa un tono de mentor. Máximo 20 palabras.
+        Sé directo, elegante y usa un tono de mentor. Máximo 25 palabras.
         Responde SOLO con el texto del consejo, sin comillas.`;
 
         const response = await ai.models.generateContent({
@@ -82,7 +97,7 @@ const NotificationManager: React.FC = () => {
         
         const newNotification: AppNotification = {
           id: Math.random().toString(36).substr(2, 9),
-          title: `Mensaje de la ${slotLabel}`,
+          title: slotLabel === 'Mañana' ? 'Estrategia del Día' : `Mensaje del Estratega`,
           content: content,
           timestamp: Date.now(),
           isRead: false,
@@ -96,11 +111,11 @@ const NotificationManager: React.FC = () => {
       }
     };
 
-    const interval = setInterval(checkTime, 30000); // Check every 30 seconds
-    checkTime(); // Initial check
+    const interval = setInterval(checkTime, 30000); 
+    checkTime(); 
 
     return () => clearInterval(interval);
-  }, [config.notifications, config.lastNotificationCheck, updateNotifications, updateConfig]);
+  }, [config.notifications, config.lastNotificationCheck, config.calendarEvents, updateNotifications, updateConfig, googleApiConfig]);
 
   return null;
 };
