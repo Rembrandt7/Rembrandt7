@@ -87,7 +87,7 @@ export const LinkEditorModal: React.FC<LinkEditorModalProps> = ({ isOpen, onClos
                         animate={{ opacity: 1 }}
                         exit={{ opacity: 0 }}
                         onClick={onClose}
-                        className="fixed inset-0 bg-black/60 backdrop-blur-sm z-[90] cursor-pointer"
+                        className="fixed inset-0 bg-black/60 backdrop-blur-sm z-[9998] cursor-pointer"
                     />
 
                     {/* Centered Floating Modal */}
@@ -96,7 +96,7 @@ export const LinkEditorModal: React.FC<LinkEditorModalProps> = ({ isOpen, onClos
                         animate={{ opacity: 1, scale: 1, y: '-50%', x: '-50%' }}
                         exit={{ opacity: 0, scale: 0.95, y: 20, x: '-50%' }}
                         transition={{ type: 'spring', damping: 25, stiffness: 200 }}
-                        className="fixed top-1/2 left-1/2 w-[95vw] max-w-3xl h-[90vh] max-h-[850px] glass-panel-heavy z-[100] shadow-[0_0_50px_rgba(0,0,0,0.7)] border border-white/10 rounded-2xl flex flex-col overflow-hidden"
+                        className="fixed top-1/2 left-1/2 w-[95vw] max-w-3xl h-[90vh] max-h-[850px] glass-panel-heavy z-[9999] shadow-[0_0_50px_rgba(0,0,0,0.7)] border border-white/10 rounded-2xl flex flex-col overflow-hidden"
                     >
                         {/* Header Panel */}
                         <div className="p-6 border-b border-white/5 bg-white/2 flex justify-between items-center shrink-0">
