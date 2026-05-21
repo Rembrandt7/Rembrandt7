@@ -1,5 +1,5 @@
 
-import React, { useState, useCallback, useMemo, useEffect } from 'react';
+import React, { useState, useCallback, useMemo, useEffect, useRef } from 'react';
 import { GoogleGenAI, Type } from '@google/genai';
 import Spinner from './common/Spinner';
 import IconButton from './common/IconButton';
@@ -9,12 +9,13 @@ import SmartTextarea from './common/SmartTextarea';
 import { SUPABASE_CONFIG } from '../utils/constants';
 import { useLinks } from '../contexts/LinkContext';
 import { cleanJsonResponse } from '../utils/jsonUtils';
-import { History, Trash2, Mail, MessageSquare, Star, Sparkles, Send, Check, RefreshCw, Pencil } from 'lucide-react';
+import { History, Trash2, Mail, MessageSquare, Star, Sparkles, Send, Check, RefreshCw, Pencil, Save, Copy } from 'lucide-react';
 import { motion, AnimatePresence } from 'motion/react';
+import { toast } from 'sonner';
 
 type Tone = 'Profesional' | 'Casual';
 type MessageLength = 'Reducido' | 'Medio' | 'Detallado';
-type Gender = 'H' | 'M';
+type Gender = 'M' | 'F';
 type CopiedState = 'email' | 'whatsapp' | null;
 
 interface GeneratedContent {
@@ -37,17 +38,13 @@ interface Contact {
 const DEFAULT_TITLES = ['', 'Sr.', 'Sra.', 'Lic.', 'Arq.', 'Ing.', 'Dr.', 'Dra.', 'C.P.'];
 const emailDomains = ['@javer', '@gmail', '@outlook', '@hotmail', 'Personalizado'];
 const emailTlds = ['.com.mx', '.com', '.es', '.mx'];
-// Fallback if DB is empty
 const predefinedProjects = ['Valle de Los Encinos', 'Cumbre del Norte', 'Xandora'];
 
-// Helper to safely get properties with case-insensitivity and partial matching
 const getDBValue = (obj: any, keysToCheck: string[] | string): any => {
     if (!obj) return undefined;
     const keys = Array.isArray(keysToCheck) ? keysToCheck : [keysToCheck];
-    
     for (const keyName of keys) {
         const target = keyName.trim().toLowerCase();
-        // Exact match first (case insensitive)
         const foundKey = Object.keys(obj).find(k => k.trim().toLowerCase() === target);
         if (foundKey && obj[foundKey] !== undefined && obj[foundKey] !== null) {
             return obj[foundKey];
@@ -59,17 +56,13 @@ const getDBValue = (obj: any, keysToCheck: string[] | string): any => {
 const stripHtml = (html: string): string => {
     try {
         const doc = new DOMParser().parseFromString(html, 'text/html');
-        doc.querySelectorAll('li').forEach(li => {
-            li.innerHTML = `\n• ${li.innerHTML}`;
-        });
+        doc.querySelectorAll('li').forEach(li => { li.innerHTML = `\n• ${li.innerHTML}`; });
         doc.querySelectorAll('br, p, div').forEach(el => {
             const newline = doc.createTextNode('\n');
             el.parentNode?.replaceChild(newline, el);
         });
-        let text = doc.body.textContent || "";
-        return text.replace(/\n\s*\n/g, '\n').trim();
+        return (doc.body.textContent || "").replace(/\n\s*\n/g, '\n').trim();
     } catch (e) {
-        console.error("Could not parse HTML", e);
         return html;
     }
 };
@@ -82,56 +75,49 @@ const EmailGenerator: React.FC<EmailGeneratorProps> = ({ attachedImages, onAttac
     const [tone, setTone] = useState<Tone>('Profesional');
     const [messageLength, setMessageLength] = useState<MessageLength>('Reducido');
     const [showHistory, setShowHistory] = useState(false);
-
+    const [showPreviousContext, setShowPreviousContext] = useState(false);
     const history = config.aiHistory?.filter(h => h.type === 'email') || [];
     
-    // Data state
     const [contacts, setContacts] = useState<Contact[]>([]);
     const [fraccionamientosList, setFraccionamientosList] = useState<string[]>([]);
-    
     const [favorites, setFavorites] = useState<string[]>(() => {
-        try {
-            return JSON.parse(localStorage.getItem('contact-favorites') || '[]');
-        } catch {
-            return [];
-        }
+        try { 
+            const saved = localStorage.getItem('contact-favorites');
+            return saved ? JSON.parse(saved) : []; 
+        } catch { return []; }
     });
 
-    const toggleFavorite = (contactName: string) => {
+    const toggleFavorite = (e: React.MouseEvent, contactName: string) => {
+        e.stopPropagation();
+        if (!contactName) return;
+        const targetName = contactName.trim();
         setFavorites(prev => {
-            const newFavs = prev.includes(contactName) 
-                ? prev.filter(f => f !== contactName)
-                : [...prev, contactName];
+            const isFav = prev.some(f => f.trim() === targetName);
+            const newFavs = isFav ? prev.filter(f => f.trim() !== targetName) : [...prev, targetName];
             localStorage.setItem('contact-favorites', JSON.stringify(newFavs));
             return newFavs;
         });
     };
 
-    // We use index for selection to ensure we grab the exact object in memory
     const [selectedContactIndex, setSelectedContactIndex] = useState<string>('');
     const [isContactsLoading, setIsContactsLoading] = useState(false);
     const [isSavingContact, setIsSavingContact] = useState(false);
-
-    // Recipient state
     const [recipientTitle, setRecipientTitle] = useState('');
-    const [titlesList, setTitlesList] = useState<string[]>(DEFAULT_TITLES); // Dynamic titles
+    const [titlesList, setTitlesList] = useState<string[]>(DEFAULT_TITLES);
     const [recipientName, setRecipientName] = useState('');
-    const [recipientGender, setRecipientGender] = useState<Gender>('H');
-    
-    // Email construction state
+    const [recipientGender, setRecipientGender] = useState<Gender>('M');
     const [recipientEmailUser, setRecipientEmailUser] = useState('');
     const [recipientEmailDomain, setRecipientEmailDomain] = useState(emailDomains[0]);
     const [customDomain, setCustomDomain] = useState('');
     const [recipientEmailTld, setRecipientEmailTld] = useState(emailTlds[0]);
-
     const [isLoading, setIsLoading] = useState(false);
     const [error, setError] = useState<string | null>(null);
     const [generatedContent, setGeneratedContent] = useState<GeneratedContent | null>(null);
     const [copied, setCopied] = useState<CopiedState>(null);
     const [isDraggingOver, setIsDraggingOver] = useState(false);
+    const [useNickname, setUseNickname] = useState(true);
+    const [isAdjusting, setIsAdjusting] = useState<'email' | 'whatsapp' | null>(null);
 
-
-    // Context Menu State
     const [contextMenu, setContextMenu] = useState<{
         visible: boolean;
         x: number;
@@ -139,195 +125,111 @@ const EmailGenerator: React.FC<EmailGeneratorProps> = ({ attachedImages, onAttac
         selectedText: string;
         targetType: 'email' | 'whatsapp' | 'improvedIdea';
         field: 'emailBody' | 'emailSubject' | 'whatsappMessage' | 'improvedIdea';
-    }>({
-        visible: false,
-        x: 0,
-        y: 0,
-        selectedText: '',
-        targetType: 'email',
-        field: 'emailBody'
-    });
+    }>({ visible: false, x: 0, y: 0, selectedText: '', targetType: 'email', field: 'emailBody' });
 
     const [isProcessingSelection, setIsProcessingSelection] = useState(false);
+    const [dictionary, setDictionary] = useState<string[]>([]);
+    const [suggestion, setSuggestion] = useState('');
+    const ideaRef = useRef<HTMLTextAreaElement>(null);
 
-    // --- Fetch Contacts & Fraccionamientos from Supabase ---
-    const fetchContacts = useCallback(async () => {
-        setIsContactsLoading(true);
+    const fetchDictionary = useCallback(async () => {
         try {
-            if (!SUPABASE_CONFIG.URL || !SUPABASE_CONFIG.KEY || SUPABASE_CONFIG.KEY.includes('PLACEHOLDER')) {
-                console.warn("Supabase credentials not configured. Using empty contacts list.");
-                setContacts([]);
-                return;
-            }
-
-            const response = await fetch(`${SUPABASE_CONFIG.URL}/rest/v1/Contactos?select=*`, {
-                headers: {
-                    'apikey': SUPABASE_CONFIG.KEY,
-                    'Authorization': `Bearer ${SUPABASE_CONFIG.KEY}`,
-                    'Content-Type': 'application/json'
-                }
+            if (!SUPABASE_CONFIG.URL || !SUPABASE_CONFIG.KEY) return;
+            const response = await fetch(`${SUPABASE_CONFIG.URL}/rest/v1/Diccionario?select=word`, {
+                headers: { 'apikey': SUPABASE_CONFIG.KEY, 'Authorization': `Bearer ${SUPABASE_CONFIG.KEY}`, 'Content-Type': 'application/json' }
             });
             if (response.ok) {
                 const data = await response.json();
-                // Sort by name
-                data.sort((a: Contact, b: Contact) => {
-                    const nameA = getDBValue(a, ['cliente', 'nombre', 'name']) || '';
-                    const nameB = getDBValue(b, ['cliente', 'nombre', 'name']) || '';
-                    return String(nameA).localeCompare(String(nameB));
-                });
-                setContacts(data);
-            } else {
-                console.warn(`Failed to fetch contacts: ${response.status} ${response.statusText}`);
-                setContacts([]);
+                setDictionary(data.map((d: any) => d.word));
             }
-        } catch (err) {
-            console.warn("Error fetching contacts (network or config issue):", err);
-            setContacts([]);
-        } finally {
-            setIsContactsLoading(false);
-        }
+        } catch (err) { console.warn(err); }
+    }, []);
+
+    const saveToDictionary = async (text: string) => {
+        const words = text.toLowerCase().split(/\s+/).filter(w => w.length > 3 && !['este', 'esta', 'para', 'como', 'todo'].includes(w));
+        const uniqueWords = Array.from(new Set(words));
+        if (uniqueWords.length === 0 || !SUPABASE_CONFIG.URL) return;
+        try {
+            await fetch(`${SUPABASE_CONFIG.URL}/rest/v1/Diccionario`, {
+                method: 'POST',
+                headers: { 'apikey': SUPABASE_CONFIG.KEY, 'Authorization': `Bearer ${SUPABASE_CONFIG.KEY}`, 'Content-Type': 'application/json', 'Prefer': 'resolution=merge-duplicates' },
+                body: JSON.stringify(uniqueWords.map(w => ({ word: w })))
+            });
+            fetchDictionary();
+        } catch (e) { console.warn(e); }
+    };
+
+    const fetchContacts = useCallback(async () => {
+        setIsContactsLoading(true);
+        try {
+            if (!SUPABASE_CONFIG.URL || !SUPABASE_CONFIG.KEY) return;
+            const response = await fetch(`${SUPABASE_CONFIG.URL}/rest/v1/Contactos?select=*`, {
+                headers: { 'apikey': SUPABASE_CONFIG.KEY, 'Authorization': `Bearer ${SUPABASE_CONFIG.KEY}`, 'Content-Type': 'application/json' }
+            });
+            if (response.ok) {
+                const data = await response.json();
+                setContacts(data);
+            }
+        } catch (err) { console.warn(err); } finally { setIsContactsLoading(false); }
     }, []);
 
     const fetchFraccionamientos = useCallback(async () => {
         try {
-            if (!SUPABASE_CONFIG.URL || !SUPABASE_CONFIG.KEY || SUPABASE_CONFIG.KEY.includes('PLACEHOLDER')) {
-                console.warn("Supabase credentials not configured. Using predefined projects.");
-                setFraccionamientosList(predefinedProjects);
-                return;
-            }
-
-            // Select * to get sector and fraccionamiento
+            if (!SUPABASE_CONFIG.URL || !SUPABASE_CONFIG.KEY) { setFraccionamientosList(predefinedProjects); return; }
             const response = await fetch(`${SUPABASE_CONFIG.URL}/rest/v1/Fraccionamientos?select=*`, {
-                headers: {
-                    'apikey': SUPABASE_CONFIG.KEY,
-                    'Authorization': `Bearer ${SUPABASE_CONFIG.KEY}`,
-                    'Content-Type': 'application/json'
-                }
+                headers: { 'apikey': SUPABASE_CONFIG.KEY, 'Authorization': `Bearer ${SUPABASE_CONFIG.KEY}`, 'Content-Type': 'application/json' }
             });
             if (response.ok) {
                 const data = await response.json();
-                // Format: "Fraccionamiento - Sector" (if sector exists)
-                const uniqueProjects = Array.from(new Set(
-                    data.map((item: any) => {
-                        const name = getDBValue(item, ['fraccionamiento', 'nombre', 'proyecto']);
-                        const sector = getDBValue(item, ['sector', 'etapa']);
-                        if (!name) return null;
-                        return sector ? `${name} - ${sector}` : name;
-                    }).filter((f: any) => f && typeof f === 'string')
-                )) as string[];
+                const uniqueProjects = Array.from(new Set(data.map((item: any) => {
+                    const name = getDBValue(item, 'fraccionamiento');
+                    const sector = getDBValue(item, 'sector');
+                    return sector ? `${name} - ${sector}` : name;
+                }).filter(Boolean))) as string[];
                 uniqueProjects.sort();
                 setFraccionamientosList(uniqueProjects);
-            } else {
-                console.warn(`Failed to fetch fraccionamientos: ${response.status} ${response.statusText}`);
-                setFraccionamientosList(predefinedProjects);
             }
-        } catch (err) {
-            console.warn("Error fetching fraccionamientos (network or config issue):", err);
-            setFraccionamientosList(predefinedProjects);
-        }
+        } catch (err) { setFraccionamientosList(predefinedProjects); }
     }, []);
 
-    useEffect(() => {
-        fetchContacts();
-        fetchFraccionamientos();
-    }, [fetchContacts, fetchFraccionamientos]);
+    useEffect(() => { fetchContacts(); fetchFraccionamientos(); fetchDictionary(); }, [fetchContacts, fetchFraccionamientos, fetchDictionary]);
 
-    // --- Handle Contact Selection & Auto-Population ---
+    const sortedContacts = useMemo(() => {
+        return [...contacts].sort((a, b) => {
+            const nameA = String(getDBValue(a, 'cliente') || '').trim();
+            const nameB = String(getDBValue(b, 'cliente') || '').trim();
+            const isFavA = favorites.some(f => f.trim() === nameA);
+            const isFavB = favorites.some(f => f.trim() === nameB);
+            
+            if (isFavA && !isFavB) return -1;
+            if (!isFavA && isFavB) return 1;
+            return nameA.localeCompare(nameB);
+        });
+    }, [contacts, favorites]);
+
     const handleContactSelect = (e: React.ChangeEvent<HTMLSelectElement>) => {
         const idxVal = e.target.value;
         setSelectedContactIndex(idxVal);
-
-        if (idxVal === '') {
-            setRecipientName('');
-            setRecipientTitle('');
-            return;
-        }
-
+        if (idxVal === '') { setRecipientName(''); setRecipientTitle(''); return; }
         const idx = parseInt(idxVal, 10);
-        if (isNaN(idx) || idx < 0 || idx >= contacts.length) return;
-
-        const contact = contacts[idx];
-        
+        const contact = sortedContacts[idx];
         if (contact) {
-            console.log("Selected contact:", contact); // Debug
-
-            // 1. Name - Added more potential column names
-            const dbName = getDBValue(contact, ['cliente', 'nombre', 'full_name', 'name', 'nombres', 'client']) || '';
-            console.log("Found Name:", dbName);
-            setRecipientName(String(dbName));
-            
-            // 2. Title
-            let dbTitle = getDBValue(contact, ['lic', 'titulo', 'title', 'prefix']) || '';
-            const lowerTitle = String(dbTitle).trim().toLowerCase().replace('.', '');
-            
-            if (lowerTitle === 'arquitecto') dbTitle = 'Arq.';
-            else if (lowerTitle === 'ingeniero') dbTitle = 'Ing.';
-            else if (lowerTitle === 'licenciado') dbTitle = 'Lic.';
-            
-            if (dbTitle && String(dbTitle).trim() !== '') {
-                setTitlesList(prev => {
-                    const exists = prev.some(t => t.toLowerCase() === String(dbTitle).toLowerCase());
-                    return exists ? prev : [...prev, dbTitle];
-                });
-                setRecipientTitle(dbTitle);
-            } else {
-                setRecipientTitle(''); 
-            }
-
-            // 3. Gender
-            const dbGender = getDBValue(contact, ['genero', 'gender', 'sexo']) || '';
-            const gen = String(dbGender).trim().toLowerCase();
-            
-            if (gen.startsWith('h') || gen.includes('masc') || gen === 'm') { 
-                 if(gen === 'm' && !gen.includes('ujer')) {
-                     // Ambiguous 'M' handling
-                 }
-                 if(gen.startsWith('h') || gen.includes('masc')) setRecipientGender('H');
-            } 
-            if (gen.startsWith('m') || gen.includes('fem') || gen.includes('ujer')) {
-                setRecipientGender('M');
-            } 
-
-            // 4. Email
-            const email = getDBValue(contact, ['correo', 'email', 'mail']) || '';
-            if (email && String(email).includes('@')) {
-                const parts = email.split('@');
-                const userPart = parts[0]; 
-                const domainPartFull = parts[1] || '';
-
-                setRecipientEmailUser(userPart); 
-
-                let matched = false;
-                if (domainPartFull && domainPartFull.includes('javer')) {
-                    setRecipientEmailDomain('@javer');
-                    matched = true;
-                } else if (domainPartFull && domainPartFull.includes('gmail')) {
-                    setRecipientEmailDomain('@gmail');
-                    matched = true;
-                } else if (domainPartFull && domainPartFull.includes('outlook')) {
-                    setRecipientEmailDomain('@outlook');
-                    matched = true;
-                } else if (domainPartFull && domainPartFull.includes('hotmail')) {
-                    setRecipientEmailDomain('@hotmail');
-                    matched = true;
-                } 
-
-                if (domainPartFull && domainPartFull.endsWith('.com.mx')) setRecipientEmailTld('.com.mx');
-                else if (domainPartFull && domainPartFull.endsWith('.com')) setRecipientEmailTld('.com');
-                else if (domainPartFull && domainPartFull.endsWith('.es')) setRecipientEmailTld('.es');
-                else if (domainPartFull && domainPartFull.endsWith('.mx')) setRecipientEmailTld('.mx');
-
-                if (!matched) {
-                    setRecipientEmailDomain('Personalizado');
-                    const lastDot = domainPartFull.lastIndexOf('.');
-                    if(lastDot !== -1) {
-                        setCustomDomain(domainPartFull.substring(0, lastDot));
-                    } else {
-                        setCustomDomain(domainPartFull);
-                    }
-                }
-            } else if (email) {
-                 setRecipientEmailUser(email);
+            setRecipientName(String(getDBValue(contact, ['cliente', 'nombre']) || ''));
+            const dbTitle = getDBValue(contact, ['lic', 'titulo']) || '';
+            setRecipientTitle(dbTitle);
+            const gen = String(getDBValue(contact, 'genero') || '').toLowerCase();
+            setRecipientGender(gen.startsWith('m') || gen.includes('fem') || gen.includes('femenino') ? 'F' : 'M');
+            const email = getDBValue(contact, 'correo') || '';
+            if (email.includes('@')) {
+                const [u, dFull] = email.split('@');
+                setRecipientEmailUser(u);
+                if (dFull.includes('javer')) setRecipientEmailDomain('@javer');
+                else if (dFull.includes('gmail')) setRecipientEmailDomain('@gmail');
+                else if (dFull.includes('outlook')) setRecipientEmailDomain('@outlook');
+                else if (dFull.includes('hotmail')) setRecipientEmailDomain('@hotmail');
+                else { setRecipientEmailDomain('Personalizado'); setCustomDomain(dFull.split('.')[0]); }
+                if (dFull.endsWith('.com.mx')) setRecipientEmailTld('.com.mx');
+                else if (dFull.endsWith('.com')) setRecipientEmailTld('.com');
             }
         }
     };
@@ -337,100 +239,42 @@ const EmailGenerator: React.FC<EmailGeneratorProps> = ({ attachedImages, onAttac
         const domainPart = recipientEmailDomain === 'Personalizado' ? `@${customDomain}` : recipientEmailDomain;
         return `${recipientEmailUser}${domainPart}${recipientEmailTld}`;
     }, [recipientEmailUser, recipientEmailDomain, customDomain, recipientEmailTld]);
+
     const handleGenerate = useCallback(async () => {
-        if (!idea.trim() && !previousEmail.trim()) {
-            setError('Por favor, introduce la idea principal del mensaje o pega un Correo Anterior para responder.');
-            return;
-        }
-
-        setIsLoading(true);
-        setError(null);
-        setGeneratedContent(null);
-
+        if (!idea.trim() && !previousEmail.trim()) { toast.error('Introduce una idea.'); return; }
+        setIsLoading(true); setError(null);
         try {
-            const apiKey = googleApiConfig?.apiKey || process.env.API_KEY || process.env.GEMINI_API_KEY;
+            const apiKey = googleApiConfig?.apiKey || process.env.GEMINI_API_KEY;
+            const ai = new GoogleGenAI({ apiKey, baseUrl: `${window.location.origin}/api/proxy/google` });
             
-            if (!apiKey) {
-                throw new Error("No se ha configurado la API Key de Gemini. Por favor, revísala en los ajustes.");
-            }
-            const ai = new GoogleGenAI({ 
-                apiKey,
-                httpOptions: {
-                    baseUrl: `${window.location.origin}/api/proxy/google`
-                }
-            });
+            const hour = new Date().getHours();
+            const timeGreeting = hour < 12 ? 'Buen día' : hour < 19 ? 'Buenas tardes' : 'Buenas noches';
             
             const idx = parseInt(selectedContactIndex, 10);
-            const selectedContact = (!isNaN(idx) && idx >= 0 && idx < contacts.length) ? contacts[idx] : undefined;
+            const contact = !isNaN(idx) ? sortedContacts[idx] : null;
+            const dataApodo = contact ? getDBValue(contact, ['apodo', 'alias']) : null;
             
-            const dataName = recipientName;
-            const dataTitle = recipientTitle;
-            const dataGender = recipientGender === 'H' ? 'Hombre' : 'Mujer';
-            const dataApodo = selectedContact ? getDBValue(selectedContact, ['apodo', 'nickname', 'alias']) : null;
+            const finalRecipient = (useNickname && dataApodo) ? dataApodo : recipientName;
+            const greeting = finalRecipient ? `${timeGreeting} ${finalRecipient}` : timeGreeting;
             
-            let isMale = true;
-            if (dataGender.toLowerCase().startsWith('m') && !dataGender.toLowerCase().includes('masc')) isMale = false;
-
-            let greetingInstruction = "";
-            if (selectedContact && dataApodo && String(dataApodo).trim() !== '') {
-                greetingInstruction = `El destinatario tiene el apodo "${dataApodo}". ÚSALO en el saludo (ej. "Hola ${dataApodo}").`;
-            } else if (dataName && String(dataName).trim()) {
-                greetingInstruction = `Usa OBLIGATORIAMENTE el nombre: "${dataName}".`;
-                if(dataTitle) greetingInstruction += ` Incluye el título "${dataTitle}" si es formal.`;
-            } else {
-                greetingInstruction = "No hay nombre específico, usa un saludo general.";
-            }
-
-            const hour = new Date().getHours();
-            let timeGreeting = "Hola";
-            if (hour >= 5 && hour < 12) timeGreeting = "Buenos días";
-            else if (hour >= 12 && hour < 20) timeGreeting = "Buenas tardes";
-            else timeGreeting = "Buenas noches";
-
-            const genderContextInstruction = isMale 
-                ? "Destinatario HOMBRE (gramática masculina: 'invitarlo', 'bienvenido')." 
-                : "Destinatario MUJER (gramática femenina: 'invitarla', 'bienvenida').";
-
-            const memoryContext = `
-            ${config.memoria_ia?.estilo ? `- ESTILO DE REDACCIÓN: ${config.memoria_ia.estilo}` : ''}
-            ${config.memoria_ia?.laboral ? `- CONTEXTO LABORAL: ${config.memoria_ia.laboral}` : ''}`;
-
-            const systemInstruction = `Eres un experto en comunicación corporativa y relaciones públicas.
+            const systemInstruction = `Eres un experto en comunicación ejecutiva y estratégica. 
+            Debes generar respuestas en formato JSON siguiendo estrictamente las reglas de estilo del usuario.`;
             
-            **ADN DEL USUARIO:**
-            ${memoryContext}
+            const userPrompt = `INSTRUCCIONES CRÍTICAS:
+            1. SALUDO: Comienza exactamente con "${greeting}".
+            2. FORMATO: Usa DOBLE SALTO DE LÍNEA (\\n\\n) después del saludo y entre CADA párrafo.
+            3. ESTRUCTURA: Usa listas numeradas o viñetas para puntos importantes. No amontones el texto.
+            4. FIRMA: Termina SIEMPRE con: "Atte.\\n\\nArq. Rembrandt Blanco Arrambide".
+            5. CONTEXTO: Proyecto: "${project}". Género: ${recipientGender === 'F' ? 'Femenino' : 'Masculino'}.
+            6. IDEA A DESARROLLAR: "${idea}". 
+            7. CONTEXTO ANTERIOR: "${previousEmail}".
+            8. TONO: ${tone}. LONGITUD: ${messageLength}.
 
-            **CONTEXTO SITUACIONAL:**
-            ${previousEmail.trim() ? `El usuario ha recibido un mensaje anterior que dice:\n"""\n${previousEmail}\n"""\n\n` : ''}
-
-            **REGLAS CRÍTICAS:**
-            1. Saludo inicial: Profesional (${timeGreeting}).
-            2. Nombre/Trato: ${greetingInstruction}
-            3. Gramática: ${genderContextInstruction}
-            4. Objetivo: Generar 3 formatos a la vez:
-               - Un CORREO formal e impecable (HTML básico). Firma: "<b>Arq. Rembrandt Blanco Arrambide</b>".
-               - Un WHATSAPP directo con emojis.
-               - Una MEJORA DIRECTA del borrador original (más claro y pulido).
-            5. Proyecto: "${project || 'General'}".`;
-
-            const userPrompt = `Idea / Inspiración: "${idea}"
-            Tono: "${tone}"
-            Longitud: "${messageLength}"
-            ${attachedImages.length > 0 ? `- Adjuntos: ${attachedImages.length} imágenes.` : ''}`;
-
-            const parts: any[] = [];
-            if (attachedImages.length > 0) {
-                attachedImages.forEach(img => {
-                    parts.push({
-                        inlineData: { data: img.base64, mimeType: img.mimeType }
-                    });
-                });
-            }
-            parts.push({ text: userPrompt });
+            Genera un objeto JSON con: emailSubject, emailBody (con doble salto de línea), whatsappMessage, improvedIdea.`;
 
             const response = await ai.models.generateContent({
-                model: 'gemini-2.5-flash',
-                contents: { parts },
+                model: 'gemini-3.1-flash-lite',
+                contents: [{ role: 'user', parts: [{ text: userPrompt }] }],
                 config: {
                     systemInstruction,
                     responseMimeType: 'application/json',
@@ -442,671 +286,314 @@ const EmailGenerator: React.FC<EmailGeneratorProps> = ({ attachedImages, onAttac
                             whatsappMessage: { type: Type.STRING },
                             improvedIdea: { type: Type.STRING }
                         },
-                        required: ["emailSubject", "emailBody", "whatsappMessage", "improvedIdea"],
-                    },
-                },
+                        required: ["emailSubject", "emailBody", "whatsappMessage", "improvedIdea"]
+                    }
+                }
             });
 
-            const parsedContent = JSON.parse(cleanJsonResponse(response.text.trim())) as GeneratedContent & { improvedIdea: string };
-            setGeneratedContent(parsedContent);
+            const textResponse = response.text || '';
+            if (!textResponse) throw new Error("La IA no devolvió respuesta.");
 
-            const historyItem = {
-                id: Date.now().toString(),
-                type: 'email' as const,
-                original: idea,
-                result: JSON.stringify(parsedContent),
-                timestamp: Date.now()
-            };
-
-            updateConfig(prev => ({
-                ...prev,
-                aiHistory: [historyItem, ...(prev.aiHistory || [])].slice(0, 50)
-            }));
-
-        } catch (e: any) {
+            const parsed = JSON.parse(cleanJsonResponse(textResponse.trim()));
+            setGeneratedContent(parsed);
+            saveToDictionary(idea);
+            
+            updateConfig(prev => ({ ...prev, aiHistory: [{ id: Date.now().toString(), type: 'email', original: idea, result: JSON.stringify(parsed), timestamp: Date.now() }, ...(prev.aiHistory || [])].slice(0, 50) }));
+            toast.success("Mensajes generados con éxito");
+        } catch (e: any) { 
             console.error(e);
-            setError(e.message || "Error al generar los mensajes.");
-        } finally {
-            setIsLoading(false);
-        }
-    }, [idea, previousEmail, tone, messageLength, attachedImages, recipientTitle, recipientName, recipientGender, project, selectedContactIndex, contacts, googleApiConfig, config, updateConfig]);
-  
+            setError(e.message); 
+            toast.error("Error al generar: " + e.message);
+        } finally { setIsLoading(false); }
+    }, [idea, previousEmail, tone, messageLength, recipientName, project, useNickname, selectedContactIndex, sortedContacts, googleApiConfig, updateConfig, recipientGender]);
+
     const handleCopyToClipboard = async (text: string, type: CopiedState) => {
-        if (type === 'email' && generatedContent?.emailBody) {
-            const htmlContent = generatedContent.emailBody;
-            const plainTextContent = stripHtml(htmlContent);
-            try {
-                const blob = new Blob([htmlContent], { type: 'text/html' });
-                const plainBlob = new Blob([plainTextContent], { type: 'text/plain' });
-                const item = new ClipboardItem({ 'text/html': blob, 'text/plain': plainBlob });
-                await navigator.clipboard.write([item]);
-            } catch (err) {
-                navigator.clipboard.writeText(plainTextContent);
-            }
-        } else {
-            navigator.clipboard.writeText(text);
-        }
-        setCopied(type);
-        setTimeout(() => setCopied(null), 2000);
+        const content = type === 'email' ? stripHtml(text) : text;
+        await navigator.clipboard.writeText(content);
+        setCopied(type); setTimeout(() => setCopied(null), 2000);
+        toast.success("Copiado al portapapeles");
     };
-  
+
     const handleSendEmail = () => {
         if (!generatedContent) return;
-        const recipient = fullRecipientEmail ? encodeURIComponent(fullRecipientEmail) : '';
-        const subject = encodeURIComponent(generatedContent.emailSubject);
-        const body = encodeURIComponent(stripHtml(generatedContent.emailBody));
-        window.location.href = `mailto:${recipient}?subject=${subject}&body=${body}`;
+        window.location.href = `mailto:${fullRecipientEmail}?subject=${encodeURIComponent(generatedContent.emailSubject)}&body=${encodeURIComponent(stripHtml(generatedContent.emailBody))}`;
     };
 
     const handleSendWhatsApp = () => {
         if (!generatedContent) return;
-        const url = `https://wa.me/?text=${encodeURIComponent(generatedContent.whatsappMessage)}`;
-        window.open(url, '_blank', 'noopener,noreferrer');
+        window.open(`https://wa.me/?text=${encodeURIComponent(generatedContent.whatsappMessage)}`, '_blank');
     };
 
-    const handleDrop = useCallback((e: React.DragEvent<HTMLDivElement>) => {
-        e.preventDefault();
-        e.stopPropagation();
-        setIsDraggingOver(false);
-        if (e.dataTransfer.files && e.dataTransfer.files.length > 0) {
-             Array.from(e.dataTransfer.files).forEach((file: File) => {
-                if (file.type.startsWith('image/')) {
-                    const reader = new FileReader();
-                    reader.onload = (event) => {
-                        const dataUrl = event.target?.result as string;
-                        const base64 = dataUrl.split(',')[1];
-                        const newImage: ReferenceImage = {
-                            name: `archivo ${attachedImages.length + 1}`,
-                            base64,
-                            mimeType: file.type,
-                            preview: dataUrl,
-                        };
-                        onAttachmentsChange([...attachedImages, newImage]);
-                    };
-                    reader.readAsDataURL(file);
-                }
-            });
+    const handleDrop = (e: React.DragEvent) => {
+        e.preventDefault(); setIsDraggingOver(false);
+        const file = e.dataTransfer.files[0];
+        if (file?.type.startsWith('image/')) {
+            const reader = new FileReader();
+            reader.onload = (ev) => onAttachmentsChange([...attachedImages, { name: file.name, base64: (ev.target?.result as string).split(',')[1], mimeType: file.type, preview: ev.target?.result as string }]);
+            reader.readAsDataURL(file);
         }
-    }, [attachedImages, onAttachmentsChange]);
-    
-    const handleDragOver = (e: React.DragEvent<HTMLDivElement>) => {
-        e.preventDefault();
-        e.stopPropagation();
-        setIsDraggingOver(true);
     };
 
-    // --- SAVE TO DB LOGIC ---
     const handleSaveNewContact = async () => {
-        if (!recipientName.trim()) {
-            alert("El nombre (Cliente) es obligatorio para guardar.");
-            return;
-        }
-
+        if (!recipientName) { toast.error("Ingresa un nombre"); return; }
         setIsSavingContact(true);
-
-        const nameToCheck = recipientName.trim().toLowerCase();
-        // Check duplication
-        const duplicate = contacts.find(c => {
-            const cName = getDBValue(c, ['cliente', 'nombre', 'name']) || '';
-            return String(cName).trim().toLowerCase() === nameToCheck;
-        });
-
-        if (duplicate) {
-            alert(`Error: El cliente "${recipientName}" ya está registrado.`);
-            setIsSavingContact(false);
-            return;
-        }
-
-        const payload = {
-            cliente: recipientName,
-            lic: recipientTitle, 
-            genero: recipientGender === 'H' ? 'Hombre' : 'Mujer',
-            correo: fullRecipientEmail,
-        };
-
         try {
-            const res = await fetch(`${SUPABASE_CONFIG.URL}/rest/v1/Contactos`, {
+            await fetch(`${SUPABASE_CONFIG.URL}/rest/v1/Contactos`, {
                 method: 'POST',
-                headers: {
-                    'apikey': SUPABASE_CONFIG.KEY,
-                    'Authorization': `Bearer ${SUPABASE_CONFIG.KEY}`,
-                    'Content-Type': 'application/json',
-                    'Prefer': 'return=minimal'
-                },
-                body: JSON.stringify(payload)
+                headers: { 'apikey': SUPABASE_CONFIG.KEY, 'Authorization': `Bearer ${SUPABASE_CONFIG.KEY}`, 'Content-Type': 'application/json' },
+                body: JSON.stringify({ cliente: recipientName, lic: recipientTitle, genero: recipientGender === 'M' ? 'Hombre' : 'Mujer', correo: fullRecipientEmail })
             });
-
-            if (!res.ok) {
-                throw new Error("Error al guardar en BD");
-            }
-
-            alert("Contacto guardado.");
-            fetchContacts(); 
-        } catch (e: any) {
-            alert("Error: " + e.message);
-        } finally {
-            setIsSavingContact(false);
-        }
+            fetchContacts();
+            toast.success("Contacto guardado");
+        } catch (e) { console.error(e); toast.error("Error al guardar contacto"); } finally { setIsSavingContact(false); }
     };
 
-    const deleteHistoryItem = (id: string) => {
-        updateConfig(prev => ({
-            ...prev,
-            aiHistory: (prev.aiHistory || []).filter(h => h.id !== id)
-        }));
+    const deleteHistoryItem = (id: string) => updateConfig(prev => ({ ...prev, aiHistory: prev.aiHistory?.filter(h => h.id !== id) }));
+
+    const handleContextMenu = (e: React.MouseEvent, type: any, field: any) => {
+        const sel = window.getSelection()?.toString().trim();
+        if (sel) { e.preventDefault(); setContextMenu({ visible: true, x: e.clientX, y: e.clientY, selectedText: sel, targetType: type, field: field }); }
     };
 
-    const handleContextMenu = (e: React.MouseEvent, type: 'email' | 'whatsapp' | 'improvedIdea', field: 'emailBody' | 'emailSubject' | 'whatsappMessage' | 'improvedIdea') => {
-        const selection = window.getSelection()?.toString().trim();
-        if (selection) {
-            e.preventDefault();
-            setContextMenu({
-                visible: true,
-                x: e.clientX,
-                y: e.clientY,
-                selectedText: selection,
-                targetType: type,
-                field: field
-            });
-        }
-    };
-
-    const handleSelectionAction = async (action: 'variation' | 'delete' | 'replace' | 'regenerate', payload?: string) => {
+    const handleSelectionAction = async (action: string, payload?: string) => {
         if (!generatedContent) return;
-
-        setIsProcessingSelection(true);
+        if (action === 'adjust') setIsAdjusting(contextMenu.targetType as any);
+        else setIsProcessingSelection(true);
         setContextMenu(prev => ({ ...prev, visible: false }));
-
         try {
-            const apiKey = googleApiConfig?.apiKey || config.googleApiConfig?.apiKey;
-            if (!apiKey) throw new Error("API Key no configurada");
-
-            const ai = new GoogleGenAI({ 
-                apiKey,
-                baseUrl: `${window.location.origin}/api/proxy/google`
+            const ai = new GoogleGenAI({ apiKey: googleApiConfig?.apiKey, baseUrl: `${window.location.origin}/api/proxy/google` });
+            const prompt = `Contexto: "${generatedContent[contextMenu.field]}". Acción: ${action} sobre "${contextMenu.selectedText}". ${payload ? `Usar: ${payload}` : ''}. Responde solo el texto completo ajustado.`;
+            const response = await ai.models.generateContent({
+                model: "gemini-3.1-flash-lite",
+                contents: [{ role: 'user', parts: [{ text: prompt }] }]
             });
-            const model = ai.getGenerativeModel({ model: "gemini-2.5-flash" });
-
-            const currentText = generatedContent[contextMenu.field];
-            let prompt = "";
-
-            if (action === 'variation') {
-                prompt = `Tengo el siguiente mensaje:\n"${currentText}"\n\nHe seleccionado esta parte: "${contextMenu.selectedText}".\nDame una opción alternativa para esa selección que mantenga el tono del resto del mensaje. Responde ÚNICAMENTE con el mensaje completo actualizado. No incluyas explicaciones.`;
-            } else if (action === 'delete') {
-                prompt = `Tengo el siguiente mensaje:\n"${currentText}"\n\nBorra esta parte: "${contextMenu.selectedText}" y ajusta el resto del texto para que no se note el corte y fluya bien. Responde ÚNICAMENTE con el mensaje completo actualizado. No incluyas explicaciones.`;
-            } else if (action === 'replace') {
-                prompt = `Tengo el siguiente mensaje:\n"${currentText}"\n\nQuiero cambiar esta parte: "${contextMenu.selectedText}" por algo que incluya o se refiera a "${payload}". Ajusta el mensaje para que quede perfecto. Responde ÚNICAMENTE con el mensaje completo actualizado. No incluyas explicaciones.`;
-            } else if (action === 'regenerate') {
-                // For regenerate, we ignore the selection and re-run the prompt for this block
-                prompt = `Genera nuevamente este mensaje manteniendo la misma idea pero con diferentes palabras: "${currentText}". Responde ÚNICAMENTE con el nuevo mensaje.`;
-            }
-
-            const result = await model.generateContent(prompt);
-            const newText = result.response.text().trim().replace(/^"|"$/g, ''); // Remove quotes if any
-
-            setGeneratedContent(prev => prev ? ({
-                ...prev,
-                [contextMenu.field]: newText
-            }) : null);
-
-        } catch (err: any) {
-            setError("Error al modificar el texto: " + err.message);
-        } finally {
-            setIsProcessingSelection(false);
-        }
+            setGeneratedContent(prev => prev ? ({ ...prev, [contextMenu.field]: response.text || '' }) : null);
+        } catch (e: any) { setError(e.message); toast.error("Error al pulir: " + e.message); } finally { setIsProcessingSelection(false); setIsAdjusting(null); }
     };
 
     useEffect(() => {
-        const handleClick = () => setContextMenu(prev => ({ ...prev, visible: false }));
-        window.addEventListener('click', handleClick);
-        return () => window.removeEventListener('click', handleClick);
+        const cb = () => setContextMenu(prev => ({ ...prev, visible: false }));
+        window.addEventListener('click', cb);
+        return () => window.removeEventListener('click', cb);
     }, []);
 
-    const clearHistory = () => {
-        if (window.confirm('¿Borrar todo el historial de correos?')) {
-            updateConfig(prev => ({
-                ...prev,
-                aiHistory: (prev.aiHistory || []).filter(h => h.type !== 'email')
-            }));
+    const clearHistory = () => { if (window.confirm('¿Borrar historial?')) updateConfig(prev => ({ ...prev, aiHistory: prev.aiHistory?.filter(h => h.type !== 'email') })); };
+
+    const onIdeaChange = (e: React.ChangeEvent<HTMLTextAreaElement>) => {
+        const val = e.target.value;
+        setIdea(val);
+        const lastWord = val.split(/\s+/).pop()?.toLowerCase() || '';
+        if (lastWord.length > 1) {
+            const match = dictionary.find(w => w.startsWith(lastWord) && w !== lastWord);
+            setSuggestion(match ? match.slice(lastWord.length) : '');
+        } else {
+            setSuggestion('');
         }
     };
 
-    return (
-    <div 
-        onDrop={handleDrop}
-        onDragOver={handleDragOver}
-        className={`transition-all duration-300 ${isDraggingOver ? 'border-2 border-purple-500 ring-4 ring-purple-500/30' : 'border-2 border-transparent'}`}
-    >
-        <div className="flex items-center justify-between mb-6">
-            <h2 className="text-2xl font-bold text-white">Generador de Mensajes</h2>
-            <button
-                onClick={() => setShowHistory(!showHistory)}
-                className={`flex items-center gap-2 px-3 py-1.5 rounded-lg transition-all ${
-                    showHistory ? 'bg-purple-600 text-white' : 'bg-gray-700 text-gray-400 hover:bg-gray-600'
-                }`}
-            >
-                <History size={18} />
-                <span className="text-sm font-medium">Historial</span>
-            </button>
-        </div>
+    const handleKeyDown = (e: React.KeyboardEvent) => {
+        if (e.key === 'Tab' && suggestion) {
+            e.preventDefault();
+            setIdea(prev => prev + suggestion + ' ');
+            setSuggestion('');
+        }
+    };
 
-        <AnimatePresence>
-            {showHistory && (
-                <motion.div
-                    initial={{ height: 0, opacity: 0 }}
-                    animate={{ height: 'auto', opacity: 1 }}
-                    exit={{ height: 0, opacity: 0 }}
-                    className="overflow-hidden mb-6"
-                >
-                    <div className="bg-gray-900/50 rounded-xl p-4 border border-gray-700">
-                        <div className="flex justify-between items-center mb-4">
-                            <h3 className="text-sm font-bold text-gray-400 uppercase tracking-wider">Últimos Correos</h3>
-                            {history.length > 0 && (
-                                <button onClick={clearHistory} className="text-xs text-red-400 hover:text-red-300 flex items-center gap-1">
-                                    <Trash2 size={12} /> Borrar todo
-                                </button>
-                            )}
-                        </div>
-                        
-                        <div className="space-y-3 max-h-64 overflow-y-auto pr-2 scrollbar-thin scrollbar-thumb-gray-700">
-                            {history.length === 0 ? (
-                                <p className="text-center text-gray-600 py-4 italic text-sm">No hay historial todavía</p>
-                            ) : (
-                                history.map(item => {
-                                    let parsedResult: GeneratedContent | null = null;
-                                    try { parsedResult = JSON.parse(item.result); } catch(e) {}
-                                    
-                                    return (
-                                        <div key={item.id} className="bg-gray-800/50 rounded-lg p-3 border border-gray-700 group relative">
-                                            <div className="flex justify-between items-start mb-2">
-                                                <span className="text-[10px] text-gray-500">
-                                                    {new Date(item.timestamp).toLocaleString()}
-                                                </span>
-                                                <div className="flex gap-2 opacity-0 group-hover:opacity-100 transition-opacity">
-                                                    <button onClick={() => deleteHistoryItem(item.id)} className="text-gray-400 hover:text-red-400">
-                                                        <Trash2 size={14} />
-                                                    </button>
-                                                </div>
-                                            </div>
-                                            <p className="text-xs text-gray-300 line-clamp-1 mb-1"><span className="text-gray-500 font-bold">Idea:</span> {item.original}</p>
-                                            {parsedResult && (
-                                                <div className="flex gap-2 mt-2">
-                                                    <button 
-                                                        onClick={() => {
-                                                            setIdea(item.original || '');
-                                                            setGeneratedContent(parsedResult);
-                                                            setShowHistory(false);
-                                                        }}
-                                                        className="text-[10px] bg-purple-600/20 text-purple-400 px-2 py-1 rounded hover:bg-purple-600/40"
-                                                    >
-                                                        Cargar de nuevo
-                                                    </button>
-                                                </div>
-                                            )}
-                                        </div>
-                                    );
-                                })
-                            )}
+    const acceptSuggestion = () => {
+        setIdea(prev => prev + suggestion + ' ');
+        setSuggestion('');
+    };
+
+    return (
+        <div onDrop={handleDrop} onDragOver={(e) => { e.preventDefault(); setIsDraggingOver(true); }} className={`p-4 transition-all ${isDraggingOver ? 'bg-purple-500/10' : ''}`}>
+            <div className="flex justify-between items-center mb-4">
+                <div className="flex items-center gap-3">
+                    <div className="p-2 bg-gradient-to-br from-purple-600 to-indigo-600 rounded-lg shadow-md"><Mail size={20} className="text-white" /></div>
+                    <div><h2 className="text-xl font-black text-white uppercase tracking-tighter">Generador de Mensajes</h2></div>
+                </div>
+                <div className="flex items-center gap-2">
+                    <button onClick={handleGenerate} disabled={isLoading} className="px-4 py-2 bg-gradient-to-r from-purple-600 via-indigo-600 to-blue-600 text-white rounded-lg font-black text-xs uppercase tracking-wider shadow-md flex items-center gap-2 hover:scale-[1.02] active:scale-[0.98] transition-all disabled:opacity-50">
+                        {isLoading ? <RefreshCw className="animate-spin" size={16}/> : <><Sparkles size={16}/> <span>Generar</span></>}
+                    </button>
+                    <button onClick={() => setShowHistory(!showHistory)} className="px-4 py-2 bg-gray-800 rounded-lg text-xs font-black uppercase text-gray-400 border border-gray-700 hover:bg-gray-700 transition-colors">Historial</button>
+                </div>
+            </div>
+
+            <AnimatePresence>{showHistory && (
+                <motion.div initial={{ height: 0, opacity: 0 }} animate={{ height: 'auto', opacity: 1 }} exit={{ height: 0, opacity: 0 }} className="overflow-hidden mb-4">
+                    <div className="bg-gray-900 p-4 rounded-xl border border-gray-800">
+                        <div className="flex justify-between mb-2"><h3 className="text-xs font-black text-gray-500 uppercase">Registros</h3><button onClick={clearHistory} className="text-xs text-red-500 hover:text-red-400">Limpiar</button></div>
+                        <div className="grid grid-cols-1 md:grid-cols-2 gap-2 max-h-48 overflow-y-auto pr-2">
+                            {history.map(item => (
+                                <div key={item.id} className="p-3 bg-gray-800/30 rounded-lg border border-white/5 relative group">
+                                    <button onClick={() => deleteHistoryItem(item.id)} className="absolute top-2 right-2 opacity-0 group-hover:opacity-100"><Trash2 size={14} className="text-gray-500 hover:text-red-400"/></button>
+                                    <p className="text-[10px] text-gray-300 line-clamp-2">{item.original}</p>
+                                    <button onClick={() => { setGeneratedContent(JSON.parse(item.result)); setIdea(item.original); setShowHistory(false); }} className="mt-2 w-full py-1 bg-white/5 hover:bg-white/10 text-[9px] uppercase font-black rounded-md transition-colors">Cargar</button>
+                                </div>
+                            ))}
                         </div>
                     </div>
                 </motion.div>
-            )}
-        </AnimatePresence>
+            )}</AnimatePresence>
 
-        <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
-            {/* --- Left Column: Inputs --- */}
-            <div className="space-y-4">
-                
-                <div className="space-y-2 border-b border-gray-700 pb-4">
-                    <label className="text-sm font-medium text-gray-300">Armador de Correo</label>
-                    <div className="flex items-center gap-1 bg-gray-900/50 p-2 rounded-md">
-                        <input type="text" value={recipientEmailUser} onChange={e => setRecipientEmailUser(e.target.value)} placeholder="usuario" className="flex-grow p-2 bg-gray-700 rounded-md border border-gray-600 focus:ring-2 focus:ring-purple-500 min-w-0 text-sm"/>
-                        
-                        {recipientEmailDomain !== 'Personalizado' ? (
-                            <select value={recipientEmailDomain} onChange={e => setRecipientEmailDomain(e.target.value)} className="p-2 bg-gray-700 rounded-md border border-gray-600 focus:ring-2 focus:ring-purple-500 text-sm">
-                                {emailDomains.map(d => <option key={d} value={d}>{d}</option>)}
-                            </select>
-                        ) : (
-                             <input type="text" value={customDomain} onChange={e => setCustomDomain(e.target.value)} placeholder="dominio.personal" className="flex-grow p-2 bg-gray-700 rounded-md border border-gray-600 focus:ring-2 focus:ring-purple-500 min-w-0 text-sm"/>
-                        )}
-                        <select value={recipientEmailTld} onChange={e => setRecipientEmailTld(e.target.value)} className="p-2 bg-gray-700 rounded-md border border-gray-600 focus:ring-2 focus:ring-purple-500 text-sm">
-                            {emailTlds.map(tld => <option key={tld} value={tld}>{tld}</option>)}
-                        </select>
-                    </div>
-                     {recipientEmailDomain === 'Personalizado' && (
-                        <button onClick={() => setRecipientEmailDomain('@javer')} className="text-xs text-purple-400 hover:underline">Volver a dominios predefinidos</button>
-                     )}
-                    {fullRecipientEmail && <p className="text-xs text-gray-400 bg-gray-900/50 p-2 rounded-md truncate">Email: {fullRecipientEmail}</p>}
-                </div>
-
-                <div className="space-y-3 pt-2">
-                    <div className="flex justify-between items-center">
-                        <h3 className="text-lg font-semibold text-gray-200">Destinatario (Base de Datos)</h3>
-                        <button onClick={fetchContacts} disabled={isContactsLoading} className="text-xs px-2 py-1 bg-gray-700 hover:bg-gray-600 rounded-md text-gray-300" title="Actualizar lista">
-                            {isContactsLoading ? <Spinner size="3"/> : '↻ Actualizar BD'}
-                        </button>
-                    </div>
-                     
-                     <div className="relative flex items-center gap-2">
-                        <select value={selectedContactIndex} onChange={handleContactSelect} className="w-full p-2 bg-gray-700 rounded-md border border-gray-600 focus:ring-2 focus:ring-purple-500 text-sm">
-                            <option value="">-- Cargar de Base de Datos --</option>
-                            {contacts.map((c, idx) => ({ c, idx }))
-                                .sort((a, b) => {
-                                    const nameA = String(getDBValue(a.c, ['cliente', 'nombre', 'name']) || '');
-                                    const nameB = String(getDBValue(b.c, ['cliente', 'nombre', 'name']) || '');
-                                    const isFavA = favorites.includes(nameA);
-                                    const isFavB = favorites.includes(nameB);
-                                    if (isFavA && !isFavB) return -1;
-                                    if (!isFavA && isFavB) return 1;
-                                    return nameA.localeCompare(nameB);
-                                })
-                                .map(({ c, idx }) => {
-                                    const cName = getDBValue(c, ['cliente', 'nombre', 'name']);
-                                    const cTitle = getDBValue(c, ['lic', 'titulo', 'prefix']) || '';
-                                    const isFav = favorites.includes(String(cName));
-                                    return <option key={idx} value={idx}>{`${isFav ? '⭐ ' : ''}${cTitle} ${cName}`}</option>;
-                                })
-                            }
-                        </select>
-                        <button 
-                             onClick={() => {
-                                 if (selectedContactIndex !== '') {
-                                     const contact = contacts[parseInt(selectedContactIndex, 10)];
-                                     const cName = getDBValue(contact, ['cliente', 'nombre', 'name']);
-                                     if (cName) toggleFavorite(String(cName));
-                                 }
-                             }}
-                             disabled={selectedContactIndex === ''}
-                             className={`shrink-0 flex justify-center items-center h-[38px] w-[38px] rounded-md border transition-colors ${selectedContactIndex !== '' && favorites.includes(String(getDBValue(contacts[parseInt(selectedContactIndex, 10)], ['cliente', 'nombre', 'name']))) ? 'bg-yellow-500/20 text-yellow-400 border-yellow-500/50' : 'bg-gray-700 text-gray-400 border-gray-600 hover:text-white'}`}
-                             title="Marcar/Desmarcar Favorito"
-                         >
-                            <Star size={16} className={selectedContactIndex !== '' && favorites.includes(String(getDBValue(contacts[parseInt(selectedContactIndex, 10)], ['cliente', 'nombre', 'name']))) ? 'fill-current' : ''} />
-                         </button>
-                        {selectedContactIndex !== '' && (
-                            <div className="absolute right-12 top-1/2 -translate-y-1/2 pointer-events-none text-green-400 text-xs font-bold animate-pulse bg-gray-800 px-1 rounded">
-                                ✓
+            <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
+                <div className="space-y-4">
+                    <div className="bg-gray-900/40 p-4 rounded-xl border border-gray-800/50 space-y-3">
+                        <div className="flex items-center gap-2">
+                            <div className="relative flex-grow">
+                                <select value={selectedContactIndex} onChange={handleContactSelect} className="w-full p-2.5 bg-gray-800 border-gray-700 rounded-lg text-sm text-white font-bold appearance-none pr-10 outline-none focus:border-purple-500/50">
+                                    <option value="">Seleccionar contacto...</option>
+                                    {sortedContacts.map((c, i) => (
+                                        <option key={i} value={i}>
+                                            {favorites.some(f => f.trim() === String(getDBValue(c, 'cliente') || '').trim()) ? '★ ' : ''}
+                                            {getDBValue(c, 'cliente')}
+                                        </option>
+                                    ))}
+                                </select>
+                                <div className="absolute right-3 top-1/2 -translate-y-1/2 flex items-center gap-2">
+                                    {selectedContactIndex !== '' && (
+                                        <button 
+                                            onClick={(e) => toggleFavorite(e, getDBValue(sortedContacts[parseInt(selectedContactIndex)], 'cliente'))}
+                                            className={`transition-colors ${favorites.some(f => f.trim() === String(getDBValue(sortedContacts[parseInt(selectedContactIndex)], 'cliente') || '').trim()) ? 'text-yellow-500' : 'text-gray-600'}`}
+                                        >
+                                            <Star size={16} fill={favorites.some(f => f.trim() === String(getDBValue(sortedContacts[parseInt(selectedContactIndex)], 'cliente') || '').trim()) ? "currentColor" : "none"} />
+                                        </button>
+                                    )}
+                                </div>
                             </div>
-                        )}
-                     </div>
-                    
-                    <div className="grid grid-cols-1 sm:grid-cols-3 gap-2 items-center">
-                         <select value={recipientTitle} onChange={e => setRecipientTitle(e.target.value)} className="p-2 bg-gray-700 rounded-md border border-gray-600 focus:ring-2 focus:ring-purple-500 text-sm">
-                            {titlesList.map((t, idx) => <option key={`${t}-${idx}`} value={t}>{t || 'Título'}</option>)}
-                        </select>
-                        <input type="text" value={recipientName} onChange={e => setRecipientName(e.target.value)} placeholder="Nombre (Dejar vacío para general)" className="sm:col-span-2 p-2 bg-gray-700 rounded-md border border-gray-600 focus:ring-2 focus:ring-purple-500 text-sm"/>
-                    </div>
-                    
-                    <div className="flex justify-between items-center">
-                         <div className="flex items-center gap-4 text-sm">
-                            <label className="font-medium text-gray-300">Género:</label>
-                            <div className="flex items-center gap-2">
-                                <input type="radio" id="genderH" name="gender" value="H" checked={recipientGender === 'H'} onChange={() => setRecipientGender('H')} className="accent-purple-500"/>
-                                <label htmlFor="genderH">H</label>
-                            </div>
-                             <div className="flex items-center gap-2">
-                                <input type="radio" id="genderM" name="gender" value="M" checked={recipientGender === 'M'} onChange={() => setRecipientGender('M')} className="accent-purple-500"/>
-                                <label htmlFor="genderM">M</label>
+                            <button onClick={() => setUseNickname(!useNickname)} className={`h-[42px] px-4 rounded-lg border transition-all font-black text-xs uppercase ${useNickname ? 'border-yellow-500 text-yellow-500 bg-yellow-500/10' : 'border-gray-700 text-gray-500 hover:text-gray-300'}`}>{useNickname ? 'Apodo' : 'Nombre'}</button>
+                        </div>
+                        <div className="flex gap-2 items-center">
+                            <button onClick={handleSaveNewContact} disabled={isSavingContact} className="p-2.5 bg-gray-800 border border-gray-700 rounded-lg text-purple-400 hover:text-purple-300 transition-colors">
+                                {isSavingContact ? <Spinner size="4" /> : <Save size={18} />}
+                            </button>
+                            <select value={recipientTitle} onChange={e => setRecipientTitle(e.target.value)} className="w-20 p-2.5 bg-gray-800 border-gray-700 rounded-lg text-sm text-purple-400 font-black outline-none focus:border-purple-500/50">{titlesList.map(t => <option key={t} value={t}>{t || '---'}</option>)}</select>
+                            <div className="flex-grow flex gap-2">
+                                <input value={recipientName} onChange={e => setRecipientName(e.target.value)} className="flex-grow p-2.5 bg-gray-800 border border-gray-700 rounded-lg text-sm text-white font-bold outline-none focus:border-purple-500/50" placeholder="Nombre..."/>
+                                <div className="flex bg-gray-800 rounded-lg border border-gray-700 p-1">
+                                    <button onClick={() => setRecipientGender('M')} className={`px-3 rounded-md text-xs font-black transition-all ${recipientGender === 'M' ? 'bg-blue-600 text-white shadow' : 'text-gray-500 hover:text-gray-300'}`}>M</button>
+                                    <button onClick={() => setRecipientGender('F')} className={`px-3 rounded-md text-xs font-black transition-all ${recipientGender === 'F' ? 'bg-pink-600 text-white shadow' : 'text-gray-500 hover:text-gray-300'}`}>F</button>
+                                </div>
                             </div>
                         </div>
-                        
-                        <button 
-                            onClick={handleSaveNewContact} 
-                            disabled={isSavingContact || !recipientName}
-                            className="text-xs px-3 py-1.5 bg-green-700 hover:bg-green-600 disabled:bg-gray-600 disabled:text-gray-400 rounded-md text-white font-medium flex items-center gap-2 transition-colors"
-                        >
-                            {isSavingContact ? <Spinner size="3"/> : '+ Guardar Nuevo'}
-                        </button>
+                        <div className="flex gap-2 bg-gray-800/50 p-1.5 rounded-lg border border-gray-700">
+                            <input value={recipientEmailUser} onChange={e => setRecipientEmailUser(e.target.value)} className="flex-grow bg-transparent p-1.5 text-sm font-bold text-white outline-none" placeholder="usuario"/>
+                            <select value={recipientEmailDomain} onChange={e => setRecipientEmailDomain(e.target.value)} className="bg-gray-900 p-1.5 rounded-md text-xs font-black text-purple-400 outline-none">{emailDomains.map(d => <option key={d} value={d}>{d}</option>)}</select>
+                            <select value={recipientEmailTld} onChange={e => setRecipientEmailTld(e.target.value)} className="bg-gray-900 p-1.5 rounded-md text-xs font-bold text-gray-400 outline-none">{emailTlds.map(t => <option key={t} value={t}>{t}</option>)}</select>
+                        </div>
+                    </div>
+                    <div className="bg-gray-900/40 p-4 rounded-xl border border-gray-800/50 space-y-3">
+                            <div className="relative group">
+                                <textarea 
+                                    ref={ideaRef}
+                                    value={idea} 
+                                    onChange={onIdeaChange}
+                                    onKeyDown={handleKeyDown}
+                                    className="w-full p-4 bg-gray-800 border border-gray-700 rounded-lg text-sm text-white font-medium focus:border-purple-500/50 transition-all min-h-[100px] shadow-inner resize-none" 
+                                    placeholder="¿Qué quieres decir?"
+                                />
+                                {suggestion && (
+                                    <div 
+                                        onClick={acceptSuggestion}
+                                        className="absolute left-4 top-4 pointer-events-none text-sm font-medium text-white/20 select-none whitespace-pre-wrap"
+                                        style={{ pointerEvents: 'auto', cursor: 'pointer' }}
+                                    >
+                                        <span className="opacity-0">{idea}</span>
+                                        <span>{suggestion}</span>
+                                    </div>
+                                )}
+                            </div>
+                        <div className="border border-gray-700/50 rounded-lg overflow-hidden">
+                            <button onClick={() => setShowPreviousContext(!showPreviousContext)} className="w-full p-2.5 bg-gray-800/40 text-xs text-left text-gray-400 hover:bg-gray-800/60 transition-colors flex justify-between items-center font-bold">
+                                <span>Contexto anterior (opcional)</span>
+                                <span>{showPreviousContext ? '▲' : '▼'}</span>
+                            </button>
+                            {showPreviousContext && (
+                                <textarea value={previousEmail} onChange={e => setPreviousEmail(e.target.value)} className="w-full p-3 bg-gray-800/20 border-t border-gray-700/20 text-[11px] text-gray-400 outline-none min-h-[60px] italic resize-none" placeholder="Pega aquí el correo o mensaje al que estás respondiendo..."/>
+                            )}
+                        </div>
+                        <div className="grid grid-cols-2 gap-3">
+                            <div className="relative">
+                                <input list="project-list" value={project} onChange={e => setProject(e.target.value)} className="w-full p-2.5 bg-gray-800/50 border border-gray-700/30 rounded-lg text-sm text-white font-bold outline-none focus:border-purple-500/50" placeholder="Proyecto..."/>
+                                <datalist id="project-list">
+                                    {fraccionamientosList.map(f => <option key={f} value={f} />)}
+                                </datalist>
+                            </div>
+                            <div className="grid grid-cols-2 gap-2"><select value={tone} onChange={e => setTone(e.target.value as any)} className="p-2.5 bg-gray-800 border-gray-700 rounded-lg text-xs font-black text-purple-400 outline-none">{['Profesional', 'Casual'].map(t => <option key={t} value={t}>{t}</option>)}</select><select value={messageLength} onChange={e => setMessageLength(e.target.value as any)} className="p-2.5 bg-gray-800 border-gray-700 rounded-lg text-xs font-black text-white outline-none">{['Reducido', 'Medio', 'Detallado'].map(l => <option key={l} value={l}>{l}</option>)}</select></div>
+                        </div>
                     </div>
                 </div>
 
                 <div className="space-y-4">
-                    <div>
-                        <label htmlFor="idea" className="block mb-2 text-sm font-medium text-gray-300">Idea Principal <span className="text-gray-500 text-xs font-normal">(Opcional si pegas un correo abajo)</span></label>
-                        <SmartTextarea id="idea" value={idea} onChange={(e) => setIdea(e.target.value)}
-                            placeholder="Ej: 'Recordar sobre la junta de mañana...' o 'Dile que sí apruebo el presupuesto'."
-                            className="w-full p-2 bg-gray-700 rounded-md border border-gray-600 focus:ring-2 focus:ring-purple-500 text-sm"
-                            rows={3}
-                        />
-                    </div>
-
-                    <details className="group border border-gray-700 rounded-md bg-gray-900/50">
-                        <summary className="cursor-pointer font-medium text-sm text-gray-300 p-3 select-none flex items-center justify-between">
-                            Correo o Mensaje Anterior (Para Responder)
-                            <span className="text-purple-400 group-open:rotate-180 transition-transform">▼</span>
-                        </summary>
-                        <div className="p-3 border-t border-gray-700">
-                            <SmartTextarea id="previousEmail" value={previousEmail} onChange={(e) => setPreviousEmail(e.target.value)}
-                                placeholder="Pega aquí el correo que quieres responder. Si dejas la Idea Principal vacía, te sugeriré qué responder."
-                                className="w-full p-2 bg-gray-700 rounded-md border border-gray-600 focus:ring-2 focus:ring-purple-500 text-sm"
-                                rows={3}
-                            />
+                    {!generatedContent && !isLoading && (
+                         <div className="h-full min-h-[400px] flex flex-col items-center justify-center bg-gray-900/20 rounded-xl p-8 text-center border-2 border-dashed border-gray-800/50">
+                            <div className="p-6 bg-gray-900/50 rounded-full mb-6 border border-gray-800"><Send size={40} className="text-gray-800" /></div>
+                            <h3 className="text-lg font-black text-gray-700 uppercase">Área de Resultados</h3>
                         </div>
-                    </details>
-                </div>
-                
-                <div>
-                    <label htmlFor="project" className="block mb-2 text-sm font-medium text-gray-300">Fraccionamiento / Proyecto</label>
-                    <input
-                        type="text"
-                        id="project"
-                        list="project-list"
-                        value={project}
-                        onChange={(e) => setProject(e.target.value)}
-                        placeholder="Ej: 'Valle de los Encinos - Sector 1' (o seleccionar de la lista)"
-                        className="w-full p-2 bg-gray-700 rounded-md border border-gray-600 focus:ring-2 focus:ring-purple-500 text-sm"
-                    />
-                    <datalist id="project-list">
-                        {fraccionamientosList.length > 0 ? (
-                            fraccionamientosList.map(p => <option key={p} value={p} />)
-                        ) : (
-                            predefinedProjects.map(p => <option key={p} value={p} />)
-                        )}
-                    </datalist>
-                </div>
-
-                <div className="grid grid-cols-2 gap-4">
-                    <div>
-                        <label htmlFor="tone" className="block mb-2 text-sm font-medium text-gray-300">Tono</label>
-                        <select id="tone" value={tone} onChange={(e) => setTone(e.target.value as Tone)}
-                            className="w-full p-2 bg-gray-700 rounded-md border border-gray-600 focus:ring-2 focus:ring-purple-500 text-sm"
-                        >
-                            <option>Profesional</option>
-                            <option>Casual</option>
-                        </select>
-                    </div>
-                    <div>
-                        <label htmlFor="length" className="block mb-2 text-sm font-medium text-gray-300">Longitud</label>
-                        <select id="length" value={messageLength} onChange={(e) => setMessageLength(e.target.value as MessageLength)}
-                            className="w-full p-2 bg-gray-700 rounded-md border border-gray-600 focus:ring-2 focus:ring-purple-500 text-sm"
-                        >
-                            <option>Reducido</option>
-                            <option>Medio</option>
-                            <option>Detallado</option>
-                        </select>
-                    </div>
-                </div>
-
-                <div className="flex flex-col gap-3">
-                    <button onClick={handleGenerate} disabled={isLoading}
-                        className="w-full px-6 py-4 font-bold text-white bg-gradient-to-r from-purple-600 to-indigo-600 rounded-xl hover:from-purple-700 hover:to-indigo-700 disabled:from-gray-700 disabled:to-gray-800 disabled:cursor-not-allowed transition-all flex items-center justify-center gap-3 shadow-xl shadow-purple-900/20 active:scale-[0.98]"
-                    >
-                        {isLoading ? (
-                            <>
-                                <Spinner size="6" />
-                                <span className="tracking-wide">Generando Mensajes...</span>
-                            </>
-                        ) : (
-                            <>
-                                <Sparkles size={20} className="text-purple-200" />
-                                <span className="tracking-wide text-lg">GENERAR</span>
-                            </>
-                        )}
-                    </button>
+                    )}
+                    {isLoading && (
+                        <div className="h-full min-h-[400px] flex flex-col items-center justify-center bg-gray-900/40 rounded-xl p-8 border-2 border-purple-500/10">
+                            <RefreshCw size={50} className="animate-spin text-purple-500/30 mb-6" />
+                            <h3 className="text-xl font-black text-white uppercase tracking-widest">El Estratega está redactando...</h3>
+                        </div>
+                    )}
+                    {generatedContent && !isLoading && (
+                        <div className="space-y-4 animate-in fade-in slide-in-from-right-8 duration-700">
+                            <div className="bg-gray-900/60 rounded-xl border border-gray-800 overflow-hidden shadow-xl">
+                                <div className="bg-gray-800/50 px-4 py-3 border-b border-gray-800 flex justify-between items-center">
+                                    <div className="flex items-center gap-2"><div className="p-2 bg-purple-600/10 rounded-lg border border-purple-500/30"><Mail size={16} className="text-purple-400" /></div><span className="text-xs font-black uppercase text-purple-300">Correo</span></div>
+                                    <div className="flex gap-2"><button onClick={() => { setContextMenu({ ...contextMenu, visible: false, targetType: 'email', field: 'emailBody' }); handleSelectionAction('adjust'); }} className="px-3 py-1.5 bg-blue-600/10 text-blue-400 rounded-lg text-[10px] font-black uppercase border border-blue-500/30 hover:bg-blue-600 hover:text-white transition-all">Pulir</button><button onClick={() => handleCopyToClipboard(generatedContent.emailBody, 'email')} className={`px-3 py-1.5 rounded-lg text-[10px] font-black uppercase transition-all ${copied === 'email' ? 'bg-green-600 text-white' : 'bg-gray-800 text-gray-300 border border-gray-700'}`}>{copied === 'email' ? 'Copiado' : 'Copiar'}</button></div>
+                                </div>
+                                <div className="p-4 space-y-3">
+                                    <input value={generatedContent.emailSubject} onChange={e => setGeneratedContent({ ...generatedContent, emailSubject: e.target.value })} className="w-full bg-gray-800/40 border border-gray-700/50 rounded-lg px-4 py-2 text-sm text-white font-black outline-none focus:border-purple-500"/>
+                                    <textarea value={generatedContent.emailBody} onChange={e => setGeneratedContent({ ...generatedContent, emailBody: e.target.value })} onContextMenu={e => handleContextMenu(e, 'email', 'emailBody')} className="w-full h-64 bg-gray-800/40 border border-gray-700/50 rounded-lg px-4 py-3 text-[14px] text-gray-200 font-medium resize-none outline-none focus:border-purple-500 leading-relaxed" placeholder="Edita aquí..."/>
+                                    <button onClick={handleSendEmail} className="w-full py-3 bg-gradient-to-r from-purple-600 to-indigo-700 text-white rounded-lg font-black text-xs uppercase tracking-widest shadow-md flex justify-center gap-2 hover:scale-[1.01] active:scale-[0.99] transition-all"><Send size={16}/> Despachar</button>
+                                </div>
+                            </div>
+                            <div className="bg-gray-900/60 rounded-xl border border-gray-800 overflow-hidden shadow-xl">
+                                <div className="bg-gray-800/50 px-4 py-3 border-b border-gray-800 flex justify-between items-center">
+                                    <div className="flex items-center gap-2"><div className="p-2 bg-green-600/10 rounded-lg border border-green-500/30"><MessageSquare size={16} className="text-green-400" /></div><span className="text-xs font-black uppercase text-green-300">WhatsApp</span></div>
+                                    <div className="flex gap-2"><button onClick={() => { setContextMenu({ ...contextMenu, visible: false, targetType: 'whatsapp', field: 'whatsappMessage' }); handleSelectionAction('adjust'); }} className="px-3 py-1.5 bg-blue-600/10 text-blue-400 rounded-lg text-[10px] font-black uppercase border border-blue-500/30 hover:bg-blue-600 hover:text-white transition-all">Pulir</button><button onClick={() => handleCopyToClipboard(generatedContent.whatsappMessage, 'whatsapp')} className={`px-3 py-1.5 rounded-lg text-[10px] font-black uppercase transition-all ${copied === 'whatsapp' ? 'bg-green-600 text-white' : 'bg-gray-800 text-gray-300 border border-gray-700'}`}>{copied === 'whatsapp' ? 'Copiado' : 'Copiar'}</button></div>
+                                </div>
+                                <div className="p-4 space-y-3">
+                                    <textarea value={generatedContent.whatsappMessage} onChange={e => setGeneratedContent({ ...generatedContent, whatsappMessage: e.target.value })} onContextMenu={e => handleContextMenu(e, 'whatsapp', 'whatsappMessage')} className="w-full h-40 bg-gray-800/40 border border-gray-700/50 rounded-lg px-4 py-3 text-[14px] text-gray-200 font-medium resize-none outline-none focus:border-green-500 leading-relaxed" placeholder="WhatsApp..."/>
+                                    <button onClick={handleSendWhatsApp} className="w-full py-3 bg-gradient-to-r from-green-600 to-green-700 text-white rounded-lg font-black text-xs uppercase tracking-widest shadow-md flex justify-center gap-2 hover:scale-[1.01] active:scale-[0.99] transition-all"><MessageSquare size={16}/> Lanzar</button>
+                                </div>
+                            </div>
+                            {generatedContent.improvedIdea && (
+                                <div className="bg-gradient-to-br from-purple-900/20 to-indigo-900/10 rounded-xl border border-purple-500/20 p-4 shadow-md relative">
+                                    <div className="absolute top-2 left-2 opacity-10"><Sparkles size={24}/></div>
+                                    <p className="text-[14px] text-purple-200 font-medium italic text-center leading-relaxed">"{generatedContent.improvedIdea}"</p>
+                                    <div className="mt-4 flex justify-center"><button onClick={() => { setIdea(generatedContent.improvedIdea || ''); window.scrollTo({ top: 0, behavior: 'smooth' }); }} className="text-[9px] font-black uppercase px-4 py-2 bg-purple-600/20 text-purple-200 rounded-lg border border-purple-500/20 hover:bg-purple-600 transition-all">Usar como base</button></div>
+                                </div>
+                            )}
+                        </div>
+                    )}
                 </div>
             </div>
 
-            {/* --- Right Column: Outputs --- */}
-            <div className="space-y-4">
-                {isLoading && (
-                    <div className="h-full flex flex-col items-center justify-center bg-gray-900/50 rounded-lg p-4">
-                        <Spinner />
-                        <p className="mt-2 text-gray-400">Generando contenido...</p>
+            <AnimatePresence>{contextMenu.visible && (
+                <motion.div initial={{ opacity: 0, scale: 0.9 }} animate={{ opacity: 1, scale: 1 }} exit={{ opacity: 0, scale: 0.9 }} style={{ top: contextMenu.y, left: contextMenu.x }} className="fixed z-[1000] min-w-[280px] bg-gray-900/95 backdrop-blur-3xl border-2 border-white/10 rounded-[28px] shadow-2xl py-3 overflow-hidden" onClick={e => e.stopPropagation()}>
+                    <div className="px-5 py-3 border-b-2 border-white/5 mb-2 bg-white/5"><div className="flex items-center gap-2 mb-1"><Sparkles size={12} className="text-purple-500" /><p className="text-[9px] font-black text-gray-500 uppercase tracking-widest">IA Sugerencia</p></div><p className="text-[13px] text-purple-300 truncate italic font-medium">"{contextMenu.selectedText}"</p></div>
+                    <div className="px-2 space-y-1">
+                        <button onClick={() => handleSelectionAction('variation')} className="w-full flex items-center gap-4 px-4 py-3 text-xs font-black text-gray-200 hover:bg-purple-600 hover:text-white rounded-[18px] transition-all group"><RefreshCw size={18} className="text-purple-500 group-hover:text-white group-hover:rotate-180 transition-all duration-500"/><div className="text-left"><span>Variación</span><p className="text-[8px] text-gray-500 group-hover:text-purple-200 uppercase tracking-tighter">Otra forma de decirlo</p></div></button>
+                        <button onClick={() => { const n = prompt('¿Qué integrar?'); if(n) handleSelectionAction('replace', n); }} className="w-full flex items-center gap-4 px-4 py-3 text-xs font-black text-gray-200 hover:bg-blue-600 hover:text-white rounded-[18px] transition-all group"><Pencil size={18} className="text-blue-500 group-hover:text-white"/><div className="text-left"><span>Ajuste</span><p className="text-[8px] text-gray-500 group-hover:text-blue-200 uppercase tracking-tighter">Inyectar palabra</p></div></button>
+                        <div className="h-px bg-white/5 my-2 mx-4" />
+                        <button onClick={() => handleSelectionAction('delete')} className="w-full flex items-center gap-4 px-4 py-3 text-xs font-black text-red-400 hover:bg-red-600 hover:text-white rounded-[18px] transition-all group"><Trash2 size={18} className="text-red-500 group-hover:text-white"/><div className="text-left"><span>Remover</span><p className="text-[8px] text-gray-500 group-hover:text-red-200 uppercase tracking-tighter">Borrar y corregir</p></div></button>
                     </div>
-                )}
-                {!isLoading && !generatedContent && (
-                     <div className="h-full flex flex-col items-center justify-center bg-gray-900/50 rounded-lg p-4 text-center">
-                        <svg xmlns="http://www.w3.org/2000/svg" className="h-16 w-16 text-gray-600" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1} d="M8 10h.01M12 10h.01M16 10h.01M9 16H5a2 2 0 01-2-2V6a2 2 0 012-2h14a2 2 0 012 2v8a2 2 0 01-2 2h-5l-5 5v-5z" /></svg>
-                        <p className="mt-2 text-gray-500">El contenido generado aparecerá aquí.</p>
-                    </div>
-                )}
+                </motion.div>
+            )}</AnimatePresence>
 
-                {generatedContent && (
-                    <div className="space-y-4 animate-fade-in">
-                        {/* Email Output */}
-                        <div className="bg-gray-900/50 p-4 rounded-lg">
-                            <div className="flex justify-between items-center mb-2">
-                                <h3 className="text-lg font-semibold text-white">Email Generado</h3>
-                                <div className="flex items-center gap-2">
-                                    <IconButton tooltip={copied === 'email' ? '¡Copiado!' : 'Copiar como texto enriquecido'} onClick={() => handleCopyToClipboard(generatedContent.emailBody, 'email')}>
-                                        <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5" viewBox="0 0 20 20" fill="currentColor"><path d="M7 3a1 1 0 000 2h6a1 1 0 100-2H7zM4 7a1 1 0 011-1h10a1 1 0 110 2H5a1 1 0 01-1-1zM2 11a1 1 0 011-1h14a1 1 0 110 2H3a1 1 0 01-1-1z" /></svg>
-                                    </IconButton>
-                                    <IconButton tooltip="Abrir en cliente de correo" onClick={handleSendEmail}>
-                                        <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5" viewBox="0 0 20 20" fill="currentColor"><path d="M10.894 2.553a1 1 0 00-1.788 0l-7 14a1 1 0 001.169 1.409l5-1.429A1 1 0 009 15.571V11a1 1 0 112 0v4.571a1 1 0 00.725.962l5 1.428a1 1 0 001.17-1.408l-7-14z" /></svg>
-                                    </IconButton>
-                                </div>
-                            </div>
-                            <div className="bg-gray-800 p-3 rounded-md space-y-2">
-                                <p className="text-sm"><strong className="text-gray-400">Asunto:</strong> {generatedContent.emailSubject}</p>
-                                <div className="border-t border-gray-700 my-1"></div>
-                                <div className="text-sm leading-relaxed text-gray-200" onContextMenu={(e) => handleContextMenu(e, 'email', 'emailBody')}>
-                                    <MarkdownRenderer content={generatedContent.emailBody} />
-                                </div>
-                            </div>
-                        </div>
-
-                        {/* WhatsApp Output */}
-                        <div className="bg-gray-900/50 p-4 rounded-lg">
-                             <div className="flex justify-between items-center mb-2">
-                                <h3 className="text-lg font-semibold text-white">Mensaje de WhatsApp</h3>
-                                 <div className="flex items-center gap-2">
-                                    <IconButton tooltip={copied === 'whatsapp' ? '¡Copiado!' : 'Copiar'} onClick={() => handleCopyToClipboard(generatedContent.whatsappMessage, 'whatsapp')}>
-                                        <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5" viewBox="0 0 20 20" fill="currentColor"><path d="M7 3a1 1 0 000 2h6a1 1 0 100-2H7zM4 7a1 1 0 011-1h10a1 1 0 110 2H5a1 1 0 01-1-1zM2 11a1 1 0 011-1h14a1 1 0 110 2H3a1 1 0 01-1-1z" /></svg>
-                                    </IconButton>
-                                    <IconButton tooltip="Abrir en WhatsApp" onClick={handleSendWhatsApp}>
-                                        <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5" fill="currentColor" viewBox="0 0 24 24"><path d="M.057 24l1.687-6.163c-1.041-1.804-1.588-3.849-1.587-5.946.003-6.556 5.338-11.891 11.893-11.891 3.181.001 6.167 1.24 8.413 3.488 2.245 2.248 3.481 5.236 3.48 8.414-.003 6.557-5.338 11.892-11.893 11.892-1.99-.001-3.951-.5-5.688-1.448l-6.305 1.654zm6.597-3.807c1.676.995 3.276 1.591 5.392 1.592 5.448 0 9.886-4.434 9.889-9.885.002-5.462-4.415-9.89-9.881-9.892-5.452 0-9.887 4.434-9.889 9.886-.001 2.269.655 4.502 1.906 6.344l-1.191 4.353 4.462-1.161z" /></svg>
-                                    </IconButton>
-                                </div>
-                            </div>
-                             <div className="bg-gray-800 p-3 rounded-md text-sm leading-relaxed text-gray-200" onContextMenu={(e) => handleContextMenu(e, 'whatsapp', 'whatsappMessage')}>
-                                {generatedContent.whatsappMessage}
-                            </div>
-                        </div>
-
-                        {/* Mejora Directa Resultados */}
-                        {generatedContent.improvedIdea && (
-                            <div className="mt-6 border-t border-gray-800 pt-6">
-                                <h3 className="text-sm font-bold text-purple-400 flex items-center gap-2 mb-3">
-                                    <Sparkles size={16} />
-                                    Mejora Directa del Borrador
-                                </h3>
-                                <div className="p-4 bg-gray-800/40 rounded-2xl border border-purple-500/30 shadow-[0_0_20px_rgba(168,85,247,0.1)]">
-                                    <div className="text-sm text-gray-300 leading-relaxed whitespace-pre-wrap italic" onContextMenu={(e) => handleContextMenu(e, 'improvedIdea', 'improvedIdea')}>
-                                        "{generatedContent.improvedIdea}"
-                                    </div>
-                                    <button 
-                                        onClick={() => {
-                                            setIdea(generatedContent.improvedIdea || '');
-                                            setCopied('email'); 
-                                            setTimeout(() => setCopied(null), 2000);
-                                        }}
-                                        className="mt-3 px-3 py-1.5 text-[10px] font-bold bg-purple-600/20 text-purple-300 border border-purple-500/30 rounded-lg hover:bg-purple-600/40 hover:scale-105 transition-all flex items-center gap-2"
-                                    >
-                                        <Star size={12} />
-                                        USAR COMO IDEA PRINCIPAL
-                                    </button>
-                                </div>
-                            </div>
-                        )}
-                    </div>
-                )}
-            </div>
-        </div>
-        {error && <p className="text-red-400 mt-4 text-center bg-red-900/20 p-2 rounded-md font-medium text-sm">{error}</p>}
-
-        {/* AI Processing Overlay */}
-        <AnimatePresence>
             {isProcessingSelection && (
-                <motion.div 
-                    initial={{ opacity: 0 }}
-                    animate={{ opacity: 1 }}
-                    exit={{ opacity: 0 }}
-                    className="fixed inset-0 bg-black/40 backdrop-blur-[2px] z-[60] flex items-center justify-center"
-                >
-                    <div className="bg-gray-900/90 border border-purple-500/50 p-6 rounded-2xl shadow-2xl flex flex-col items-center gap-4">
-                        <Spinner size="8" />
-                        <p className="text-purple-400 font-bold animate-pulse">Ajustando con IA...</p>
-                    </div>
-                </motion.div>
+                <div className="fixed inset-0 bg-gray-950/80 backdrop-blur-2xl flex items-center justify-center z-[1100]">
+                    <motion.div initial={{ scale: 0.8, opacity: 0 }} animate={{ scale: 1, opacity: 1 }} className="bg-gray-900/90 p-12 rounded-[50px] border-2 border-purple-500/30 flex flex-col items-center gap-8 shadow-2xl">
+                        <div className="relative"><div className="w-24 h-24 rounded-full border-4 border-purple-500/20 border-t-purple-500 animate-spin" /><Sparkles className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 text-purple-400" size={32} /></div>
+                        <h4 className="text-xl font-black text-white uppercase tracking-[0.3em]">IA Refinando...</h4>
+                    </motion.div>
+                </div>
             )}
-        </AnimatePresence>
-
-        {/* Context Menu */}
-        <AnimatePresence>
-            {contextMenu.visible && (
-                <motion.div
-                    initial={{ opacity: 0, scale: 0.95, y: -10 }}
-                    animate={{ opacity: 1, scale: 1, y: 0 }}
-                    exit={{ opacity: 0, scale: 0.95, y: -10 }}
-                    style={{ top: contextMenu.y, left: contextMenu.x }}
-                    className="fixed z-[100] bg-gray-900/95 backdrop-blur-xl border border-white/10 rounded-xl shadow-2xl p-1.5 w-64 overflow-hidden"
-                    onClick={(e) => e.stopPropagation()}
-                >
-                    <div className="px-3 py-2 border-b border-white/5 mb-1">
-                        <p className="text-[10px] font-black text-gray-500 uppercase tracking-widest">IA Editor de Selección</p>
-                        <p className="text-xs text-purple-400 truncate mt-0.5 italic">"{contextMenu.selectedText}"</p>
-                    </div>
-                    
-                    <button 
-                        onClick={() => handleSelectionAction('variation')}
-                        className="w-full flex items-center gap-3 px-3 py-2.5 text-sm text-gray-300 hover:bg-purple-600/20 hover:text-purple-300 rounded-lg transition-all group"
-                    >
-                        <Sparkles size={16} className="text-purple-500 group-hover:scale-110 transition-transform" />
-                        Pedir otra opción
-                    </button>
-                    
-                    <button 
-                        onClick={() => {
-                            const newWord = window.prompt("¿Qué palabra o concepto quieres integrar?", "");
-                            if (newWord) handleSelectionAction('replace', newWord);
-                        }}
-                        className="w-full flex items-center gap-3 px-3 py-2.5 text-sm text-gray-300 hover:bg-blue-600/20 hover:text-blue-300 rounded-lg transition-all group"
-                    >
-                        <Pencil size={16} className="text-blue-500 group-hover:scale-110 transition-transform" />
-                        Cambiar palabra / ajustar
-                    </button>
-                    
-                    <button 
-                        onClick={() => handleSelectionAction('delete')}
-                        className="w-full flex items-center gap-3 px-3 py-2.5 text-sm text-gray-300 hover:bg-red-600/20 hover:text-red-300 rounded-lg transition-all group"
-                    >
-                        <Trash2 size={16} className="text-red-500 group-hover:scale-110 transition-transform" />
-                        Borrar y ajustar flujo
-                    </button>
-
-                    <div className="h-[1px] bg-white/5 my-1" />
-
-                    <button 
-                        onClick={() => handleSelectionAction('regenerate')}
-                        className="w-full flex items-center gap-3 px-3 py-2.5 text-sm text-gray-400 hover:bg-gray-800 hover:text-white rounded-lg transition-all group"
-                    >
-                        <RefreshCw size={16} className="group-hover:rotate-180 transition-transform duration-500" />
-                        Generar nuevamente bloque
-                    </button>
-                </motion.div>
-            )}
-        </AnimatePresence>
-    </div>
-  );
+        </div>
+    );
 };
 
 export default EmailGenerator;

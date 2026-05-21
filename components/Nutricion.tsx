@@ -295,7 +295,7 @@ const Nutricion: React.FC = () => {
             Responde SOLO con el número estimado de calorías (un entero).`;
 
             const response = await ai.models.generateContent({
-                model: "gemini-2.5-flash",
+                model: "gemini-3.1-flash-preview",
                 contents: prompt,
             });
 
@@ -342,7 +342,7 @@ const Nutricion: React.FC = () => {
             Responde SOLO con el número estimado de calorías (un entero).`;
 
             const response = await ai.models.generateContent({
-                model: "gemini-2.5-flash",
+                model: "gemini-3.1-flash-preview",
                 contents: prompt,
             });
 
@@ -549,7 +549,7 @@ Responde estrictamente en formato JSON:
 }
 `;
             const response = await ai.models.generateContent({
-                model: 'gemini-2.5-flash',
+                model: 'gemini-3.1-flash-preview',
                 contents: prompt,
                 config: { 
                     responseMimeType: 'application/json',
@@ -718,7 +718,7 @@ Si no hay cambios en el plan ni en las exclusiones, solo responde a su pregunta 
 `;
 
             const response = await ai.models.generateContent({
-                model: 'gemini-2.5-flash',
+                model: 'gemini-3.1-flash-preview',
                 contents: prompt,
             });
 
@@ -859,7 +859,7 @@ Por favor, proporciona un análisis detallado, amigable y estructurado en Markdo
 `;
 
             const response = await ai.models.generateContent({
-                model: 'gemini-2.5-flash',
+                model: 'gemini-3.1-flash-preview',
                 contents: prompt,
             });
 
@@ -938,7 +938,7 @@ Por favor, proporciona un análisis detallado, amigable y estructurado en Markdo
                     }
                 });
                 const response = await ai.models.generateContent({
-                    model: "gemini-2.5-flash",
+                    model: "gemini-3.1-flash-preview",
                     contents: {
                         parts: [
                             { inlineData: { data: base64Data, mimeType: file.type } },

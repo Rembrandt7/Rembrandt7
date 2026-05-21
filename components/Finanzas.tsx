@@ -1,10 +1,24 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useCallback } from 'react';
 import { useLinks } from '../contexts/LinkContext';
 import { FinanzasCard, FinancialItem } from '../types';
 import { Plus, Edit, Trash2, CreditCard, Wallet, TrendingUp, TrendingDown, Save, Download } from 'lucide-react';
 import { motion, AnimatePresence } from 'motion/react';
 import { supabase } from '../services/supabaseClient';
 import { toast } from 'sonner';
+
+const formatCurrencyInput = (value: string | number) => {
+  if (value === undefined || value === null) return '';
+  const strVal = value.toString().replace(/[^0-9.]/g, '');
+  if (!strVal) return '';
+  const parts = strVal.split('.');
+  parts[0] = parts[0].replace(/\B(?=(\d{3})+(?!\d))/g, ',');
+  if (parts.length > 2) parts.pop();
+  return parts.join('.');
+};
+
+const parseCurrencyInput = (value: string) => {
+  return parseFloat(value.replace(/,/g, '')) || 0;
+};
 
 const CardItem: React.FC<{ 
   card: FinanzasCard, 
@@ -36,8 +50,13 @@ const CardItem: React.FC<{
             ${card.balance.toLocaleString('es-MX', { minimumFractionDigits: 0 })}
           </span>
         </div>
-        <div className="text-xs text-white/50 font-medium mb-3">
-          {card.expirationDate} {isCredit && `| Corte: ${card.cutoffDate}`}
+        <div className="text-xs text-white/50 font-medium mb-3 flex items-center justify-between">
+          <span>{card.expirationDate} {isCredit && `| Corte: ${card.cutoffDate}`}</span>
+          {card.annualYieldRate ? (
+            <span className="flex items-center gap-1 text-emerald-400 bg-emerald-400/10 px-1.5 py-0.5 rounded" title={`Rendimiento: ${card.annualYieldRate}% anual`}>
+              <TrendingUp size={10} /> {card.annualYieldRate}%
+            </span>
+          ) : null}
         </div>
       </div>
 
@@ -74,7 +93,7 @@ const CardItem: React.FC<{
   );
 };
 
-const FinancialItemItem: React.FC<{ item: FinancialItem, onDelete: (id: string) => void, onEdit: (i: FinancialItem) => void }> = ({ item, onDelete, onEdit }) => {
+const FinancialItemItem: React.FC<{ item: FinancialItem, onDelete: (id: string) => void, onEdit: (i: FinancialItem) => void, onMarkPaid?: (id: string) => void }> = ({ item, onDelete, onEdit, onMarkPaid }) => {
   const isDebt = item.type === 'deuda';
   const totalToPay = isDebt && item.annualInterestRate 
     ? item.totalAmount + (item.totalAmount * (item.annualInterestRate / 100) * ((item.totalPayments || 12) / 12))
@@ -83,6 +102,40 @@ const FinancialItemItem: React.FC<{ item: FinancialItem, onDelete: (id: string) 
   const progress = isDebt 
     ? ((item.totalAmount - item.currentAmount) / item.totalAmount) * 100 
     : (item.currentAmount / item.totalAmount) * 100;
+
+  let nextPaymentDateStr = '';
+  let finishDateStr = '';
+
+  if (isDebt) {
+    if (item.paymentDate) {
+      const today = new Date();
+      const paymentDay = parseInt(item.paymentDate, 10);
+      if (!isNaN(paymentDay)) {
+        let nextMonth = today.getMonth();
+        let nextYear = today.getFullYear();
+        if (today.getDate() > paymentDay) {
+          nextMonth += 1;
+          if (nextMonth > 11) {
+            nextMonth = 0;
+            nextYear += 1;
+          }
+        }
+        const nextDate = new Date(nextYear, nextMonth, paymentDay);
+        nextPaymentDateStr = nextDate.toLocaleDateString('es-MX', { day: '2-digit', month: 'short' });
+      }
+    }
+
+    if (item.totalPayments && item.paymentsMade !== undefined) {
+      const remaining = item.totalPayments - item.paymentsMade;
+      if (remaining > 0) {
+        const today = new Date();
+        const finishDate = new Date(today.getFullYear(), today.getMonth() + remaining, today.getDate());
+        finishDateStr = finishDate.toLocaleDateString('es-MX', { month: 'short', year: 'numeric' });
+      } else {
+        finishDateStr = 'Terminado';
+      }
+    }
+  }
 
   return (
     <motion.div 
@@ -129,10 +182,37 @@ const FinancialItemItem: React.FC<{ item: FinancialItem, onDelete: (id: string) 
           <p className="text-white/40 text-[10px] uppercase tracking-wider">Actual</p>
           <p className="text-white font-mono font-semibold">${item.currentAmount}</p>
         </div>
+        {isDebt && (
+          <>
+            <div className="bg-white/5 p-2 rounded-lg">
+              <p className="text-white/40 text-[10px] uppercase tracking-wider">Pagos</p>
+              <p className="text-white font-mono font-semibold">{item.paymentsMade || 0} / {item.totalPayments || '?'}</p>
+            </div>
+            <div className="bg-white/5 p-2 rounded-lg">
+              <p className="text-white/40 text-[10px] uppercase tracking-wider">Siguiente Pago</p>
+              <p className="text-white font-mono font-semibold">{nextPaymentDateStr || 'N/A'}</p>
+            </div>
+            {finishDateStr && (
+              <div className="bg-white/5 p-2 rounded-lg col-span-2 flex justify-between items-center">
+                 <span className="text-white/40 text-[10px] uppercase tracking-wider">Término est.</span>
+                 <span className="text-white font-mono font-semibold text-emerald-400">{finishDateStr}</span>
+              </div>
+            )}
+          </>
+        )}
       </div>
       
+      {isDebt && onMarkPaid && (
+        <button 
+          onClick={() => onMarkPaid(item.id)}
+          className="mt-2 w-full py-2 bg-emerald-600/20 hover:bg-emerald-600/40 border border-emerald-500/30 text-emerald-400 rounded-lg text-xs font-bold transition-colors"
+        >
+          Ya hice el pago
+        </button>
+      )}
+
       {isDebt && item.annualInterestRate && (
-        <div className="text-[10px] text-white/40 text-center border-t border-white/5 pt-2">
+        <div className="text-[10px] text-white/40 text-center border-t border-white/5 pt-2 mt-2">
           Total estimado con interés: <span className="text-white font-mono">${totalToPay.toFixed(2)}</span>
         </div>
       )}
@@ -148,7 +228,9 @@ const Finanzas: React.FC = () => {
   const [isItemModalOpen, setIsItemModalOpen] = useState(false);
   const [editingCard, setEditingCard] = useState<FinanzasCard | null>(null);
 
-  const [profileName, setProfileName] = useState('rem');
+  const [profileName, setProfileName] = useState(() => {
+    return localStorage.getItem('finanzas_profile_name') || 'rem';
+  });
   const [isLoading, setIsLoading] = useState(false);
   const [isSaving, setIsSaving] = useState(false);
 
@@ -159,6 +241,7 @@ const Finanzas: React.FC = () => {
   const [paymentDate, setPaymentDate] = useState('');
   const [cutoffDate, setCutoffDate] = useState('');
   const [balance, setBalance] = useState('');
+  const [annualYieldRate, setAnnualYieldRate] = useState('');
 
   // Item Form state
   const [itemType, setItemType] = useState<'deuda' | 'ahorro'>('deuda');
@@ -173,15 +256,7 @@ const Finanzas: React.FC = () => {
   const [itemInterest, setItemInterest] = useState('');
   const [editingItem, setEditingItem] = useState<FinancialItem | null>(null);
 
-  useEffect(() => {
-    // Solo carga inicial desde la config si están vacíos.
-    if (cards.length === 0 && financialItems.length === 0) {
-      setCards(config.finanzasCards || []);
-      setFinancialItems(config.financialItems || []);
-    }
-  }, [config.finanzasCards, config.financialItems]);
-
-  const fetchFinanzas = async () => {
+  const fetchFinanzas = useCallback(async () => {
     if (!profileName) return;
     setIsLoading(true);
     try {
@@ -206,9 +281,45 @@ const Finanzas: React.FC = () => {
     } finally {
       setIsLoading(false);
     }
-  };
+  }, [profileName]);
 
-  const saveFinanzas = async () => {
+  // Daily yield calculation effect
+  useEffect(() => {
+    if (cards.length > 0 && !isLoading) {
+      const now = Date.now();
+      const msPerDay = 1000 * 60 * 60 * 24;
+      let hasChanges = false;
+
+      const updatedCards = cards.map(c => {
+        if ((c.type === 'debito' || c.type === 'ahorro') && c.annualYieldRate && c.lastYieldUpdate) {
+           const daysPassed = Math.floor((now - c.lastYieldUpdate) / msPerDay);
+           if (daysPassed > 0) {
+              hasChanges = true;
+              const dailyRate = (c.annualYieldRate / 100) / 365;
+              let newBalance = c.balance;
+              for (let i = 0; i < daysPassed; i++) {
+                 newBalance += newBalance * dailyRate;
+              }
+              return {
+                 ...c,
+                 balance: newBalance,
+                 lastYieldUpdate: c.lastYieldUpdate + (daysPassed * msPerDay)
+              };
+           }
+        } else if ((c.type === 'debito' || c.type === 'ahorro') && c.annualYieldRate && !c.lastYieldUpdate) {
+           hasChanges = true;
+           return { ...c, lastYieldUpdate: now };
+        }
+        return c;
+      });
+
+      if (hasChanges) {
+        setCards(updatedCards);
+      }
+    }
+  }, [cards, isLoading]);
+
+  const saveFinanzas = useCallback(async () => {
     if (!profileName) return;
     setIsSaving(true);
     try {
@@ -226,7 +337,27 @@ const Finanzas: React.FC = () => {
     } finally {
       setIsSaving(false);
     }
-  };
+  }, [profileName, cards, financialItems]);
+
+  // Persistence for profileName
+  useEffect(() => {
+    localStorage.setItem('finanzas_profile_name', profileName);
+  }, [profileName]);
+
+  // Initial load logic
+  useEffect(() => {
+    if (profileName) {
+      fetchFinanzas();
+    }
+  }, [fetchFinanzas]); // Depend on fetchFinanzas which depends on profileName
+
+  useEffect(() => {
+    // Solo carga inicial desde la config si están vacíos y no hay profileName o falló la carga
+    if (cards.length === 0 && financialItems.length === 0 && !isLoading) {
+      setCards(config.finanzasCards || []);
+      setFinancialItems(config.financialItems || []);
+    }
+  }, [config.finanzasCards, config.financialItems, isLoading, cards.length, financialItems.length]);
 
   const handleSaveCard = () => {
     if (!name) return;
@@ -238,7 +369,9 @@ const Finanzas: React.FC = () => {
       expirationDate,
       paymentDate: type === 'credito' ? paymentDate : undefined,
       cutoffDate: type === 'credito' ? cutoffDate : undefined,
-      balance: parseFloat(balance) || 0,
+      balance: parseCurrencyInput(balance),
+      annualYieldRate: (type === 'debito' || type === 'ahorro') && annualYieldRate ? parseFloat(annualYieldRate) : undefined,
+      lastYieldUpdate: editingCard?.lastYieldUpdate || Date.now(),
     };
 
     let updatedCards;
@@ -260,9 +393,9 @@ const Finanzas: React.FC = () => {
       id: editingItem ? editingItem.id : Date.now().toString(),
       type: itemType,
       name: itemName,
-      monthlyAmount: parseFloat(itemMonthly) || 0,
-      totalAmount: parseFloat(itemTotal) || 0,
-      currentAmount: parseFloat(itemCurrent) || 0,
+      monthlyAmount: parseCurrencyInput(itemMonthly),
+      totalAmount: parseCurrencyInput(itemTotal),
+      currentAmount: parseCurrencyInput(itemCurrent),
       startDate: itemStart,
       totalPayments: parseInt(itemPayments) || undefined,
       paymentsMade: parseInt(itemMade) || undefined,
@@ -284,6 +417,25 @@ const Finanzas: React.FC = () => {
   const handleDeleteItem = (id: string) => {
     const updatedItems = financialItems.filter(i => i.id !== id);
     setFinancialItems(updatedItems);
+  };
+
+  const handleMarkPaidItem = (id: string) => {
+    const updatedItems = financialItems.map(item => {
+      if (item.id === id && item.type === 'deuda') {
+        const monthly = item.monthlyAmount || 0;
+        const newCurrent = Math.max(0, item.currentAmount - monthly);
+        const newMade = (item.paymentsMade || 0) + 1;
+        
+        return {
+          ...item,
+          currentAmount: newCurrent,
+          paymentsMade: newMade
+        };
+      }
+      return item;
+    });
+    setFinancialItems(updatedItems);
+    toast.success("Pago registrado con éxito");
   };
 
   const creditoCards = cards.filter(c => c.type === 'credito');
@@ -316,9 +468,9 @@ const Finanzas: React.FC = () => {
       setEditingItem(item);
       setItemType(item.type);
       setItemName(item.name);
-      setItemMonthly((item.monthlyAmount || 0).toString());
-      setItemTotal((item.totalAmount || 0).toString());
-      setItemCurrent((item.currentAmount || 0).toString());
+      setItemMonthly(formatCurrencyInput(item.monthlyAmount));
+      setItemTotal(formatCurrencyInput(item.totalAmount));
+      setItemCurrent(formatCurrencyInput(item.currentAmount));
       setItemStart(item.startDate);
       setItemPayments(item.totalPayments?.toString() || '');
       setItemMade(item.paymentsMade?.toString() || '');
@@ -348,7 +500,8 @@ const Finanzas: React.FC = () => {
       setExpirationDate(card.expirationDate);
       setPaymentDate(card.paymentDate || '');
       setCutoffDate(card.cutoffDate || '');
-      setBalance(card.balance.toString());
+      setBalance(formatCurrencyInput(card.balance));
+      setAnnualYieldRate(card.annualYieldRate?.toString() || '');
     } else {
       setEditingCard(null);
       setType('credito');
@@ -357,6 +510,7 @@ const Finanzas: React.FC = () => {
       setPaymentDate('');
       setCutoffDate('');
       setBalance('');
+      setAnnualYieldRate('');
     }
     setIsModalOpen(true);
   };
@@ -462,7 +616,7 @@ const Finanzas: React.FC = () => {
             <h3 className="text-xl font-bold text-orange-400 mb-4">Deudas</h3>
             <div className="space-y-2">
               {financialItems.filter(i => i.type === 'deuda').map(item => (
-                <FinancialItemItem key={item.id} item={item} onDelete={handleDeleteItem} onEdit={openItemModal} />
+                <FinancialItemItem key={item.id} item={item} onDelete={handleDeleteItem} onEdit={openItemModal} onMarkPaid={handleMarkPaidItem} />
               ))}
             </div>
           </div>
@@ -568,13 +722,29 @@ const Finanzas: React.FC = () => {
                   {type === 'credito' || type === 'deuda' ? 'Deuda Actual ($)' : 'Ahorro / Saldo ($)'}
                 </label>
                 <input 
-                  type="number" 
+                  type="text" 
                   value={balance} 
-                  onChange={e => setBalance(e.target.value)}
+                  onChange={e => setBalance(formatCurrencyInput(e.target.value))}
                   className="w-full bg-black/50 border border-white/10 rounded-lg px-3 py-2 text-white focus:outline-none focus:border-emerald-500"
                   placeholder="0.00"
                 />
               </div>
+
+              {(type === 'debito' || type === 'ahorro') && (
+                <div>
+                  <label className="block text-sm font-medium text-white/70 mb-1">
+                    Rendimiento Anual (%) <span className="text-emerald-400 text-xs">Opcional</span>
+                  </label>
+                  <input 
+                    type="number" 
+                    value={annualYieldRate} 
+                    onChange={e => setAnnualYieldRate(e.target.value)}
+                    className="w-full bg-black/50 border border-white/10 rounded-lg px-3 py-2 text-white focus:outline-none focus:border-emerald-500"
+                    placeholder="Ej. 15"
+                  />
+                  <p className="text-xs text-white/40 mt-1">Se calculará y sumará automáticamente el rendimiento diario.</p>
+                </div>
+              )}
             </div>
 
             <div className="flex justify-end gap-3 mt-6">
@@ -636,9 +806,9 @@ const Finanzas: React.FC = () => {
                 <div>
                   <label className="block text-sm font-medium text-white/70 mb-1">Mensualidad ($)</label>
                   <input 
-                    type="number" 
+                    type="text" 
                     value={itemMonthly} 
-                    onChange={e => setItemMonthly(e.target.value)}
+                    onChange={e => setItemMonthly(formatCurrencyInput(e.target.value))}
                     className="w-full bg-black/50 border border-white/10 rounded-lg px-3 py-2 text-white focus:outline-none focus:border-emerald-500"
                     placeholder="0.00"
                   />
@@ -646,9 +816,9 @@ const Finanzas: React.FC = () => {
                 <div>
                   <label className="block text-sm font-medium text-white/70 mb-1">Total ($)</label>
                   <input 
-                    type="number" 
+                    type="text" 
                     value={itemTotal} 
-                    onChange={e => setItemTotal(e.target.value)}
+                    onChange={e => setItemTotal(formatCurrencyInput(e.target.value))}
                     className="w-full bg-black/50 border border-white/10 rounded-lg px-3 py-2 text-white focus:outline-none focus:border-emerald-500"
                     placeholder="0.00"
                   />
@@ -658,9 +828,9 @@ const Finanzas: React.FC = () => {
               <div>
                 <label className="block text-sm font-medium text-white/70 mb-1">Actual ($)</label>
                 <input 
-                  type="number" 
+                  type="text" 
                   value={itemCurrent} 
-                  onChange={e => setItemCurrent(e.target.value)}
+                  onChange={e => setItemCurrent(formatCurrencyInput(e.target.value))}
                   className="w-full bg-black/50 border border-white/10 rounded-lg px-3 py-2 text-white focus:outline-none focus:border-emerald-500"
                   placeholder="0.00"
                 />

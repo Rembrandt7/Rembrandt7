@@ -166,7 +166,7 @@ Contexto actual:
 `;
 
       const response = await ai.models.generateContent({
-        model: "gemini-2.5-flash",
+        model: "gemini-3.1-flash-preview",
         contents: [
           ...messages.map(m => ({ role: m.role, parts: [{ text: m.content }] })),
           { role: 'user', parts: [{ text: userMessage }] }
@@ -421,7 +421,7 @@ Contexto actual:
           } else if (call.name === 'generate_image') {
             const args = call.args as any;
             const imgResponse = await ai.models.generateContent({
-              model: 'gemini-2.5-flash-image',
+              model: 'gemini-3.1-flash-preview-image',
               contents: { parts: [{ text: args.prompt }] },
             });
             const part = imgResponse.candidates?.[0]?.content?.parts?.find(p => p.inlineData);
@@ -438,7 +438,7 @@ Contexto actual:
 
         // After function call, we need to get a text response from the model
         const followUp = await ai.models.generateContent({
-          model: "gemini-2.5-flash",
+          model: "gemini-3.1-flash-preview",
           contents: [
             ...messages.map(m => ({ role: m.role, parts: [{ text: m.content }] })),
             { role: 'user', parts: [{ text: userMessage }] },

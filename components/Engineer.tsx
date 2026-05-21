@@ -65,7 +65,7 @@ const Engineer: React.FC = () => {
                 }));
 
             const chat = ai.chats.create({
-                model: 'gemini-2.5-flash',
+                model: 'gemini-3.1-flash-preview',
                 config: {
                     systemInstruction: systemInstruction,
                 },
@@ -107,7 +107,7 @@ const Engineer: React.FC = () => {
             const prompt = `Genera un diagrama técnico estructural, esquema o visualización realista que explique el siguiente concepto o solución de ingeniería: "${lastModelMessage.text.substring(0, 500)}...". La imagen debe ser clara, profesional y educativa.`;
 
             const response = await ai.models.generateContent({
-                model: 'gemini-2.5-flash-image',
+                model: 'gemini-3.1-flash-preview-image',
                 contents: { parts: [{ text: prompt }] },
                 config: { responseModalities: [Modality.IMAGE] },
             });

@@ -115,7 +115,7 @@ const Renders: React.FC = () => {
           const prompt = `Edita esta imagen. ${editPrompt}. Mantén la estructura y el estilo visual original lo más posible, solo aplica el cambio solicitado.`;
           
           const response = await ai.models.generateContent({
-              model: 'gemini-2.5-flash-image',
+              model: 'gemini-3.1-flash-preview-image',
               contents: {
                   parts: [
                       {
@@ -190,7 +190,7 @@ const Renders: React.FC = () => {
               </svg>
           </RenderLinkIcon>
           
-          <RenderLinkIcon href="https://aistudio.google.com/prompts/new_chat?model=gemini-2.5-flash-image" name="NanoBanana" colorClass="text-yellow-400 hover:border-yellow-400">
+          <RenderLinkIcon href="https://aistudio.google.com/prompts/new_chat?model=gemini-3.1-flash-preview-image" name="NanoBanana" colorClass="text-yellow-400 hover:border-yellow-400">
               <svg className="h-8 w-8" viewBox="0 0 100 100" fill="currentColor" xmlns="http://www.w3.org/2000/svg">
                   <path d="M 85,15 C 70,10 50,25 35,40 C 20,55 10,70 15,85 C 20,100 40,95 55,80 C 70,65 90,50 95,35 C 100,20 95,18 85,15 Z" />
               </svg>

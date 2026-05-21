@@ -64,7 +64,7 @@ const NotificationManager: React.FC = () => {
             apiKey: googleApiConfig?.apiKey || process.env.API_KEY || process.env.GEMINI_API_KEY || '',
             baseUrl: `${window.location.origin}/api/proxy/google`
         });
-        const model = "gemini-2.5-flash";
+        const model = "gemini-3.1-flash-preview";
         
         let context = "";
         if (slotLabel === 'Mañana') {

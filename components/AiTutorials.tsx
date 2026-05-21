@@ -36,7 +36,7 @@ const AiTutorials: React.FC = () => {
             baseUrl: `${window.location.origin}/api/proxy/google`
         });
         const response = await ai.models.generateContent({
-            model: "gemini-2.5-flash-preview-tts",
+            model: "gemini-3.1-flash-preview-preview-tts",
             contents: [{ parts: [{ text: text }] }],
             config: {
                 responseModalities: [Modality.AUDIO],
@@ -108,7 +108,7 @@ const AiTutorials: React.FC = () => {
         baseUrl: `${window.location.origin}/api/proxy/google`
       });
       const response = await ai.models.generateContent({
-        model: "gemini-2.5-flash",
+        model: "gemini-3.1-flash-preview",
         contents: "Busca 4 videos tutoriales REALES y muy recientes en YouTube (en español mayormente) sobre inteligencia artificial, renders, arquitectura. Busca específicamente si el canal 'AleJavi' sacó algo nuevo, o novedades de Unreal Engine, AutoCAD y Photoshop. Es CRÍTICO que devuelvas enlaces reales que existan y que tengan una miniatura válida. NO incluyas videos que no tengan imagen de miniatura. Si un video no tiene miniatura, busca otro que sí la tenga. Devuelve EXCLUSIVAMENTE SÓLO UN JSON con un array de 4 objetos, cada uno con 'title', 'source' (nombre del canal), 'url' (enlace real de YouTube, ej: https://www.youtube.com/watch?v=...), 'audioSummary' (resumen de máximo 3 líneas) y 'thumbnail' (URL real de la miniatura de YouTube). Sin formatos adicionales ni bloques de sintaxis ocultos, SÓLO el JSON.",
         config: {
           tools: [{ googleSearch: {} }]

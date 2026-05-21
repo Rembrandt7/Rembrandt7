@@ -61,7 +61,7 @@ const Assistant: React.FC<AssistantProps> = ({ messages, setMessages, onAttachIm
 
         if (isImageRequest) {
             const response = await ai.models.generateContent({
-                model: 'gemini-2.5-flash-image',
+                model: 'gemini-3.1-flash-preview-image',
                 contents: { parts: [{ text: input }] },
                 config: { responseModalities: [Modality.IMAGE] },
             });
@@ -173,7 +173,7 @@ Puedes usar las herramientas proporcionadas para añadir notas, eventos al calen
             ];
 
             const response = await ai.models.generateContent({
-                model: 'gemini-2.5-flash',
+                model: 'gemini-3.1-flash-preview',
                 contents: contents as any,
                 config: {
                     systemInstruction,

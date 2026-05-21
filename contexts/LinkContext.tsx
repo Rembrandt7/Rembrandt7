@@ -102,6 +102,13 @@ const INITIAL_CONFIG: AppConfig = {
         colorClass: "text-white hover:text-gray-300",
         iconSvg: `<svg xmlns="http://www.w3.org/2000/svg" className="h-6 w-6" viewBox="0 0 24 24" fill="currentColor"><path d="M18.244 2.25h3.308l-7.227 7.688 8.502 11.25h-6.657l-5.214-6.817L4.99 21.188H1.68l7.73-8.235L1.254 2.25H8.08l4.713 6.231zm-1.161 17.52h1.833L7.084 4.126H5.117z"/></svg>`
     },
+    {
+        id: '9',
+        href: "https://fusion.online.autodesk.com/",
+        name: "Fusion",
+        colorClass: "text-orange-500 hover:text-orange-400",
+        iconSvg: `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 100 100" class="w-full h-full p-0.5"><defs><linearGradient id="fusion-grad-1" x1="0%" y1="0%" x2="100%" y2="100%"><stop offset="0%" stop-color="#FF9B00"/><stop offset="50%" stop-color="#FF5100"/><stop offset="100%" stop-color="#D41400"/></linearGradient><linearGradient id="fusion-grad-2" x1="0%" y1="100%" x2="100%" y2="0%"><stop offset="0%" stop-color="#D41400"/><stop offset="100%" stop-color="#FF5100"/></linearGradient><linearGradient id="fusion-grad-3" x1="100%" y1="0%" x2="0%" y2="100%"><stop offset="0%" stop-color="#FF3300"/><stop offset="100%" stop-color="#5A0000"/></linearGradient></defs><polygon points="50,2 98,24 98,76 50,98 2,76 2,24" fill="url(#fusion-grad-1)" opacity="0.15" stroke="url(#fusion-grad-1)" stroke-width="1.5"/><polygon points="8,8 92,8 92,26 34,26 34,46 82,46 82,64 34,64 34,92 8,92" fill="url(#fusion-grad-1)"/><polygon points="92,8 92,26 97,21 97,3" fill="url(#fusion-grad-2)"/><polygon points="82,46 82,64 87,59 87,41" fill="url(#fusion-grad-2)"/><polygon points="8,92 34,92 34,97 8,97" fill="url(#fusion-grad-2)"/><polygon points="8,8 34,26 34,97 8,92" fill="url(#fusion-grad-3)" opacity="0.3"/></svg>`
+    },
   ],
 
   aiSidebar: {
@@ -206,7 +213,8 @@ const INITIAL_CONFIG: AppConfig = {
     { id: 'gd-16', name: "Whisk", href: "https://labs.google/fx/es/tools/whisk/project", colorClass: "text-yellow-400", iconSvg: '<svg viewBox="0 0 24 24" class="w-8 h-8 fill-none stroke-current stroke-2" strokeLinecap="round" strokeLinejoin="round"><path d="M12 20a8 8 0 1 0 0-16 8 8 0 0 0 0 16Z"/><path d="M12 14a2 2 0 1 0 0-4 2 2 0 0 0 0 4Z"/><path d="M12 2v2"/><path d="M12 22v-2"/><path d="M20 12h2"/><path d="M2 12h2"/></svg>' },
     { id: 'gd-17', name: "Word", href: "https://docs.google.com", colorClass: "text-blue-500", iconSvg: '<svg viewBox="0 0 24 24" class="w-8 h-8 fill-blue-500"><path d="M14 2H6c-1.1 0-1.99.9-1.99 2L4 20c0 1.1.89 2 1.99 2H18c1.1 0 2-.9 2-2V8l-6-6zm2 16H8v-2h8v2zm0-4H8v-2h8v2zm-3-5V3.5L18.5 9H13z"/></svg>' },
     { id: 'gd-18', name: "Excel", href: "https://sheets.google.com", colorClass: "text-green-600", iconSvg: '<svg viewBox="0 0 24 24" class="w-8 h-8 fill-green-500"><path d="M14 2H6c-1.1 0-1.99.9-1.99 2L4 20c0 1.1.89 2 1.99 2H18c1.1 0 2-.9 2-2V8l-6-6zm2 16H8v-2h8v2zm0-4H8v-2h8v2zm-3-5V3.5L18.5 9H13z"/></svg>' },
-    { id: 'gd-19', name: "PowerPoint", href: "https://slides.google.com", colorClass: "text-yellow-500", iconSvg: '<svg viewBox="0 0 24 24" class="w-8 h-8 fill-yellow-500"><path d="M19 3H5c-1.1 0-2 .9-2 2v14c0 1.1.9 2 2 2h14c1.1 0 2-.9 2-2V5c0-1.1-.9-2-2-2zM9 15c-1.1 0-2-.9-2-2s.9-2 2-2 2 .9 2 2-.9 2-2zm3-6c-1.1 0-2-.9-2-2s.9-2 2-2 2 .9 2 2-.9 2-2zm3 6c-1.1 0-2-.9-2-2s.9-2 2-2 2 .9 2 2-.9 2-2z"/></svg>' }
+    { id: 'gd-19', name: "PowerPoint", href: "https://slides.google.com", colorClass: "text-yellow-500", iconSvg: '<svg viewBox="0 0 24 24" class="w-8 h-8 fill-yellow-500"><path d="M19 3H5c-1.1 0-2 .9-2 2v14c0 1.1.9 2 2 2h14c1.1 0 2-.9 2-2V5c0-1.1-.9-2-2-2zM9 15c-1.1 0-2-.9-2-2s.9-2 2-2 2 .9 2 2-.9 2-2zm3-6c-1.1 0-2-.9-2-2s.9-2 2-2 2 .9 2 2-.9 2-2zm3 6c-1.1 0-2-.9-2-2s.9-2 2-2 2 .9 2 2-.9 2-2z"/></svg>' },
+    { id: 'gd-20', name: "Fusion", href: "https://fusion.online.autodesk.com/webapp?submit_button=Launch+Autodesk+Fusion&device_theme=dark", colorClass: "text-orange-500", iconSvg: '<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 100 100" class="w-full h-full p-0.5"><defs><linearGradient id="fusion-grad-1" x1="0%" y1="0%" x2="100%" y2="100%"><stop offset="0%" stop-color="#FF9B00"/><stop offset="50%" stop-color="#FF5100"/><stop offset="100%" stop-color="#D41400"/></linearGradient><linearGradient id="fusion-grad-2" x1="0%" y1="100%" x2="100%" y2="0%"><stop offset="0%" stop-color="#D41400"/><stop offset="100%" stop-color="#FF5100"/></linearGradient><linearGradient id="fusion-grad-3" x1="100%" y1="0%" x2="0%" y2="100%"><stop offset="0%" stop-color="#FF3300"/><stop offset="100%" stop-color="#5A0000"/></linearGradient></defs><polygon points="50,2 98,24 98,76 50,98 2,76 2,24" fill="url(#fusion-grad-1)" opacity="0.15" stroke="url(#fusion-grad-1)" stroke-width="1.5"/><polygon points="8,8 92,8 92,26 34,26 34,46 82,46 82,64 34,64 34,92 8,92" fill="url(#fusion-grad-1)"/><polygon points="92,8 92,26 97,21 97,3" fill="url(#fusion-grad-2)"/><polygon points="82,46 82,64 87,59 87,41" fill="url(#fusion-grad-2)"/><polygon points="8,92 34,92 34,97 8,97" fill="url(#fusion-grad-2)"/><polygon points="8,8 34,26 34,97 8,92" fill="url(#fusion-grad-3)" opacity="0.3"/></svg>' }
   ],
   usefulTools: [
     {
@@ -247,7 +255,13 @@ const INITIAL_CONFIG: AppConfig = {
         title: '3D',
         gradient: 'from-indigo-400 to-blue-600',
         iconSvg: '<svg xmlns="http://www.w3.org/2000/svg" class="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M21 16V8a2 2 0 00-1-1.73l-7-4a2 2 0 00-2 0l-7 4A2 2 0 003 8v8a2 2 0 001 1.73l7 4a2 2 0 002 0l7-4A2 2 0 0021 16z" /></svg>',
-        items: []
+        items: [
+            { id: 'ut-5-1', name: "Thingiverse", description: "Modelos 3D gratis", href: "https://www.thingiverse.com/", colorClass: "hover:shadow-blue-500/20", iconSvg: '<svg class="w-full h-full text-blue-400" viewBox="0 0 24 24" fill="currentColor"><path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm0 18c-4.41 0-8-3.59-8-8s3.59-8 8-8 8 3.59 8 8-3.59 8-8 8zm-1-13h2v6h-2zm0 8h2v2h-2z"/></svg>' },
+            { id: 'ut-5-2', name: "Cults3D", description: "Modelos 3D premium y gratis", href: "https://cults3d.com/es", colorClass: "hover:shadow-purple-500/20", iconSvg: '<svg class="w-full h-full text-purple-400" viewBox="0 0 24 24" fill="currentColor"><path d="M12 2L4.5 20.29l.71.71L12 18l6.79 3 .71-.71L12 2z"/></svg>' },
+            { id: 'ut-5-3', name: "MyMiniFactory", description: "Modelos 3D de alta calidad", href: "https://www.myminifactory.com/", colorClass: "hover:shadow-green-500/20", iconSvg: '<svg class="w-full h-full text-green-400" viewBox="0 0 24 24" fill="currentColor"><path d="M12 2L2 19h20L12 2zm0 4.83L18.17 17H5.83L12 6.83z"/></svg>' },
+            { id: 'ut-5-4', name: "Thangs", description: "Buscador de modelos 3D", href: "https://thangs.com/", colorClass: "hover:shadow-orange-500/20", iconSvg: '<svg class="w-full h-full text-orange-400" viewBox="0 0 24 24" fill="currentColor"><path d="M12 2L2 7v10l10 5 10-5V7l-10-5zm0 2.18L19.82 8 12 11.82 4.18 8 12 4.18zM4 15.18l7 3.5v-7.18l-7-3.5v7.18zm16 0l-7 3.5v-7.18l7-3.5v7.18z"/></svg>' },
+            { id: 'ut-5-5', name: "MakerWorld", description: "Diseños de la comunidad Bambu Lab", href: "https://makerworld.com/es/@h3li0", colorClass: "hover:shadow-teal-500/20", iconSvg: '<svg class="w-full h-full text-teal-400" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 16V8a2 2 0 0 0-1-1.73l-7-4a2 2 0 0 0-2 0l-7 4A2 2 0 0 0 3 8v8a2 2 0 0 0 1 1.73l7 4a2 2 0 0 0 2 0l7-4A2 2 0 0 0 21 16z"></path><polyline points="3.27 6.96 12 12.01 20.73 6.96"></polyline><line x1="12" y1="22.08" x2="12" y2="12"></line></svg>' }
+        ]
     },
     {
         id: 'ut-6',
@@ -644,6 +658,19 @@ export const LinkProvider: React.FC<{ children: React.ReactNode }> = ({ children
           finalConfig.memoria_ia = INITIAL_CONFIG.memoria_ia;
         }
 
+        if (finalConfig.usefulTools && Array.isArray(finalConfig.usefulTools)) {
+          const section3D = finalConfig.usefulTools.find((s: any) => s.id === 'ut-5');
+          if (section3D) {
+            if (section3D.title === '3D') section3D.title = 'Impresión 3D';
+            const default3D = INITIAL_CONFIG.usefulTools.find(s => s.id === 'ut-5')?.items || [];
+            default3D.forEach(defaultItem => {
+              if (!section3D.items.find((l: any) => l.name === defaultItem.name)) {
+                section3D.items.push(defaultItem);
+              }
+            });
+          }
+        }
+
         // Migration for notes into config
         console.log('Checking for notes in separate files...');
         try {
@@ -810,6 +837,19 @@ export const LinkProvider: React.FC<{ children: React.ReactNode }> = ({ children
              };
           } else if (!parsed.memoria_ia) {
              parsed.memoria_ia = INITIAL_CONFIG.memoria_ia;
+          }
+
+          if (parsed.usefulTools && Array.isArray(parsed.usefulTools)) {
+            const section3D = parsed.usefulTools.find((s: any) => s.id === 'ut-5');
+            if (section3D) {
+              if (section3D.title === '3D') section3D.title = 'Impresión 3D';
+              const default3D = INITIAL_CONFIG.usefulTools.find(s => s.id === 'ut-5')?.items || [];
+              default3D.forEach(defaultItem => {
+                if (!section3D.items.find((l: any) => l.name === defaultItem.name)) {
+                  section3D.items.push(defaultItem);
+                }
+              });
+            }
           }
 
           setConfig(parsed);

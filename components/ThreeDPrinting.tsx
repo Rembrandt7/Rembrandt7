@@ -14,6 +14,7 @@ const tools = [
   { name: 'Gridfinity', href: 'https://gridfinitygenerator.com/es/editor', icon: <Database size={24} className="text-orange-400" />, color: 'from-orange-500/20 to-transparent' },
   { name: 'Printables', href: 'https://www.printables.com/?lang=es', icon: <Globe size={24} className="text-orange-600" />, color: 'from-orange-600/20 to-transparent' },
   { name: 'Multibuild', href: 'https://multibuild.io/parts', icon: <Settings size={24} className="text-indigo-400" />, color: 'from-indigo-500/20 to-transparent' },
+  { name: 'MakerWorld', href: 'https://makerworld.com/es/@h3li0', icon: <Package size={24} className="text-teal-400" />, color: 'from-teal-500/20 to-transparent' },
   { name: 'MyMiniFactory', href: 'https://www.myminifactory.com/', icon: <Sparkles size={24} className="text-pink-400" />, color: 'from-pink-500/20 to-transparent' },
   { name: 'Thangs', href: 'https://thangs.com/', icon: <Wrench size={24} className="text-cyan-400" />, color: 'from-cyan-500/20 to-transparent' },
   { name: 'Thingiverse', href: 'https://www.thingiverse.com/', icon: <Box size={24} className="text-blue-600" />, color: 'from-blue-600/20 to-transparent' },

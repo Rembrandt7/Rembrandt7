@@ -26,7 +26,7 @@ const ImageGenerator: React.FC = () => {
         baseUrl: `${window.location.origin}/api/proxy/google`
       });
       const response = await ai.models.generateContent({
-        model: 'gemini-2.5-flash-image',
+        model: 'gemini-3.1-flash-preview-image',
         contents: {
           parts: [
             {

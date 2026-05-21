@@ -172,12 +172,11 @@ export const LinkEditorModal: React.FC<LinkEditorModalProps> = ({ isOpen, onClos
                                 <label className="flex items-center gap-2 text-xs font-bold text-gray-400 uppercase tracking-widest px-1">
                                     Descripción
                                 </label>
-                                <input 
-                                    type="text" 
+                                <textarea 
                                     value={formData.description || ''}
                                     onChange={e => setFormData({...formData, description: e.target.value})}
                                     placeholder="Opcional..."
-                                    className="w-full bg-white/5 border border-white/10 rounded-xl px-4 py-3 text-white focus:outline-none focus:ring-2 focus:ring-blue-500/30 transition-all"
+                                    className="w-full bg-white/5 border border-white/10 rounded-xl px-4 py-3 text-white focus:outline-none focus:ring-2 focus:ring-blue-500/30 transition-all min-h-[80px] resize-y"
                                 />
                             </div>
 
@@ -274,7 +273,7 @@ export const LinkEditorModal: React.FC<LinkEditorModalProps> = ({ isOpen, onClos
                                     <textarea 
                                         value={formData.iconSvg}
                                         onChange={e => setFormData({...formData, iconSvg: e.target.value})}
-                                        className="w-full bg-gray-950/50 border border-white/10 rounded-xl px-4 py-4 text-white font-mono text-[10px] h-32 focus:outline-none focus:ring-1 focus:ring-blue-500 transition-all"
+                                        className="w-full bg-gray-950/50 border border-white/10 rounded-xl px-4 py-4 text-white font-mono text-xs h-64 min-h-[250px] resize-y focus:outline-none focus:ring-1 focus:ring-blue-500 transition-all"
                                         placeholder="<svg>...</svg>"
                                     />
                                 </div>

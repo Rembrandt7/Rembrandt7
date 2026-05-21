@@ -67,7 +67,7 @@ const DatabaseViewer: React.FC<DatabaseViewerProps> = () => {
                 baseUrl: `${window.location.origin}/api/proxy/google`
             });
             const response = await ai.models.generateContent({
-                model: "gemini-2.5-flash",
+                model: "gemini-3.1-flash-preview",
                 contents: `Modify the following JSON content based on this prompt: "${assistantPrompt}". Return ONLY the modified JSON string.
                 Content:
                 ${fileContent}`,

@@ -83,6 +83,33 @@ const LinksSidebar: React.FC<LinksSidebarProps> = ({ onClose }) => {
                             <path d="M.057 24l1.687-6.163c-1.041-1.804-1.588-3.849-1.587-5.946.003-6.556 5.338-11.891 11.893-11.891 3.181.001 6.167 1.24 8.413 3.488 2.245 2.248 3.481 5.236 3.48 8.414-.003 6.557-5.338 11.892-11.893 11.892-1.99-.001-3.951-.5-5.688-1.448l-6.305 1.654zm6.597-3.807c1.676.995 3.276 1.591 5.392 1.592 5.448 0 9.886-4.434 9.889-9.885.002-5.462-4.415-9.89-9.881-9.892-5.452 0-9.887 4.434-9.889 9.886-.001 2.269.655 4.502 1.906 6.344l-1.191 4.353 4.462-1.161z" />
                         </svg>
                     </LinkCard>
+
+                    <LinkCard href="https://fusion.online.autodesk.com/" name="Fusion" description="Autodesk Fusion en la nube." hoverColor="hover:ring-2 hover:ring-orange-500 focus:ring-orange-500">
+                        <svg className="w-full h-full p-0.5 text-orange-500 transition-transform group-hover:scale-110" viewBox="0 0 100 100" xmlns="http://www.w3.org/2000/svg">
+                            <defs>
+                                <linearGradient id="fusion-grad-1" x1="0%" y1="0%" x2="100%" y2="100%">
+                                    <stop offset="0%" stopColor="#FF9B00"/>
+                                    <stop offset="50%" stopColor="#FF5100"/>
+                                    <stop offset="100%" stopColor="#D41400"/>
+                                </linearGradient>
+                                <linearGradient id="fusion-grad-2" x1="0%" y1="100%" x2="100%" y2="0%">
+                                    <stop offset="0%" stopColor="#D41400"/>
+                                    <stop offset="100%" stopColor="#FF5100"/>
+                                </linearGradient>
+                                <linearGradient id="fusion-grad-3" x1="100%" y1="0%" x2="0%" y2="100%">
+                                    <stop offset="0%" stopColor="#FF3300"/>
+                                    <stop offset="100%" stopColor="#5A0000"/>
+                                </linearGradient>
+                            </defs>
+                            <polygon points="50,2 98,24 98,76 50,98 2,76 2,24" fill="url(#fusion-grad-1)" opacity="0.15" stroke="url(#fusion-grad-1)" strokeWidth="1.5"/>
+                            <polygon points="8,8 92,8 92,26 34,26 34,46 82,46 82,64 34,64 34,92 8,92" fill="url(#fusion-grad-1)"/>
+                            <polygon points="92,8 92,26 97,21 97,3" fill="url(#fusion-grad-2)"/>
+                            <polygon points="82,46 82,64 87,59 87,41" fill="url(#fusion-grad-2)"/>
+                            <polygon points="8,92 34,92 34,97 8,97" fill="url(#fusion-grad-2)"/>
+                            <polygon points="8,8 34,26 34,97 8,92" fill="url(#fusion-grad-3)" opacity="0.3"/>
+                        </svg>
+                    </LinkCard>
+
                     
                     <LinkCard href="https://app.rendair.ai/generate/image" name="Rendair" description="Generador de imágenes de Rendair AI." hoverColor="hover:ring-2 hover:ring-teal-400 focus:ring-teal-400">
                         <svg className="h-10 w-10 transition-transform group-hover:scale-110" viewBox="0 0 64 64" xmlns="http://www.w3.org/2000/svg">
@@ -179,7 +206,7 @@ const LinksSidebar: React.FC<LinksSidebarProps> = ({ onClose }) => {
                         </svg>
                     </LinkCard>
 
-                    <LinkCard href="https://aistudio.google.com/prompts/new_chat?model=gemini-2.5-flash-image" name="NanoBanana" description="Chatea con el modelo de imagen Gemini Flash." hoverColor="hover:ring-2 hover:ring-yellow-400 focus:ring-yellow-400">
+                    <LinkCard href="https://aistudio.google.com/prompts/new_chat?model=gemini-3.1-flash-preview-image" name="NanoBanana" description="Chatea con el modelo de imagen Gemini Flash." hoverColor="hover:ring-2 hover:ring-yellow-400 focus:ring-yellow-400">
                         <svg className="h-10 w-10 text-yellow-400 transition-transform group-hover:scale-110" viewBox="0 0 100 100" fill="currentColor" xmlns="http://www.w3.org/2000/svg">
                             <path d="M 85,15 C 70,10 50,25 35,40 C 20,55 10,70 15,85 C 20,100 40,95 55,80 C 70,65 90,50 95,35 C 100,20 95,18 85,15 Z" />
                             <path d="M 88,23 L 83,28 M 78,18 L 73,23" stroke="#A16207" strokeWidth="4" strokeLinecap="round" />

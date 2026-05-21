@@ -23,7 +23,7 @@ const Dashboard: React.FC = () => {
         baseUrl: `${window.location.origin}/api/proxy/google`
       });
         const response = await ai.models.generateContent({
-            model: "gemini-2.5-flash-preview-tts",
+            model: "gemini-3.1-flash-preview-preview-tts",
             contents: [{ parts: [{ text: text }] }],
             config: {
                 responseModalities: [Modality.AUDIO],
@@ -131,7 +131,7 @@ const Dashboard: React.FC = () => {
       if (mtyNews.length === 0) {
         try {
           const newsResponse = await ai.models.generateContent({
-              model: "gemini-2.5-flash",
+              model: "gemini-3.1-flash-preview",
               contents: "Busca 4 noticias REALES y recientes de Monterrey, NL. Devuelve EXCLUSIVAMENTE un JSON array plano con title, source, url, audioSummary, thumbnail.",
               config: { tools: [{ googleSearch: {} }] },
           });

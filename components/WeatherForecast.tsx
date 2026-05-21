@@ -34,69 +34,142 @@ const WeatherForecast: React.FC = () => {
     const cached = localStorage.getItem('weatherData');
     return cached ? JSON.parse(cached) : [];
   });
+  const [lastUpdatedText, setLastUpdatedText] = useState<string>('');
+
+  const updateLastUpdatedText = () => {
+    const lastFetched = localStorage.getItem('lastFetchedWeather');
+    if (!lastFetched) {
+      setLastUpdatedText('');
+      return;
+    }
+    const diffMs = Date.now() - parseInt(lastFetched);
+    const diffMins = Math.floor(diffMs / (60 * 1000));
+    if (diffMins < 1) {
+      setLastUpdatedText('Actualizado ahora');
+    } else if (diffMins < 60) {
+      setLastUpdatedText(`Actualizado hace ${diffMins} min`);
+    } else {
+      const diffHours = Math.floor(diffMins / 60);
+      if (diffHours >= 24) {
+        setLastUpdatedText('Actualizado hace más de 1 día');
+      } else {
+        setLastUpdatedText(`Actualizado hace ${diffHours} hr${diffHours > 1 ? 's' : ''}`);
+      }
+    }
+  };
+
+  const mapWeatherCode = (code: number): { condition: string; weather: string } => {
+    if (code === 0) return { condition: 'sun', weather: 'Despejado' };
+    if (code === 1 || code === 2) return { condition: 'partially cloudy', weather: 'Medio nublado' };
+    if (code === 3) return { condition: 'cloud', weather: 'Nublado' };
+    if (code === 45 || code === 48) return { condition: 'cloud', weather: 'Niebla' };
+    if (code >= 51 && code <= 57) return { condition: 'shower', weather: 'Llovizna' };
+    if (code >= 61 && code <= 67) return { condition: 'rain', weather: 'Lluvia' };
+    if (code >= 71 && code <= 77) return { condition: 'cloud', weather: 'Nieve' };
+    if (code >= 80 && code <= 82) return { condition: 'shower', weather: 'Chubasco' };
+    if (code >= 85 && code <= 86) return { condition: 'cloud', weather: 'Nevada' };
+    if (code >= 95 && code <= 99) return { condition: 'rain', weather: 'Tormenta' };
+    return { condition: 'partially cloudy', weather: 'Parcial' };
+  };
+
+  const getDayName = (dateStr: string, index: number) => {
+    if (index === 0) return 'Hoy';
+    const date = new Date(dateStr + 'T00:00:00');
+    const days = ['Dom', 'Lun', 'Mar', 'Mié', 'Jue', 'Vie', 'Sáb'];
+    return days[date.getDay()];
+  };
 
   const fetchData = async (force: boolean = false) => {
     const now = Date.now();
     const lastFetched = localStorage.getItem('lastFetchedWeather');
-    const cooldown = 86400000; // 24 hours
+    const cooldown = 6 * 60 * 60 * 1000; // 6 hours
     
-    if (!force && lastFetched && (now - parseInt(lastFetched) < cooldown) && weatherData.length > 0) return;
+    if (!force && lastFetched && (now - parseInt(lastFetched) < cooldown) && weatherData.length > 0) {
+      updateLastUpdatedText();
+      return;
+    }
 
     setLoading(true);
     setError(null);
     try {
-      const apiKey = googleApiConfig?.apiKey || process.env.GEMINI_API_KEY;
-      if (!apiKey) {
-          setError("Configura la API Key para ver el clima.");
-          setLoading(false);
-          return;
-      }
-
-      const ai = new GoogleGenAI({ 
-        apiKey,
-        baseUrl: `${window.location.origin}/api/proxy/google`
-      });
+      const response = await fetch(
+        'https://api.open-meteo.com/v1/forecast?latitude=25.6866&longitude=-100.3161&daily=weather_code,temperature_2m_max,temperature_2m_min&timezone=auto'
+      );
+      if (!response.ok) throw new Error('Error al conectar con el servicio meteorológico.');
+      const data = await response.json();
       
-      const weatherResponse = await ai.models.generateContent({
-          model: "gemini-2.5-flash",
-          contents: "Dame el pronóstico del tiempo para Monterrey, Nuevo León, para los próximos 7 días (incluyendo hoy). Devuelve EXCLUSIVAMENTE UN ARRAY JSON: [{day: string, weather: string, temp: string, condition: 'sun' | 'partially cloudy' | 'cloud' | 'rain' | 'shower'}]. Asegúrate de incluir la temperatura promedio (ej. '25°C') en el campo 'temp'. No escribas texto adicional.",
-          config: { tools: [{ googleSearch: {} }] }
-      });
-
-      if (weatherResponse.text) {
-        try {
-          const weather = JSON.parse(cleanJsonResponse(weatherResponse.text));
-          if (weather.length > 0 && !weather[0].day.toLowerCase().includes('hoy')) {
-              weather[0].day = 'Hoy';
-          }
-          setWeatherData(weather);
-          localStorage.setItem('weatherData', JSON.stringify(weather));
-          localStorage.setItem('lastFetchedWeather', now.toString());
-        } catch (e) {
-          console.error("Error parsing weather data:", e);
-        }
+      if (data && data.daily) {
+        const formattedWeather = data.daily.time.slice(0, 7).map((timeStr: string, idx: number) => {
+          const code = data.daily.weather_code[idx];
+          const max = data.daily.temperature_2m_max[idx];
+          const min = data.daily.temperature_2m_min[idx];
+          const avg = Math.round((max + min) / 2);
+          const mapped = mapWeatherCode(code);
+          return {
+            day: getDayName(timeStr, idx),
+            weather: mapped.weather,
+            temp: `${avg}°C`,
+            condition: mapped.condition
+          };
+        });
+        
+        setWeatherData(formattedWeather);
+        localStorage.setItem('weatherData', JSON.stringify(formattedWeather));
+        localStorage.setItem('lastFetchedWeather', now.toString());
+        setTimeout(() => updateLastUpdatedText(), 100);
+      } else {
+        throw new Error('Formato de datos incorrecto.');
       }
-    } catch (error: any) {
-      console.error('Error fetching weather:', error);
-      setError("Error al actualizar clima.");
+    } catch (err: any) {
+      console.error('Error fetching weather:', err);
+      setError("No se pudo obtener el clima más reciente.");
     } finally {
       setLoading(false);
     }
   };
 
   useEffect(() => {
-    if (weatherData.length === 0) {
+    fetchData();
+
+    // Actualizar el texto del indicador cada 30 segundos
+    const timerId = setInterval(() => {
+      updateLastUpdatedText();
+    }, 30 * 1000);
+
+    // Intentar actualizar el clima cada 5 minutos en segundo plano (cooldown interno de 6 horas)
+    const backgroundFetchId = setInterval(() => {
       fetchData();
-    }
+    }, 5 * 60 * 1000);
+
+    // Comprobar actualización al enfocar la pestaña
+    const handleVisibilityChange = () => {
+      if (document.visibilityState === 'visible') {
+        fetchData();
+      }
+    };
+    document.addEventListener('visibilitychange', handleVisibilityChange);
+
+    return () => {
+      clearInterval(timerId);
+      clearInterval(backgroundFetchId);
+      document.removeEventListener('visibilitychange', handleVisibilityChange);
+    };
   }, []);
 
   return (
     <div className="bg-zinc-900/50 rounded-2xl border border-white/10 p-4 shadow-xl">
       <div className="flex justify-between items-center mb-4">
-          <h2 className="text-lg font-bold text-white flex items-center gap-2">
-            <CloudSun size={20} className="text-amber-400" />
-            Pronóstico Monterrey
-          </h2>
+          <div className="flex flex-col">
+              <h2 className="text-lg font-bold text-white flex items-center gap-2">
+                <CloudSun size={20} className="text-amber-400" />
+                Pronóstico Monterrey
+              </h2>
+              {lastUpdatedText && (
+                <span className="text-[10px] text-zinc-400 font-medium ml-7 leading-none mt-0.5">
+                  {lastUpdatedText}
+                </span>
+              )}
+          </div>
           <button onClick={() => fetchData(true)} disabled={loading} className="p-1.5 rounded-lg bg-amber-600/20 text-amber-400 hover:bg-amber-600/30 transition-colors">
               <RefreshCw size={16} className={loading ? 'animate-spin' : ''} />
           </button>

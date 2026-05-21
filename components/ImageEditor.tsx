@@ -332,7 +332,7 @@ const ImageEditor: React.FC<ImageEditorProps> = ({ onAttachToEmail, onSwitchTab 
             });
             
             const response = await ai.models.generateContent({
-                model: 'gemini-2.5-flash-image',
+                model: 'gemini-3.1-flash-preview-image',
                 contents: { parts: [{ text: prompt }] },
                 config: { responseModalities: [Modality.IMAGE] },
             });

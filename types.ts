@@ -164,6 +164,8 @@ export interface FinanzasCard {
   paymentDate?: string;
   cutoffDate?: string;
   balance: number;
+  annualYieldRate?: number;
+  lastYieldUpdate?: number;
 }
 
 export interface FinancialItem {

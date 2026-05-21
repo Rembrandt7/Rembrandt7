@@ -222,7 +222,8 @@ const INITIAL_CONFIG: AppConfig = {
             { id: 'ut-5-1', name: "Thingiverse", description: "Modelos 3D gratis", href: "https://www.thingiverse.com/", colorClass: "hover:shadow-blue-500/20", iconSvg: '<svg class="w-full h-full text-blue-400" viewBox="0 0 24 24" fill="currentColor"><path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm0 18c-4.41 0-8-3.59-8-8s3.59-8 8-8 8 3.59 8 8-3.59 8-8 8zm-1-13h2v6h-2zm0 8h2v2h-2z"/></svg>' },
             { id: 'ut-5-2', name: "Cults3D", description: "Modelos 3D premium y gratis", href: "https://cults3d.com/es", colorClass: "hover:shadow-purple-500/20", iconSvg: '<svg class="w-full h-full text-purple-400" viewBox="0 0 24 24" fill="currentColor"><path d="M12 2L4.5 20.29l.71.71L12 18l6.79 3 .71-.71L12 2z"/></svg>' },
             { id: 'ut-5-3', name: "MyMiniFactory", description: "Modelos 3D de alta calidad", href: "https://www.myminifactory.com/", colorClass: "hover:shadow-green-500/20", iconSvg: '<svg class="w-full h-full text-green-400" viewBox="0 0 24 24" fill="currentColor"><path d="M12 2L2 19h20L12 2zm0 4.83L18.17 17H5.83L12 6.83z"/></svg>' },
-            { id: 'ut-5-4', name: "Thangs", description: "Buscador de modelos 3D", href: "https://thangs.com/", colorClass: "hover:shadow-orange-500/20", iconSvg: '<svg class="w-full h-full text-orange-400" viewBox="0 0 24 24" fill="currentColor"><path d="M12 2L2 7v10l10 5 10-5V7l-10-5zm0 2.18L19.82 8 12 11.82 4.18 8 12 4.18zM4 15.18l7 3.5v-7.18l-7-3.5v7.18zm16 0l-7 3.5v-7.18l7-3.5v7.18z"/></svg>' }
+            { id: 'ut-5-4', name: "Thangs", description: "Buscador de modelos 3D", href: "https://thangs.com/", colorClass: "hover:shadow-orange-500/20", iconSvg: '<svg class="w-full h-full text-orange-400" viewBox="0 0 24 24" fill="currentColor"><path d="M12 2L2 7v10l10 5 10-5V7l-10-5zm0 2.18L19.82 8 12 11.82 4.18 8 12 4.18zM4 15.18l7 3.5v-7.18l-7-3.5v7.18zm16 0l-7 3.5v-7.18l7-3.5v7.18z"/></svg>' },
+            { id: 'ut-5-5', name: "MakerWorld", description: "Diseños de la comunidad Bambu Lab", href: "https://makerworld.com/es/@h3li0", colorClass: "hover:shadow-teal-500/20", iconSvg: '<svg class="w-full h-full text-teal-400" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 16V8a2 2 0 0 0-1-1.73l-7-4a2 2 0 0 0-2 0l-7 4A2 2 0 0 0 3 8v8a2 2 0 0 0 1 1.73l7 4a2 2 0 0 0 2 0l7-4A2 2 0 0 0 21 16z"></path><polyline points="3.27 6.96 12 12.01 20.73 6.96"></polyline><line x1="12" y1="22.08" x2="12" y2="12"></line></svg>' }
         ]
     },
     {
@@ -626,6 +627,10 @@ export const LinkProvider: React.FC<{ children: React.ReactNode }> = ({ children
               const th = INITIAL_CONFIG.usefulTools.find(s => s.id === 'ut-5')?.items.find(l => l.name === 'Thangs');
               if (th) section3D.items.push(th);
             }
+            if (!section3D.items.find((l: any) => l.name === 'MakerWorld')) {
+              const mw = INITIAL_CONFIG.usefulTools.find(s => s.id === 'ut-5')?.items.find(l => l.name === 'MakerWorld');
+              if (mw) section3D.items.push(mw);
+            }
           }
         }
 
@@ -813,6 +818,10 @@ export const LinkProvider: React.FC<{ children: React.ReactNode }> = ({ children
               if (!section3D.items.find((l: any) => l.name === 'Thangs')) {
                 const th = INITIAL_CONFIG.usefulTools.find(s => s.id === 'ut-5')?.items.find(l => l.name === 'Thangs');
                 if (th) section3D.items.push(th);
+              }
+              if (!section3D.items.find((l: any) => l.name === 'MakerWorld')) {
+                const mw = INITIAL_CONFIG.usefulTools.find(s => s.id === 'ut-5')?.items.find(l => l.name === 'MakerWorld');
+                if (mw) section3D.items.push(mw);
               }
             }
           }

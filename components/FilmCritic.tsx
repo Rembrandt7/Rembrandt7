@@ -57,7 +57,7 @@ const StickerModal: React.FC<{ isOpen: boolean; onClose: () => void }> = ({ isOp
             const prompt = "Generate a high-quality die-cut sticker of the main subject in this image. Isolate the subject and add a thick white border contour around it. Place it on a plain solid black background for easy extraction.";
             
             const response = await ai.models.generateContent({
-                model: 'gemini-2.5-flash-image',
+                model: 'gemini-3.1-flash-preview-image',
                 contents: {
                     parts: [
                         { inlineData: { mimeType: image.mimeType, data: image.base64 } },
@@ -166,7 +166,7 @@ const FilmCritic: React.FC = () => {
             });
 
             const analysisRes = await ai.models.generateContent({
-                model: 'gemini-2.5-flash',
+                model: 'gemini-3.1-flash-preview',
                 contents: {
                     parts: [
                         { inlineData: { mimeType: selectedImage.mimeType, data: selectedImage.base64 } },
@@ -177,7 +177,7 @@ const FilmCritic: React.FC = () => {
             setAnalysisText(analysisRes.text);
 
             const conceptsRes = await ai.models.generateContent({
-                model: 'gemini-2.5-flash',
+                model: 'gemini-3.1-flash-preview',
                 contents: {
                     parts: [
                         { inlineData: { mimeType: selectedImage.mimeType, data: selectedImage.base64 } },
@@ -237,7 +237,7 @@ const FilmCritic: React.FC = () => {
                 Make explicit reference to the original subject. Devuelve SOLO el prompt en inglés.
             `;
             const response = await ai.models.generateContent({
-                model: 'gemini-2.5-flash',
+                model: 'gemini-3.1-flash-preview',
                 contents: {
                     parts: [
                         { inlineData: { mimeType: selectedImage.mimeType, data: selectedImage.base64 } },
