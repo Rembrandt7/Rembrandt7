@@ -1,4 +1,5 @@
 import React, { useState, useEffect, useCallback } from 'react';
+import { createPortal } from 'react-dom';
 import { LinkItem } from '../../types';
 import { X, Save, ArrowLeft, Layout, Type, Link as LinkIcon, Palette, Image as ImageIcon, Box } from 'lucide-react';
 import { useLinks } from '../../contexts/LinkContext';
@@ -77,7 +78,7 @@ export const LinkEditorModal: React.FC<LinkEditorModalProps> = ({ isOpen, onClos
         }
     }, []);
 
-    return (
+    const modalContent = (
         <AnimatePresence>
             {isOpen && (
                 <>
@@ -301,4 +302,7 @@ export const LinkEditorModal: React.FC<LinkEditorModalProps> = ({ isOpen, onClos
             )}
         </AnimatePresence>
     );
+
+    if (typeof document === 'undefined') return null;
+    return createPortal(modalContent, document.body);
 };
