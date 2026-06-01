@@ -18,7 +18,7 @@ export const VideoGenerator: React.FC = () => {
     toast.info("Iniciando renderizado en el servidor...");
 
     try {
-      const API_URL = import.meta.env.VITE_API_URL || "";
+      const API_URL = (import.meta as any).env?.VITE_API_URL || "";
       const response = await fetch(`${API_URL}/api/remotion/render`, {
         method: "POST",
         headers: {

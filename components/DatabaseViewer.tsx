@@ -7,6 +7,7 @@ import { SUPABASE_CONFIG } from '../utils/constants';
 import { createClient } from '@supabase/supabase-js';
 import { GoogleGenAI } from "@google/genai";
 import { useLinks } from '../contexts/LinkContext';
+import { toast } from 'sonner';
 
 interface DatabaseViewerProps {}
 

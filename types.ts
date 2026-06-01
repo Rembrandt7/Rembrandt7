@@ -384,3 +384,9 @@ declare global {
         webkitSpeechRecognition: any;
     }
 }
+
+declare module '@google/genai' {
+  interface GoogleGenAIOptions {
+    baseUrl?: string;
+  }
+}

@@ -63,7 +63,7 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
       
       const oauth2Client = await getOAuth2Client(req);
       const { tokens } = await oauth2Client.getToken(code);
-      return res.json(tokens);
+      return res.json({ tokens });
     }
 
     // 3. Auth Callback (HTML)

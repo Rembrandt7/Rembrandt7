@@ -392,7 +392,7 @@ const CalendarTab: React.FC = () => {
         }
         
         const exchangeData = await exchangeResponse.json();
-        tokens = exchangeData.tokens;
+        tokens = exchangeData.tokens || exchangeData;
 
         // Save tokens
         const updatedConfigWithTokens = { ...config, googleCalendarTokens: tokens };

@@ -10,11 +10,10 @@ import ThreeDCalculator from './ThreeDCalculator';
 const tools = [
   { name: 'Meshy (IA)', href: 'https://www.meshy.ai/workspace', icon: <Box size={24} className="text-purple-400" />, color: 'from-purple-500/20 to-transparent' },
   { name: 'Hitem3D', href: 'https://www.hitem3d.ai/create', icon: <Move size={24} className="text-blue-400" />, color: 'from-blue-500/20 to-transparent' },
-  { name: 'Rendair', href: 'https://app.rendair.ai/generate/image', icon: <Layout size={24} className="text-emerald-400" />, color: 'from-emerald-500/20 to-transparent' },
   { name: 'Gridfinity', href: 'https://gridfinitygenerator.com/es/editor', icon: <Database size={24} className="text-orange-400" />, color: 'from-orange-500/20 to-transparent' },
   { name: 'Printables', href: 'https://www.printables.com/?lang=es', icon: <Globe size={24} className="text-orange-600" />, color: 'from-orange-600/20 to-transparent' },
   { name: 'Multibuild', href: 'https://multibuild.io/parts', icon: <Settings size={24} className="text-indigo-400" />, color: 'from-indigo-500/20 to-transparent' },
-  { name: 'MakerWorld', href: 'https://makerworld.com/es/@h3li0', icon: <Package size={24} className="text-teal-400" />, color: 'from-teal-500/20 to-transparent' },
+  { name: 'MakerWorld', href: 'https://makerworld.com/es', icon: <Package size={24} className="text-teal-400" />, color: 'from-teal-500/20 to-transparent' },
   { name: 'MyMiniFactory', href: 'https://www.myminifactory.com/', icon: <Sparkles size={24} className="text-pink-400" />, color: 'from-pink-500/20 to-transparent' },
   { name: 'Thangs', href: 'https://thangs.com/', icon: <Wrench size={24} className="text-cyan-400" />, color: 'from-cyan-500/20 to-transparent' },
   { name: 'Thingiverse', href: 'https://www.thingiverse.com/', icon: <Box size={24} className="text-blue-600" />, color: 'from-blue-600/20 to-transparent' },
@@ -158,7 +157,7 @@ const CustomIcon = ({ type, src, index = 0 }: { type: keyof typeof ICONS, src?: 
   }
 
   return (
-    <div className="w-12 h-12 rounded-xl bg-no-repeat shadow-md border border-white/10 overflow-hidden flex items-center justify-center bg-gray-900/50 shrink-0">
+    <div className="w-10 h-10 rounded-xl bg-no-repeat shadow-md border border-white/10 overflow-hidden flex items-center justify-center bg-gray-900/50 shrink-0">
       <div 
         className="w-full h-full transition-transform duration-500 group-hover:scale-110"
         style={{
@@ -173,32 +172,34 @@ const CustomIcon = ({ type, src, index = 0 }: { type: keyof typeof ICONS, src?: 
 };
 
 const GroupCard = ({ group, className }: { group: typeof groups[0], className?: string }) => (
-  <div className={`p-3 rounded-2xl border ${group.color} transition-all ${className}`}>
-    <div className="flex items-center justify-between mb-2">
-      <h3 className="font-bold text-[10px] text-white flex items-center gap-2 uppercase tracking-widest opacity-70">
-        {group.title}
-        <div className="h-px flex-1 bg-white/5 min-w-[5px] ml-2" />
-      </h3>
-    </div>
-    <div className="grid grid-cols-4 sm:grid-cols-6 md:grid-cols-8 lg:grid-cols-10 xl:grid-cols-12 gap-1.5">
-      {group.items.map((item, iIdx) => (
-        <motion.a
-          key={iIdx}
-          href={item.href}
-          target="_blank"
-          rel="noopener noreferrer"
-          whileHover={{ scale: 1.05, backgroundColor: 'rgba(255,255,255,0.08)' }}
-          className="flex flex-col items-center p-1 bg-white/5 border border-white/5 rounded-xl group transition-all text-center relative"
-        >
-          <CustomIcon type={item.type as any} index={item.index} />
-          <span className="text-[8px] font-bold text-gray-500 group-hover:text-white uppercase tracking-tighter line-clamp-1 mt-1 w-full px-0.5">
-            {item.name}
-          </span>
-          <div className="absolute top-0.5 right-0.5 opacity-0 group-hover:opacity-100 transition-opacity">
-            <ExternalLink size={6} className="text-blue-400" />
-          </div>
-        </motion.a>
-      ))}
+  <div className={`p-4 bg-slate-900/10 rounded-2xl border ${group.color} transition-all duration-300 hover:bg-slate-900/20 flex flex-col justify-between h-full ${className}`}>
+    <div>
+      <div className="flex items-center justify-between mb-3">
+        <h3 className="font-bold text-[10px] text-white flex items-center gap-2 uppercase tracking-widest opacity-80">
+          {group.title}
+          <div className="h-px flex-1 bg-white/5 min-w-[5px] ml-2" />
+        </h3>
+      </div>
+      <div className="grid grid-cols-4 sm:grid-cols-6 md:grid-cols-5 lg:grid-cols-6 xl:grid-cols-4 gap-2">
+        {group.items.map((item, iIdx) => (
+          <motion.a
+            key={iIdx}
+            href={item.href}
+            target="_blank"
+            rel="noopener noreferrer"
+            whileHover={{ scale: 1.05, backgroundColor: 'rgba(255,255,255,0.08)' }}
+            className="flex flex-col items-center p-1 bg-white/5 border border-white/5 rounded-xl group transition-all text-center relative"
+          >
+            <CustomIcon type={item.type as any} index={item.index} />
+            <span className="text-[8px] font-bold text-gray-500 group-hover:text-white uppercase tracking-tighter line-clamp-1 mt-1.5 w-full px-0.5">
+              {item.name}
+            </span>
+            <div className="absolute top-0.5 right-0.5 opacity-0 group-hover:opacity-100 transition-opacity">
+              <ExternalLink size={6} className="text-blue-400" />
+            </div>
+          </motion.a>
+        ))}
+      </div>
     </div>
   </div>
 );
@@ -241,43 +242,31 @@ const ThreeDPrinting: React.FC = () => {
       {/* Calculator Section */}
       <ThreeDCalculator />
 
-      {/* Main Grid Reorganized */}
-      <div className="space-y-6">
-        {/* Mega Pack - Full Width */}
-        <GroupCard group={groups[0]} />
-
-        {/* Anime + Articulados - Row 2 */}
-        <div className="grid grid-cols-1 lg:grid-cols-12 gap-6">
-           <div className="lg:col-span-8">
-              <GroupCard group={groups[1]} />
-           </div>
-           <div className="lg:col-span-4">
-              <GroupCard group={groups[5]} />
-           </div>
+      {/* Main Grid Reorganized - 4 Symmetrical Balanced Columns */}
+      <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-4 gap-6">
+        {/* Column 1 (Total: 12 items) */}
+        <div className="flex flex-col gap-6">
+          <GroupCard group={groups[0]} /> {/* Mega Pack: 10 items */}
+          <GroupCard group={groups[5]} /> {/* Articulados: 2 items */}
         </div>
 
-        {/* Pokemon + Marvel/DC - Row 3 */}
-        <div className="grid grid-cols-1 lg:grid-cols-12 gap-6">
-           <div className="lg:col-span-5"> {/* Pokémon narrower, 5 cols instead of 6 or 8 */}
-              <GroupCard group={groups[2]} />
-           </div>
-           <div className="lg:col-span-7">
-              <GroupCard group={groups[4]} />
-           </div>
+        {/* Column 2 (Total: 11 items) */}
+        <div className="flex flex-col gap-6">
+          <GroupCard group={groups[1]} /> {/* Anime Legends: 7 items */}
+          <GroupCard group={groups[2]} /> {/* Pokémon World: 4 items */}
         </div>
 
-        {/* Máscaras + Llaveros - Row 4 */}
-        <div className="grid grid-cols-1 lg:grid-cols-12 gap-6">
-           <div className="lg:col-span-6">
-              <GroupCard group={groups[3]} />
-           </div>
-           <div className="lg:col-span-6">
-              <GroupCard group={groups[6]} />
-           </div>
+        {/* Column 3 (Total: 11 items) */}
+        <div className="flex flex-col gap-6">
+          <GroupCard group={groups[7]} /> {/* Star Wars: 7 items */}
+          <GroupCard group={groups[4]} /> {/* Marvel & DC: 4 items */}
         </div>
 
-        {/* Star Wars - Full Width */}
-        <GroupCard group={groups[7]} />
+        {/* Column 4 (Total: 12 items) */}
+        <div className="flex flex-col gap-6">
+          <GroupCard group={groups[3]} /> {/* Máscaras 3D: 6 items */}
+          <GroupCard group={groups[6]} /> {/* Llaveros: 6 items */}
+        </div>
       </div>
       
       <div className="p-6 bg-gradient-to-r from-purple-600/10 to-blue-600/10 rounded-3xl border border-white/10 text-center">

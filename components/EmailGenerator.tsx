@@ -43,9 +43,23 @@ const predefinedProjects = ['Valle de Los Encinos', 'Cumbre del Norte', 'Xandora
 const getDBValue = (obj: any, keysToCheck: string[] | string): any => {
     if (!obj) return undefined;
     const keys = Array.isArray(keysToCheck) ? keysToCheck : [keysToCheck];
+    
+    // First, try exact case-insensitive match
     for (const keyName of keys) {
         const target = keyName.trim().toLowerCase();
         const foundKey = Object.keys(obj).find(k => k.trim().toLowerCase() === target);
+        if (foundKey && obj[foundKey] !== undefined && obj[foundKey] !== null) {
+            return obj[foundKey];
+        }
+    }
+    
+    // Second, try partial match (contains or is contained by)
+    for (const keyName of keys) {
+        const target = keyName.trim().toLowerCase();
+        const foundKey = Object.keys(obj).find(k => {
+            const normalizedK = k.trim().toLowerCase();
+            return normalizedK.includes(target) || target.includes(normalizedK);
+        });
         if (foundKey && obj[foundKey] !== undefined && obj[foundKey] !== null) {
             return obj[foundKey];
         }
@@ -113,6 +127,7 @@ const EmailGenerator: React.FC<EmailGeneratorProps> = ({ attachedImages, onAttac
     const [isLoading, setIsLoading] = useState(false);
     const [error, setError] = useState<string | null>(null);
     const [generatedContent, setGeneratedContent] = useState<GeneratedContent | null>(null);
+    const [originalContent, setOriginalContent] = useState<GeneratedContent | null>(null);
     const [copied, setCopied] = useState<CopiedState>(null);
     const [isDraggingOver, setIsDraggingOver] = useState(false);
     const [useNickname, setUseNickname] = useState(true);
@@ -265,7 +280,8 @@ const EmailGenerator: React.FC<EmailGeneratorProps> = ({ attachedImages, onAttac
             2. FORMATO: Usa DOBLE SALTO DE LÍNEA (\\n\\n) después del saludo y entre CADA párrafo.
             3. ESTRUCTURA: Usa listas numeradas o viñetas para puntos importantes. No amontones el texto.
             4. FIRMA: Termina SIEMPRE con: "Atte.\\n\\nArq. Rembrandt Blanco Arrambide".
-            5. CONTEXTO: Proyecto: "${project}". Género: ${recipientGender === 'F' ? 'Femenino' : 'Masculino'}.
+            5. CONTEXTO: Proyecto: "${project}". Destinatario (nombre/apodo a usar): "${finalRecipient}".
+               IMPORTANTE: Si está activo el uso de apodo o nombre corto, refiérete al destinatario siempre por su apodo ("${finalRecipient}") en lugar de su nombre formal completo en cualquier mención formal o informal a lo largo del cuerpo del mensaje.
             6. IDEA A DESARROLLAR: "${idea}". 
             7. CONTEXTO ANTERIOR: "${previousEmail}".
             8. TONO: ${tone}. LONGITUD: ${messageLength}.
@@ -296,9 +312,10 @@ const EmailGenerator: React.FC<EmailGeneratorProps> = ({ attachedImages, onAttac
 
             const parsed = JSON.parse(cleanJsonResponse(textResponse.trim()));
             setGeneratedContent(parsed);
+            setOriginalContent(parsed);
             saveToDictionary(idea);
             
-            updateConfig(prev => ({ ...prev, aiHistory: [{ id: Date.now().toString(), type: 'email', original: idea, result: JSON.stringify(parsed), timestamp: Date.now() }, ...(prev.aiHistory || [])].slice(0, 50) }));
+            updateConfig(prev => ({ ...prev, aiHistory: [{ id: Date.now().toString(), type: 'email' as const, original: idea, result: JSON.stringify(parsed), timestamp: Date.now() }, ...(prev.aiHistory || [])].slice(0, 50) }));
             toast.success("Mensajes generados con éxito");
         } catch (e: any) { 
             console.error(e);
@@ -350,9 +367,10 @@ const EmailGenerator: React.FC<EmailGeneratorProps> = ({ attachedImages, onAttac
 
     const deleteHistoryItem = (id: string) => updateConfig(prev => ({ ...prev, aiHistory: prev.aiHistory?.filter(h => h.id !== id) }));
 
-    const handleContextMenu = (e: React.MouseEvent, type: any, field: any) => {
-        const sel = window.getSelection()?.toString().trim();
-        if (sel) { e.preventDefault(); setContextMenu({ visible: true, x: e.clientX, y: e.clientY, selectedText: sel, targetType: type, field: field }); }
+    const handleContextMenu = (e: React.MouseEvent, type: 'email' | 'whatsapp', field: 'emailBody' | 'emailSubject' | 'whatsappMessage') => {
+        e.preventDefault();
+        const sel = window.getSelection()?.toString().trim() || '';
+        setContextMenu({ visible: true, x: e.clientX, y: e.clientY, selectedText: sel, targetType: type, field: field });
     };
 
     const handleSelectionAction = async (action: string, payload?: string) => {
@@ -361,14 +379,56 @@ const EmailGenerator: React.FC<EmailGeneratorProps> = ({ attachedImages, onAttac
         else setIsProcessingSelection(true);
         setContextMenu(prev => ({ ...prev, visible: false }));
         try {
-            const ai = new GoogleGenAI({ apiKey: googleApiConfig?.apiKey, baseUrl: `${window.location.origin}/api/proxy/google` });
+            const apiKey = googleApiConfig?.apiKey || process.env.GEMINI_API_KEY;
+            const ai = new GoogleGenAI({ apiKey, baseUrl: `${window.location.origin}/api/proxy/google` });
             const prompt = `Contexto: "${generatedContent[contextMenu.field]}". Acción: ${action} sobre "${contextMenu.selectedText}". ${payload ? `Usar: ${payload}` : ''}. Responde solo el texto completo ajustado.`;
             const response = await ai.models.generateContent({
                 model: "gemini-3.1-flash-lite",
                 contents: [{ role: 'user', parts: [{ text: prompt }] }]
             });
-            setGeneratedContent(prev => prev ? ({ ...prev, [contextMenu.field]: response.text || '' }) : null);
+            const resultText = response.text || '';
+            setGeneratedContent(prev => prev ? ({ ...prev, [contextMenu.field]: resultText }) : null);
         } catch (e: any) { setError(e.message); toast.error("Error al pulir: " + e.message); } finally { setIsProcessingSelection(false); setIsAdjusting(null); }
+    };
+
+    const handlePolishWithEdits = async () => {
+        if (!generatedContent || !originalContent) return;
+        setIsProcessingSelection(true);
+        setContextMenu(prev => ({ ...prev, visible: false }));
+        try {
+            const apiKey = googleApiConfig?.apiKey || process.env.GEMINI_API_KEY;
+            const ai = new GoogleGenAI({ apiKey, baseUrl: `${window.location.origin}/api/proxy/google` });
+            
+            const field = contextMenu.field === 'emailSubject' ? 'emailBody' : contextMenu.field;
+            const originalText = originalContent[field];
+            const modifiedText = generatedContent[field];
+            
+            const prompt = `El usuario ha redactado y modificado un mensaje generado previamente de forma manual.
+            Tu tarea es actuar como un experto en redacción y pulir de manera profesional y natural el mensaje, combinando las ideas, palabras añadidas, cambiadas o eliminadas de manera fluida y con perfecta gramática, manteniendo el estilo y tono original de la comunicación.
+            
+            MENSAJE ORIGINAL GENERADO:
+            "${originalText}"
+            
+            MENSAJE MODIFICADO POR EL USUARIO:
+            "${modifiedText}"
+            
+            Entrega ÚNICAMENTE el texto final completamente pulido y limpio, sin introducciones, explicaciones ni etiquetas HTML adicionales.`;
+
+            const response = await ai.models.generateContent({
+                model: "gemini-3.1-flash-lite",
+                contents: [{ role: 'user', parts: [{ text: prompt }] }]
+            });
+            
+            const resultText = response.text || '';
+            setGeneratedContent(prev => prev ? ({ ...prev, [field]: resultText.trim() }) : null);
+            setOriginalContent(prev => prev ? ({ ...prev, [field]: resultText.trim() }) : null);
+            toast.success("Mensaje pulido con éxito de acuerdo a tus cambios");
+        } catch (e: any) {
+            setError(e.message);
+            toast.error("Error al pulir cambios: " + e.message);
+        } finally {
+            setIsProcessingSelection(false);
+        }
     };
 
     useEffect(() => {
@@ -545,7 +605,7 @@ const EmailGenerator: React.FC<EmailGeneratorProps> = ({ attachedImages, onAttac
                                     <div className="flex gap-2"><button onClick={() => { setContextMenu({ ...contextMenu, visible: false, targetType: 'email', field: 'emailBody' }); handleSelectionAction('adjust'); }} className="px-3 py-1.5 bg-blue-600/10 text-blue-400 rounded-lg text-[10px] font-black uppercase border border-blue-500/30 hover:bg-blue-600 hover:text-white transition-all">Pulir</button><button onClick={() => handleCopyToClipboard(generatedContent.emailBody, 'email')} className={`px-3 py-1.5 rounded-lg text-[10px] font-black uppercase transition-all ${copied === 'email' ? 'bg-green-600 text-white' : 'bg-gray-800 text-gray-300 border border-gray-700'}`}>{copied === 'email' ? 'Copiado' : 'Copiar'}</button></div>
                                 </div>
                                 <div className="p-4 space-y-3">
-                                    <input value={generatedContent.emailSubject} onChange={e => setGeneratedContent({ ...generatedContent, emailSubject: e.target.value })} className="w-full bg-gray-800/40 border border-gray-700/50 rounded-lg px-4 py-2 text-sm text-white font-black outline-none focus:border-purple-500"/>
+                                    <input value={generatedContent.emailSubject} onChange={e => setGeneratedContent({ ...generatedContent, emailSubject: e.target.value })} onContextMenu={e => handleContextMenu(e, 'email', 'emailSubject')} className="w-full bg-gray-800/40 border border-gray-700/50 rounded-lg px-4 py-2 text-sm text-white font-black outline-none focus:border-purple-500" placeholder="Asunto..."/>
                                     <textarea value={generatedContent.emailBody} onChange={e => setGeneratedContent({ ...generatedContent, emailBody: e.target.value })} onContextMenu={e => handleContextMenu(e, 'email', 'emailBody')} className="w-full h-64 bg-gray-800/40 border border-gray-700/50 rounded-lg px-4 py-3 text-[14px] text-gray-200 font-medium resize-none outline-none focus:border-purple-500 leading-relaxed" placeholder="Edita aquí..."/>
                                     <button onClick={handleSendEmail} className="w-full py-3 bg-gradient-to-r from-purple-600 to-indigo-700 text-white rounded-lg font-black text-xs uppercase tracking-widest shadow-md flex justify-center gap-2 hover:scale-[1.01] active:scale-[0.99] transition-all"><Send size={16}/> Despachar</button>
                                 </div>
@@ -574,12 +634,69 @@ const EmailGenerator: React.FC<EmailGeneratorProps> = ({ attachedImages, onAttac
 
             <AnimatePresence>{contextMenu.visible && (
                 <motion.div initial={{ opacity: 0, scale: 0.9 }} animate={{ opacity: 1, scale: 1 }} exit={{ opacity: 0, scale: 0.9 }} style={{ top: contextMenu.y, left: contextMenu.x }} className="fixed z-[1000] min-w-[280px] bg-gray-900/95 backdrop-blur-3xl border-2 border-white/10 rounded-[28px] shadow-2xl py-3 overflow-hidden" onClick={e => e.stopPropagation()}>
-                    <div className="px-5 py-3 border-b-2 border-white/5 mb-2 bg-white/5"><div className="flex items-center gap-2 mb-1"><Sparkles size={12} className="text-purple-500" /><p className="text-[9px] font-black text-gray-500 uppercase tracking-widest">IA Sugerencia</p></div><p className="text-[13px] text-purple-300 truncate italic font-medium">"{contextMenu.selectedText}"</p></div>
+                    {contextMenu.selectedText ? (
+                        <>
+                            <div className="px-5 py-3 border-b-2 border-white/5 mb-2 bg-white/5"><div className="flex items-center gap-2 mb-1"><Sparkles size={12} className="text-purple-500" /><p className="text-[9px] font-black text-gray-500 uppercase tracking-widest">IA Sugerencia</p></div><p className="text-[13px] text-purple-300 truncate italic font-medium">"{contextMenu.selectedText}"</p></div>
+                            <div className="px-2 space-y-1">
+                                <button onClick={() => handleSelectionAction('variation')} className="w-full flex items-center gap-4 px-4 py-3 text-xs font-black text-gray-200 hover:bg-purple-600 hover:text-white rounded-[18px] transition-all group"><RefreshCw size={18} className="text-purple-500 group-hover:text-white group-hover:rotate-180 transition-all duration-500"/><div className="text-left"><span>Variación</span><p className="text-[8px] text-gray-500 group-hover:text-purple-200 uppercase tracking-tighter">Otra forma de decirlo</p></div></button>
+                                <button onClick={() => { const n = prompt('¿Qué integrar?'); if(n) handleSelectionAction('replace', n); }} className="w-full flex items-center gap-4 px-4 py-3 text-xs font-black text-gray-200 hover:bg-blue-600 hover:text-white rounded-[18px] transition-all group"><Pencil size={18} className="text-blue-500 group-hover:text-white"/><div className="text-left"><span>Ajuste</span><p className="text-[8px] text-gray-500 group-hover:text-blue-200 uppercase tracking-tighter">Inyectar palabra</p></div></button>
+                                <button onClick={() => handleSelectionAction('delete')} className="w-full flex items-center gap-4 px-4 py-3 text-xs font-black text-red-400 hover:bg-red-600 hover:text-white rounded-[18px] transition-all group"><Trash2 size={18} className="text-red-500 group-hover:text-white"/><div className="text-left"><span>Remover</span><p className="text-[8px] text-gray-500 group-hover:text-red-200 uppercase tracking-tighter">Borrar y corregir</p></div></button>
+                            </div>
+                            <div className="h-px bg-white/5 my-2 mx-4" />
+                        </>
+                    ) : (
+                        <div className="px-5 py-2 border-b border-white/5 mb-2"><div className="flex items-center gap-2"><Sparkles size={12} className="text-purple-400" /><p className="text-[9px] font-black text-gray-400 uppercase tracking-widest">Opciones de Mensaje</p></div></div>
+                    )}
+                    
                     <div className="px-2 space-y-1">
-                        <button onClick={() => handleSelectionAction('variation')} className="w-full flex items-center gap-4 px-4 py-3 text-xs font-black text-gray-200 hover:bg-purple-600 hover:text-white rounded-[18px] transition-all group"><RefreshCw size={18} className="text-purple-500 group-hover:text-white group-hover:rotate-180 transition-all duration-500"/><div className="text-left"><span>Variación</span><p className="text-[8px] text-gray-500 group-hover:text-purple-200 uppercase tracking-tighter">Otra forma de decirlo</p></div></button>
-                        <button onClick={() => { const n = prompt('¿Qué integrar?'); if(n) handleSelectionAction('replace', n); }} className="w-full flex items-center gap-4 px-4 py-3 text-xs font-black text-gray-200 hover:bg-blue-600 hover:text-white rounded-[18px] transition-all group"><Pencil size={18} className="text-blue-500 group-hover:text-white"/><div className="text-left"><span>Ajuste</span><p className="text-[8px] text-gray-500 group-hover:text-blue-200 uppercase tracking-tighter">Inyectar palabra</p></div></button>
-                        <div className="h-px bg-white/5 my-2 mx-4" />
-                        <button onClick={() => handleSelectionAction('delete')} className="w-full flex items-center gap-4 px-4 py-3 text-xs font-black text-red-400 hover:bg-red-600 hover:text-white rounded-[18px] transition-all group"><Trash2 size={18} className="text-red-500 group-hover:text-white"/><div className="text-left"><span>Remover</span><p className="text-[8px] text-gray-500 group-hover:text-red-200 uppercase tracking-tighter">Borrar y corregir</p></div></button>
+                        {/* Pulir con cambios - only shown if text has changes relative to original baseline */}
+                        {(() => {
+                            const fieldToPolish = contextMenu.field === 'emailSubject' ? 'emailBody' : contextMenu.field;
+                            const hasChanges = generatedContent && originalContent && 
+                                generatedContent[fieldToPolish] !== originalContent[fieldToPolish];
+                            if (!hasChanges) return null;
+                            
+                            return (
+                                <button onClick={handlePolishWithEdits} className="w-full flex items-center gap-4 px-4 py-3 text-xs font-black text-purple-300 hover:bg-purple-600 hover:text-white rounded-[18px] transition-all group bg-purple-500/5 border border-purple-500/10">
+                                    <Sparkles size={18} className="text-purple-400 group-hover:text-white animate-pulse"/>
+                                    <div className="text-left">
+                                        <span>Pulir con mis cambios</span>
+                                        <p className="text-[8px] text-purple-400 group-hover:text-purple-200 uppercase tracking-tighter">Regenerar con mis edits</p>
+                                    </div>
+                                </button>
+                            );
+                        })()}
+
+                        {/* Copiar mensaje (cuerpo) */}
+                        <button onClick={() => { 
+                            if (generatedContent) {
+                                const field = contextMenu.field === 'emailSubject' ? 'emailBody' : contextMenu.field;
+                                handleCopyToClipboard(generatedContent[field], contextMenu.targetType as any); 
+                            }
+                            setContextMenu(prev => ({ ...prev, visible: false })); 
+                        }} className="w-full flex items-center gap-4 px-4 py-3 text-xs font-black text-gray-200 hover:bg-emerald-600 hover:text-white rounded-[18px] transition-all group">
+                            <Copy size={18} className="text-emerald-500 group-hover:text-white"/>
+                            <div className="text-left">
+                                <span>Copiar Mensaje</span>
+                                <p className="text-[8px] text-gray-500 group-hover:text-emerald-200 uppercase tracking-tighter">Copiar todo el cuerpo</p>
+                            </div>
+                        </button>
+
+                        {/* Copiar asunto (only if right-clicked item is email related) */}
+                        {contextMenu.targetType === 'email' && (
+                            <button onClick={() => { 
+                                if (generatedContent) {
+                                    handleCopyToClipboard(generatedContent.emailSubject, 'email'); 
+                                }
+                                setContextMenu(prev => ({ ...prev, visible: false })); 
+                            }} className="w-full flex items-center gap-4 px-4 py-3 text-xs font-black text-gray-200 hover:bg-blue-600 hover:text-white rounded-[18px] transition-all group">
+                                <Copy size={18} className="text-blue-500 group-hover:text-white"/>
+                                <div className="text-left">
+                                    <span>Copiar Asunto</span>
+                                    <p className="text-[8px] text-gray-500 group-hover:text-blue-200 uppercase tracking-tighter">Copiar asunto del correo</p>
+                                </div>
+                            </button>
+                        )}
                     </div>
                 </motion.div>
             )}</AnimatePresence>
