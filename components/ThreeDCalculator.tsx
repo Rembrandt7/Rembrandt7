@@ -36,6 +36,8 @@ interface SalesEntry {
   name: string;
   cost: number;
   price: number;
+  advance?: number;
+  paid?: boolean;
   date: string; // YYYY-MM-DD
 }
 
@@ -72,9 +74,13 @@ const ThreeDCalculator: React.FC = () => {
   const [saleName, setSaleName] = useState('');
   const [saleCost, setSaleCost] = useState(0);
   const [salePrice, setSalePrice] = useState(0);
-  const [saleDate, setSaleDate] = useState(new Date().toISOString().split('T')[0]);
+  const [saleAdvance, setSaleAdvance] = useState(0);
+  const [salePaid, setSalePaid] = useState(true);
+  const [editingSaleId, setEditingSaleId] = useState<string | null>(null);
   const [salesFilter, setSalesFilter] = useState<'all' | 'year' | 'month' | 'week' | 'day'>('all');
+  const [paymentFilter, setPaymentFilter] = useState<'all' | 'pending' | 'paid'>('all');
   const [specificFilterDate, setSpecificFilterDate] = useState(new Date().toISOString().split('T')[0]);
+  const [saleDate, setSaleDate] = useState(new Date().toISOString().split('T')[0]);
   const [isSavingSales, setIsSavingSales] = useState(false);
   const [isLoadingSales, setIsLoadingSales] = useState(false);
 
@@ -206,7 +212,12 @@ const ThreeDCalculator: React.FC = () => {
         const text = await data.text();
         const json = JSON.parse(text);
         if (Array.isArray(json)) {
-          setSalesList(json);
+          const compatibleList = json.map(item => ({
+            ...item,
+            advance: item.advance !== undefined ? item.advance : item.price,
+            paid: item.paid !== undefined ? item.paid : true
+          }));
+          setSalesList(compatibleList);
         }
       }
     } catch (err) {
@@ -228,19 +239,79 @@ const ThreeDCalculator: React.FC = () => {
       toast.error('Ingresa el nombre de la impresión');
       return;
     }
-    const newEntry: SalesEntry = {
-      id: Date.now().toString(),
-      name: saleName.trim(),
-      cost: saleCost,
-      price: salePrice,
-      date: saleDate
-    };
-    const updated = [newEntry, ...salesList];
-    setSalesList(updated);
-    saveSalesData(updated);
+    
+    const finalAdvance = salePaid ? salePrice : saleAdvance;
+
+    if (editingSaleId) {
+      const updated = salesList.map(item => {
+        if (item.id === editingSaleId) {
+          return {
+            ...item,
+            name: saleName.trim(),
+            cost: saleCost,
+            price: salePrice,
+            advance: finalAdvance,
+            paid: salePaid,
+            date: saleDate
+          };
+        }
+        return item;
+      });
+      setSalesList(updated);
+      saveSalesData(updated);
+      setEditingSaleId(null);
+      toast.success('Registro de venta actualizado');
+    } else {
+      const newEntry: SalesEntry = {
+        id: Date.now().toString(),
+        name: saleName.trim(),
+        cost: saleCost,
+        price: salePrice,
+        advance: finalAdvance,
+        paid: salePaid,
+        date: saleDate
+      };
+      const updated = [newEntry, ...salesList];
+      setSalesList(updated);
+      saveSalesData(updated);
+      toast.success('Venta registrada');
+    }
+
     setSaleName('');
     setSaleCost(0);
     setSalePrice(0);
+    setSaleAdvance(0);
+    setSalePaid(true);
+  };
+
+  const editSaleEntry = (item: SalesEntry) => {
+    setEditingSaleId(item.id);
+    setSaleName(item.name);
+    setSaleCost(item.cost);
+    setSalePrice(item.price);
+    setSaleAdvance(item.advance !== undefined ? item.advance : item.price);
+    setSalePaid(item.paid !== undefined ? item.paid : true);
+    setSaleDate(item.date);
+    const formElement = document.getElementById('sales-form-heading');
+    if (formElement) {
+      formElement.scrollIntoView({ behavior: 'smooth' });
+    }
+  };
+
+  const markSaleAsPaid = (id: string) => {
+    const updated = salesList.map(item => {
+      if (item.id === id) {
+        return {
+          ...item,
+          paid: true,
+          advance: item.price
+        };
+      }
+      return item;
+    });
+    setSalesList(updated);
+    saveSalesData(updated);
+    toast.success('Venta cobrada por completo');
   };
 
   const deleteSaleEntry = (id: string) => {
@@ -256,18 +327,21 @@ const ThreeDCalculator: React.FC = () => {
       if (!item.date) return false;
       const itemDate = parseLocalDate(item.date);
       
+      let matchesPeriod = false;
       switch (salesFilter) {
         case 'year':
-          return itemDate.getFullYear() === today.getFullYear();
+          matchesPeriod = itemDate.getFullYear() === today.getFullYear();
+          break;
         case 'month':
-          return (
+          matchesPeriod = (
             itemDate.getFullYear() === today.getFullYear() &&
             itemDate.getMonth() === today.getMonth()
           );
+          break;
         case 'week': {
           const startOfWeek = new Date(today);
           const day = today.getDay();
-          const diff = today.getDate() - day + (day === 0 ? -6 : 1); // Monday start
+          const diff = today.getDate() - day + (day === 0 ? -6 : 1);
           startOfWeek.setDate(diff);
           startOfWeek.setHours(0, 0, 0, 0);
 
@@ -275,16 +349,29 @@ const ThreeDCalculator: React.FC = () => {
           endOfWeek.setDate(startOfWeek.getDate() + 6);
           endOfWeek.setHours(23, 59, 59, 999);
 
-          return itemDate >= startOfWeek && itemDate <= endOfWeek;
+          matchesPeriod = itemDate >= startOfWeek && itemDate <= endOfWeek;
+          break;
         }
         case 'day':
-          return item.date === specificFilterDate;
+          matchesPeriod = item.date === specificFilterDate;
+          break;
         case 'all':
         default:
-          return true;
+          matchesPeriod = true;
+          break;
       }
+
+      if (!matchesPeriod) return false;
+
+      const itemPaid = item.paid !== undefined ? item.paid : true;
+      if (paymentFilter === 'pending') {
+        return !itemPaid;
+      } else if (paymentFilter === 'paid') {
+        return itemPaid;
+      }
+      return true;
     });
-  }, [salesList, salesFilter, specificFilterDate]);
+  }, [salesList, salesFilter, specificFilterDate, paymentFilter]);
 
   useEffect(() => { 
     loadData(); 
@@ -669,8 +756,13 @@ const ThreeDCalculator: React.FC = () => {
           {/* COLUMNA 1: FORMULARIO */}
           <div className="lg:col-span-4 bg-white/[0.02] border border-white/5 p-5 rounded-2xl flex flex-col justify-between space-y-4">
             <div>
-              <h4 className="text-xs font-black text-gray-400 uppercase tracking-wider mb-4 border-b border-white/5 pb-2">
-                Añadir Registro de Venta
+              <h4 id="sales-form-heading" className="text-xs font-black text-gray-400 uppercase tracking-wider mb-4 border-b border-white/5 pb-2 flex items-center justify-between">
+                <span>{editingSaleId ? 'Editar Registro de Venta' : 'Añadir Registro de Venta'}</span>
+                {editingSaleId && (
+                  <span className="text-[9px] px-2 py-0.5 bg-yellow-500/10 text-yellow-400 rounded-full font-black animate-pulse">
+                    Modo Edición
+                  </span>
+                )}
               </h4>
               
               <div className="space-y-4">
@@ -697,15 +789,51 @@ const ThreeDCalculator: React.FC = () => {
                     />
                   </div>
                   <div className="space-y-1.5">
-                    <label className="text-[9px] font-black text-gray-500 uppercase tracking-widest ml-1">Precio de Venta ($)</label>
+                    <label className="text-[9px] font-black text-gray-500 uppercase tracking-widest ml-1">Precio Acordado ($)</label>
                     <input 
                       type="number" 
                       value={salePrice || ''} 
-                      onChange={e => setSalePrice(Number(e.target.value))} 
+                      onChange={e => {
+                        const val = Number(e.target.value);
+                        setSalePrice(val);
+                        if (salePaid) setSaleAdvance(val);
+                      }} 
                       placeholder="0.00" 
                       className="w-full bg-white/5 border border-white/10 rounded-xl px-3 py-2 text-white text-xs font-bold focus:outline-none focus:ring-1 focus:ring-emerald-500/50 h-[38px] text-center" 
                     />
                   </div>
+                </div>
+
+                {/* Anticipo & Paid status toggle */}
+                <div className="bg-white/[0.02] border border-white/5 p-3 rounded-xl space-y-3">
+                  <div className="flex items-center justify-between">
+                    <label className="text-[9px] font-black text-gray-400 uppercase tracking-widest ml-1">¿Totalmente Pagado?</label>
+                    <input 
+                      type="checkbox" 
+                      checked={salePaid} 
+                      onChange={e => {
+                        const checked = e.target.checked;
+                        setSalePaid(checked);
+                        if (checked) {
+                          setSaleAdvance(salePrice);
+                        }
+                      }} 
+                      className="w-4 h-4 rounded text-emerald-600 bg-white/5 border-white/10 focus:ring-emerald-500/50 cursor-pointer"
+                    />
+                  </div>
+                  
+                  {!salePaid && (
+                    <div className="space-y-1.5 animate-in slide-in-from-top-2 duration-200">
+                      <label className="text-[9px] font-black text-gray-500 uppercase tracking-widest ml-1">Anticipo Pagado ($)</label>
+                      <input 
+                        type="number" 
+                        value={saleAdvance || ''} 
+                        onChange={e => setSaleAdvance(Number(e.target.value))} 
+                        placeholder="0.00" 
+                        className="w-full bg-white/5 border border-white/10 rounded-xl px-3 py-2 text-white text-xs font-bold focus:outline-none focus:ring-1 focus:ring-emerald-500/50 h-[38px] text-center" 
+                      />
+                    </div>
+                  )}
                 </div>
 
                 <div className="space-y-1.5">
@@ -720,19 +848,40 @@ const ThreeDCalculator: React.FC = () => {
               </div>
             </div>
 
-            <button 
-              onClick={addSaleEntry} 
-              className="w-full py-3 bg-gradient-to-r from-emerald-600 to-teal-700 hover:from-emerald-500 hover:to-teal-600 text-white rounded-xl font-black text-[10px] uppercase tracking-widest shadow-md transition-all duration-300"
-            >
-              Registrar Venta
-            </button>
+            <div className="flex gap-2">
+              {editingSaleId && (
+                <button 
+                  onClick={() => {
+                    setEditingSaleId(null);
+                    setSaleName('');
+                    setSaleCost(0);
+                    setSalePrice(0);
+                    setSaleAdvance(0);
+                    setSalePaid(true);
+                  }}
+                  className="flex-1 py-3 bg-white/5 hover:bg-white/10 text-gray-300 rounded-xl font-black text-[10px] uppercase tracking-widest transition-all border border-white/10"
+                >
+                  Cancelar
+                </button>
+              )}
+              <button 
+                onClick={addSaleEntry} 
+                className={`py-3 text-white rounded-xl font-black text-[10px] uppercase tracking-widest shadow-md transition-all duration-300 ${
+                  editingSaleId 
+                    ? 'flex-[2] bg-gradient-to-r from-yellow-600 to-amber-700 hover:from-yellow-500 hover:to-amber-600' 
+                    : 'w-full bg-gradient-to-r from-emerald-600 to-teal-700 hover:from-emerald-500 hover:to-teal-600'
+                }`}
+              >
+                {editingSaleId ? 'Guardar Cambios' : 'Registrar Venta'}
+              </button>
+            </div>
           </div>
 
           {/* COLUMNA 2: DASHBOARD Y TABLA */}
           <div className="lg:col-span-8 flex flex-col space-y-4">
-            {/* FILTROS */}
-            <div className="flex flex-wrap items-center justify-between gap-3 bg-white/[0.01] border border-white/5 p-3 rounded-2xl">
-              <div className="flex flex-wrap gap-1">
+            {/* FILTROS Y ESTADOS DE COBRO */}
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-3 bg-white/[0.01] border border-white/5 p-3 rounded-2xl">
+              <div className="flex flex-wrap items-center gap-1">
                 {(['all', 'year', 'month', 'week', 'day'] as const).map(f => (
                   <button 
                     key={f} 
@@ -744,9 +893,24 @@ const ThreeDCalculator: React.FC = () => {
                 ))}
               </div>
               
+              <div className="flex items-center justify-between md:justify-end gap-2 text-xs">
+                <span className="text-[9px] font-black text-gray-500 uppercase tracking-widest select-none">Cobro:</span>
+                <div className="flex gap-1">
+                  {(['all', 'pending', 'paid'] as const).map(f => (
+                    <button 
+                      key={f} 
+                      onClick={() => setPaymentFilter(f)} 
+                      className={`px-3 py-1 rounded-lg text-[9px] font-black uppercase tracking-wider transition-all duration-300 ${paymentFilter === f ? 'bg-indigo-600 text-white shadow-sm' : 'text-gray-500 hover:text-white hover:bg-white/5'}`}
+                    >
+                      {f === 'all' ? 'Todos' : f === 'pending' ? 'Pendientes' : 'Pagados'}
+                    </button>
+                  ))}
+                </div>
+              </div>
+
               {salesFilter === 'day' && (
-                <div className="flex items-center gap-2 animate-in slide-in-from-right-2 duration-300">
-                  <span className="text-[9px] font-black text-gray-500 uppercase tracking-widest">Selecciona:</span>
+                <div className="flex items-center gap-2 animate-in slide-in-from-right-2 duration-300 col-span-1 md:col-span-2 border-t border-white/5 pt-2 mt-1">
+                  <span className="text-[9px] font-black text-gray-500 uppercase tracking-widest">Selecciona Día:</span>
                   <input 
                     type="date" 
                     value={specificFilterDate} 
@@ -760,11 +924,17 @@ const ThreeDCalculator: React.FC = () => {
             {/* METRICS GRID */}
             {(() => {
               const totals = filteredSales.reduce((acc, curr) => {
+                const itemPaid = curr.paid !== undefined ? curr.paid : true;
+                const itemAdvance = curr.advance !== undefined ? curr.advance : curr.price;
+                const pending = itemPaid ? 0 : Math.max(0, curr.price - itemAdvance);
+                
                 acc.cost += curr.cost || 0;
                 acc.price += curr.price || 0;
+                acc.collected += itemAdvance;
+                acc.pending += pending;
                 acc.profit += (curr.price || 0) - (curr.cost || 0);
                 return acc;
-              }, { cost: 0, price: 0, profit: 0 });
+              }, { cost: 0, price: 0, collected: 0, pending: 0, profit: 0 });
 
               return (
                 <div className="grid grid-cols-3 gap-4">
@@ -774,13 +944,19 @@ const ThreeDCalculator: React.FC = () => {
                     <div className="absolute -bottom-2 -right-2 opacity-5"><DollarSign size={40} className="text-red-500" /></div>
                   </div>
                   <div className="p-4 bg-blue-500/5 border border-blue-500/10 rounded-2xl flex flex-col items-center justify-center relative overflow-hidden group hover:bg-blue-500/[0.08] transition-colors duration-300">
-                    <p className="text-[9px] text-blue-400 font-black uppercase tracking-widest mb-1 select-none">Total Ventas</p>
+                    <p className="text-[9px] text-blue-400 font-black uppercase tracking-widest mb-1 select-none">Total Acordado</p>
                     <p className="text-xl font-black text-white italic">{formatCurrency(totals.price)}</p>
+                    <div className="text-[8px] text-gray-400 font-bold mt-1 text-center select-none">
+                      Cobrado: <span className="text-emerald-400">{formatCurrency(totals.collected)}</span> | Resta: <span className="text-amber-400">{formatCurrency(totals.pending)}</span>
+                    </div>
                     <div className="absolute -bottom-2 -right-2 opacity-5"><DollarSign size={40} className="text-blue-500" /></div>
                   </div>
                   <div className={`p-4 border rounded-2xl flex flex-col items-center justify-center relative overflow-hidden group transition-colors duration-300 ${totals.profit >= 0 ? 'bg-emerald-500/5 border-emerald-500/10 hover:bg-emerald-500/[0.08]' : 'bg-rose-500/5 border-rose-500/10 hover:bg-rose-500/[0.08]'}`}>
-                    <p className={`text-[9px] font-black uppercase tracking-widest mb-1 select-none ${totals.profit >= 0 ? 'text-emerald-400' : 'text-rose-400'}`}>Ganancia Neta</p>
+                    <p className={`text-[9px] font-black uppercase tracking-widest mb-1 select-none ${totals.profit >= 0 ? 'text-emerald-400' : 'text-rose-400'}`}>Ganancia Neto</p>
                     <p className="text-xl font-black text-white italic">{formatCurrency(totals.profit)}</p>
+                    <div className="text-[8px] text-gray-400 font-bold mt-1 text-center select-none">
+                      Cobrada: <span className="text-emerald-400">{formatCurrency(totals.collected - totals.cost)}</span>
+                    </div>
                     <div className="absolute -bottom-2 -right-2 opacity-5"><TrendingUp size={40} className={totals.profit >= 0 ? 'text-emerald-500' : 'text-rose-500'} /></div>
                   </div>
                 </div>
@@ -793,41 +969,86 @@ const ThreeDCalculator: React.FC = () => {
                 <table className="w-full text-left border-collapse text-xs table-auto">
                   <thead className="bg-slate-950 border-b border-white/10 uppercase font-black text-[9px] tracking-wider text-gray-500 sticky top-0 z-10">
                     <tr>
-                      <th className="p-3 w-[15%] text-center">Fecha</th>
-                      <th className="p-3 w-[45%]">Impresión</th>
+                      <th className="p-3 w-[12%] text-center">Fecha</th>
+                      <th className="p-3 w-[30%]">Impresión</th>
                       <th className="p-3 w-[12%] text-center">Costo</th>
-                      <th className="p-3 w-[12%] text-center">Precio</th>
-                      <th className="p-3 w-[12%] text-center">Ganancia</th>
-                      <th className="p-3 w-[4%] text-center"></th>
+                      <th className="p-3 w-[18%] text-center">Precio / Cobrado</th>
+                      <th className="p-3 w-[12%] text-center">Estado</th>
+                      <th className="p-3 w-[10%] text-center">Ganancia</th>
+                      <th className="p-3 w-[6%] text-center"></th>
                     </tr>
                   </thead>
                   <tbody className="divide-y divide-white/5 font-bold">
                     {filteredSales.length === 0 ? (
                       <tr>
-                        <td colSpan={6} className="p-8 text-center text-gray-600 font-bold uppercase text-[10px] tracking-widest select-none">
-                          No hay registros de venta para este periodo
+                        <td colSpan={7} className="p-8 text-center text-gray-600 font-bold uppercase text-[10px] tracking-widest select-none">
+                          No hay registros de venta para este periodo o estado
                         </td>
                       </tr>
                     ) : (
                       filteredSales.map(item => {
+                        const itemPaid = item.paid !== undefined ? item.paid : true;
+                        const itemAdvance = item.advance !== undefined ? item.advance : item.price;
                         const gain = (item.price || 0) - (item.cost || 0);
+                        
                         return (
                           <tr key={item.id} className="hover:bg-white/[0.02] transition-colors group">
                             <td className="p-3 text-center text-gray-500 font-mono select-none">{item.date}</td>
-                            <td className="p-3 text-white uppercase italic truncate max-w-[200px]">{item.name}</td>
+                            <td className="p-3 text-white uppercase italic truncate max-w-[180px]">{item.name}</td>
                             <td className="p-3 text-center text-red-400 font-mono">{formatCurrency(item.cost || 0)}</td>
-                            <td className="p-3 text-center text-blue-400 font-mono">{formatCurrency(item.price || 0)}</td>
+                            <td className="p-3 text-center font-mono text-white text-[11px]">
+                              <span>{formatCurrency(item.price || 0)}</span>
+                              {!itemPaid && (
+                                <div className="text-[9px] text-gray-400 font-bold">
+                                  Cobrado: <span className="text-emerald-400 font-semibold">{formatCurrency(itemAdvance)}</span>
+                                </div>
+                              )}
+                            </td>
+                            <td className="p-3 text-center">
+                              {itemPaid ? (
+                                <span className="text-[8px] px-2 py-0.5 bg-emerald-500/10 text-emerald-400 border border-emerald-500/20 rounded-full font-black uppercase">
+                                  PAGADO
+                                </span>
+                              ) : (
+                                <div className="flex flex-col items-center gap-0.5">
+                                  <span className="text-[8px] px-2 py-0.5 bg-amber-500/10 text-amber-400 border border-amber-500/20 rounded-full font-black uppercase">
+                                    PENDIENTE
+                                  </span>
+                                  <span className="text-[8px] text-rose-400 font-black">
+                                    Falta: {formatCurrency(item.price - itemAdvance)}
+                                  </span>
+                                </div>
+                              )}
+                            </td>
                             <td className={`p-3 text-center font-mono ${gain >= 0 ? 'text-emerald-400' : 'text-rose-400'}`}>
                               {gain >= 0 ? '+' : ''}{formatCurrency(gain)}
                             </td>
                             <td className="p-2 text-center">
-                              <button 
-                                onClick={() => deleteSaleEntry(item.id)} 
-                                className="p-1.5 text-gray-500 hover:text-rose-500 hover:bg-rose-500/10 rounded-lg transition-all opacity-0 group-hover:opacity-100"
-                                title="Eliminar Registro"
-                              >
-                                <Trash2 size={12} />
-                              </button>
+                              <div className="flex items-center justify-center gap-1">
+                                {!itemPaid && (
+                                  <button 
+                                    onClick={() => markSaleAsPaid(item.id)} 
+                                    className="p-1.5 text-emerald-400 hover:bg-emerald-400/10 rounded-lg transition-all"
+                                    title="Marcar como Completamente Pagado"
+                                  >
+                                    <CheckCircle2 size={12} />
+                                  </button>
+                                )}
+                                <button 
+                                  onClick={() => editSaleEntry(item)} 
+                                  className="p-1.5 text-blue-400 hover:bg-blue-400/10 rounded-lg transition-all"
+                                  title="Editar Registro"
+                                >
+                                  <Edit3 size={12} />
+                                </button>
+                                <button 
+                                  onClick={() => deleteSaleEntry(item.id)} 
+                                  className="p-1.5 text-gray-500 hover:text-rose-500 hover:bg-rose-500/10 rounded-lg transition-all opacity-0 group-hover:opacity-100"
+                                  title="Eliminar Registro"
+                                >
+                                  <Trash2 size={12} />
+                                </button>
+                              </div>
                             </td>
                           </tr>
                         );

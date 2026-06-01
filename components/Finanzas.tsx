@@ -515,6 +515,10 @@ const Finanzas: React.FC = () => {
     setIsModalOpen(true);
   };
 
+  const totalAhorrado = totalDebito + totalAhorro + financialItems.filter(i => i.type === 'ahorro').reduce((sum, i) => sum + i.currentAmount, 0);
+  const totalDeber = totalCredito + totalDeuda + financialItems.filter(i => i.type === 'deuda').reduce((sum, i) => sum + i.currentAmount, 0);
+  const balanceReal = totalAhorrado - totalDeber;
+
   return (
     <div className="p-6 h-full flex flex-col space-y-6 overflow-y-auto custom-scrollbar">
       <div className="flex justify-between items-center">
@@ -565,6 +569,43 @@ const Finanzas: React.FC = () => {
           >
             <Plus size={18} /> Agregar Tarjeta
           </button>
+        </div>
+      </div>
+
+      {/* Resumen de Balance Consolidado Real */}
+      <div className="bg-zinc-950/80 border border-white/10 rounded-2xl p-6 shadow-xl relative overflow-hidden flex flex-col md:flex-row md:items-center justify-between gap-6 animate-in fade-in duration-300">
+        <div className="absolute top-0 left-0 w-1 h-full bg-gradient-to-b from-emerald-500 to-indigo-600"></div>
+        <div>
+          <h3 className="text-sm font-black text-white uppercase tracking-widest leading-none flex items-center gap-1.5 select-none">
+            <TrendingUp size={16} className="text-emerald-400" />
+            Balance Financiero Real
+          </h3>
+          <p className="text-[10px] text-white/50 font-bold uppercase mt-1">
+            Consolidado Neto: Ahorros y cuentas de débito menos deudas y créditos pendientes
+          </p>
+        </div>
+        
+        <div className="grid grid-cols-3 gap-6 md:w-[60%] select-none font-bold">
+          <div className="bg-white/[0.02] border border-white/5 p-3 px-4 rounded-xl flex flex-col items-center justify-center">
+            <span className="text-[8px] text-white/40 uppercase tracking-widest mb-1">Total Ahorrado</span>
+            <span className="text-lg font-black text-blue-400 font-mono">
+              ${totalAhorrado.toLocaleString('es-MX', { minimumFractionDigits: 2 })}
+            </span>
+          </div>
+          <div className="bg-white/[0.02] border border-white/5 p-3 px-4 rounded-xl flex flex-col items-center justify-center">
+            <span className="text-[8px] text-white/40 uppercase tracking-widest mb-1">Total Deudas</span>
+            <span className="text-lg font-black text-orange-400 font-mono">
+              ${totalDeber.toLocaleString('es-MX', { minimumFractionDigits: 2 })}
+            </span>
+          </div>
+          <div className={`p-3 px-4 border rounded-xl flex flex-col items-center justify-center relative overflow-hidden ${balanceReal >= 0 ? 'bg-emerald-500/5 border-emerald-500/10' : 'bg-rose-500/5 border-rose-500/10'}`}>
+            <span className={`text-[8px] uppercase tracking-widest mb-1 ${balanceReal >= 0 ? 'text-emerald-400/80' : 'text-rose-400/80'}`}>
+              Balance Real
+            </span>
+            <span className={`text-lg font-black font-mono ${balanceReal >= 0 ? 'text-emerald-400' : 'text-rose-400'}`}>
+              ${balanceReal.toLocaleString('es-MX', { minimumFractionDigits: 2 })}
+            </span>
+          </div>
         </div>
       </div>
 
