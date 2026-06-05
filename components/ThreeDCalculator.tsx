@@ -41,6 +41,72 @@ interface SalesEntry {
   date: string; // YYYY-MM-DD
 }
 
+const SPECIAL_COLORS = [
+  { name: 'Dorado Metálico', value: 'linear-gradient(135deg, #ffd700 0%, #b8860b 50%, #ffd700 100%)' },
+  { name: 'Plata Metálica', value: 'linear-gradient(135deg, #e0e0e0 0%, #888888 50%, #e0e0e0 100%)' },
+  { name: 'Cobre Metálico', value: 'linear-gradient(135deg, #d2691e 0%, #8b4513 50%, #d2691e 100%)' },
+  { name: 'Bronce Metálico', value: 'linear-gradient(135deg, #cd7f32 0%, #804a00 50%, #cd7f32 100%)' },
+  { name: 'Duplex Rojo-Azul', value: 'linear-gradient(90deg, #ef4444 50%, #3b82f6 50%)' },
+  { name: 'Duplex Verde-Negro', value: 'linear-gradient(90deg, #22c55e 50%, #0f172a 50%)' },
+  { name: 'Duplex Oro-Cobre', value: 'linear-gradient(90deg, #ffd700 50%, #d2691e 50%)' },
+  { name: 'Duplex Púrpura-Amarillo', value: 'linear-gradient(90deg, #a855f7 50%, #eab308 50%)' },
+  { name: 'Duplex Magenta-Cian', value: 'linear-gradient(90deg, #ec4899 50%, #06b6d4 50%)' },
+];
+
+const getNearestColorName = (hex: string): string => {
+  if (!hex) return 'Color';
+  if (hex.startsWith('linear-gradient')) {
+    const matched = SPECIAL_COLORS.find(sc => sc.value === hex);
+    if (matched) return matched.name;
+    return 'Color Especial';
+  }
+
+  const cleanHex = hex.replace('#', '');
+  if (cleanHex.length !== 6) return 'Color';
+  const r = parseInt(cleanHex.substring(0, 2), 16);
+  const g = parseInt(cleanHex.substring(2, 4), 16);
+  const b = parseInt(cleanHex.substring(4, 6), 16);
+
+  // Convert RGB to HSL
+  const rNorm = r / 255;
+  const gNorm = g / 255;
+  const bNorm = b / 255;
+  const max = Math.max(rNorm, gNorm, bNorm);
+  const min = Math.min(rNorm, gNorm, bNorm);
+  let h = 0, s = 0, l = (max + min) / 2;
+
+  if (max !== min) {
+    const d = max - min;
+    s = l > 0.5 ? d / (2 - max - min) : d / (max + min);
+    switch (max) {
+      case rNorm: h = (gNorm - bNorm) / d + (gNorm < bNorm ? 6 : 0); break;
+      case gNorm: h = (bNorm - rNorm) / d + 2; break;
+      case bNorm: h = (rNorm - gNorm) / d + 4; break;
+    }
+    h /= 6;
+  }
+
+  const hue = h * 360;
+  const sat = s * 100;
+  const light = l * 100;
+
+  if (light < 15) return 'Negro';
+  if (light > 85) return 'Blanco';
+  if (sat < 15) return 'Gris';
+
+  if (hue >= 330 || hue < 15) {
+    if (light > 60) return 'Rosa';
+    return 'Rojo';
+  }
+  if (hue >= 15 && hue < 45) return 'Naranja';
+  if (hue >= 45 && hue < 70) return 'Amarillo';
+  if (hue >= 70 && hue < 165) return 'Verde';
+  if (hue >= 165 && hue < 255) return 'Azul';
+  if (hue >= 255 && hue < 330) return 'Morado';
+
+  return 'Color';
+};
+
 const MATERIAL_POWER = {
   PLA: 125,
   TPU: 125,
@@ -68,6 +134,8 @@ const ThreeDCalculator: React.FC = () => {
 
   const [newQueueItemName, setNewQueueItemName] = useState('');
   const [newFilament, setNewFilament] = useState<Partial<FilamentInventory>>({ material: 'PLA', color: '#ffffff', customName: '' });
+  const [filamentFilter, setFilamentFilter] = useState<'all' | 'PLA' | 'PETG' | 'TPU'>('all');
+  const [lastProposedColorName, setLastProposedColorName] = useState('');
 
   // Sales Log State
   const [salesList, setSalesList] = useState<SalesEntry[]>([]);
@@ -423,6 +491,48 @@ const ThreeDCalculator: React.FC = () => {
     setEditingQueueId(item.id);
   };
 
+  const handleColorChange = (newColor: string) => {
+    const proposed = getNearestColorName(newColor);
+    setNewFilament(prev => {
+      const shouldOverwrite = !prev.customName || prev.customName === lastProposedColorName;
+      return {
+        ...prev,
+        color: newColor,
+        customName: shouldOverwrite ? proposed : prev.customName
+      };
+    });
+    setLastProposedColorName(proposed);
+  };
+
+  const copyAvailableFilaments = () => {
+    const activeFils = myFilaments.filter(f => filamentFilter === 'all' || f.material.toUpperCase() === filamentFilter.toUpperCase());
+    const colorNames = activeFils.map(f => {
+      return (f.customName || getNearestColorName(f.color)).trim();
+    }).filter(Boolean);
+
+    const uniqueColors: string[] = [];
+    const seen = new Set<string>();
+    for (const c of colorNames) {
+      const lower = c.toLowerCase();
+      if (!seen.has(lower)) {
+        seen.add(lower);
+        uniqueColors.push(c);
+      }
+    }
+
+    if (uniqueColors.length === 0) {
+      toast.error('No hay filamentos disponibles en esta selección');
+      return;
+    }
+
+    const listText = uniqueColors.map(c => `• ${c}`).join('\n');
+    const header = '¡Hola! Te comparto los colores que tengo disponibles:\n\n';
+    const textToCopy = `${header}${listText}\n\n¡Cualquier duda quedo a tus órdenes!`;
+    
+    navigator.clipboard.writeText(textToCopy);
+    toast.success('Lista de colores copiada');
+  };
+
   const saveFilament = () => {
     if (!newFilament.color) return;
     let updated;
@@ -436,12 +546,14 @@ const ThreeDCalculator: React.FC = () => {
     }
     setMyFilaments(updated);
     setNewFilament({ material: 'PLA', color: '#ffffff', customName: '' });
+    setLastProposedColorName('');
     syncData(printQueue, updated);
   };
 
   const editFilament = (fil: FilamentInventory) => {
     setNewFilament(fil);
     setEditingFilamentId(fil.id);
+    setLastProposedColorName(fil.customName || '');
   };
 
   const formatCurrency = (val: number) => new Intl.NumberFormat('es-MX', { style: 'currency', currency: 'MXN' }).format(val);
@@ -519,7 +631,7 @@ const ThreeDCalculator: React.FC = () => {
                           <optgroup label="En mi Stock">
                              {myFilaments.map(f => (
                                <option key={f.id} value={`stock:${f.id}`}>
-                                 📦 {f.material} {f.customName ? `- ${f.customName}` : `(${f.color})`}
+                                 📦 {f.material} {f.customName ? `- ${f.customName}` : `(${f.color.startsWith('linear-gradient') ? 'Especial' : f.color})`}
                                </option>
                              ))}
                           </optgroup>
@@ -655,7 +767,7 @@ const ThreeDCalculator: React.FC = () => {
                           <div className="flex items-center justify-between pt-1 border-t border-white/5">
                              <div className="flex gap-2">
                                 <span className="text-[9px] px-2 py-0.5 bg-blue-500/10 text-blue-400 rounded-full font-black uppercase flex items-center gap-1">
-                                   {stockRef?.color && <div className="w-1.5 h-1.5 rounded-full" style={{ backgroundColor: stockRef.color }}></div>}
+                                   {stockRef?.color && <div className="w-1.5 h-1.5 rounded-full border border-white/10" style={{ background: stockRef.color }}></div>}
                                    {item.material} {stockRef?.customName ? `- ${stockRef.customName}` : ''}
                                 </span>
                                 <span className="text-[9px] px-2 py-0.5 bg-orange-500/10 text-orange-400 rounded-full font-black uppercase">{item.time}</span>
@@ -681,37 +793,105 @@ const ThreeDCalculator: React.FC = () => {
               <Palette className="text-pink-400" size={16} />
               <h3 className="text-xs font-black text-white uppercase italic">Mi Stock</h3>
             </div>
+            <span className="text-[10px] bg-pink-500/20 text-pink-400 border border-pink-500/30 px-2 py-0.5 rounded-full font-black">
+              {myFilaments.length} {myFilaments.length === 1 ? 'Filamento' : 'Filamentos'}
+            </span>
           </div>
           <div className="p-4 flex flex-col gap-4 flex-1 overflow-y-auto custom-scrollbar">
-             <div className="space-y-2 pb-3 border-b border-white/5">
+             <div className="space-y-3 pb-4 border-b border-white/5">
                 <div className="flex gap-2">
                    <select value={newFilament.material} onChange={e => setNewFilament({...newFilament, material: e.target.value})} className="flex-1 bg-slate-800 border border-white/10 rounded-lg px-2 py-2 text-xs text-white focus:outline-none font-bold">
                       <option value="PLA">PLA</option><option value="PETG">PETG</option><option value="TPU">TPU</option>
                    </select>
-                   <input type="color" value={newFilament.color} onChange={e => setNewFilament({...newFilament, color: e.target.value})} className="w-10 h-10 bg-transparent border-none cursor-pointer rounded-lg overflow-hidden shrink-0" />
+                   <div 
+                      className="relative shrink-0 w-10 h-10 rounded-lg border border-white/20 overflow-hidden flex items-center justify-center" 
+                      style={{ background: newFilament.color || '#ffffff' }}
+                   >
+                      <input 
+                         type="color" 
+                         value={newFilament.color?.startsWith('linear-gradient') ? '#ffffff' : (newFilament.color || '#ffffff')} 
+                         onChange={e => handleColorChange(e.target.value)} 
+                         className="absolute inset-0 opacity-0 cursor-pointer w-full h-full" 
+                      />
+                      {newFilament.color?.startsWith('linear-gradient') && (
+                         <div className="absolute inset-0 pointer-events-none flex items-center justify-center bg-black/10">
+                            <span className="text-[8px] font-black text-white bg-slate-900/80 px-1 py-0.5 rounded uppercase tracking-tighter">EFX</span>
+                         </div>
+                      )}
+                   </div>
                 </div>
+
+                <div className="space-y-1">
+                   <label className="text-[9px] font-black text-gray-500 uppercase tracking-widest ml-1">Efectos / Duplex</label>
+                   <div className="grid grid-cols-5 gap-1">
+                      {SPECIAL_COLORS.map(sc => (
+                         <button
+                            key={sc.name}
+                            type="button"
+                            onClick={() => handleColorChange(sc.value)}
+                            className={`w-6 h-6 rounded-full border transition-all hover:scale-110 shrink-0 ${newFilament.color === sc.value ? 'border-white scale-105 shadow-[0_0_6px_rgba(255,255,255,0.4)]' : 'border-white/10'}`}
+                            style={{ background: sc.value }}
+                            title={sc.name}
+                         />
+                      ))}
+                   </div>
+                </div>
+
                 <input type="text" value={newFilament.customName} onChange={e => setNewFilament({...newFilament, customName: e.target.value})} placeholder="Nombre/Marca..." className="w-full bg-white/5 border border-white/10 rounded-lg px-3 py-2 text-[10px] text-white focus:outline-none font-bold" />
-                <button onClick={saveFilament} className={`w-full ${editingFilamentId ? 'bg-yellow-600' : 'bg-pink-600'} text-white rounded-lg py-2 flex items-center justify-center font-black text-[10px]`}>
+                <button onClick={saveFilament} className={`w-full ${editingFilamentId ? 'bg-yellow-600 hover:bg-yellow-500' : 'bg-pink-600 hover:bg-pink-500'} text-white rounded-lg py-2 flex items-center justify-center font-black text-[10px] transition-all`}>
                    {editingFilamentId ? 'GUARDAR' : 'AGREGAR'}
                 </button>
              </div>
+
+             {/* Filters and Copy */}
+             <div className="flex flex-col gap-2 pb-2 border-b border-white/5">
+                <div className="flex items-center justify-between gap-1.5">
+                   <div className="flex gap-0.5 bg-white/5 p-0.5 rounded-lg border border-white/5 flex-1">
+                      {(['all', 'PLA', 'PETG', 'TPU'] as const).map(f => (
+                         <button
+                           key={f}
+                           onClick={() => setFilamentFilter(f)}
+                           className={`flex-1 text-[8px] font-black uppercase tracking-tighter py-1 rounded-md transition-all ${filamentFilter === f ? 'bg-pink-600 text-white shadow-md' : 'text-gray-400 hover:text-white'}`}
+                         >
+                           {f === 'all' ? 'Todo' : f}
+                         </button>
+                      ))}
+                   </div>
+                   <button
+                      onClick={copyAvailableFilaments}
+                      className="p-1 bg-pink-500/10 hover:bg-pink-500/20 text-pink-400 border border-pink-500/20 rounded-lg transition-all flex items-center justify-center gap-1 text-[8px] font-black uppercase tracking-wider px-2 h-[24px]"
+                      title="Copiar lista de colores para cliente"
+                   >
+                      <Copy size={10} />
+                      <span>Copiar</span>
+                   </button>
+                </div>
+             </div>
              
              <div className="space-y-2">
-                {myFilaments.map(fil => (
-                  <div key={fil.id} style={{ borderColor: `${fil.color}44`, backgroundColor: `${fil.color}08` }} className="p-2.5 border rounded-2xl flex items-center justify-between group transition-all">
-                     <div className="flex items-center gap-2 overflow-hidden">
-                        <div className="w-3 h-3 rounded-full shrink-0 border border-white/20" style={{ backgroundColor: fil.color }}></div>
-                        <div className="flex flex-col">
-                           <span className="text-[10px] font-black text-white uppercase leading-none">{fil.material}</span>
-                           {fil.customName && <span className="text-[8px] text-gray-400 font-bold italic truncate max-w-[80px]">({fil.customName})</span>}
+                {myFilaments
+                   .filter(fil => filamentFilter === 'all' || fil.material.toUpperCase() === filamentFilter.toUpperCase())
+                   .map(fil => {
+                      const isGradient = fil.color?.startsWith('linear-gradient');
+                      const borderColor = isGradient ? 'rgba(236, 72, 153, 0.2)' : `${fil.color}44`;
+                      const backgroundColor = isGradient ? 'rgba(236, 72, 153, 0.03)' : `${fil.color}08`;
+                      return (
+                        <div key={fil.id} style={{ borderColor, backgroundColor }} className="p-2 border rounded-2xl flex items-center justify-between group transition-all">
+                           <div className="flex items-center gap-2 overflow-hidden">
+                              <div className="w-3 h-3 rounded-full shrink-0 border border-white/20" style={{ background: fil.color }}></div>
+                              <div className="flex flex-col">
+                                 <span className="text-[10px] font-black text-white uppercase leading-none">{fil.material}</span>
+                                 {fil.customName && <span className="text-[8px] text-gray-400 font-bold italic truncate max-w-[80px]">({fil.customName})</span>}
+                              </div>
+                           </div>
+                           <div className="flex items-center gap-1 opacity-0 group-hover:opacity-100 transition-opacity">
+                              <button onClick={() => editFilament(fil)} className="text-blue-400 hover:text-blue-300 p-1"><Edit3 size={14}/></button>
+                              <button onClick={() => { const n = myFilaments.filter(i => i.id !== fil.id); setMyFilaments(n); syncData(printQueue, n); }} className="text-rose-500 hover:text-rose-400 p-1"><Trash2 size={14}/></button>
+                           </div>
                         </div>
-                     </div>
-                     <div className="flex items-center gap-1 opacity-0 group-hover:opacity-100 transition-opacity">
-                        <button onClick={() => editFilament(fil)} className="text-blue-400 p-1"><Edit3 size={14}/></button>
-                        <button onClick={() => { const n = myFilaments.filter(i => i.id !== fil.id); setMyFilaments(n); syncData(printQueue, n); }} className="text-rose-500 p-1"><Trash2 size={14}/></button>
-                     </div>
-                  </div>
-                ))}
+                      );
+                   })
+                }
              </div>
           </div>
         </div>
