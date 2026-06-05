@@ -109,6 +109,13 @@ const INITIAL_CONFIG: AppConfig = {
         colorClass: "text-orange-500 hover:text-orange-400",
         iconSvg: `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 100 100" class="w-full h-full p-0.5"><defs><linearGradient id="fusion-grad-1" x1="0%" y1="0%" x2="100%" y2="100%"><stop offset="0%" stop-color="#FF9B00"/><stop offset="50%" stop-color="#FF5100"/><stop offset="100%" stop-color="#D41400"/></linearGradient><linearGradient id="fusion-grad-2" x1="0%" y1="100%" x2="100%" y2="0%"><stop offset="0%" stop-color="#D41400"/><stop offset="100%" stop-color="#FF5100"/></linearGradient><linearGradient id="fusion-grad-3" x1="100%" y1="0%" x2="0%" y2="100%"><stop offset="0%" stop-color="#FF3300"/><stop offset="100%" stop-color="#5A0000"/></linearGradient></defs><polygon points="50,2 98,24 98,76 50,98 2,76 2,24" fill="url(#fusion-grad-1)" opacity="0.15" stroke="url(#fusion-grad-1)" stroke-width="1.5"/><polygon points="8,8 92,8 92,26 34,26 34,46 82,46 82,64 34,64 34,92 8,92" fill="url(#fusion-grad-1)"/><polygon points="92,8 92,26 97,21 97,3" fill="url(#fusion-grad-2)"/><polygon points="82,46 82,64 87,59 87,41" fill="url(#fusion-grad-2)"/><polygon points="8,92 34,92 34,97 8,97" fill="url(#fusion-grad-2)"/><polygon points="8,8 34,26 34,97 8,92" fill="url(#fusion-grad-3)" opacity="0.3"/></svg>`
     },
+    {
+        id: '10',
+        href: "https://app.maket.ai/dashboard",
+        name: "Maket AI",
+        colorClass: "text-indigo-400 hover:text-indigo-300",
+        iconSvg: `<svg class="w-full h-full text-indigo-400" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="3" width="18" height="18" rx="4"></rect><path d="M9 3v18"></path><path d="M3 12h18"></path><path d="M15 3v18"></path><circle cx="12" cy="12" r="3" opacity="0.3"></circle><path d="M12 9l3 3-3 3-3-3z"></path></svg>`
+    }
   ],
 
   aiSidebar: {

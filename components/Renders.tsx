@@ -204,6 +204,17 @@ const Renders: React.FC = () => {
                   <circle cx="11" cy="11" r="2" />
               </svg>
           </RenderLinkIcon>
+
+          <RenderLinkIcon href="https://app.maket.ai/dashboard" name="Maket AI" colorClass="text-indigo-400 hover:border-indigo-400">
+              <svg className="h-8 w-8" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                  <rect x="3" y="3" width="18" height="18" rx="4" />
+                  <path d="M9 3v18" />
+                  <path d="M3 12h18" />
+                  <path d="M15 3v18" />
+                  <circle cx="12" cy="12" r="3" opacity="0.3" />
+                  <path d="M12 9l3 3-3 3-3-3z" />
+              </svg>
+          </RenderLinkIcon>
       </div>
 
       <h2 className="text-3xl font-bold text-white mb-6">Galería de Renders</h2>
