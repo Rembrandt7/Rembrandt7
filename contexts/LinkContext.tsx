@@ -115,6 +115,13 @@ const INITIAL_CONFIG: AppConfig = {
         name: "Maket AI",
         colorClass: "text-indigo-400 hover:text-indigo-300",
         iconSvg: `<svg class="w-full h-full text-indigo-400" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="3" width="18" height="18" rx="4"></rect><path d="M9 3v18"></path><path d="M3 12h18"></path><path d="M15 3v18"></path><circle cx="12" cy="12" r="3" opacity="0.3"></circle><path d="M12 9l3 3-3 3-3-3z"></path></svg>`
+    },
+    {
+        id: '11',
+        href: "https://www.capcut.com/my-edit?start_tab=video",
+        name: "CapCut",
+        colorClass: "text-cyan-400 hover:text-cyan-300",
+        iconSvg: `<svg xmlns="http://www.w3.org/2000/svg" class="h-6 w-6" viewBox="0 0 24 24" fill="none"><defs><linearGradient id="capcut-grad" x1="0%" y1="0%" x2="100%" y2="100%"><stop offset="0%" stop-color="#00f2fe" /><stop offset="100%" stop-color="#4facfe" /></linearGradient></defs><path d="M24.189 6.442V2.671l-4.535 2.383V4.91c.002-1.505-1.078-2.411-2.638-2.411H2.64C.993 2.5 0 3.407 0 4.91V8.72L6.354 12 0 15.316v3.8C0 20.595 1 21.5 2.64 21.5h14.373c1.56 0 2.639-.907 2.639-2.382v-.197l4.536 2.409v-3.828L13.64 12 24.189 6.443zM9.982 13.873l7.797 4.083H2.157l7.825-4.083zm7.741-7.828l-7.742 4.057-7.825-4.057h15.567z" fill="url(#capcut-grad)"/></svg>`
     }
   ],
 
@@ -1587,10 +1594,13 @@ export const LinkProvider: React.FC<{ children: React.ReactNode }> = ({ children
         json.tabs = INITIAL_TABS;
       }
 
-      if (json.linksBar && Array.isArray(json.linksBar) && !json.linksBar.find((l: any) => l.name === 'Flow')) {
-        const flowLink = INITIAL_CONFIG.linksBar.find(l => l.name === 'Flow');
-        if (flowLink) {
-          json.linksBar.push(flowLink);
+      if (json.linksBar && Array.isArray(json.linksBar)) {
+        const missingLinks = INITIAL_CONFIG.linksBar.filter(initialLink => 
+          !json.linksBar.find((l: any) => l.name === initialLink.name)
+        );
+
+        if (missingLinks.length > 0) {
+          json.linksBar = [...json.linksBar, ...missingLinks];
         }
       }
 
