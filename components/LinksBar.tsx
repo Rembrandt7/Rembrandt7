@@ -28,7 +28,7 @@ const LinkIcon: React.FC<{
                 target="_blank" 
                 rel="noopener noreferrer" 
                 onClick={(e) => isEditing && e.preventDefault()}
-                className={`flex items-center justify-center w-[52px] h-[52px] rounded-[1.25rem] transition-all duration-300 flex-shrink-0 group ${item.colorClass} hover:scale-[1.15] hover:-translate-y-1 ${isEditing ? 'opacity-100 cursor-default' : ''} ${hasBg ? 'bg-white/5 hover:bg-white/10 hover:shadow-[0_4px_15px_rgba(255,255,255,0.05)] border border-white/5' : ''}`}
+                className={`flex items-center justify-center w-8 h-8 sm:w-10 sm:h-10 md:w-[52px] md:h-[52px] rounded-lg sm:rounded-xl md:rounded-[1.25rem] transition-all duration-300 flex-shrink-0 group ${item.colorClass} hover:scale-[1.15] hover:-translate-y-1 ${isEditing ? 'opacity-100 cursor-default' : ''} ${hasBg ? 'bg-white/5 hover:bg-white/10 hover:shadow-[0_4px_15px_rgba(255,255,255,0.05)] border border-white/5' : ''} [&_svg]:w-4 [&_svg]:h-4 sm:[&_svg]:w-5 sm:[&_svg]:h-5 md:[&_svg]:w-6 md:[&_svg]:h-6 [&_img]:w-5 [&_img]:h-5 sm:[&_img]:w-7 sm:[&_img]:h-7 md:[&_img]:w-10 md:[&_img]:h-10`}
                 title={item.name}
                 style={{
                     filter: item.outlineColor && item.outlineWidth ? `drop-shadow(0 0 ${item.outlineWidth}px ${item.outlineColor})` : undefined
@@ -224,14 +224,23 @@ const LinksBar: React.FC = () => {
                 </div>
             )}
 
-            <div className={`flex flex-col items-center gap-6 max-w-7xl mx-auto ${isEditing ? 'mt-12' : 'mt-4'}`}>
+            <div className={`flex flex-col items-center gap-6 max-w-7xl mx-auto w-full ${isEditing ? 'mt-12' : 'mt-4'}`}>
+                <style>{`
+                    .links-bar-scroll {
+                        -ms-overflow-style: none;
+                        scrollbar-width: none;
+                    }
+                    .links-bar-scroll::-webkit-scrollbar {
+                        display: none;
+                    }
+                `}</style>
                 <SortableLinkList 
                     id="linksBar"
                     items={config.linksBar}
                     isEditing={isEditing}
                     onReorder={(newItems) => updateConfig({ ...config, linksBar: newItems })}
                     strategy={horizontalListSortingStrategy}
-                    className="flex flex-wrap items-center justify-center gap-8"
+                    className="flex flex-nowrap items-center justify-start md:justify-center gap-2 sm:gap-4 md:gap-6 lg:gap-8 max-w-full overflow-x-auto py-2 w-full links-bar-scroll"
                     renderItem={(link, index) => (
                         <LinkIcon 
                             key={link.id} 
