@@ -170,9 +170,19 @@ const AiTutorials: React.FC = () => {
   return (
     <div className="p-4 space-y-4">
       {error && (
-        <div className="bg-amber-500/10 border border-amber-500/20 rounded-lg p-3 flex items-center gap-3 text-amber-200 text-xs">
-          <AlertTriangle size={14} className="shrink-0" />
-          <p>{error}</p>
+        <div className="bg-amber-500/10 border border-amber-500/20 rounded-lg p-3 flex flex-col md:flex-row md:items-center justify-between gap-3 text-amber-200 text-xs">
+          <div className="flex items-center gap-3">
+            <AlertTriangle size={14} className="shrink-0 text-amber-400" />
+            <p>{error}</p>
+          </div>
+          {(error.toLowerCase().includes('cuota') || error.toLowerCase().includes('key') || error.toLowerCase().includes('configur')) && (
+            <button 
+                onClick={() => window.dispatchEvent(new Event('open-google-config'))}
+                className="shrink-0 px-2 py-1 bg-amber-500 hover:bg-amber-400 text-slate-900 rounded font-black text-[10px] uppercase transition-colors cursor-pointer"
+            >
+                Configurar API
+            </button>
+          )}
         </div>
       )}
       <div className="flex justify-between items-center">

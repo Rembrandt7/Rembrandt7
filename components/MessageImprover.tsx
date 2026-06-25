@@ -3,10 +3,11 @@ import React, { useState } from 'react';
 import { GoogleGenAI } from '@google/genai';
 import Spinner from './common/Spinner';
 import IconButton from './common/IconButton';
-import { Sparkles, Copy, Check, History, Trash2 } from 'lucide-react';
+import { Sparkles, Copy, Check, History, Trash2, AlertTriangle } from 'lucide-react';
 import { useLinks } from '../contexts/LinkContext';
 import { motion, AnimatePresence } from 'motion/react';
 import SmartTextarea from './common/SmartTextarea';
+import { getFriendlyAiErrorMessage, isQuotaError } from '../utils/aiError';
 
 const MessageImprover: React.FC = () => {
     const { config, updateConfig, googleApiConfig } = useLinks();
@@ -117,7 +118,7 @@ const MessageImprover: React.FC = () => {
             }));
         } catch (e: any) {
             console.error(e);
-            setError(e.message || 'Ocurrió un error al mejorar el mensaje.');
+            setError(getFriendlyAiErrorMessage(e));
         } finally {
             setIsLoading(false);
         }
@@ -278,9 +279,23 @@ const MessageImprover: React.FC = () => {
             </div>
 
             {error && (
-                <p className="text-red-400 mt-4 text-center bg-red-900/20 p-2 rounded-md font-medium text-sm">
-                    {error}
-                </p>
+                <div className="mt-4 bg-red-950/20 border border-red-500/20 rounded-xl p-4 flex flex-col md:flex-row md:items-center justify-between gap-3 text-red-200 text-sm">
+                    <div className="flex items-start gap-3">
+                        <AlertTriangle className="shrink-0 text-red-400 mt-0.5" size={18} />
+                        <div className="text-left">
+                            <p className="font-semibold text-white">Error en el asistente de IA</p>
+                            <p className="text-xs text-red-300/95 mt-1 leading-relaxed">{error}</p>
+                        </div>
+                    </div>
+                    {isQuotaError(error) && (
+                        <button 
+                            onClick={() => window.dispatchEvent(new Event('open-google-config'))}
+                            className="shrink-0 px-4 py-2 bg-amber-500 hover:bg-amber-400 text-slate-900 rounded-lg font-black text-xs uppercase tracking-wider transition-colors shadow-md shadow-amber-500/10 cursor-pointer"
+                        >
+                            Configurar mi API Key
+                        </button>
+                    )}
+                </div>
             )}
 
             <button

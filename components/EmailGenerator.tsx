@@ -9,9 +9,10 @@ import SmartTextarea from './common/SmartTextarea';
 import { SUPABASE_CONFIG } from '../utils/constants';
 import { useLinks } from '../contexts/LinkContext';
 import { cleanJsonResponse } from '../utils/jsonUtils';
-import { History, Trash2, Mail, MessageSquare, Star, Sparkles, Send, Check, RefreshCw, Pencil, Save, Copy } from 'lucide-react';
+import { History, Trash2, Mail, MessageSquare, Star, Sparkles, Send, Check, RefreshCw, Pencil, Save, Copy, AlertTriangle } from 'lucide-react';
 import { motion, AnimatePresence } from 'motion/react';
 import { toast } from 'sonner';
+import { getFriendlyAiErrorMessage, isQuotaError } from '../utils/aiError';
 
 type Tone = 'Profesional' | 'Casual';
 type MessageLength = 'Reducido' | 'Medio' | 'Detallado';
@@ -319,8 +320,9 @@ const EmailGenerator: React.FC<EmailGeneratorProps> = ({ attachedImages, onAttac
             toast.success("Mensajes generados con éxito");
         } catch (e: any) { 
             console.error(e);
-            setError(e.message); 
-            toast.error("Error al generar: " + e.message);
+            const friendlyMsg = getFriendlyAiErrorMessage(e);
+            setError(friendlyMsg); 
+            toast.error("Error al generar: " + friendlyMsg);
         } finally { setIsLoading(false); }
     }, [idea, previousEmail, tone, messageLength, recipientName, project, useNickname, selectedContactIndex, sortedContacts, googleApiConfig, updateConfig, recipientGender]);
 
@@ -388,7 +390,11 @@ const EmailGenerator: React.FC<EmailGeneratorProps> = ({ attachedImages, onAttac
             });
             const resultText = response.text || '';
             setGeneratedContent(prev => prev ? ({ ...prev, [contextMenu.field]: resultText }) : null);
-        } catch (e: any) { setError(e.message); toast.error("Error al pulir: " + e.message); } finally { setIsProcessingSelection(false); setIsAdjusting(null); }
+        } catch (e: any) { 
+            const friendlyMsg = getFriendlyAiErrorMessage(e);
+            setError(friendlyMsg); 
+            toast.error("Error al pulir: " + friendlyMsg); 
+        } finally { setIsProcessingSelection(false); setIsAdjusting(null); }
     };
 
     const handlePolishWithEdits = async () => {
@@ -424,8 +430,9 @@ const EmailGenerator: React.FC<EmailGeneratorProps> = ({ attachedImages, onAttac
             setOriginalContent(prev => prev ? ({ ...prev, [field]: resultText.trim() }) : null);
             toast.success("Mensaje pulido con éxito de acuerdo a tus cambios");
         } catch (e: any) {
-            setError(e.message);
-            toast.error("Error al pulir cambios: " + e.message);
+            const friendlyMsg = getFriendlyAiErrorMessage(e);
+            setError(friendlyMsg);
+            toast.error("Error al pulir cambios: " + friendlyMsg);
         } finally {
             setIsProcessingSelection(false);
         }
@@ -478,6 +485,26 @@ const EmailGenerator: React.FC<EmailGeneratorProps> = ({ attachedImages, onAttac
                     <button onClick={() => setShowHistory(!showHistory)} className="px-4 py-2 bg-gray-800 rounded-lg text-xs font-black uppercase text-gray-400 border border-gray-700 hover:bg-gray-700 transition-colors">Historial</button>
                 </div>
             </div>
+
+            {error && (
+                <div className="mb-4 bg-red-950/20 border border-red-500/20 rounded-xl p-4 flex flex-col md:flex-row md:items-center justify-between gap-3 text-red-200 text-sm">
+                    <div className="flex items-start gap-3">
+                        <AlertTriangle className="shrink-0 text-red-400 mt-0.5" size={18} />
+                        <div>
+                            <p className="font-semibold text-white">Error en el asistente de IA</p>
+                            <p className="text-xs text-red-300/95 mt-1 leading-relaxed">{error}</p>
+                        </div>
+                    </div>
+                    {isQuotaError(error) && (
+                        <button 
+                            onClick={() => window.dispatchEvent(new Event('open-google-config'))}
+                            className="shrink-0 px-4 py-2 bg-amber-500 hover:bg-amber-400 text-slate-900 rounded-lg font-black text-xs uppercase tracking-wider transition-colors shadow-md shadow-amber-500/10 cursor-pointer"
+                        >
+                            Configurar mi API Key
+                        </button>
+                    )}
+                </div>
+            )}
 
             <AnimatePresence>{showHistory && (
                 <motion.div initial={{ height: 0, opacity: 0 }} animate={{ height: 'auto', opacity: 1 }} exit={{ height: 0, opacity: 0 }} className="overflow-hidden mb-4">

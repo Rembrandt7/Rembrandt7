@@ -265,9 +265,19 @@ const Dashboard: React.FC = () => {
   return (
     <div className="p-6 h-full overflow-y-auto space-y-8">
       {error && (
-        <div className="bg-amber-500/10 border border-amber-500/20 rounded-lg p-3 flex items-center gap-3 text-amber-200 text-sm">
-          <AlertTriangle size={18} className="shrink-0" />
-          <p>{error}</p>
+        <div className="bg-amber-500/10 border border-amber-500/20 rounded-lg p-3 flex flex-col md:flex-row md:items-center justify-between gap-3 text-amber-200 text-sm">
+          <div className="flex items-center gap-3">
+            <AlertTriangle size={18} className="shrink-0 text-amber-400" />
+            <p>{error}</p>
+          </div>
+          {(error.toLowerCase().includes('cuota') || error.toLowerCase().includes('key') || error.toLowerCase().includes('configur')) && (
+            <button 
+                onClick={() => window.dispatchEvent(new Event('open-google-config'))}
+                className="shrink-0 px-3 py-1 bg-amber-500 hover:bg-amber-400 text-slate-900 rounded font-black text-xs uppercase transition-colors cursor-pointer"
+            >
+                Configurar API
+            </button>
+          )}
         </div>
       )}
 

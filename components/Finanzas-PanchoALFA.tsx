@@ -11,8 +11,9 @@ const CardItem: React.FC<{
   onEdit: (c: FinanzasCard) => void, 
   onDelete: (id: string) => void, 
   onAdjust: (id: string, amount: number) => void,
-  onSetBalance: (id: string, amount: number) => void
-}> = ({ card, onEdit, onDelete, onAdjust, onSetBalance }) => {
+  onSetBalance: (id: string, amount: number) => void,
+  onMarkPaid?: (id: string) => void
+}> = ({ card, onEdit, onDelete, onAdjust, onSetBalance, onMarkPaid }) => {
   const [amountInput, setAmountInput] = useState('');
 
   const handleAction = (isPositive: boolean) => {
@@ -25,6 +26,28 @@ const CardItem: React.FC<{
   const isCredit = card.type === 'credito';
   const isGreen = isCredit && card.balance < 0;
 
+  const today = new Date();
+  const currentMonthStr = `${today.getFullYear()}-${(today.getMonth() + 1).toString().padStart(2, '0')}`;
+  const isPaidThisMonth = isCredit && card.lastPaidMonth === currentMonthStr;
+
+  let nextPaymentDateStr = '';
+  if (isCredit && card.paymentDate) {
+    const paymentDay = parseInt(card.paymentDate, 10);
+    if (!isNaN(paymentDay)) {
+      let nextMonth = today.getMonth();
+      let nextYear = today.getFullYear();
+      if (isPaidThisMonth) {
+        nextMonth += 1;
+        if (nextMonth > 11) {
+          nextMonth = 0;
+          nextYear += 1;
+        }
+      }
+      const nextDate = new Date(nextYear, nextMonth, paymentDay);
+      nextPaymentDateStr = nextDate.toLocaleDateString('es-MX', { day: '2-digit', month: 'short' });
+    }
+  }
+
   return (
     <div className="bg-zinc-900/80 border border-white/10 rounded-lg p-4 relative group overflow-hidden flex flex-col justify-between h-[210px]">
       <div className={`absolute top-0 left-0 w-full h-1 ${isCredit ? 'bg-rose-500' : 'bg-emerald-500'}`}></div>
@@ -36,8 +59,13 @@ const CardItem: React.FC<{
             ${card.balance.toLocaleString('es-MX', { minimumFractionDigits: 0 })}
           </span>
         </div>
-        <div className="text-xs text-white/50 font-medium mb-3">
-          {card.expirationDate} {isCredit && `| Corte: ${card.cutoffDate}`}
+        <div className="text-xs text-white/50 font-medium mb-3 flex items-center justify-between">
+          <span>{card.expirationDate} {isCredit && `| Corte: ${card.cutoffDate}`}</span>
+          {isCredit && nextPaymentDateStr && (
+            <span className={isPaidThisMonth ? 'text-emerald-400 font-bold' : 'text-rose-400 font-bold'}>
+              Pago: {nextPaymentDateStr}
+            </span>
+          )}
         </div>
       </div>
 
@@ -57,9 +85,23 @@ const CardItem: React.FC<{
             {isCredit ? 'Pago' : 'Gasto'}
           </button>
         </div>
-        <button onClick={() => onSetBalance(card.id, 0)} className="w-full mt-1 px-2 py-1.5 bg-white/5 hover:bg-white/10 text-white/60 hover:text-white rounded text-xs font-bold transition-colors">
-          Limpiar
-        </button>
+        <div className="flex gap-1 mt-1">
+          <button onClick={() => onSetBalance(card.id, 0)} className="flex-1 px-2 py-1.5 bg-white/5 hover:bg-white/10 text-white/60 hover:text-white rounded text-xs font-bold transition-colors">
+            Limpiar
+          </button>
+          {isCredit && onMarkPaid && (
+            <button 
+              onClick={() => onMarkPaid(card.id)} 
+              className={`flex-1 px-2 py-1.5 rounded text-xs font-bold transition-all border ${
+                isPaidThisMonth 
+                  ? 'bg-emerald-600/20 hover:bg-emerald-600/40 text-emerald-400 border-emerald-500/30' 
+                  : 'bg-rose-600/20 hover:bg-rose-600/40 text-rose-400 border-rose-500/30'
+              }`}
+            >
+              {isPaidThisMonth ? '✓ Pagado' : 'Ya pagué'}
+            </button>
+          )}
+        </div>
       </div>
       
       <div className="absolute top-2 right-2 flex gap-1 opacity-0 group-hover:opacity-100 transition-opacity z-20">
@@ -286,6 +328,24 @@ const Finanzas: React.FC = () => {
     setFinancialItems(updatedItems);
   };
 
+  const handleMarkCardPaid = (cardId: string) => {
+    const today = new Date();
+    const currentMonthStr = `${today.getFullYear()}-${(today.getMonth() + 1).toString().padStart(2, '0')}`;
+    
+    const updatedCards = cards.map(c => {
+      if (c.id === cardId) {
+        const isPaid = c.lastPaidMonth === currentMonthStr;
+        return {
+          ...c,
+          lastPaidMonth: isPaid ? undefined : currentMonthStr
+        };
+      }
+      return c;
+    });
+    setCards(updatedCards);
+    toast.success("Estado de pago de tarjeta actualizado");
+  };
+
   const creditoCards = cards.filter(c => c.type === 'credito');
   const debitoCards = cards.filter(c => c.type === 'debito');
   const deudaCards = cards.filter(c => c.type === 'deuda');
@@ -431,7 +491,7 @@ const Finanzas: React.FC = () => {
           </div>
           <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3">
             {creditoCards.map(card => (
-              <CardItem key={card.id} card={card} onEdit={openModal} onDelete={handleDeleteCard} onAdjust={adjustBalance} onSetBalance={setCardBalance} />
+              <CardItem key={card.id} card={card} onEdit={openModal} onDelete={handleDeleteCard} onAdjust={adjustBalance} onSetBalance={setCardBalance} onMarkPaid={handleMarkCardPaid} />
             ))}
           </div>
         </div>
@@ -451,7 +511,7 @@ const Finanzas: React.FC = () => {
           </div>
           <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3">
             {debitoCards.map(card => (
-              <CardItem key={card.id} card={card} onEdit={openModal} onDelete={handleDeleteCard} onAdjust={adjustBalance} onSetBalance={setCardBalance} />
+              <CardItem key={card.id} card={card} onEdit={openModal} onDelete={handleDeleteCard} onAdjust={adjustBalance} onSetBalance={setCardBalance} onMarkPaid={handleMarkCardPaid} />
             ))}
           </div>
         </div>

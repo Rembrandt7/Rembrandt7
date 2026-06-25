@@ -154,6 +154,7 @@ export interface CalendarToken {
   isCompleted?: boolean;
   reminderMinutes?: number;
   reminderTime?: string;
+  googleEventId?: string;
 }
 
 export interface FinanzasCard {
@@ -166,6 +167,7 @@ export interface FinanzasCard {
   balance: number;
   annualYieldRate?: number;
   lastYieldUpdate?: number;
+  lastPaidMonth?: string;
 }
 
 export interface FinancialItem {
@@ -319,6 +321,7 @@ export interface AppConfig {
   notifications?: AppNotification[];
   lastNotificationCheck?: string; // YYYY-MM-DD
   updatedAt?: number; // Timestamp
+  googleApiConfig?: GoogleApiConfig;
 }
 
 export interface GoogleApiConfig {

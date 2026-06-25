@@ -471,12 +471,19 @@ export const LinkProvider: React.FC<{ children: React.ReactNode }> = ({ children
     }
   });
 
-  const updateGoogleApiConfig = (config: GoogleApiConfig | null) => {
-    setGoogleApiConfigState(config);
-    if (config) {
-      localStorage.setItem('googleApiConfig', JSON.stringify(config));
+  const updateGoogleApiConfig = (newConfig: GoogleApiConfig | null) => {
+    setGoogleApiConfigState(newConfig);
+    if (newConfig) {
+      localStorage.setItem('googleApiConfig', JSON.stringify(newConfig));
+      const updatedConfig = { ...configRef.current, googleApiConfig: newConfig };
+      setConfig(updatedConfig);
+      saveToSupabase(updatedConfig).catch(err => console.error("Error saving googleApiConfig to Supabase:", err));
     } else {
       localStorage.removeItem('googleApiConfig');
+      const updatedConfig = { ...configRef.current };
+      delete updatedConfig.googleApiConfig;
+      setConfig(updatedConfig);
+      saveToSupabase(updatedConfig).catch(err => console.error("Error clearing googleApiConfig from Supabase:", err));
     }
   };
 
@@ -716,6 +723,23 @@ export const LinkProvider: React.FC<{ children: React.ReactNode }> = ({ children
 
           let currentNotes: Note[] = finalConfig.notes || [];
           let needsUpdate = false;
+
+          // Merge local googleApiConfig into Supabase config if missing
+          let localGoogleApiConfig: GoogleApiConfig | null = null;
+          try {
+            const stored = localStorage.getItem('googleApiConfig');
+            if (stored) localGoogleApiConfig = JSON.parse(stored);
+          } catch (e) {
+            console.error('Error parsing local googleApiConfig:', e);
+          }
+
+          if (!finalConfig.googleApiConfig && localGoogleApiConfig) {
+            finalConfig.googleApiConfig = localGoogleApiConfig;
+            needsUpdate = true;
+          } else if (finalConfig.googleApiConfig) {
+            setGoogleApiConfigState(finalConfig.googleApiConfig);
+            localStorage.setItem('googleApiConfig', JSON.stringify(finalConfig.googleApiConfig));
+          }
 
           const mergeNotes = (remoteData: { notes: Note[], updatedAt?: number } | null, categories: string[]) => {
             if (!remoteData) return;

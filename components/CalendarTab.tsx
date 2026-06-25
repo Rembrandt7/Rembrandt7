@@ -411,7 +411,8 @@ const CalendarTab: React.FC = () => {
         body: JSON.stringify({
           tokens,
           localEvents: config.calendarEvents || [],
-          localTokens: config.calendarTokens || []
+          localTokens: config.calendarTokens || [],
+          timeZone: Intl.DateTimeFormat().resolvedOptions().timeZone
         })
       });
 
@@ -427,12 +428,14 @@ const CalendarTab: React.FC = () => {
         throw new Error(errorData.details || errorData.error || 'Error sincronizando con Google Calendar');
       }
 
-      const { events: syncedEvents, tokens: syncedTokens } = await syncResponse.json();
+      const responseData = await syncResponse.json();
+      const { events: syncedEvents, tokens: syncedTokens, googleCalendarTokens: updatedGoogleTokens } = responseData;
       
       const finalConfig = { 
         ...config, 
         calendarEvents: syncedEvents,
-        calendarTokens: syncedTokens || config.calendarTokens
+        calendarTokens: syncedTokens || config.calendarTokens,
+        ...(updatedGoogleTokens ? { googleCalendarTokens: updatedGoogleTokens } : {})
       };
       updateConfig(finalConfig);
       await saveToSupabase(finalConfig);
@@ -1033,7 +1036,7 @@ const CalendarTab: React.FC = () => {
           { id: 'payment', label: 'Pagos', color: 'bg-green-500' },
           { id: 'ingreso', label: 'Ingresos', color: 'bg-emerald-600' },
           { id: 'holiday', label: 'Feriados', color: 'bg-red-500' },
-          { id: 'vacation', label: 'Vacaciones', color: 'bg-purple-500' },
+          { id: 'vacation', label: 'Vacaciones', color: 'bg-green-500' },
           { id: 'mountain', label: 'Montaña', color: 'bg-emerald-500' },
           { id: 'party', label: 'Fiesta', color: 'bg-pink-500' },
           { id: 'medical', label: 'Médico', color: 'bg-cyan-500' },
@@ -1713,7 +1716,17 @@ const CalendarTab: React.FC = () => {
                 <label className="block text-[10px] font-black text-gray-500 uppercase mb-1 ml-1">Categoría</label>
                 <select
                   value={newEvent.type}
-                  onChange={(e) => setNewEvent({ ...newEvent, type: e.target.value as any })}
+                  onChange={(e) => {
+                    const type = e.target.value as any;
+                    const updates: Partial<CalendarEvent> = { type };
+                    if (type === 'vacation') {
+                      if (!newEvent.title || newEvent.title.trim() === '') {
+                        updates.title = 'Vacaciones';
+                      }
+                      updates.color = '#10b981'; // Green
+                    }
+                    setNewEvent({ ...newEvent, ...updates });
+                  }}
                   className="w-full bg-gray-900 text-white rounded-xl px-4 py-2 border border-gray-700 focus:ring-2 focus:ring-purple-500 outline-none transition-all"
                 >
                   <option value="event">Evento General</option>
