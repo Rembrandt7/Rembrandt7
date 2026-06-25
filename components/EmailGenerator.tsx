@@ -320,7 +320,7 @@ const EmailGenerator: React.FC<EmailGeneratorProps> = ({ attachedImages, onAttac
             toast.success("Mensajes generados con éxito");
         } catch (e: any) { 
             console.error(e);
-            const friendlyMsg = getFriendlyAiErrorMessage(e);
+            const friendlyMsg = getFriendlyAiErrorMessage(e, !!googleApiConfig?.apiKey);
             setError(friendlyMsg); 
             toast.error("Error al generar: " + friendlyMsg);
         } finally { setIsLoading(false); }
@@ -391,7 +391,7 @@ const EmailGenerator: React.FC<EmailGeneratorProps> = ({ attachedImages, onAttac
             const resultText = response.text || '';
             setGeneratedContent(prev => prev ? ({ ...prev, [contextMenu.field]: resultText }) : null);
         } catch (e: any) { 
-            const friendlyMsg = getFriendlyAiErrorMessage(e);
+            const friendlyMsg = getFriendlyAiErrorMessage(e, !!googleApiConfig?.apiKey);
             setError(friendlyMsg); 
             toast.error("Error al pulir: " + friendlyMsg); 
         } finally { setIsProcessingSelection(false); setIsAdjusting(null); }
@@ -430,7 +430,7 @@ const EmailGenerator: React.FC<EmailGeneratorProps> = ({ attachedImages, onAttac
             setOriginalContent(prev => prev ? ({ ...prev, [field]: resultText.trim() }) : null);
             toast.success("Mensaje pulido con éxito de acuerdo a tus cambios");
         } catch (e: any) {
-            const friendlyMsg = getFriendlyAiErrorMessage(e);
+            const friendlyMsg = getFriendlyAiErrorMessage(e, !!googleApiConfig?.apiKey);
             setError(friendlyMsg);
             toast.error("Error al pulir cambios: " + friendlyMsg);
         } finally {

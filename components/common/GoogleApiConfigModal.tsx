@@ -22,8 +22,8 @@ export const GoogleApiConfigModal: React.FC = () => {
     if (!isOpen) return null;
 
     const handleSave = () => {
-        if (!tempConfig.clientId || !tempConfig.apiKey) {
-            alert('Por favor ingresa al menos Client ID y API Key');
+        if (!tempConfig.clientId && !tempConfig.apiKey) {
+            alert('Por favor ingresa al menos una API Key de Gemini o un Client ID de Google.');
             return;
         }
         updateGoogleApiConfig(tempConfig);

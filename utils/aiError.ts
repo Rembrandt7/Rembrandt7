@@ -17,8 +17,11 @@ export function isQuotaError(error: any): boolean {
   );
 }
 
-export function getFriendlyAiErrorMessage(error: any): string {
+export function getFriendlyAiErrorMessage(error: any, isCustomKey = false): string {
   if (isQuotaError(error)) {
+    if (isCustomKey) {
+      return 'Límite de cuota excedido (429) en tu clave de API de Gemini. Las claves gratuitas de Google AI Studio están limitadas a 15 consultas por minuto. Por favor, espera unos segundos antes de intentar de nuevo.';
+    }
     return 'Límite de cuota excedido (429) en la API de Gemini. La clave de API gratuita compartida ha superado el número de solicitudes permitidas por Google. Para solucionarlo y tener uso ilimitado, te recomendamos configurar tu propia API Key gratuita en la sección de Ajustes.';
   }
   return error?.message || String(error) || 'Ocurrió un error inesperado al procesar la solicitud con la IA.';

@@ -118,7 +118,7 @@ const MessageImprover: React.FC = () => {
             }));
         } catch (e: any) {
             console.error(e);
-            setError(getFriendlyAiErrorMessage(e));
+            setError(getFriendlyAiErrorMessage(e, !!googleApiConfig?.apiKey));
         } finally {
             setIsLoading(false);
         }
