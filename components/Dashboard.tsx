@@ -126,9 +126,9 @@ const Dashboard: React.FC = () => {
       const mtyNews = processArticles(mtyNewsData?.articles);
       const finNews = processArticles(finNewsData?.articles);
 
-      // If GNews failed, fallback to Gemini for MTY news at least
+      // If GNews failed, fallback to Gemini for MTY news ONLY if force is true (manual refresh)
       let finalMtyNews = mtyNews;
-      if (mtyNews.length === 0) {
+      if (mtyNews.length === 0 && force) {
         try {
           const newsResponse = await ai.models.generateContent({
               model: "gemini-3.1-flash-preview",

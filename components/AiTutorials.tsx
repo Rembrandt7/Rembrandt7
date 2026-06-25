@@ -21,6 +21,37 @@ const getYouTubeThumbnail = (url: string, fallback: string) => {
   return fallback;
 };
 
+const DEFAULT_TUTORIALS = [
+  {
+    title: "Curso de Unreal Engine 5 desde Cero",
+    source: "YouTube",
+    url: "https://www.youtube.com/watch?v=R1d4LwGgJSc",
+    audioSummary: "Aprende las bases de Unreal Engine 5: interfaz, navegación, materiales e iluminación.",
+    thumbnail: "https://img.youtube.com/vi/R1d4LwGgJSc/hqdefault.jpg"
+  },
+  {
+    title: "Novedades de AutoCAD 2026",
+    source: "YouTube",
+    url: "https://www.youtube.com/watch?v=7h-6EuxrOaY",
+    audioSummary: "Descubre las últimas mejoras de rendimiento y las nuevas herramientas en AutoCAD.",
+    thumbnail: "https://img.youtube.com/vi/7h-6EuxrOaY/hqdefault.jpg"
+  },
+  {
+    title: "Inteligencia Artificial en Arquitectura",
+    source: "YouTube",
+    url: "https://www.youtube.com/watch?v=f-B6N5R148I",
+    audioSummary: "Usa herramientas de IA como Midjourney y Stable Diffusion para mejorar tus renders.",
+    thumbnail: "https://img.youtube.com/vi/f-B6N5R148I/hqdefault.jpg"
+  },
+  {
+    title: "Photoshop AI: Relleno Generativo en Renders",
+    source: "YouTube",
+    url: "https://www.youtube.com/watch?v=jWJsnw5Vd4Y",
+    audioSummary: "Aprende a usar la inteligencia artificial de Photoshop para posproducción de renders.",
+    thumbnail: "https://img.youtube.com/vi/jWJsnw5Vd4Y/hqdefault.jpg"
+  }
+];
+
 const AiTutorials: React.FC = () => {
   const { config, updateConfig, googleApiConfig } = useLinks();
   const [loading, setLoading] = useState(false);
@@ -160,10 +191,9 @@ const AiTutorials: React.FC = () => {
     const cachedTutorials = localStorage.getItem('aiTutorials');
     if (cachedTutorials) {
         updateConfig({ ...config, aiTutorials: JSON.parse(cachedTutorials) });
-    }
-    
-    if (!config.aiTutorials || config.aiTutorials.length === 0) {
-      fetchTutorials();
+    } else if (!config.aiTutorials || config.aiTutorials.length === 0) {
+        updateConfig({ ...config, aiTutorials: DEFAULT_TUTORIALS });
+        localStorage.setItem('aiTutorials', JSON.stringify(DEFAULT_TUTORIALS));
     }
   }, []);
 
