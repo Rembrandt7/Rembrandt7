@@ -7,18 +7,21 @@ import ThreeDCalculator from './ThreeDCalculator';
 /* ─────────────────────────────────────────────────────────────────
    DATA - Audit and Corrected from PDF (stl_pack.pdf)
 ───────────────────────────────────────────────────────────────── */
-const tools = [
-  { name: 'Meshy (IA)', href: 'https://www.meshy.ai/workspace', icon: <Box size={20} className="text-purple-400" />, color: 'from-purple-500/20 to-transparent' },
-  { name: 'Hitem3D', href: 'https://www.hitem3d.ai/create', icon: <Move size={20} className="text-blue-400" />, color: 'from-blue-500/20 to-transparent' },
-  { name: 'Gridfinity', href: 'https://gridfinitygenerator.com/es/editor', icon: <Database size={20} className="text-orange-400" />, color: 'from-orange-500/20 to-transparent' },
-  { name: 'Printables', href: 'https://www.printables.com/?lang=es', icon: <Globe size={20} className="text-orange-600" />, color: 'from-orange-600/20 to-transparent' },
-  { name: 'Multibuild', href: 'https://multibuild.io/parts', icon: <Settings size={20} className="text-indigo-400" />, color: 'from-indigo-500/20 to-transparent' },
+const libraries = [
+  { name: 'Printables', href: 'https://www.printables.com/?lang=es', icon: <Globe size={20} className="text-orange-500" />, color: 'from-orange-600/20 to-transparent' },
   { name: 'MakerWorld', href: 'https://makerworld.com/es', icon: <Package size={20} className="text-teal-400" />, color: 'from-teal-500/20 to-transparent' },
+  { name: 'Thingiverse', href: 'https://www.thingiverse.com/', icon: <Box size={20} className="text-blue-500" />, color: 'from-blue-600/20 to-transparent' },
   { name: 'MyMiniFactory', href: 'https://www.myminifactory.com/', icon: <Sparkles size={20} className="text-pink-400" />, color: 'from-pink-500/20 to-transparent' },
   { name: 'Thangs', href: 'https://thangs.com/', icon: <Wrench size={20} className="text-cyan-400" />, color: 'from-cyan-500/20 to-transparent' },
-  { name: 'Thingiverse', href: 'https://www.thingiverse.com/', icon: <Box size={20} className="text-blue-600" />, color: 'from-blue-600/20 to-transparent' },
-  { name: 'Dora', href: 'https://www.3dkoneko.com/dora', icon: <Sparkles size={20} className="text-rose-400" />, color: 'from-rose-500/20 to-transparent' },
   { name: 'Creality', href: 'https://www.crealitycloud.com/es', icon: <Cloud size={20} className="text-cyan-400" />, color: 'from-cyan-500/20 to-transparent' },
+  { name: 'Multibuild', href: 'https://multibuild.io/parts', icon: <Settings size={20} className="text-indigo-400" />, color: 'from-indigo-500/20 to-transparent' },
+];
+
+const tools3D = [
+  { name: 'Meshy (IA)', href: 'https://www.meshy.ai/workspace', icon: <Sparkles size={20} className="text-purple-400" />, color: 'from-purple-500/20 to-transparent' },
+  { name: 'Hitem3D', href: 'https://www.hitem3d.ai/create', icon: <Move size={20} className="text-blue-400" />, color: 'from-blue-500/20 to-transparent' },
+  { name: 'Dora', href: 'https://www.3dkoneko.com/dora', icon: <Sparkles size={20} className="text-rose-400" />, color: 'from-rose-500/20 to-transparent' },
+  { name: 'Gridfinity', href: 'https://gridfinitygenerator.com/es/editor', icon: <Database size={20} className="text-orange-400" />, color: 'from-orange-500/20 to-transparent' },
 ];
 
 // Helper to create reliable Drive links
@@ -209,26 +212,58 @@ const GroupCard = ({ group, className }: { group: typeof groups[0], className?: 
 const ThreeDPrinting: React.FC = () => {
   return (
     <div className="p-4 space-y-6 animate-in fade-in slide-in-from-bottom-4 duration-500 max-w-[1600px] mx-auto pb-20">
-      {/* Header */}
-      <div className="flex flex-col md:flex-row md:items-center justify-between gap-4 bg-blue-600/10 p-6 rounded-3xl border border-blue-500/20">
-        <div className="flex items-center gap-4">
+      {/* Librerías */}
+      <div className="flex flex-col lg:flex-row lg:items-center justify-between gap-4 bg-blue-600/10 p-6 rounded-3xl border border-blue-500/20 shadow-xl">
+        <div className="flex items-center gap-4 shrink-0">
           <div className="p-3 bg-blue-600/20 rounded-2xl border border-blue-500/30 shrink-0">
-            <Box size={32} className="text-blue-400" />
+            <Globe size={32} className="text-blue-400" />
           </div>
           <div>
-            <h2 className="text-2xl font-bold text-white">Estudio 3D</h2>
-            <p className="text-sm text-gray-400">Modelos 3D categorizados y optimizados.</p>
+            <h2 className="text-2xl font-bold text-white">Librerías</h2>
+            <p className="text-sm text-gray-400">Plataformas y repositorios de modelos 3D.</p>
           </div>
         </div>
         
-        <div className="grid grid-cols-3 sm:grid-cols-4 md:grid-cols-5 lg:grid-cols-11 gap-2">
-          {tools.map((tool, idx) => (
+        <div className="grid grid-cols-2 sm:grid-cols-4 lg:grid-cols-7 gap-2.5">
+          {libraries.map((tool, idx) => (
             <a
               key={idx}
               href={tool.href}
               target="_blank"
               rel="noopener noreferrer"
-              className={`flex flex-col items-center justify-center p-2 bg-gradient-to-b ${tool.color} border border-white/10 rounded-2xl transition-all hover:scale-105 hover:border-white/30 group aspect-[4/5]`}
+              className={`flex flex-col items-center justify-center p-2.5 bg-gradient-to-b ${tool.color} border border-white/10 rounded-2xl transition-all hover:scale-105 hover:border-white/30 group aspect-[4/5] min-w-[75px]`}
+            >
+              <div className="mb-2 p-1.5 bg-gray-900/50 rounded-xl group-hover:scale-110 transition-transform">
+                {tool.icon}
+              </div>
+              <span className="text-[9px] font-black text-gray-400 group-hover:text-white uppercase tracking-wider text-center line-clamp-1">
+                {tool.name}
+              </span>
+            </a>
+          ))}
+        </div>
+      </div>
+
+      {/* Herramientas 3D */}
+      <div className="flex flex-col lg:flex-row lg:items-center justify-between gap-4 bg-purple-600/10 p-6 rounded-3xl border border-purple-500/20 shadow-xl">
+        <div className="flex items-center gap-4 shrink-0">
+          <div className="p-3 bg-purple-600/20 rounded-2xl border border-purple-500/30 shrink-0">
+            <Wrench size={32} className="text-purple-400" />
+          </div>
+          <div>
+            <h2 className="text-2xl font-bold text-white">Herramientas 3D</h2>
+            <p className="text-sm text-gray-400">Generadores con IA y editores de modelos.</p>
+          </div>
+        </div>
+        
+        <div className="grid grid-cols-2 sm:grid-cols-4 gap-2.5">
+          {tools3D.map((tool, idx) => (
+            <a
+              key={idx}
+              href={tool.href}
+              target="_blank"
+              rel="noopener noreferrer"
+              className={`flex flex-col items-center justify-center p-2.5 bg-gradient-to-b ${tool.color} border border-white/10 rounded-2xl transition-all hover:scale-105 hover:border-white/30 group aspect-[4/5] min-w-[85px]`}
             >
               <div className="mb-2 p-1.5 bg-gray-900/50 rounded-xl group-hover:scale-110 transition-transform">
                 {tool.icon}
