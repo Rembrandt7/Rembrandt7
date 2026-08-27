@@ -14,7 +14,6 @@ const libraries = [
   { name: 'MyMiniFactory', href: 'https://www.myminifactory.com/', icon: <Sparkles size={20} className="text-pink-400" />, color: 'from-pink-500/20 to-transparent' },
   { name: 'Thangs', href: 'https://thangs.com/', icon: <Wrench size={20} className="text-cyan-400" />, color: 'from-cyan-500/20 to-transparent' },
   { name: 'Creality', href: 'https://www.crealitycloud.com/es', icon: <Cloud size={20} className="text-cyan-400" />, color: 'from-cyan-500/20 to-transparent' },
-  { name: 'Multibuild', href: 'https://multibuild.io/parts', icon: <Settings size={20} className="text-indigo-400" />, color: 'from-indigo-500/20 to-transparent' },
 ];
 
 const tools3D = [
@@ -22,6 +21,8 @@ const tools3D = [
   { name: 'Hitem3D', href: 'https://www.hitem3d.ai/create', icon: <Move size={20} className="text-blue-400" />, color: 'from-blue-500/20 to-transparent' },
   { name: 'Dora', href: 'https://www.3dkoneko.com/dora', icon: <Sparkles size={20} className="text-rose-400" />, color: 'from-rose-500/20 to-transparent' },
   { name: 'Gridfinity', href: 'https://gridfinitygenerator.com/es/editor', icon: <Database size={20} className="text-orange-400" />, color: 'from-orange-500/20 to-transparent' },
+  { name: 'Multibuild', href: 'https://multibuild.io/parts', icon: <Settings size={20} className="text-indigo-400" />, color: 'from-indigo-500/20 to-transparent' },
+  { name: 'Fusion', href: 'https://fusion.online.autodesk.com/', icon: <Box size={20} className="text-orange-500" />, color: 'from-orange-500/20 to-transparent' },
 ];
 
 // Helper to create reliable Drive links
@@ -224,7 +225,7 @@ const ThreeDPrinting: React.FC = () => {
           </div>
         </div>
         
-        <div className="grid grid-cols-2 sm:grid-cols-4 lg:grid-cols-7 gap-2.5">
+        <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-6 gap-2.5">
           {libraries.map((tool, idx) => (
             <a
               key={idx}
@@ -256,14 +257,14 @@ const ThreeDPrinting: React.FC = () => {
           </div>
         </div>
         
-        <div className="grid grid-cols-2 sm:grid-cols-4 gap-2.5">
+        <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-6 gap-2.5">
           {tools3D.map((tool, idx) => (
             <a
               key={idx}
               href={tool.href}
               target="_blank"
               rel="noopener noreferrer"
-              className={`flex flex-col items-center justify-center p-2.5 bg-gradient-to-b ${tool.color} border border-white/10 rounded-2xl transition-all hover:scale-105 hover:border-white/30 group aspect-[4/5] min-w-[85px]`}
+              className={`flex flex-col items-center justify-center p-2.5 bg-gradient-to-b ${tool.color} border border-white/10 rounded-2xl transition-all hover:scale-105 hover:border-white/30 group aspect-[4/5] min-w-[75px]`}
             >
               <div className="mb-2 p-1.5 bg-gray-900/50 rounded-xl group-hover:scale-110 transition-transform">
                 {tool.icon}

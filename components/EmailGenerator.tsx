@@ -9,7 +9,7 @@ import SmartTextarea from './common/SmartTextarea';
 import { SUPABASE_CONFIG } from '../utils/constants';
 import { useLinks } from '../contexts/LinkContext';
 import { cleanJsonResponse } from '../utils/jsonUtils';
-import { History, Trash2, Mail, MessageSquare, Star, Sparkles, Send, Check, RefreshCw, Pencil, Save, Copy, AlertTriangle, Mic, MicOff, RotateCcw, Bot } from 'lucide-react';
+import { History, Trash2, Mail, MessageSquare, Star, Sparkles, Send, Check, RefreshCw, Pencil, Save, Copy, AlertTriangle, Mic, MicOff, RotateCcw, Bot, Newspaper, ExternalLink } from 'lucide-react';
 import { motion, AnimatePresence } from 'motion/react';
 import { toast } from 'sonner';
 import { getFriendlyAiErrorMessage, isQuotaError } from '../utils/aiError';
@@ -1023,6 +1023,28 @@ const EmailGenerator: React.FC<EmailGeneratorProps> = ({ attachedImages, onAttac
                         </div>
                     )}
                 </div>
+            </div>
+
+            {/* Sección Noticias */}
+            <div className="mt-8 p-5 bg-gradient-to-r from-blue-950/40 via-purple-950/30 to-indigo-950/40 rounded-2xl border border-white/10 flex flex-col sm:flex-row items-center justify-between gap-4 shadow-xl">
+                <div className="flex items-center gap-3">
+                    <div className="p-3 bg-blue-600/20 rounded-2xl border border-blue-500/30 text-blue-400 shrink-0">
+                        <Newspaper size={24} />
+                    </div>
+                    <div>
+                        <h3 className="text-lg font-bold text-white tracking-wide">Noticias</h3>
+                        <p className="text-xs text-gray-400">Actualidad, novedades y tendencias de Inteligencia Artificial.</p>
+                    </div>
+                </div>
+                <a 
+                    href="https://academiartificial.com/noticias-ia/" 
+                    target="_blank" 
+                    rel="noopener noreferrer"
+                    className="flex items-center gap-2 px-5 py-2.5 bg-gradient-to-r from-blue-600 to-indigo-600 hover:from-blue-500 hover:to-indigo-500 text-white font-bold text-xs uppercase tracking-wider rounded-xl shadow-lg hover:scale-105 transition-all group shrink-0"
+                >
+                    <span>alejavi noticias</span>
+                    <ExternalLink size={14} className="group-hover:translate-x-0.5 transition-transform" />
+                </a>
             </div>
 
             <AnimatePresence>{contextMenu.visible && (
