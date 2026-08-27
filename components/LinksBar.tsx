@@ -17,7 +17,7 @@ const LinkIcon: React.FC<{
 }> = ({ item, isEditing, onEdit, onDelete, onMove, isFirst, isLast }) => {
     const hasBg = item.hasBackground !== false;
     return (
-        <div className="relative group flex items-center justify-center">
+        <div className="relative group flex items-center justify-center flex-1 max-w-[50px] min-w-[24px]">
             {isEditing && !isFirst && (
                 <button onClick={() => onMove(item.id, 'left')} className="absolute -left-3 z-40 p-1 bg-gray-700 rounded-full text-white hover:bg-gray-600 shadow-md">
                     <ChevronLeft size={12} />
@@ -28,7 +28,7 @@ const LinkIcon: React.FC<{
                 target="_blank" 
                 rel="noopener noreferrer" 
                 onClick={(e) => isEditing && e.preventDefault()}
-                className={`flex items-center justify-center w-9 h-9 sm:w-10 sm:h-10 md:w-11 md:h-11 lg:w-12 lg:h-12 rounded-xl sm:rounded-2xl transition-all duration-300 flex-shrink-0 group ${item.colorClass} hover:scale-[1.15] hover:-translate-y-1 ${isEditing ? 'opacity-100 cursor-default' : ''} ${hasBg ? 'bg-white/5 hover:bg-white/10 hover:shadow-[0_4px_15px_rgba(255,255,255,0.08)] border border-white/10' : ''} [&_svg]:w-4.5 [&_svg]:h-4.5 sm:[&_svg]:w-5 sm:[&_svg]:h-5 md:[&_svg]:w-6 md:[&_svg]:h-6 [&_img]:w-6 [&_img]:h-6 sm:[&_img]:w-7 sm:[&_img]:h-7 md:[&_img]:w-8 md:[&_img]:h-8 [&_img]:object-contain`}
+                className={`flex items-center justify-center w-full aspect-square max-w-[48px] max-h-[48px] min-w-[26px] min-h-[26px] rounded-xl sm:rounded-2xl transition-all duration-300 group ${item.colorClass} hover:scale-[1.18] hover:-translate-y-1 ${isEditing ? 'opacity-100 cursor-default' : ''} ${hasBg ? 'bg-white/5 hover:bg-white/10 hover:shadow-[0_4px_15px_rgba(255,255,255,0.08)] border border-white/10' : ''} [&_svg]:w-[58%] [&_svg]:h-[58%] [&_svg]:max-w-[26px] [&_svg]:max-h-[26px] [&_img]:w-[62%] [&_img]:h-[62%] [&_img]:max-w-[28px] [&_img]:max-h-[28px] [&_img]:object-contain`}
                 title={item.name}
                 style={{
                     filter: item.outlineColor && item.outlineWidth ? `drop-shadow(0 0 ${item.outlineWidth}px ${item.outlineColor})` : undefined
@@ -231,14 +231,14 @@ const LinksBar: React.FC = () => {
                 </div>
             )}
 
-            <div className={`flex flex-col items-center gap-4 max-w-screen-2xl mx-auto w-full px-2 ${isEditing ? 'mt-12' : 'mt-1'}`}>
+            <div className={`flex flex-col items-center gap-4 max-w-full mx-auto w-full px-1 ${isEditing ? 'mt-12' : 'mt-0.5'}`}>
                 <SortableLinkList 
                     id="linksBar"
                     items={config.linksBar}
                     isEditing={isEditing}
                     onReorder={(newItems) => updateConfig({ ...config, linksBar: newItems })}
                     strategy={rectSortingStrategy}
-                    className="flex flex-wrap items-center justify-center gap-2 sm:gap-3 md:gap-4 lg:gap-5 w-full py-1.5"
+                    className="flex flex-nowrap items-center justify-between sm:justify-center gap-1 sm:gap-2 md:gap-2.5 lg:gap-3 xl:gap-3.5 w-full py-1 overflow-x-hidden"
                     renderItem={(link, index) => (
                         <LinkIcon 
                             key={link.id} 

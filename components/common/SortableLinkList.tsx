@@ -34,7 +34,7 @@ const SortableItemWrapper: React.FC<SortableItemWrapperProps> = ({ id, isEditing
     <div
       ref={setNodeRef}
       style={style}
-      className={isEditing ? 'cursor-grab active:cursor-grabbing' : undefined}
+      className={`flex-shrink min-w-0 flex items-center justify-center ${isEditing ? 'cursor-grab active:cursor-grabbing' : ''}`}
       {...sortableProps}
     >
       {children}

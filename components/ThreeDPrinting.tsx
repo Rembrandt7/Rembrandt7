@@ -11,6 +11,7 @@ const libraries = [
   { name: 'MakerWorld', href: 'https://makerworld.com/es', icon: <Package size={20} className="text-teal-400" />, color: 'from-teal-500/20 to-transparent' },
   { name: 'Creality', href: 'https://www.crealitycloud.com/es', icon: <Cloud size={20} className="text-cyan-400" />, color: 'from-cyan-500/20 to-transparent' },
   { name: 'Printables', href: 'https://www.printables.com/?lang=es', icon: <Globe size={20} className="text-orange-500" />, color: 'from-orange-600/20 to-transparent' },
+  { name: 'Anycubic', href: 'https://www.makeronline.com/en/', icon: <Layout size={20} className="text-emerald-400" />, color: 'from-emerald-500/20 to-transparent' },
   { name: 'Thingiverse', href: 'https://www.thingiverse.com/', icon: <Box size={20} className="text-blue-500" />, color: 'from-blue-600/20 to-transparent' },
   { name: 'MyMiniFactory', href: 'https://www.myminifactory.com/', icon: <Sparkles size={20} className="text-pink-400" />, color: 'from-pink-500/20 to-transparent' },
   { name: 'Thangs', href: 'https://thangs.com/', icon: <Wrench size={20} className="text-cyan-400" />, color: 'from-cyan-500/20 to-transparent' },
@@ -255,7 +256,7 @@ const ThreeDPrinting: React.FC = () => {
           </div>
         </div>
         
-        <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-6 gap-2.5">
+        <div className="grid grid-cols-2 sm:grid-cols-4 lg:grid-cols-7 gap-2.5">
           {libraries.map((tool, idx) => (
             <a
               key={idx}
