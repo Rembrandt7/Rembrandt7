@@ -1,5 +1,5 @@
 import React from 'react';
-import { Box, Wrench, Layout, Sparkles, Move, Star, Shield, Zap, Package, Key, Sword, Globe, ChevronRight, Settings, Database, ExternalLink } from 'lucide-react';
+import { Box, Wrench, Layout, Sparkles, Move, Star, Shield, Zap, Package, Key, Sword, Globe, ChevronRight, Settings, Database, ExternalLink, Cloud } from 'lucide-react';
 import { motion } from 'motion/react';
 
 import ThreeDCalculator from './ThreeDCalculator';
@@ -8,15 +8,17 @@ import ThreeDCalculator from './ThreeDCalculator';
    DATA - Audit and Corrected from PDF (stl_pack.pdf)
 ───────────────────────────────────────────────────────────────── */
 const tools = [
-  { name: 'Meshy (IA)', href: 'https://www.meshy.ai/workspace', icon: <Box size={24} className="text-purple-400" />, color: 'from-purple-500/20 to-transparent' },
-  { name: 'Hitem3D', href: 'https://www.hitem3d.ai/create', icon: <Move size={24} className="text-blue-400" />, color: 'from-blue-500/20 to-transparent' },
-  { name: 'Gridfinity', href: 'https://gridfinitygenerator.com/es/editor', icon: <Database size={24} className="text-orange-400" />, color: 'from-orange-500/20 to-transparent' },
-  { name: 'Printables', href: 'https://www.printables.com/?lang=es', icon: <Globe size={24} className="text-orange-600" />, color: 'from-orange-600/20 to-transparent' },
-  { name: 'Multibuild', href: 'https://multibuild.io/parts', icon: <Settings size={24} className="text-indigo-400" />, color: 'from-indigo-500/20 to-transparent' },
-  { name: 'MakerWorld', href: 'https://makerworld.com/es', icon: <Package size={24} className="text-teal-400" />, color: 'from-teal-500/20 to-transparent' },
-  { name: 'MyMiniFactory', href: 'https://www.myminifactory.com/', icon: <Sparkles size={24} className="text-pink-400" />, color: 'from-pink-500/20 to-transparent' },
-  { name: 'Thangs', href: 'https://thangs.com/', icon: <Wrench size={24} className="text-cyan-400" />, color: 'from-cyan-500/20 to-transparent' },
-  { name: 'Thingiverse', href: 'https://www.thingiverse.com/', icon: <Box size={24} className="text-blue-600" />, color: 'from-blue-600/20 to-transparent' },
+  { name: 'Meshy (IA)', href: 'https://www.meshy.ai/workspace', icon: <Box size={20} className="text-purple-400" />, color: 'from-purple-500/20 to-transparent' },
+  { name: 'Hitem3D', href: 'https://www.hitem3d.ai/create', icon: <Move size={20} className="text-blue-400" />, color: 'from-blue-500/20 to-transparent' },
+  { name: 'Gridfinity', href: 'https://gridfinitygenerator.com/es/editor', icon: <Database size={20} className="text-orange-400" />, color: 'from-orange-500/20 to-transparent' },
+  { name: 'Printables', href: 'https://www.printables.com/?lang=es', icon: <Globe size={20} className="text-orange-600" />, color: 'from-orange-600/20 to-transparent' },
+  { name: 'Multibuild', href: 'https://multibuild.io/parts', icon: <Settings size={20} className="text-indigo-400" />, color: 'from-indigo-500/20 to-transparent' },
+  { name: 'MakerWorld', href: 'https://makerworld.com/es', icon: <Package size={20} className="text-teal-400" />, color: 'from-teal-500/20 to-transparent' },
+  { name: 'MyMiniFactory', href: 'https://www.myminifactory.com/', icon: <Sparkles size={20} className="text-pink-400" />, color: 'from-pink-500/20 to-transparent' },
+  { name: 'Thangs', href: 'https://thangs.com/', icon: <Wrench size={20} className="text-cyan-400" />, color: 'from-cyan-500/20 to-transparent' },
+  { name: 'Thingiverse', href: 'https://www.thingiverse.com/', icon: <Box size={20} className="text-blue-600" />, color: 'from-blue-600/20 to-transparent' },
+  { name: 'Dora', href: 'https://www.3dkoneko.com/dora', icon: <Sparkles size={20} className="text-rose-400" />, color: 'from-rose-500/20 to-transparent' },
+  { name: 'Creality', href: 'https://www.crealitycloud.com/es', icon: <Cloud size={20} className="text-cyan-400" />, color: 'from-cyan-500/20 to-transparent' },
 ];
 
 // Helper to create reliable Drive links
@@ -219,19 +221,19 @@ const ThreeDPrinting: React.FC = () => {
           </div>
         </div>
         
-        <div className="grid grid-cols-3 sm:grid-cols-4 md:grid-cols-5 lg:grid-cols-9 gap-3">
+        <div className="grid grid-cols-3 sm:grid-cols-4 md:grid-cols-5 lg:grid-cols-11 gap-2">
           {tools.map((tool, idx) => (
             <a
               key={idx}
               href={tool.href}
               target="_blank"
               rel="noopener noreferrer"
-              className={`flex flex-col items-center justify-center p-3 bg-gradient-to-b ${tool.color} border border-white/10 rounded-2xl transition-all hover:scale-105 hover:border-white/30 group aspect-[4/5]`}
+              className={`flex flex-col items-center justify-center p-2 bg-gradient-to-b ${tool.color} border border-white/10 rounded-2xl transition-all hover:scale-105 hover:border-white/30 group aspect-[4/5]`}
             >
-              <div className="mb-3 p-2 bg-gray-900/50 rounded-xl group-hover:scale-110 transition-transform">
+              <div className="mb-2 p-1.5 bg-gray-900/50 rounded-xl group-hover:scale-110 transition-transform">
                 {tool.icon}
               </div>
-              <span className="text-[10px] font-black text-gray-400 group-hover:text-white uppercase tracking-wider text-center line-clamp-1">
+              <span className="text-[9px] font-black text-gray-400 group-hover:text-white uppercase tracking-wider text-center line-clamp-1">
                 {tool.name}
               </span>
             </a>

@@ -9,7 +9,7 @@ import SmartTextarea from './common/SmartTextarea';
 import { SUPABASE_CONFIG } from '../utils/constants';
 import { useLinks } from '../contexts/LinkContext';
 import { cleanJsonResponse } from '../utils/jsonUtils';
-import { History, Trash2, Mail, MessageSquare, Star, Sparkles, Send, Check, RefreshCw, Pencil, Save, Copy, AlertTriangle } from 'lucide-react';
+import { History, Trash2, Mail, MessageSquare, Star, Sparkles, Send, Check, RefreshCw, Pencil, Save, Copy, AlertTriangle, Mic, MicOff, RotateCcw, Bot } from 'lucide-react';
 import { motion, AnimatePresence } from 'motion/react';
 import { toast } from 'sonner';
 import { getFriendlyAiErrorMessage, isQuotaError } from '../utils/aiError';
@@ -148,6 +148,159 @@ const EmailGenerator: React.FC<EmailGeneratorProps> = ({ attachedImages, onAttac
     const [suggestion, setSuggestion] = useState('');
     const ideaRef = useRef<HTMLTextAreaElement>(null);
 
+    const [isListening, setIsListening] = useState(false);
+    const recognitionRef = useRef<any>(null);
+    const baseIdeaRef = useRef<string>('');
+
+    const toggleListening = useCallback(() => {
+        const SpeechRecognition = (window as any).SpeechRecognition || (window as any).webkitSpeechRecognition;
+        if (!SpeechRecognition) {
+            toast.error("Tu navegador no soporta dictado por voz (Web Speech API). Intenta en Chrome o Edge.");
+            return;
+        }
+
+        if (isListening) {
+            if (recognitionRef.current) {
+                recognitionRef.current.stop();
+            }
+            setIsListening(false);
+            toast.info("Dictado pausado.");
+            return;
+        }
+
+        try {
+            baseIdeaRef.current = idea;
+            const recognition = new SpeechRecognition();
+            recognition.continuous = true;
+            recognition.interimResults = true;
+            recognition.lang = 'es-MX';
+
+            recognition.onstart = () => {
+                setIsListening(true);
+                toast.success("Escuchando... Puedes dictar tu mensaje.");
+            };
+
+            recognition.onresult = (event: any) => {
+                const transcript = Array.from(event.results)
+                    .map((res: any) => res[0].transcript)
+                    .join('');
+                const prefix = baseIdeaRef.current ? (baseIdeaRef.current.trim() + ' ') : '';
+                setIdea(prefix + transcript);
+            };
+
+            recognition.onerror = (event: any) => {
+                console.error("Error dictado:", event.error);
+                if (event.error !== 'no-speech') {
+                    toast.error(`Error en micrófono: ${event.error}`);
+                }
+                setIsListening(false);
+            };
+
+            recognition.onend = () => {
+                setIsListening(false);
+            };
+
+            recognitionRef.current = recognition;
+            recognition.start();
+        } catch (e) {
+            console.error("Speech recognition error:", e);
+            toast.error("No se pudo acceder al micrófono.");
+            setIsListening(false);
+        }
+    }, [isListening, idea]);
+
+    useEffect(() => {
+        return () => {
+            if (recognitionRef.current) {
+                recognitionRef.current.stop();
+            }
+            if (aiRecognitionRef.current) {
+                aiRecognitionRef.current.stop();
+            }
+        };
+    }, []);
+
+    const [showAiConsultant, setShowAiConsultant] = useState(false);
+    const [aiConsultantMessages, setAiConsultantMessages] = useState<Array<{ role: 'user' | 'assistant'; text: string; suggestedIdea?: string }>>([
+        {
+            role: 'assistant',
+            text: '¡Hola! Soy tu IA Consejera de Redacción. Puedes preguntarme orientación sobre el tono, pedirme ajustar la intención, o hablarme por micrófono. Cuando estemos de acuerdo con una sugerencia, pulsa "Aplicar a la Idea y Regenerar".'
+        }
+    ]);
+    const [aiInput, setAiInput] = useState('');
+    const [isAiLoading, setIsAiLoading] = useState(false);
+    const [isAiListening, setIsAiListening] = useState(false);
+    const aiRecognitionRef = useRef<any>(null);
+    const baseAiInputRef = useRef<string>('');
+
+    const handleResetAll = useCallback(() => {
+        setIdea('');
+        setPreviousEmail('');
+        setProject('');
+        setGeneratedContent(null);
+        setOriginalContent(null);
+        setError(null);
+        setSelectedContactIndex('');
+        setRecipientName('');
+        setRecipientTitle('');
+        setRecipientEmailUser('');
+        setCustomDomain('');
+        setSuggestion('');
+        onAttachmentsChange([]);
+        toast.info("Todos los campos han sido reiniciados");
+    }, [onAttachmentsChange]);
+
+    const toggleAiListening = useCallback(() => {
+        const SpeechRecognition = (window as any).SpeechRecognition || (window as any).webkitSpeechRecognition;
+        if (!SpeechRecognition) {
+            toast.error("Tu navegador no soporta dictado por voz (Web Speech API).");
+            return;
+        }
+
+        if (isAiListening) {
+            if (aiRecognitionRef.current) aiRecognitionRef.current.stop();
+            setIsAiListening(false);
+            return;
+        }
+
+        try {
+            baseAiInputRef.current = aiInput;
+            const recognition = new SpeechRecognition();
+            recognition.continuous = true;
+            recognition.interimResults = true;
+            recognition.lang = 'es-MX';
+
+            recognition.onstart = () => {
+                setIsAiListening(true);
+                toast.success("Escuchando para la IA Consejera...");
+            };
+
+            recognition.onresult = (event: any) => {
+                const transcript = Array.from(event.results)
+                    .map((res: any) => res[0].transcript)
+                    .join('');
+                const prefix = baseAiInputRef.current ? (baseAiInputRef.current.trim() + ' ') : '';
+                setAiInput(prefix + transcript);
+            };
+
+            recognition.onerror = (event: any) => {
+                console.error("Error dictado IA:", event.error);
+                setIsAiListening(false);
+            };
+
+            recognition.onend = () => {
+                setIsAiListening(false);
+            };
+
+            aiRecognitionRef.current = recognition;
+            recognition.start();
+        } catch (e) {
+            console.error(e);
+            toast.error("No se pudo activar el micrófono para la IA.");
+            setIsAiListening(false);
+        }
+    }, [isAiListening, aiInput]);
+
     const fetchDictionary = useCallback(async () => {
         try {
             if (!SUPABASE_CONFIG.URL || !SUPABASE_CONFIG.KEY) return;
@@ -256,8 +409,9 @@ const EmailGenerator: React.FC<EmailGeneratorProps> = ({ attachedImages, onAttac
         return `${recipientEmailUser}${domainPart}${recipientEmailTld}`;
     }, [recipientEmailUser, recipientEmailDomain, customDomain, recipientEmailTld]);
 
-    const handleGenerate = useCallback(async () => {
-        if (!idea.trim() && !previousEmail.trim()) { toast.error('Introduce una idea.'); return; }
+    const handleGenerate = useCallback(async (overrideIdea?: string) => {
+        const targetIdea = typeof overrideIdea === 'string' ? overrideIdea : idea;
+        if (!targetIdea.trim() && !previousEmail.trim()) { toast.error('Introduce una idea.'); return; }
         setIsLoading(true); setError(null);
         try {
             const apiKey = googleApiConfig?.apiKey || process.env.GEMINI_API_KEY;
@@ -274,7 +428,7 @@ const EmailGenerator: React.FC<EmailGeneratorProps> = ({ attachedImages, onAttac
             const greeting = finalRecipient ? `${timeGreeting} ${finalRecipient}` : timeGreeting;
             
             const systemInstruction = `Eres un experto en comunicación ejecutiva y estratégica. 
-            Debes generar respuestas en formato JSON siguiendo estrictamente las reglas de estilo del usuario.`;
+            Debes generar respuestas en formato JSON siguiendo strictly las reglas de estilo del usuario.`;
             
             const userPrompt = `INSTRUCCIONES CRÍTICAS:
             1. SALUDO: Comienza exactamente con "${greeting}".
@@ -283,7 +437,7 @@ const EmailGenerator: React.FC<EmailGeneratorProps> = ({ attachedImages, onAttac
             4. FIRMA: Termina SIEMPRE con: "Atte.\\n\\nArq. Rembrandt Blanco Arrambide".
             5. CONTEXTO: Proyecto: "${project}". Destinatario (nombre/apodo a usar): "${finalRecipient}".
                IMPORTANTE: Si está activo el uso de apodo o nombre corto, refiérete al destinatario siempre por su apodo ("${finalRecipient}") en lugar de su nombre formal completo en cualquier mención formal o informal a lo largo del cuerpo del mensaje.
-            6. IDEA A DESARROLLAR: "${idea}". 
+            6. IDEA A DESARROLLAR: "${targetIdea}". 
             7. CONTEXTO ANTERIOR: "${previousEmail}".
             8. TONO: ${tone}. LONGITUD: ${messageLength}.
 
@@ -314,9 +468,9 @@ const EmailGenerator: React.FC<EmailGeneratorProps> = ({ attachedImages, onAttac
             const parsed = JSON.parse(cleanJsonResponse(textResponse.trim()));
             setGeneratedContent(parsed);
             setOriginalContent(parsed);
-            saveToDictionary(idea);
+            saveToDictionary(targetIdea);
             
-            updateConfig(prev => ({ ...prev, aiHistory: [{ id: Date.now().toString(), type: 'email' as const, original: idea, result: JSON.stringify(parsed), timestamp: Date.now() }, ...(prev.aiHistory || [])].slice(0, 50) }));
+            updateConfig(prev => ({ ...prev, aiHistory: [{ id: Date.now().toString(), type: 'email' as const, original: targetIdea, result: JSON.stringify(parsed), timestamp: Date.now() }, ...(prev.aiHistory || [])].slice(0, 50) }));
             toast.success("Mensajes generados con éxito");
         } catch (e: any) { 
             console.error(e);
@@ -325,6 +479,75 @@ const EmailGenerator: React.FC<EmailGeneratorProps> = ({ attachedImages, onAttac
             toast.error("Error al generar: " + friendlyMsg);
         } finally { setIsLoading(false); }
     }, [idea, previousEmail, tone, messageLength, recipientName, project, useNickname, selectedContactIndex, sortedContacts, googleApiConfig, updateConfig, recipientGender]);
+
+    const handleSendAiConsultantMessage = async (userPromptText?: string) => {
+        const messageText = userPromptText || aiInput;
+        if (!messageText.trim()) return;
+
+        const newMessages = [...aiConsultantMessages, { role: 'user' as const, text: messageText }];
+        setAiConsultantMessages(newMessages);
+        setAiInput('');
+        setIsAiLoading(true);
+
+        try {
+            const apiKey = googleApiConfig?.apiKey || process.env.GEMINI_API_KEY;
+            const ai = new GoogleGenAI({ apiKey, baseUrl: `${window.location.origin}/api/proxy/google` });
+
+            const systemInstruction = `Eres una IA consejera y asesora estratégica de comunicación ejecutiva. 
+            Tu objetivo es orientar al usuario para definir el tono exacto, intención y sugerencias para redactar un correo o mensaje perfecto.
+            
+            CONTEXTO ACTUAL DEL REDACTOR:
+            - Destinatario: "${recipientName}" (${recipientTitle})
+            - Proyecto: "${project}"
+            - Idea principal actual: "${idea}"
+            - Contexto previo: "${previousEmail}"
+            - Tono seleccionado: "${tone}"
+            
+            Responde en formato JSON con:
+            1. adviceText: Tu consejo estratégico breve (máximo 2 párrafos).
+            2. refinedIdea: La sugerencia pulida y explícita de la idea o instrucción para colocar en el redactor y generar el correo en ese tono específico.`;
+
+            const response = await ai.models.generateContent({
+                model: 'gemini-3.1-flash-lite',
+                contents: [{ role: 'user', parts: [{ text: `Mensaje del usuario: "${messageText}". Conversación previa: ${JSON.stringify(newMessages.slice(-3))}` }] }],
+                config: {
+                    systemInstruction,
+                    responseMimeType: 'application/json',
+                    responseSchema: {
+                        type: Type.OBJECT,
+                        properties: {
+                            adviceText: { type: Type.STRING },
+                            refinedIdea: { type: Type.STRING }
+                        },
+                        required: ["adviceText", "refinedIdea"]
+                    }
+                }
+            });
+
+            const textRes = response.text || '';
+            const parsed = JSON.parse(cleanJsonResponse(textRes.trim()));
+
+            setAiConsultantMessages(prev => [
+                ...prev,
+                {
+                    role: 'assistant',
+                    text: parsed.adviceText,
+                    suggestedIdea: parsed.refinedIdea
+                }
+            ]);
+        } catch (e: any) {
+            console.error(e);
+            toast.error("Error al consultar la IA Consejera");
+        } finally {
+            setIsAiLoading(false);
+        }
+    };
+
+    const handleApplyIdeaAndRegenerate = (suggestedIdea: string) => {
+        setIdea(suggestedIdea);
+        toast.success("Sugerencia aplicada. Regenerando mensajes...");
+        handleGenerate(suggestedIdea);
+    };
 
     const handleCopyToClipboard = async (text: string, type: CopiedState) => {
         const content = type === 'email' ? stripHtml(text) : text;
@@ -479,10 +702,18 @@ const EmailGenerator: React.FC<EmailGeneratorProps> = ({ attachedImages, onAttac
                     <div><h2 className="text-xl font-black text-white uppercase tracking-tighter">Generador de Mensajes</h2></div>
                 </div>
                 <div className="flex items-center gap-2">
-                    <button onClick={handleGenerate} disabled={isLoading} className="px-4 py-2 bg-gradient-to-r from-purple-600 via-indigo-600 to-blue-600 text-white rounded-lg font-black text-xs uppercase tracking-wider shadow-md flex items-center gap-2 hover:scale-[1.02] active:scale-[0.98] transition-all disabled:opacity-50">
+                    <button onClick={() => handleGenerate()} disabled={isLoading} className="px-4 py-2 bg-gradient-to-r from-purple-600 via-indigo-600 to-blue-600 text-white rounded-lg font-black text-xs uppercase tracking-wider shadow-md flex items-center gap-2 hover:scale-[1.02] active:scale-[0.98] transition-all disabled:opacity-50">
                         {isLoading ? <RefreshCw className="animate-spin" size={16}/> : <><Sparkles size={16}/> <span>Generar</span></>}
                     </button>
                     <button onClick={() => setShowHistory(!showHistory)} className="px-4 py-2 bg-gray-800 rounded-lg text-xs font-black uppercase text-gray-400 border border-gray-700 hover:bg-gray-700 transition-colors">Historial</button>
+                    <button onClick={handleResetAll} title="Reiniciar todos los campos" className="px-3 py-2 bg-gray-800 hover:bg-red-600/20 text-gray-400 hover:text-red-400 rounded-lg text-xs font-black uppercase border border-gray-700 hover:border-red-500/40 transition-all flex items-center gap-1.5">
+                        <RotateCcw size={14} />
+                        <span>Reset</span>
+                    </button>
+                    <button onClick={() => setShowAiConsultant(!showAiConsultant)} className={`px-3 py-2 rounded-lg text-xs font-black uppercase border transition-all flex items-center gap-1.5 ${showAiConsultant ? 'bg-amber-500/20 text-amber-300 border-amber-500/50 shadow-amber-500/20' : 'bg-gray-800 hover:bg-purple-600/30 text-purple-300 border-gray-700 hover:border-purple-500/50'}`}>
+                        <Bot size={14} />
+                        <span>IA Consejera</span>
+                    </button>
                 </div>
             </div>
 
@@ -505,6 +736,102 @@ const EmailGenerator: React.FC<EmailGeneratorProps> = ({ attachedImages, onAttac
                     )}
                 </div>
             )}
+
+            <AnimatePresence>{showAiConsultant && (
+                <motion.div 
+                    initial={{ height: 0, opacity: 0 }} 
+                    animate={{ height: 'auto', opacity: 1 }} 
+                    exit={{ height: 0, opacity: 0 }} 
+                    className="overflow-hidden mb-4"
+                >
+                    <div className="bg-slate-900/90 backdrop-blur-xl p-4 rounded-2xl border-2 border-amber-500/30 shadow-2xl space-y-4">
+                        <div className="flex justify-between items-center border-b border-white/10 pb-3">
+                            <div className="flex items-center gap-2.5">
+                                <div className="p-2 bg-amber-500/20 text-amber-400 rounded-xl border border-amber-500/30">
+                                    <Bot size={20} />
+                                </div>
+                                <div>
+                                    <h3 className="text-sm font-black text-white uppercase tracking-wider">IA Consejera de Tono y Estrategia</h3>
+                                    <p className="text-[11px] text-gray-400">Pídele sugerencias de tono, orientación o dictale tus intenciones por voz.</p>
+                                </div>
+                            </div>
+                            <button 
+                                onClick={() => setShowAiConsultant(false)} 
+                                className="p-1.5 text-gray-400 hover:text-white bg-white/5 hover:bg-white/10 rounded-lg transition-colors text-xs font-bold"
+                            >
+                                ✕ Cerrar
+                            </button>
+                        </div>
+
+                        <div className="space-y-3 max-h-60 overflow-y-auto pr-2 custom-scrollbar">
+                            {aiConsultantMessages.map((msg, idx) => (
+                                <div 
+                                    key={idx} 
+                                    className={`flex flex-col ${msg.role === 'user' ? 'items-end' : 'items-start'}`}
+                                >
+                                    <div className={`p-3 rounded-2xl max-w-[85%] text-xs leading-relaxed ${
+                                        msg.role === 'user' 
+                                            ? 'bg-purple-600 text-white rounded-br-none shadow-md' 
+                                            : 'bg-slate-800 text-slate-100 border border-slate-700 rounded-bl-none shadow-inner'
+                                    }`}>
+                                        <p className="whitespace-pre-wrap">{msg.text}</p>
+                                    </div>
+                                    {msg.suggestedIdea && (
+                                        <div className="mt-2 p-3 bg-amber-500/10 border border-amber-500/30 rounded-xl text-xs space-y-2 max-w-[85%]">
+                                            <div className="flex items-center gap-1.5 text-amber-300 font-black uppercase text-[10px]">
+                                                <Sparkles size={14} />
+                                                <span>Tono y Propuesta Sugerida por la IA</span>
+                                            </div>
+                                            <p className="text-amber-100/90 italic font-medium">"{msg.suggestedIdea}"</p>
+                                            <button
+                                                onClick={() => handleApplyIdeaAndRegenerate(msg.suggestedIdea!)}
+                                                disabled={isLoading}
+                                                className="w-full py-2 bg-gradient-to-r from-amber-500 to-amber-600 hover:from-amber-400 hover:to-amber-500 text-slate-950 font-black text-xs uppercase tracking-wider rounded-lg shadow-md flex items-center justify-center gap-2 transition-all hover:scale-[1.01] active:scale-[0.99] disabled:opacity-50 cursor-pointer"
+                                            >
+                                                {isLoading ? <RefreshCw className="animate-spin" size={14} /> : <Sparkles size={14} />}
+                                                <span>Aplicar a la Idea y Regenerar Mensajes</span>
+                                            </button>
+                                        </div>
+                                    )}
+                                </div>
+                            ))}
+                        </div>
+
+                        <div className="flex items-center gap-2 pt-2 border-t border-white/10">
+                            <div className="relative flex-grow">
+                                <input
+                                    type="text"
+                                    value={aiInput}
+                                    onChange={(e) => setAiInput(e.target.value)}
+                                    onKeyDown={(e) => { if (e.key === 'Enter') handleSendAiConsultantMessage(); }}
+                                    placeholder="Ej. 'Sugiéreme un tono más ejecutivo para cobro', o habla por el micrófono..."
+                                    className="w-full p-3 pr-12 bg-slate-950/80 border border-slate-700 rounded-xl text-xs text-white placeholder-gray-500 outline-none focus:border-amber-500/60"
+                                />
+                                <button
+                                    type="button"
+                                    onClick={toggleAiListening}
+                                    title={isAiListening ? "Detener micrófono IA" : "Hablarle a la IA"}
+                                    className={`absolute right-2 top-1/2 -translate-y-1/2 p-2 rounded-lg transition-all ${
+                                        isAiListening 
+                                            ? 'bg-red-600 text-white animate-pulse' 
+                                            : 'text-gray-400 hover:text-amber-400 hover:bg-white/5'
+                                    }`}
+                                >
+                                    {isAiListening ? <MicOff size={16} className="animate-spin" /> : <Mic size={16} />}
+                                </button>
+                            </div>
+                            <button
+                                onClick={() => handleSendAiConsultantMessage()}
+                                disabled={isAiLoading || !aiInput.trim()}
+                                className="px-4 py-3 bg-amber-500 hover:bg-amber-400 text-slate-950 rounded-xl font-black text-xs uppercase tracking-wider flex items-center gap-1.5 shadow-md disabled:opacity-50 transition-all cursor-pointer"
+                            >
+                                {isAiLoading ? <RefreshCw className="animate-spin" size={16} /> : <Send size={16} />}
+                                <span>Consultar</span>
+                            </button>
+                        </div>
+                    </div>
+                </motion.div>
+            )}</AnimatePresence>
 
             <AnimatePresence>{showHistory && (
                 <motion.div initial={{ height: 0, opacity: 0 }} animate={{ height: 'auto', opacity: 1 }} exit={{ height: 0, opacity: 0 }} className="overflow-hidden mb-4">
@@ -570,15 +897,54 @@ const EmailGenerator: React.FC<EmailGeneratorProps> = ({ attachedImages, onAttac
                         </div>
                     </div>
                     <div className="bg-gray-900/40 p-4 rounded-xl border border-gray-800/50 space-y-3">
+                            <div className="flex items-center justify-between px-1">
+                                <label className="text-xs font-black uppercase text-gray-400 tracking-wider flex items-center gap-1.5">
+                                    <span>Idea / Mensaje principal</span>
+                                </label>
+                                <button
+                                    type="button"
+                                    onClick={toggleListening}
+                                    title={isListening ? "Detener dictado" : "Dictar con micrófono"}
+                                    className={`px-3 py-1.5 rounded-lg text-xs font-black uppercase tracking-wider flex items-center gap-1.5 transition-all shadow-md ${
+                                        isListening 
+                                            ? 'bg-red-600 text-white animate-pulse shadow-red-500/30' 
+                                            : 'bg-gray-800 hover:bg-purple-600/30 hover:border-purple-500/50 text-purple-400 border border-gray-700'
+                                    }`}
+                                >
+                                    {isListening ? (
+                                        <>
+                                            <MicOff size={14} className="animate-spin" />
+                                            <span>Escuchando...</span>
+                                        </>
+                                    ) : (
+                                        <>
+                                            <Mic size={14} />
+                                            <span>Dictar por voz</span>
+                                        </>
+                                    )}
+                                </button>
+                            </div>
                             <div className="relative group">
                                 <textarea 
                                     ref={ideaRef}
                                     value={idea} 
                                     onChange={onIdeaChange}
                                     onKeyDown={handleKeyDown}
-                                    className="w-full p-4 bg-gray-800 border border-gray-700 rounded-lg text-sm text-white font-medium focus:border-purple-500/50 transition-all min-h-[100px] shadow-inner resize-none" 
-                                    placeholder="¿Qué quieres decir?"
+                                    className="w-full p-4 pr-14 bg-gray-800 border border-gray-700 rounded-lg text-sm text-white font-medium focus:border-purple-500/50 transition-all min-h-[100px] shadow-inner resize-none" 
+                                    placeholder="¿Qué quieres decir? (Escribe o usa el micrófono para dictar)"
                                 />
+                                <button
+                                    type="button"
+                                    onClick={toggleListening}
+                                    title={isListening ? "Detener dictado por voz" : "Dictar por voz con micrófono"}
+                                    className={`absolute right-3 bottom-3 p-2.5 rounded-full transition-all shadow-lg border z-10 flex items-center justify-center ${
+                                        isListening
+                                            ? 'bg-red-600 border-red-400 text-white animate-pulse shadow-red-500/50 scale-110'
+                                            : 'bg-purple-600/30 border-purple-500/50 text-purple-300 hover:bg-purple-600 hover:text-white hover:scale-105'
+                                    }`}
+                                >
+                                    {isListening ? <MicOff size={18} className="animate-spin" /> : <Mic size={18} />}
+                                </button>
                                 {suggestion && (
                                     <div 
                                         onClick={acceptSuggestion}

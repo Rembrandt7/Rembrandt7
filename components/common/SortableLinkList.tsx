@@ -1,31 +1,15 @@
 import React from 'react';
-import {
-  DndContext,
-  closestCenter,
-  KeyboardSensor,
-  PointerSensor,
-  useSensor,
-  useSensors,
-  DragEndEvent,
-  useDroppable,
-} from '@dnd-kit/core';
-import {
-  arrayMove,
-  SortableContext,
-  sortableKeyboardCoordinates,
-  rectSortingStrategy,
-  useSortable,
-} from '@dnd-kit/sortable';
+import { useSortable, SortableContext } from '@dnd-kit/sortable';
 import { CSS } from '@dnd-kit/utilities';
 import { LinkItem } from '../../types';
 
-interface SortableItemProps {
+interface SortableItemWrapperProps {
   id: string;
+  isEditing: boolean;
   children: React.ReactNode;
-  disabled?: boolean;
 }
 
-const SortableItem: React.FC<SortableItemProps> = ({ id, children, disabled }) => {
+const SortableItemWrapper: React.FC<SortableItemWrapperProps> = ({ id, isEditing, children }) => {
   const {
     attributes,
     listeners,
@@ -33,53 +17,59 @@ const SortableItem: React.FC<SortableItemProps> = ({ id, children, disabled }) =
     transform,
     transition,
     isDragging,
-  } = useSortable({ id, disabled });
+  } = useSortable({ id });
 
   const style = {
     transform: CSS.Translate.toString(transform),
     transition,
-    zIndex: isDragging ? 100 : undefined,
-    opacity: isDragging ? 0.5 : undefined,
+    opacity: isDragging ? 0.5 : 1,
+    zIndex: isDragging ? 100 : 1,
   };
 
+  const sortableProps = isEditing
+    ? { ...attributes, ...listeners }
+    : {};
+
   return (
-    <div ref={setNodeRef} style={style} {...attributes} {...listeners}>
+    <div
+      ref={setNodeRef}
+      style={style}
+      className={`h-full flex-shrink-0 ${isEditing ? 'cursor-grab active:cursor-grabbing' : ''}`}
+      {...sortableProps}
+    >
       {children}
     </div>
   );
 };
 
 interface SortableLinkListProps {
+  id: string;
   items: LinkItem[];
-  id: string; // Container ID
-  renderItem: (item: LinkItem, index: number) => React.ReactNode;
-  className?: string;
   isEditing: boolean;
-  strategy?: any;
-  children?: React.ReactNode;
-  onReorder?: (items: LinkItem[]) => void;
+  onReorder?: (newItems: LinkItem[]) => void;
+  strategy: any;
+  className?: string;
+  renderItem: (item: LinkItem, index: number) => React.ReactNode;
 }
 
 export const SortableLinkList: React.FC<SortableLinkListProps> = ({
   items,
-  id,
-  renderItem,
-  className,
   isEditing,
-  strategy = rectSortingStrategy,
-  children,
+  strategy,
+  className,
+  renderItem,
 }) => {
-  const { setNodeRef } = useDroppable({ id });
-
   return (
-    <SortableContext id={id} items={items.map((i) => i.id)} strategy={strategy}>
-      <div ref={setNodeRef} className={className}>
+    <SortableContext
+      items={items.map((item) => item.id)}
+      strategy={strategy}
+    >
+      <div className={className}>
         {items.map((item, index) => (
-          <SortableItem key={item.id} id={item.id} disabled={false}>
+          <SortableItemWrapper key={item.id} id={item.id} isEditing={isEditing}>
             {renderItem(item, index)}
-          </SortableItem>
+          </SortableItemWrapper>
         ))}
-        {children}
       </div>
     </SortableContext>
   );

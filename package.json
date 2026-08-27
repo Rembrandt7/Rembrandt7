@@ -44,6 +44,7 @@
     "@vercel/node": "^5.7.12",
     "@vitejs/plugin-react": "^5.0.0",
     "typescript": "~5.8.2",
+    "vercel": "^56.4.1",
     "vite": "^6.2.0"
   }
 }

@@ -125,9 +125,11 @@ export interface NewsItem {
 
 export interface TutorialItem {
   title: string;
-  summary: string;
+  summary?: string;
   url: string;
   thumbnail: string;
+  source?: string;
+  audioSummary?: string;
 }
 
 export interface Note {
