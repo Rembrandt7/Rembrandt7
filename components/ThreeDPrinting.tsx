@@ -8,26 +8,26 @@ import ThreeDCalculator from './ThreeDCalculator';
    DATA - Audit and Corrected from PDF (stl_pack.pdf)
 ───────────────────────────────────────────────────────────────── */
 const libraries = [
-  { name: 'MakerWorld', href: 'https://makerworld.com/es', icon: <Package size={20} className="text-teal-400" />, color: 'from-teal-500/20 to-transparent' },
-  { name: 'Creality', href: 'https://www.crealitycloud.com/es', icon: <Cloud size={20} className="text-cyan-400" />, color: 'from-cyan-500/20 to-transparent' },
-  { name: 'Printables', href: 'https://www.printables.com/?lang=es', icon: <Globe size={20} className="text-orange-500" />, color: 'from-orange-600/20 to-transparent' },
-  { name: 'Anycubic', href: 'https://www.makeronline.com/en/', icon: <Layout size={20} className="text-emerald-400" />, color: 'from-emerald-500/20 to-transparent' },
-  { name: 'Thingiverse', href: 'https://www.thingiverse.com/', icon: <Box size={20} className="text-blue-500" />, color: 'from-blue-600/20 to-transparent' },
-  { name: 'MyMiniFactory', href: 'https://www.myminifactory.com/', icon: <Sparkles size={20} className="text-pink-400" />, color: 'from-pink-500/20 to-transparent' },
-  { name: 'Thangs', href: 'https://thangs.com/', icon: <Wrench size={20} className="text-cyan-400" />, color: 'from-cyan-500/20 to-transparent' },
+  { name: 'MakerWorld', href: 'https://makerworld.com/es', icon: <Package size={17} className="text-teal-400" />, color: 'from-teal-500/20 to-transparent' },
+  { name: 'Creality', href: 'https://www.crealitycloud.com/es', icon: <Cloud size={17} className="text-cyan-400" />, color: 'from-cyan-500/20 to-transparent' },
+  { name: 'Anycubic', href: 'https://www.makeronline.com/en/', icon: <Layout size={17} className="text-emerald-400" />, color: 'from-emerald-500/20 to-transparent' },
+  { name: 'Printables', href: 'https://www.printables.com/?lang=es', icon: <Globe size={17} className="text-orange-500" />, color: 'from-orange-600/20 to-transparent' },
+  { name: 'Thingiverse', href: 'https://www.thingiverse.com/', icon: <Box size={17} className="text-blue-500" />, color: 'from-blue-600/20 to-transparent' },
+  { name: 'MyMiniFactory', href: 'https://www.myminifactory.com/', icon: <Sparkles size={17} className="text-pink-400" />, color: 'from-pink-500/20 to-transparent' },
+  { name: 'Thangs', href: 'https://thangs.com/', icon: <Wrench size={17} className="text-cyan-400" />, color: 'from-cyan-500/20 to-transparent' },
 ];
 
 const tools3D = [
-  { name: 'Meshy (IA)', href: 'https://www.meshy.ai/workspace', icon: <Sparkles size={20} className="text-purple-400" />, color: 'from-purple-500/20 to-transparent' },
-  { name: 'Hitem3D', href: 'https://www.hitem3d.ai/create', icon: <Move size={20} className="text-blue-400" />, color: 'from-blue-500/20 to-transparent' },
-  { name: 'Dora', href: 'https://www.3dkoneko.com/dora', icon: <Sparkles size={20} className="text-rose-400" />, color: 'from-rose-500/20 to-transparent' },
-  { name: 'Gridfinity', href: 'https://gridfinitygenerator.com/es/editor', icon: <Database size={20} className="text-orange-400" />, color: 'from-orange-500/20 to-transparent' },
-  { name: 'Multibuild', href: 'https://multibuild.io/parts', icon: <Settings size={20} className="text-indigo-400" />, color: 'from-indigo-500/20 to-transparent' },
+  { name: 'Meshy (IA)', href: 'https://www.meshy.ai/workspace', icon: <Sparkles size={17} className="text-purple-400" />, color: 'from-purple-500/20 to-transparent' },
+  { name: 'Hitem3D', href: 'https://www.hitem3d.ai/create', icon: <Move size={17} className="text-blue-400" />, color: 'from-blue-500/20 to-transparent' },
+  { name: 'Dora', href: 'https://www.3dkoneko.com/dora', icon: <Sparkles size={17} className="text-rose-400" />, color: 'from-rose-500/20 to-transparent' },
+  { name: 'Gridfinity', href: 'https://gridfinitygenerator.com/es/editor', icon: <Database size={17} className="text-orange-400" />, color: 'from-orange-500/20 to-transparent' },
+  { name: 'Multibuild', href: 'https://multibuild.io/parts', icon: <Settings size={17} className="text-indigo-400" />, color: 'from-indigo-500/20 to-transparent' },
   { 
     name: 'Fusion', 
     href: 'https://fusion.online.autodesk.com/', 
     icon: (
-      <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 100 100" className="w-5 h-5">
+      <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 100 100" className="w-4.5 h-4.5">
         <defs>
           <linearGradient id="fusion-3d-1" x1="0%" y1="0%" x2="100%" y2="100%">
             <stop offset="0%" stopColor="#FF9B00"/>
@@ -53,7 +53,7 @@ const tools3D = [
     ), 
     color: 'from-orange-500/20 to-transparent' 
   },
-  { name: 'Bumpmesh', href: 'https://bumpmesh.com/', icon: <Zap size={20} className="text-amber-400" />, color: 'from-amber-500/20 to-transparent' },
+  { name: 'Bumpmesh', href: 'https://bumpmesh.com/', icon: <Zap size={17} className="text-amber-400" />, color: 'from-amber-500/20 to-transparent' },
 ];
 
 // Helper to create reliable Drive links
@@ -245,30 +245,30 @@ const ThreeDPrinting: React.FC = () => {
   return (
     <div className="p-4 space-y-6 animate-in fade-in slide-in-from-bottom-4 duration-500 max-w-[1600px] mx-auto pb-20">
       {/* Librerías */}
-      <div className="flex flex-col lg:flex-row lg:items-center justify-between gap-4 bg-blue-600/10 p-6 rounded-3xl border border-blue-500/20 shadow-xl">
-        <div className="flex items-center gap-4 shrink-0">
-          <div className="p-3 bg-blue-600/20 rounded-2xl border border-blue-500/30 shrink-0">
-            <Globe size={32} className="text-blue-400" />
+      <div className="flex flex-col lg:flex-row lg:items-center justify-between gap-3 bg-blue-600/10 p-4 sm:p-5 rounded-2xl border border-blue-500/20 shadow-lg">
+        <div className="flex items-center gap-3 shrink-0">
+          <div className="p-2.5 bg-blue-600/20 rounded-xl border border-blue-500/30 shrink-0">
+            <Globe size={22} className="text-blue-400" />
           </div>
           <div>
-            <h2 className="text-2xl font-bold text-white">Librerías</h2>
-            <p className="text-sm text-gray-400">Plataformas y repositorios de modelos 3D.</p>
+            <h2 className="text-base sm:text-lg font-bold text-white leading-tight">Librerías</h2>
+            <p className="text-xs text-gray-400">Plataformas y repositorios de modelos 3D.</p>
           </div>
         </div>
         
-        <div className="grid grid-cols-2 sm:grid-cols-4 lg:grid-cols-7 gap-2.5">
+        <div className="grid grid-cols-3 sm:grid-cols-4 lg:grid-cols-7 gap-2">
           {libraries.map((tool, idx) => (
             <a
               key={idx}
               href={tool.href}
               target="_blank"
               rel="noopener noreferrer"
-              className={`flex flex-col items-center justify-center p-2.5 bg-gradient-to-b ${tool.color} border border-white/10 rounded-2xl transition-all hover:scale-105 hover:border-white/30 group aspect-[4/5] min-w-[75px]`}
+              className={`flex flex-col items-center justify-center p-2 bg-gradient-to-b ${tool.color} border border-white/10 rounded-xl transition-all hover:scale-105 hover:border-white/30 group min-w-[65px] h-[70px]`}
             >
-              <div className="mb-2 p-1.5 bg-gray-900/50 rounded-xl group-hover:scale-110 transition-transform">
+              <div className="mb-1 p-1 bg-gray-900/50 rounded-lg group-hover:scale-110 transition-transform">
                 {tool.icon}
               </div>
-              <span className="text-[9px] font-black text-gray-400 group-hover:text-white uppercase tracking-wider text-center line-clamp-1">
+              <span className="text-[8.5px] font-black text-gray-400 group-hover:text-white uppercase tracking-wider text-center line-clamp-1">
                 {tool.name}
               </span>
             </a>
@@ -277,30 +277,30 @@ const ThreeDPrinting: React.FC = () => {
       </div>
 
       {/* Herramientas 3D */}
-      <div className="flex flex-col lg:flex-row lg:items-center justify-between gap-4 bg-purple-600/10 p-6 rounded-3xl border border-purple-500/20 shadow-xl">
-        <div className="flex items-center gap-4 shrink-0">
-          <div className="p-3 bg-purple-600/20 rounded-2xl border border-purple-500/30 shrink-0">
-            <Wrench size={32} className="text-purple-400" />
+      <div className="flex flex-col lg:flex-row lg:items-center justify-between gap-3 bg-purple-600/10 p-4 sm:p-5 rounded-2xl border border-purple-500/20 shadow-lg">
+        <div className="flex items-center gap-3 shrink-0">
+          <div className="p-2.5 bg-purple-600/20 rounded-xl border border-purple-500/30 shrink-0">
+            <Wrench size={22} className="text-purple-400" />
           </div>
           <div>
-            <h2 className="text-2xl font-bold text-white">Herramientas 3D</h2>
-            <p className="text-sm text-gray-400">Generadores con IA y editores de modelos.</p>
+            <h2 className="text-base sm:text-lg font-bold text-white leading-tight">Herramientas 3D</h2>
+            <p className="text-xs text-gray-400">Generadores con IA y editores de modelos.</p>
           </div>
         </div>
         
-        <div className="grid grid-cols-2 sm:grid-cols-4 lg:grid-cols-7 gap-2.5">
+        <div className="grid grid-cols-3 sm:grid-cols-4 lg:grid-cols-7 gap-2">
           {tools3D.map((tool, idx) => (
             <a
               key={idx}
               href={tool.href}
               target="_blank"
               rel="noopener noreferrer"
-              className={`flex flex-col items-center justify-center p-2.5 bg-gradient-to-b ${tool.color} border border-white/10 rounded-2xl transition-all hover:scale-105 hover:border-white/30 group aspect-[4/5] min-w-[75px]`}
+              className={`flex flex-col items-center justify-center p-2 bg-gradient-to-b ${tool.color} border border-white/10 rounded-xl transition-all hover:scale-105 hover:border-white/30 group min-w-[65px] h-[70px]`}
             >
-              <div className="mb-2 p-1.5 bg-gray-900/50 rounded-xl group-hover:scale-110 transition-transform">
+              <div className="mb-1 p-1 bg-gray-900/50 rounded-lg group-hover:scale-110 transition-transform">
                 {tool.icon}
               </div>
-              <span className="text-[9px] font-black text-gray-400 group-hover:text-white uppercase tracking-wider text-center line-clamp-1">
+              <span className="text-[8.5px] font-black text-gray-400 group-hover:text-white uppercase tracking-wider text-center line-clamp-1">
                 {tool.name}
               </span>
             </a>

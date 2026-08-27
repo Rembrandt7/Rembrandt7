@@ -17,7 +17,7 @@ const LinkIcon: React.FC<{
 }> = ({ item, isEditing, onEdit, onDelete, onMove, isFirst, isLast }) => {
     const hasBg = item.hasBackground !== false;
     return (
-        <div className="relative group flex items-center justify-center flex-1 max-w-[50px] min-w-[24px]">
+        <div className="relative group flex items-center justify-center flex-1 max-w-[78px] min-w-[26px]">
             {isEditing && !isFirst && (
                 <button onClick={() => onMove(item.id, 'left')} className="absolute -left-3 z-40 p-1 bg-gray-700 rounded-full text-white hover:bg-gray-600 shadow-md">
                     <ChevronLeft size={12} />
@@ -28,7 +28,7 @@ const LinkIcon: React.FC<{
                 target="_blank" 
                 rel="noopener noreferrer" 
                 onClick={(e) => isEditing && e.preventDefault()}
-                className={`flex items-center justify-center w-full aspect-square max-w-[48px] max-h-[48px] min-w-[26px] min-h-[26px] rounded-xl sm:rounded-2xl transition-all duration-300 group ${item.colorClass} hover:scale-[1.18] hover:-translate-y-1 ${isEditing ? 'opacity-100 cursor-default' : ''} ${hasBg ? 'bg-white/5 hover:bg-white/10 hover:shadow-[0_4px_15px_rgba(255,255,255,0.08)] border border-white/10' : ''} [&_svg]:w-[58%] [&_svg]:h-[58%] [&_svg]:max-w-[26px] [&_svg]:max-h-[26px] [&_img]:w-[62%] [&_img]:h-[62%] [&_img]:max-w-[28px] [&_img]:max-h-[28px] [&_img]:object-contain`}
+                className={`flex items-center justify-center w-full aspect-square max-w-[74px] max-h-[74px] min-w-[28px] min-h-[28px] rounded-xl sm:rounded-2xl md:rounded-3xl transition-all duration-300 group ${item.colorClass} hover:scale-[1.12] hover:-translate-y-1 ${isEditing ? 'opacity-100 cursor-default' : ''} ${hasBg ? 'bg-white/5 hover:bg-white/10 hover:shadow-[0_6px_20px_rgba(255,255,255,0.09)] border border-white/10' : ''} [&_svg]:w-[62%] [&_svg]:h-[62%] [&_svg]:max-w-[44px] [&_svg]:max-h-[44px] [&_img]:w-[68%] [&_img]:h-[68%] [&_img]:max-w-[48px] [&_img]:max-h-[48px] [&_img]:object-contain`}
                 title={item.name}
                 style={{
                     filter: item.outlineColor && item.outlineWidth ? `drop-shadow(0 0 ${item.outlineWidth}px ${item.outlineColor})` : undefined
