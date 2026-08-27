@@ -8,12 +8,12 @@ import ThreeDCalculator from './ThreeDCalculator';
    DATA - Audit and Corrected from PDF (stl_pack.pdf)
 ───────────────────────────────────────────────────────────────── */
 const libraries = [
-  { name: 'Printables', href: 'https://www.printables.com/?lang=es', icon: <Globe size={20} className="text-orange-500" />, color: 'from-orange-600/20 to-transparent' },
   { name: 'MakerWorld', href: 'https://makerworld.com/es', icon: <Package size={20} className="text-teal-400" />, color: 'from-teal-500/20 to-transparent' },
+  { name: 'Creality', href: 'https://www.crealitycloud.com/es', icon: <Cloud size={20} className="text-cyan-400" />, color: 'from-cyan-500/20 to-transparent' },
+  { name: 'Printables', href: 'https://www.printables.com/?lang=es', icon: <Globe size={20} className="text-orange-500" />, color: 'from-orange-600/20 to-transparent' },
   { name: 'Thingiverse', href: 'https://www.thingiverse.com/', icon: <Box size={20} className="text-blue-500" />, color: 'from-blue-600/20 to-transparent' },
   { name: 'MyMiniFactory', href: 'https://www.myminifactory.com/', icon: <Sparkles size={20} className="text-pink-400" />, color: 'from-pink-500/20 to-transparent' },
   { name: 'Thangs', href: 'https://thangs.com/', icon: <Wrench size={20} className="text-cyan-400" />, color: 'from-cyan-500/20 to-transparent' },
-  { name: 'Creality', href: 'https://www.crealitycloud.com/es', icon: <Cloud size={20} className="text-cyan-400" />, color: 'from-cyan-500/20 to-transparent' },
 ];
 
 const tools3D = [
@@ -23,6 +23,7 @@ const tools3D = [
   { name: 'Gridfinity', href: 'https://gridfinitygenerator.com/es/editor', icon: <Database size={20} className="text-orange-400" />, color: 'from-orange-500/20 to-transparent' },
   { name: 'Multibuild', href: 'https://multibuild.io/parts', icon: <Settings size={20} className="text-indigo-400" />, color: 'from-indigo-500/20 to-transparent' },
   { name: 'Fusion', href: 'https://fusion.online.autodesk.com/', icon: <Box size={20} className="text-orange-500" />, color: 'from-orange-500/20 to-transparent' },
+  { name: 'Bumpmesh', href: 'https://bumpmesh.com/', icon: <Zap size={20} className="text-amber-400" />, color: 'from-amber-500/20 to-transparent' },
 ];
 
 // Helper to create reliable Drive links
@@ -257,7 +258,7 @@ const ThreeDPrinting: React.FC = () => {
           </div>
         </div>
         
-        <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-6 gap-2.5">
+        <div className="grid grid-cols-2 sm:grid-cols-4 lg:grid-cols-7 gap-2.5">
           {tools3D.map((tool, idx) => (
             <a
               key={idx}

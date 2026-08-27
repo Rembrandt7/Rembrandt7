@@ -53,6 +53,13 @@ const INITIAL_CONFIG: AppConfig = {
         iconSvg: `<img src="/mercadolibre_premium.png" class="w-10 h-10 object-contain" />`
     },
     {
+        id: 'amazon',
+        href: "https://www.amazon.com.mx/",
+        name: "Amazon",
+        colorClass: "text-amber-400 hover:text-amber-300",
+        iconSvg: `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" class="w-full h-full fill-current"><path d="M13.958 10.09c0 1.25.047 2.296-.547 3.422-.438.828-1.125 1.344-1.953 1.344-1.125 0-1.781-.875-1.781-2.172 0-2.547 2.062-3 4.281-3v.406zm2.844 7.016c-.14-.125-.328-.156-.516-.047-1.047.89-2.422 1.406-3.89 1.406-2.922 0-4.64-1.89-4.64-4.688 0-2.438 1.453-4.11 3.515-4.625 1.844-.453 4.094-.531 4.094-2.203 0-1.39-1.063-2.078-2.422-2.078-1.578 0-2.281.766-2.453 2.125-.031.25-.219.453-.469.453l-2.484-.25c-.234-.031-.422-.219-.406-.469.344-2.734 2.453-4.406 5.828-4.406 3.031 0 5.438 1.64 5.438 4.969v6.5c0 .766.313 1.094.61 1.5.187.25.171.469-.016.656l-2.125 1.781c-.203.172-.406.14-.563-.078zm5.547 3.14c-.313.25-.719.14-.984-.156-2.14-2.39-5.75-3.766-9.5-3.766-3.484 0-6.734 1.156-8.969 3.078-.266.234-.672.188-.89-.109l-.797-1.047c-.203-.266-.172-.656.094-.89 2.625-2.266 6.453-3.64 10.562-3.64 4.39 0 8.578 1.578 11.078 4.344.25.281.203.688-.078.938l-.516.25z"/></svg>`
+    },
+    {
         id: '2',
         href: "https://web.whatsapp.com/",
         name: "WhatsApp",
@@ -101,13 +108,6 @@ const INITIAL_CONFIG: AppConfig = {
         name: "X",
         colorClass: "text-white hover:text-gray-300",
         iconSvg: `<svg xmlns="http://www.w3.org/2000/svg" className="h-6 w-6" viewBox="0 0 24 24" fill="currentColor"><path d="M18.244 2.25h3.308l-7.227 7.688 8.502 11.25h-6.657l-5.214-6.817L4.99 21.188H1.68l7.73-8.235L1.254 2.25H8.08l4.713 6.231zm-1.161 17.52h1.833L7.084 4.126H5.117z"/></svg>`
-    },
-    {
-        id: '9',
-        href: "https://fusion.online.autodesk.com/",
-        name: "Fusion",
-        colorClass: "text-orange-500 hover:text-orange-400",
-        iconSvg: `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 100 100" class="w-full h-full p-0.5"><defs><linearGradient id="fusion-grad-1" x1="0%" y1="0%" x2="100%" y2="100%"><stop offset="0%" stop-color="#FF9B00"/><stop offset="50%" stop-color="#FF5100"/><stop offset="100%" stop-color="#D41400"/></linearGradient><linearGradient id="fusion-grad-2" x1="0%" y1="100%" x2="100%" y2="0%"><stop offset="0%" stop-color="#D41400"/><stop offset="100%" stop-color="#FF5100"/></linearGradient><linearGradient id="fusion-grad-3" x1="100%" y1="0%" x2="0%" y2="100%"><stop offset="0%" stop-color="#FF3300"/><stop offset="100%" stop-color="#5A0000"/></linearGradient></defs><polygon points="50,2 98,24 98,76 50,98 2,76 2,24" fill="url(#fusion-grad-1)" opacity="0.15" stroke="url(#fusion-grad-1)" stroke-width="1.5"/><polygon points="8,8 92,8 92,26 34,26 34,46 82,46 82,64 34,64 34,92 8,92" fill="url(#fusion-grad-1)"/><polygon points="92,8 92,26 97,21 97,3" fill="url(#fusion-grad-2)"/><polygon points="82,46 82,64 87,59 87,41" fill="url(#fusion-grad-2)"/><polygon points="8,92 34,92 34,97 8,97" fill="url(#fusion-grad-2)"/><polygon points="8,8 34,26 34,97 8,92" fill="url(#fusion-grad-3)" opacity="0.3"/></svg>`
     },
     {
         id: '10',
