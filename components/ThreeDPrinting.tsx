@@ -22,7 +22,36 @@ const tools3D = [
   { name: 'Dora', href: 'https://www.3dkoneko.com/dora', icon: <Sparkles size={20} className="text-rose-400" />, color: 'from-rose-500/20 to-transparent' },
   { name: 'Gridfinity', href: 'https://gridfinitygenerator.com/es/editor', icon: <Database size={20} className="text-orange-400" />, color: 'from-orange-500/20 to-transparent' },
   { name: 'Multibuild', href: 'https://multibuild.io/parts', icon: <Settings size={20} className="text-indigo-400" />, color: 'from-indigo-500/20 to-transparent' },
-  { name: 'Fusion', href: 'https://fusion.online.autodesk.com/', icon: <Box size={20} className="text-orange-500" />, color: 'from-orange-500/20 to-transparent' },
+  { 
+    name: 'Fusion', 
+    href: 'https://fusion.online.autodesk.com/', 
+    icon: (
+      <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 100 100" className="w-5 h-5">
+        <defs>
+          <linearGradient id="fusion-3d-1" x1="0%" y1="0%" x2="100%" y2="100%">
+            <stop offset="0%" stopColor="#FF9B00"/>
+            <stop offset="50%" stopColor="#FF5100"/>
+            <stop offset="100%" stopColor="#D41400"/>
+          </linearGradient>
+          <linearGradient id="fusion-3d-2" x1="0%" y1="100%" x2="100%" y2="0%">
+            <stop offset="0%" stopColor="#D41400"/>
+            <stop offset="100%" stopColor="#FF5100"/>
+          </linearGradient>
+          <linearGradient id="fusion-3d-3" x1="100%" y1="0%" x2="0%" y2="100%">
+            <stop offset="0%" stopColor="#FF3300"/>
+            <stop offset="100%" stopColor="#5A0000"/>
+          </linearGradient>
+        </defs>
+        <polygon points="50,2 98,24 98,76 50,98 2,76 2,24" fill="url(#fusion-3d-1)" opacity="0.2" stroke="url(#fusion-3d-1)" strokeWidth="1.5"/>
+        <polygon points="8,8 92,8 92,26 34,26 34,46 82,46 82,64 34,64 34,92 8,92" fill="url(#fusion-3d-1)"/>
+        <polygon points="92,8 92,26 97,21 97,3" fill="url(#fusion-3d-2)"/>
+        <polygon points="82,46 82,64 87,59 87,41" fill="url(#fusion-3d-2)"/>
+        <polygon points="8,92 34,92 34,97 8,97" fill="url(#fusion-3d-2)"/>
+        <polygon points="8,8 34,26 34,97 8,92" fill="url(#fusion-3d-3)" opacity="0.3"/>
+      </svg>
+    ), 
+    color: 'from-orange-500/20 to-transparent' 
+  },
   { name: 'Bumpmesh', href: 'https://bumpmesh.com/', icon: <Zap size={20} className="text-amber-400" />, color: 'from-amber-500/20 to-transparent' },
 ];
 

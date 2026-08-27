@@ -1,5 +1,5 @@
 import React, { useState, useEffect, useCallback, useMemo } from 'react';
-import { Calculator, DollarSign, Zap, Clock, TrendingUp, RefreshCw, UserCheck, ShoppingBag, Copy, CheckCircle2, Plus, Trash2, Save, Download, ListChecks, Database, Palette, PlusCircle, Edit3, AlertCircle } from 'lucide-react';
+import { Calculator, DollarSign, Zap, Clock, TrendingUp, RefreshCw, UserCheck, ShoppingBag, Copy, CheckCircle2, Plus, Trash2, Save, Download, ListChecks, Database, Palette, PlusCircle, Edit3, AlertCircle, ChevronDown, ChevronUp, MessageSquare, Sliders } from 'lucide-react';
 import { motion, AnimatePresence } from 'motion/react';
 import { toast } from 'sonner';
 import { supabase } from '../services/supabaseClient';
@@ -127,6 +127,7 @@ const ThreeDCalculator: React.FC = () => {
 
   const [printQueue, setPrintQueue] = useState<PrintItem[]>([]);
   const [myFilaments, setMyFilaments] = useState<FilamentInventory[]>([]);
+  const [isStockOpen, setIsStockOpen] = useState(false);
   const [isSaving, setIsSaving] = useState(false);
   const [isLoading, setIsLoading] = useState(false);
   const [editingQueueId, setEditingQueueId] = useState<string | null>(null);
@@ -556,56 +557,80 @@ const ThreeDCalculator: React.FC = () => {
     setLastProposedColorName(fil.customName || '');
   };
 
+  const copyQuoteForWhatsApp = (type: 'comercial' | 'amigo' = 'comercial') => {
+    const price = type === 'comercial' ? results.commercialPrice : results.friendPrice;
+    const timeFormatted = `${printHours > 0 ? `${printHours}h ` : ''}${printMinutes > 0 ? `${printMinutes}m` : (printHours === 0 ? '0m' : '')}`;
+    const quoteText = `📦 *Cotización de Impresión 3D*\n\n` +
+      `🔹 *Pieza:* ${pieceName.trim() || 'Modelo 3D'}\n` +
+      `🔹 *Material:* ${material} ${selectedFilamentId ? `(En Stock)` : ''}\n` +
+      `🔹 *Peso:* ${weightUsed}g\n` +
+      `🔹 *Tiempo:* ${timeFormatted || 'N/A'}\n` +
+      `🔹 *Total:* ${formatCurrency(price)}\n\n` +
+      `_¿Deseas proceder con la impresión?_ 🚀`;
+    navigator.clipboard.writeText(quoteText);
+    toast.success('¡Cotización para WhatsApp copiada!');
+  };
+
   const formatCurrency = (val: number) => new Intl.NumberFormat('es-MX', { style: 'currency', currency: 'MXN' }).format(val);
 
   return (
     <div className="w-full h-full p-2 flex flex-col">
-      <div className="grid grid-cols-1 lg:grid-cols-12 gap-4 h-full min-h-[650px] max-w-[1600px] mx-auto w-full">
+      <div className="grid grid-cols-1 lg:grid-cols-12 gap-3.5 max-w-[1600px] mx-auto w-full">
         
         {/* COL 1: CALCULADORA */}
-        <div className="lg:col-span-6 bg-slate-950/80 backdrop-blur-3xl border border-white/10 rounded-3xl flex flex-col overflow-hidden shadow-2xl">
-          <div className="px-6 py-4 border-b border-white/10 flex items-center justify-between bg-white/[0.02]">
-            <div className="flex items-center gap-3">
-              <Calculator className={`text-blue-400 ${editingQueueId ? 'animate-pulse text-yellow-400' : ''}`} size={20} />
-              <h3 className="text-sm font-black text-white uppercase tracking-widest italic leading-none">
-                {editingQueueId ? 'Modificando Idea' : 'Calculadora Studio'}
+        <div className={`${isStockOpen ? 'lg:col-span-5' : 'lg:col-span-7'} bg-slate-950/85 backdrop-blur-3xl border border-white/10 rounded-2xl flex flex-col overflow-hidden shadow-xl transition-all duration-300`}>
+          <div className="px-4 py-2.5 border-b border-white/10 flex items-center justify-between bg-white/[0.02]">
+            <div className="flex items-center gap-2">
+              <Calculator className={`text-blue-400 ${editingQueueId ? 'animate-pulse text-yellow-400' : ''}`} size={17} />
+              <h3 className="text-xs font-black text-white uppercase tracking-wider italic leading-none">
+                {editingQueueId ? 'Modificando Idea' : 'Calculadora 3D'}
               </h3>
             </div>
-            <div className="flex items-center gap-3">
-               <button onClick={addToQueueFromCalc} className={`flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-[10px] font-black uppercase tracking-widest transition-all ${editingQueueId ? 'bg-yellow-600 hover:bg-yellow-500 text-white' : 'bg-indigo-600 hover:bg-indigo-500 text-white'}`}>
-                  {editingQueueId ? <Save size={14} /> : <Plus size={14} />} {editingQueueId ? 'Guardar' : 'Lote'}
+            <div className="flex items-center gap-2">
+               <button 
+                  onClick={() => setIsStockOpen(!isStockOpen)} 
+                  className={`flex items-center gap-1 px-2.5 py-1 rounded-lg text-[9px] font-black uppercase tracking-wider transition-all border ${isStockOpen ? 'bg-pink-600/25 text-pink-300 border-pink-500/40 shadow-sm' : 'bg-white/5 hover:bg-white/10 text-gray-400 border-white/10'}`}
+                  title="Mostrar / Ocultar panel de Stock de Filamentos"
+               >
+                  <Palette size={11} className={isStockOpen ? 'text-pink-400' : 'text-gray-400'} />
+                  <span>Stock ({myFilaments.length})</span>
+                  {isStockOpen ? <ChevronUp size={11}/> : <ChevronDown size={11}/>}
                </button>
-               <button onClick={() => { setPieceName(''); setFilamentPrice(400); setWeightUsed(100); setPrintHours(5); setPrintMinutes(0); setEditingQueueId(null); setSelectedFilamentId(''); }} className="text-gray-500 hover:text-white p-1"><RefreshCw size={14} /></button>
+               <button onClick={addToQueueFromCalc} className={`flex items-center gap-1 px-2.5 py-1 rounded-lg text-[9px] font-black uppercase tracking-wider transition-all ${editingQueueId ? 'bg-yellow-600 hover:bg-yellow-500 text-white' : 'bg-indigo-600 hover:bg-indigo-500 text-white'}`}>
+                  {editingQueueId ? <Save size={12} /> : <Plus size={12} />} {editingQueueId ? 'Guardar' : 'Lote'}
+               </button>
+               <button onClick={() => { setPieceName(''); setFilamentPrice(400); setWeightUsed(100); setPrintHours(5); setPrintMinutes(0); setEditingQueueId(null); setSelectedFilamentId(''); }} className="text-gray-500 hover:text-white p-1" title="Reiniciar campos"><RefreshCw size={12} /></button>
             </div>
           </div>
 
-          <div className="p-6 flex-1 flex flex-col space-y-6 overflow-y-auto custom-scrollbar">
-            <div className="space-y-4">
-               <div className="flex gap-4">
-                  <div className="flex-[2] space-y-1.5">
-                     <label className="text-[10px] font-black text-gray-500 uppercase tracking-widest ml-1">Nombre Pieza</label>
+          <div className="p-4 flex-1 flex flex-col space-y-3.5 overflow-y-auto custom-scrollbar">
+            <div className="space-y-3">
+               {/* Fila 1: Nombre y Material */}
+               <div className="flex gap-3">
+                  <div className="flex-[2] space-y-1">
+                     <label className="text-[9px] font-black text-gray-400 uppercase tracking-widest ml-0.5">Nombre Pieza</label>
                      <div className="relative group">
-                        <input type="text" value={pieceName} onChange={e => setPieceName(e.target.value)} placeholder="Ej: Casco Iron Man..." className="w-full bg-white/5 border border-white/10 rounded-xl px-4 py-2 text-white text-sm focus:outline-none focus:ring-1 focus:ring-blue-500/50 h-[44px] font-bold" />
+                        <input type="text" value={pieceName} onChange={e => setPieceName(e.target.value)} placeholder="Ej: Casco Iron Man..." className="w-full bg-white/5 border border-white/10 rounded-xl px-3 py-1.5 text-white text-xs focus:outline-none focus:ring-1 focus:ring-blue-500/50 h-[36px] font-bold" />
                         
                         {(pieceName || printHours > 0 || printMinutes > 0) && (
-                          <div className="absolute -bottom-10 left-0 right-0 flex items-center justify-between px-3 py-2 bg-slate-900 border border-blue-500/30 rounded-lg shadow-xl z-10 animate-in fade-in slide-in-from-top-2 opacity-0 group-hover:opacity-100 transition-opacity pointer-events-none group-hover:pointer-events-auto">
-                             <p className="text-[10px] font-black text-blue-400 uppercase tracking-tighter truncate max-w-[70%]">
-                               Sugerencia: <span className="text-white italic">{proposedName}</span>
+                          <div className="absolute -bottom-8 left-0 right-0 flex items-center justify-between px-2.5 py-1 bg-slate-900 border border-blue-500/30 rounded-lg shadow-xl z-10 animate-in fade-in opacity-0 group-hover:opacity-100 transition-opacity pointer-events-none group-hover:pointer-events-auto">
+                             <p className="text-[9px] font-black text-blue-400 uppercase tracking-tighter truncate max-w-[75%]">
+                                Sugerencia: <span className="text-white italic">{proposedName}</span>
                              </p>
                              <div className="flex gap-1">
-                               <button onClick={applyProposedName} className="p-1 hover:bg-blue-500/20 text-blue-400 rounded transition-all" title="Aplicar">
-                                  <PlusCircle size={14} />
-                               </button>
-                               <button onClick={copyProposedName} className="p-1 hover:bg-emerald-500/20 text-emerald-400 rounded transition-all" title="Copiar">
-                                  <Copy size={14} />
-                               </button>
+                               <button onClick={applyProposedName} className="p-0.5 hover:bg-blue-500/20 text-blue-400 rounded transition-all" title="Aplicar">
+                                  <PlusCircle size={12} />
+                                </button>
+                               <button onClick={copyProposedName} className="p-0.5 hover:bg-emerald-500/20 text-emerald-400 rounded transition-all" title="Copiar">
+                                  <Copy size={12} />
+                                </button>
                              </div>
                           </div>
                         )}
                      </div>
                   </div>
-                  <div className="flex-1 space-y-1.5">
-                     <label className="text-[10px] font-black text-gray-500 uppercase tracking-widest ml-1">Material / Stock</label>
+                  <div className="flex-1 space-y-1">
+                     <label className="text-[9px] font-black text-gray-400 uppercase tracking-widest ml-0.5">Material / Stock</label>
                      <select 
                         value={selectedFilamentId ? `stock:${selectedFilamentId}` : material} 
                         onChange={e => {
@@ -620,7 +645,7 @@ const ThreeDCalculator: React.FC = () => {
                               setMaterial(val as any);
                            }
                         }} 
-                        className="w-full bg-slate-800 border border-white/10 rounded-xl px-3 py-2 text-white text-sm font-bold appearance-none h-[44px]"
+                        className="w-full bg-slate-800 border border-white/10 rounded-xl px-2.5 py-1.5 text-white text-xs font-bold appearance-none h-[36px]"
                      >
                         <optgroup label="Genéricos">
                            <option value="PLA">PLA Estándar</option>
@@ -640,139 +665,165 @@ const ThreeDCalculator: React.FC = () => {
                   </div>
                </div>
 
-               <div className="grid grid-cols-3 gap-4">
-                  <div className="space-y-1.5">
-                     <label className="text-[10px] font-black text-gray-500 uppercase tracking-widest ml-1">Precio/kg</label>
-                     <div className="flex items-center bg-white/5 border border-white/10 rounded-xl overflow-hidden h-[44px]">
-                        <button onClick={() => setFilamentPrice(p => Math.max(0, p-50))} className="px-3 text-white font-black">-</button>
-                        <input type="number" value={filamentPrice || ''} onChange={e => setFilamentPrice(Number(e.target.value))} className="w-full bg-transparent text-white text-center font-bold text-sm focus:outline-none" />
-                        <button onClick={() => setFilamentPrice(p => p+50)} className="px-3 text-white font-black">+</button>
+               {/* Fila 2: Precio/kg, Gramos, Tiempo */}
+               <div className="grid grid-cols-3 gap-2.5">
+                  <div className="space-y-1">
+                     <div className="flex justify-between items-center">
+                        <label className="text-[9px] font-black text-gray-400 uppercase tracking-widest ml-0.5">Precio/kg</label>
+                        <div className="flex gap-1">
+                           {[350, 400, 480].map(p => (
+                             <button key={p} onClick={() => setFilamentPrice(p)} className="text-[8px] px-1 py-0.2 bg-white/5 hover:bg-blue-600/30 text-gray-400 hover:text-blue-300 rounded font-bold">${p}</button>
+                           ))}
+                        </div>
+                     </div>
+                     <div className="flex items-center bg-white/5 border border-white/10 rounded-xl overflow-hidden h-[36px]">
+                        <button onClick={() => setFilamentPrice(p => Math.max(0, p-50))} className="px-2.5 text-white font-black hover:bg-white/10 text-xs">-</button>
+                        <input type="number" value={filamentPrice || ''} onChange={e => setFilamentPrice(Number(e.target.value))} className="w-full bg-transparent text-white text-center font-bold text-xs focus:outline-none" />
+                        <button onClick={() => setFilamentPrice(p => p+50)} className="px-2.5 text-white font-black hover:bg-white/10 text-xs">+</button>
                      </div>
                   </div>
-                  <div className="space-y-1.5">
-                     <label className="text-[10px] font-black text-gray-500 uppercase tracking-widest ml-1">Gramos</label>
-                     <div className="flex items-center bg-white/5 border border-white/10 rounded-xl overflow-hidden h-[44px]">
-                        <button onClick={() => setWeightUsed(p => Math.max(0, p-10))} className="px-3 text-white font-black">-</button>
-                        <input type="number" value={weightUsed || ''} onChange={e => setWeightUsed(Number(e.target.value))} className="w-full bg-transparent text-white text-center font-bold text-sm focus:outline-none" />
-                        <button onClick={() => setWeightUsed(p => p+10)} className="px-3 text-white font-black">+</button>
+                  <div className="space-y-1">
+                     <div className="flex justify-between items-center">
+                        <label className="text-[9px] font-black text-gray-400 uppercase tracking-widest ml-0.5">Gramos</label>
+                        <div className="flex gap-1">
+                           {[25, 50, 100, 200].map(g => (
+                             <button key={g} onClick={() => setWeightUsed(g)} className="text-[8px] px-1 py-0.2 bg-white/5 hover:bg-blue-600/30 text-gray-400 hover:text-blue-300 rounded font-bold">{g}g</button>
+                           ))}
+                        </div>
+                     </div>
+                     <div className="flex items-center bg-white/5 border border-white/10 rounded-xl overflow-hidden h-[36px]">
+                        <button onClick={() => setWeightUsed(p => Math.max(0, p-10))} className="px-2.5 text-white font-black hover:bg-white/10 text-xs">-</button>
+                        <input type="number" value={weightUsed || ''} onChange={e => setWeightUsed(Number(e.target.value))} className="w-full bg-transparent text-white text-center font-bold text-xs focus:outline-none" />
+                        <button onClick={() => setWeightUsed(p => p+10)} className="px-2.5 text-white font-black hover:bg-white/10 text-xs">+</button>
                      </div>
                   </div>
-                  <div className="space-y-1.5">
-                     <label className="text-[10px] font-black text-gray-500 uppercase tracking-widest ml-1">Tiempo</label>
-                     <div className="flex items-center bg-white/5 border border-white/10 rounded-xl px-2 h-[44px]">
-                        <input type="number" value={printHours || ''} onChange={e => setPrintHours(Number(e.target.value))} className="w-full bg-transparent text-white font-bold text-right focus:outline-none pr-1 text-sm" placeholder="0" />
-                        <span className="text-gray-600 font-bold">:</span>
-                        <input type="number" value={printMinutes.toString().padStart(2, '0')} onChange={e => setPrintMinutes(Math.min(59, Number(e.target.value)))} className="w-full bg-transparent text-white font-bold text-left focus:outline-none pl-1 text-sm" placeholder="00" />
+                  <div className="space-y-1">
+                     <label className="text-[9px] font-black text-gray-400 uppercase tracking-widest ml-0.5">Tiempo (h:m)</label>
+                     <div className="flex items-center bg-white/5 border border-white/10 rounded-xl px-2 h-[36px]">
+                        <input type="number" value={printHours || ''} onChange={e => setPrintHours(Number(e.target.value))} className="w-full bg-transparent text-white font-bold text-right focus:outline-none pr-1 text-xs" placeholder="0" />
+                        <span className="text-gray-500 font-bold">:</span>
+                        <input type="number" value={printMinutes.toString().padStart(2, '0')} onChange={e => setPrintMinutes(Math.min(59, Number(e.target.value)))} className="w-full bg-transparent text-white font-bold text-left focus:outline-none pl-1 text-xs" placeholder="00" />
                      </div>
                   </div>
                </div>
 
-               <div className="flex gap-4">
-                  <div className="flex-1 space-y-1.5">
-                     <label className="text-[10px] font-black text-gray-500 uppercase tracking-widest ml-1">Labor (+/- 10)</label>
-                     <div className="flex items-center bg-white/5 border border-white/10 rounded-xl overflow-hidden h-[44px]">
-                        <button onClick={() => setLaborCostManual(p => Math.max(0, p-10))} className="px-4 text-white font-black">-</button>
-                        <input type="number" value={laborCostManual || ''} onChange={e => setLaborCostManual(Number(e.target.value))} className="w-full bg-transparent text-white text-center font-bold text-sm focus:outline-none" />
-                        <button onClick={() => setLaborCostManual(p => p+10)} className="px-4 text-white font-black">+</button>
+               {/* Fila 3: Labor y Margen */}
+               <div className="flex gap-2.5">
+                  <div className="flex-1 space-y-1">
+                     <label className="text-[9px] font-black text-gray-400 uppercase tracking-widest ml-0.5">Labor ($)</label>
+                     <div className="flex items-center bg-white/5 border border-white/10 rounded-xl overflow-hidden h-[36px]">
+                        <button onClick={() => setLaborCostManual(p => Math.max(0, p-10))} className="px-3 text-white font-black hover:bg-white/10 text-xs">-</button>
+                        <input type="number" value={laborCostManual || ''} onChange={e => setLaborCostManual(Number(e.target.value))} className="w-full bg-transparent text-white text-center font-bold text-xs focus:outline-none" />
+                        <button onClick={() => setLaborCostManual(p => p+10)} className="px-3 text-white font-black hover:bg-white/10 text-xs">+</button>
                      </div>
                   </div>
-                  <div className="flex-1 space-y-1.5">
-                     <label className="text-[10px] font-black text-gray-500 uppercase tracking-widest ml-1">Margen %</label>
-                     <div className="grid grid-cols-3 gap-2 p-1 bg-white/5 border border-white/10 rounded-xl h-[44px]">
-                        {[15, 20, 30].map(m => (
-                          <button key={m} onClick={() => setMarkup(m)} className={`text-[11px] font-black rounded-lg transition-all ${markup === m ? 'bg-blue-600 text-white' : 'text-gray-500 hover:text-white'}`}>{m}%</button>
+                  <div className="flex-1 space-y-1">
+                     <label className="text-[9px] font-black text-gray-400 uppercase tracking-widest ml-0.5">Margen de Ganancia</label>
+                     <div className="grid grid-cols-4 gap-1 p-0.5 bg-white/5 border border-white/10 rounded-xl h-[36px] items-center">
+                        {[15, 20, 30, 50].map(m => (
+                          <button key={m} onClick={() => setMarkup(m)} className={`h-[28px] text-[10px] font-black rounded-lg transition-all ${markup === m ? 'bg-blue-600 text-white shadow-sm' : 'text-gray-400 hover:text-white'}`}>{m}%</button>
                         ))}
                      </div>
                   </div>
                </div>
             </div>
 
-            <div className="grid grid-cols-3 gap-4 border-t border-white/5 pt-6">
-               <div className="p-4 bg-yellow-500/5 border border-yellow-500/10 rounded-2xl flex flex-col items-center justify-center">
-                  <p className="text-[10px] text-yellow-500 font-black uppercase tracking-widest mb-1">Energía</p>
-                  <p className="text-2xl font-black text-white italic">{formatCurrency(results.energyCost)}</p>
+            {/* Desglose de Costos Base */}
+            <div className="grid grid-cols-3 gap-2.5 border-t border-white/5 pt-3">
+               <div className="p-2.5 bg-yellow-500/5 border border-yellow-500/10 rounded-xl flex flex-col items-center justify-center">
+                  <p className="text-[8px] text-yellow-500 font-black uppercase tracking-widest mb-0.5">Energía</p>
+                  <p className="text-lg font-black text-white italic">{formatCurrency(results.energyCost)}</p>
                </div>
-               <div className="p-4 bg-green-500/5 border border-green-500/10 rounded-2xl flex flex-col items-center justify-center">
-                  <p className="text-[10px] text-green-500 font-black uppercase tracking-widest mb-1">Filamento</p>
-                  <p className="text-2xl font-black text-white italic">{formatCurrency(results.filamentCost)}</p>
+               <div className="p-2.5 bg-green-500/5 border border-green-500/10 rounded-xl flex flex-col items-center justify-center">
+                  <p className="text-[8px] text-green-500 font-black uppercase tracking-widest mb-0.5">Filamento</p>
+                  <p className="text-lg font-black text-white italic">{formatCurrency(results.filamentCost)}</p>
                </div>
-               <div className="p-4 bg-blue-500/5 border border-blue-500/10 rounded-2xl flex flex-col items-center justify-center">
-                  <p className="text-[10px] text-blue-500 font-black uppercase tracking-widest mb-1">Costo Base</p>
-                  <p className="text-2xl font-black text-white italic">{formatCurrency(results.baseCost)}</p>
+               <div className="p-2.5 bg-blue-500/5 border border-blue-500/10 rounded-xl flex flex-col items-center justify-center">
+                  <p className="text-[8px] text-blue-400 font-black uppercase tracking-widest mb-0.5">Costo Base</p>
+                  <p className="text-lg font-black text-white italic">{formatCurrency(results.baseCost)}</p>
                </div>
             </div>
 
-            <div className="flex gap-4 pt-4 border-t border-white/5">
-               <div className="flex-1 p-4 bg-white/[0.03] border border-white/5 rounded-2xl flex items-center justify-between">
+            {/* Precios Sugeridos y Botones de Copiado */}
+            <div className="flex flex-col sm:flex-row gap-2.5 pt-2 border-t border-white/5">
+               <div className="flex-1 p-3 bg-white/[0.03] border border-white/5 rounded-xl flex items-center justify-between">
                   <div>
-                     <p className="text-[10px] font-black text-green-400 uppercase tracking-widest mb-1">Amigo</p>
-                     <span className="text-2xl font-black text-white">{formatCurrency(results.friendPrice)}</span>
+                     <p className="text-[8px] font-black text-green-400 uppercase tracking-widest mb-0.5">Precio Amigo</p>
+                     <span className="text-xl font-black text-white">{formatCurrency(results.friendPrice)}</span>
                   </div>
-                  <button onClick={() => handleCopy(results.friendPrice, 'amigo')} className="p-3 bg-green-500/10 hover:bg-green-500/20 text-green-400 rounded-xl transition-all"><Copy size={18}/></button>
+                  <button onClick={() => handleCopy(results.friendPrice, 'amigo')} className="p-2 bg-green-500/10 hover:bg-green-500/20 text-green-400 rounded-lg transition-all" title="Copiar precio amigo"><Copy size={15}/></button>
                </div>
-               <div className="flex-[1.2] p-4 bg-blue-600/10 border border-blue-500/20 rounded-2xl flex items-center justify-between relative overflow-hidden">
-                   <div className="absolute top-0 right-0 p-1 px-2 bg-blue-500/20 text-[8px] font-black text-blue-300 rounded-bl-lg uppercase tracking-tighter">
-                      Incluye Mantenimiento y Labor
-                   </div>
-                   <div>
-                      <p className="text-[10px] font-black text-blue-400 uppercase tracking-widest mb-1">Comercial</p>
-                      <div className="flex items-center gap-2">
-                         <span className="text-3xl font-black text-white">{formatCurrency(results.commercialPrice)}</span>
-                         <span className="text-xs text-green-400 font-black">+{formatCurrency(results.profit)}</span>
-                      </div>
-                   </div>
-                   <button onClick={() => handleCopy(results.commercialPrice, 'comercial')} className="px-4 py-3 bg-blue-600 hover:bg-blue-500 text-white rounded-xl text-xs font-black uppercase tracking-widest transition-all"><Copy size={18}/></button>
-                </div>
+               <div className="flex-[1.3] p-3 bg-gradient-to-r from-blue-600/20 to-indigo-600/20 border border-blue-500/30 rounded-xl flex items-center justify-between relative overflow-hidden">
+                    <div>
+                       <p className="text-[8px] font-black text-blue-300 uppercase tracking-widest mb-0.5">Precio Comercial</p>
+                       <div className="flex items-center gap-1.5">
+                          <span className="text-2xl font-black text-white">{formatCurrency(results.commercialPrice)}</span>
+                          <span className="text-[10px] text-green-400 font-black">+{formatCurrency(results.profit)}</span>
+                       </div>
+                    </div>
+                    <div className="flex gap-1.5">
+                       <button onClick={() => copyQuoteForWhatsApp('comercial')} className="px-2.5 py-2 bg-green-600 hover:bg-green-500 text-white rounded-lg text-[9px] font-black uppercase tracking-wider flex items-center gap-1 shadow-md transition-all" title="Copiar cotización para WhatsApp">
+                          <MessageSquare size={13} />
+                          <span>WhatsApp</span>
+                       </button>
+                       <button onClick={() => handleCopy(results.commercialPrice, 'comercial')} className="p-2 bg-blue-600 hover:bg-blue-500 text-white rounded-lg text-xs font-black transition-all" title="Copiar precio comercial"><Copy size={15}/></button>
+                    </div>
+                 </div>
             </div>
           </div>
         </div>
 
         {/* COL 2: QUIERO IMPRIMIR */}
-        <div className="lg:col-span-4 bg-slate-900/40 backdrop-blur-2xl border border-white/10 rounded-3xl flex flex-col overflow-hidden">
-          <div className="px-5 py-4 border-b border-white/10 flex items-center justify-between bg-white/[0.02]">
+        <div className={`${isStockOpen ? 'lg:col-span-4' : 'lg:col-span-5'} bg-slate-900/50 backdrop-blur-2xl border border-white/10 rounded-2xl flex flex-col overflow-hidden shadow-xl transition-all duration-300`}>
+          <div className="px-4 py-2.5 border-b border-white/10 flex items-center justify-between bg-white/[0.02]">
             <div className="flex items-center gap-2">
-              <ListChecks className="text-indigo-400" size={18} />
-              <h3 className="text-xs font-black text-white uppercase tracking-widest italic">Quiero Imprimir</h3>
+              <ListChecks className="text-indigo-400" size={16} />
+              <h3 className="text-xs font-black text-white uppercase tracking-wider italic">Quiero Imprimir</h3>
             </div>
-            <div className="flex gap-2">
-               <button onClick={loadData} className="p-1.5 text-gray-500 hover:text-white bg-white/5 rounded-lg"><Download size={14}/></button>
-               <button onClick={() => syncData()} className="p-1.5 text-gray-500 hover:text-emerald-400 bg-white/5 rounded-lg"><Save size={14}/></button>
+            <div className="flex items-center gap-1.5">
+               <button onClick={loadData} className="p-1 text-gray-400 hover:text-white bg-white/5 rounded-lg text-[9px] font-bold flex items-center gap-1 px-2 border border-white/5"><Download size={11}/> <span>Cargar</span></button>
+               <button onClick={() => syncData()} className="p-1 text-emerald-400 hover:text-emerald-300 bg-emerald-500/10 rounded-lg text-[9px] font-bold flex items-center gap-1 px-2 border border-emerald-500/20"><Save size={11}/> <span>Guardar</span></button>
             </div>
           </div>
           
-          <div className="p-5 flex flex-col gap-4 flex-1 overflow-y-auto custom-scrollbar">
-             <div className="flex gap-2 pb-3 border-b border-white/5">
-                <input type="text" value={newQueueItemName} onChange={e => setNewQueueItemName(e.target.value)} placeholder="Nombre..." className="flex-1 bg-white/5 border border-white/10 rounded-lg px-3 py-2 text-xs text-white focus:outline-none font-bold" />
-                <button onClick={addManualQueueItem} className="bg-indigo-600 hover:bg-indigo-500 text-white rounded-lg px-4 flex items-center justify-center font-black text-[10px]">AGREGAR</button>
+          <div className="p-3.5 flex flex-col gap-3 flex-1 overflow-y-auto custom-scrollbar">
+             <div className="flex gap-2 pb-2.5 border-b border-white/5">
+                <input type="text" value={newQueueItemName} onChange={e => setNewQueueItemName(e.target.value)} placeholder="Nombre pieza rápida..." className="flex-1 bg-white/5 border border-white/10 rounded-lg px-2.5 py-1.5 text-xs text-white focus:outline-none font-bold h-[34px]" />
+                <button onClick={addManualQueueItem} className="bg-indigo-600 hover:bg-indigo-500 text-white rounded-lg px-3 flex items-center justify-center font-black text-[9px] uppercase tracking-wider h-[34px]">AGREGAR</button>
              </div>
 
-             <div className="space-y-3">
+             <div className="space-y-2 max-h-[380px] overflow-y-auto custom-scrollbar">
+                {printQueue.length === 0 && (
+                   <div className="py-8 text-center text-gray-500 text-xs font-medium">
+                      No hay piezas en cola. ¡Agrega una arriba o desde la calculadora!
+                   </div>
+                )}
                 {printQueue.map(item => {
                   const isInStock = item.filamentId ? myFilaments.some(f => f.id === item.filamentId) : false;
                   const stockRef = item.filamentId ? myFilaments.find(f => f.id === item.filamentId) : null;
                   
                   return (
-                    <div key={item.id} className="p-4 bg-white/[0.03] border border-white/5 rounded-2xl flex flex-col gap-2 group hover:bg-white/5 transition-all relative">
+                    <div key={item.id} className="p-3 bg-white/[0.03] border border-white/5 rounded-xl flex flex-col gap-1.5 group hover:bg-white/5 transition-all relative">
                        <div className="flex justify-between items-start">
                           <div className="flex items-center gap-2 pr-12">
                              <div className={`w-2 h-2 rounded-full shrink-0 ${item.filamentId ? (isInStock ? 'bg-green-500 shadow-[0_0_8px_rgba(34,197,94,0.5)]' : 'bg-red-500 shadow-[0_0_8px_rgba(239,68,68,0.5)]') : 'bg-gray-700'}`}></div>
-                             <h4 className="text-sm font-black text-white uppercase italic break-words">{item.name}</h4>
+                             <h4 className="text-xs font-black text-white uppercase italic break-words">{item.name}</h4>
                           </div>
-                          <div className="flex gap-1 absolute top-3 right-3 opacity-0 group-hover:opacity-100 transition-opacity">
-                             <button onClick={() => loadToCalculator(item)} className="p-1.5 text-blue-400 hover:bg-blue-400/10 rounded-lg"><Edit3 size={16}/></button>
-                             <button onClick={() => { const n = printQueue.filter(i => i.id !== item.id); setPrintQueue(n); syncData(n, myFilaments); }} className="p-1.5 text-rose-500 hover:bg-rose-500/10 rounded-lg"><Trash2 size={16}/></button>
+                          <div className="flex gap-1 absolute top-2.5 right-2.5 opacity-0 group-hover:opacity-100 transition-opacity">
+                             <button onClick={() => loadToCalculator(item)} className="p-1 text-blue-400 hover:bg-blue-400/10 rounded-lg"><Edit3 size={13}/></button>
+                             <button onClick={() => { const n = printQueue.filter(i => i.id !== item.id); setPrintQueue(n); syncData(n, myFilaments); }} className="p-1 text-rose-500 hover:bg-rose-500/10 rounded-lg"><Trash2 size={13}/></button>
                           </div>
                        </div>
                         {item.material && (
                           <div className="flex items-center justify-between pt-1 border-t border-white/5">
-                             <div className="flex gap-2">
-                                <span className="text-[9px] px-2 py-0.5 bg-blue-500/10 text-blue-400 rounded-full font-black uppercase flex items-center gap-1">
+                             <div className="flex gap-1.5">
+                                <span className="text-[8px] px-2 py-0.5 bg-blue-500/10 text-blue-400 rounded-full font-black uppercase flex items-center gap-1">
                                    {stockRef?.color && <div className="w-1.5 h-1.5 rounded-full border border-white/10" style={{ background: stockRef.color }}></div>}
                                    {item.material} {stockRef?.customName ? `- ${stockRef.customName}` : ''}
                                 </span>
-                                <span className="text-[9px] px-2 py-0.5 bg-orange-500/10 text-orange-400 rounded-full font-black uppercase">{item.time}</span>
+                                <span className="text-[8px] px-2 py-0.5 bg-orange-500/10 text-orange-400 rounded-full font-black uppercase">{item.time}</span>
                              </div>
-                             <span className="text-sm font-black text-white">{formatCurrency(item.cost || 0)}</span>
+                             <span className="text-xs font-black text-white">{formatCurrency(item.cost || 0)}</span>
                           </div>
                         )}
                     </div>
@@ -780,121 +831,128 @@ const ThreeDCalculator: React.FC = () => {
                 })}
              </div>
           </div>
-          <div className="px-6 py-4 border-t border-white/5 bg-white/[0.02] flex justify-between items-center">
-             <span className="text-xs text-gray-500 font-black uppercase tracking-widest">Inversión Lote</span>
-             <span className="text-xl font-black text-white italic">{formatCurrency(printQueue.reduce((a,c) => a + (c.cost || 0), 0))}</span>
+          <div className="px-4 py-2.5 border-t border-white/5 bg-white/[0.02] flex justify-between items-center">
+             <span className="text-[10px] text-gray-400 font-black uppercase tracking-widest">Inversión Lote ({printQueue.length})</span>
+             <span className="text-lg font-black text-white italic">{formatCurrency(printQueue.reduce((a,c) => a + (c.cost || 0), 0))}</span>
           </div>
         </div>
 
-        {/* COL 3: STOCK */}
-        <div className="lg:col-span-2 bg-slate-900/40 backdrop-blur-2xl border border-white/10 rounded-3xl flex flex-col overflow-hidden">
-          <div className="px-4 py-4 border-b border-white/10 flex items-center justify-between bg-white/[0.02]">
-            <div className="flex items-center gap-2">
-              <Palette className="text-pink-400" size={16} />
-              <h3 className="text-xs font-black text-white uppercase italic">Mi Stock</h3>
-            </div>
-            <span className="text-[10px] bg-pink-500/20 text-pink-400 border border-pink-500/30 px-2 py-0.5 rounded-full font-black">
-              {myFilaments.length} {myFilaments.length === 1 ? 'Filamento' : 'Filamentos'}
-            </span>
-          </div>
-          <div className="p-4 flex flex-col gap-4 flex-1 overflow-y-auto custom-scrollbar">
-             <div className="space-y-3 pb-4 border-b border-white/5">
-                <div className="flex gap-2">
-                   <select value={newFilament.material} onChange={e => setNewFilament({...newFilament, material: e.target.value})} className="flex-1 bg-slate-800 border border-white/10 rounded-lg px-2 py-2 text-xs text-white focus:outline-none font-bold">
-                      <option value="PLA">PLA</option><option value="PETG">PETG</option><option value="TPU">TPU</option>
-                   </select>
-                   <div 
-                      className="relative shrink-0 w-10 h-10 rounded-lg border border-white/20 overflow-hidden flex items-center justify-center" 
-                      style={{ background: newFilament.color || '#ffffff' }}
-                   >
-                      <input 
-                         type="color" 
-                         value={newFilament.color?.startsWith('linear-gradient') ? '#ffffff' : (newFilament.color || '#ffffff')} 
-                         onChange={e => handleColorChange(e.target.value)} 
-                         className="absolute inset-0 opacity-0 cursor-pointer w-full h-full" 
-                      />
-                      {newFilament.color?.startsWith('linear-gradient') && (
-                         <div className="absolute inset-0 pointer-events-none flex items-center justify-center bg-black/10">
-                            <span className="text-[8px] font-black text-white bg-slate-900/80 px-1 py-0.5 rounded uppercase tracking-tighter">EFX</span>
-                         </div>
-                      )}
-                   </div>
-                </div>
-
-                <div className="space-y-1">
-                   <label className="text-[9px] font-black text-gray-500 uppercase tracking-widest ml-1">Efectos / Duplex</label>
-                   <div className="grid grid-cols-5 gap-1">
-                      {SPECIAL_COLORS.map(sc => (
-                         <button
-                            key={sc.name}
-                            type="button"
-                            onClick={() => handleColorChange(sc.value)}
-                            className={`w-6 h-6 rounded-full border transition-all hover:scale-110 shrink-0 ${newFilament.color === sc.value ? 'border-white scale-105 shadow-[0_0_6px_rgba(255,255,255,0.4)]' : 'border-white/10'}`}
-                            style={{ background: sc.value }}
-                            title={sc.name}
-                         />
-                      ))}
-                   </div>
-                </div>
-
-                <input type="text" value={newFilament.customName} onChange={e => setNewFilament({...newFilament, customName: e.target.value})} placeholder="Nombre/Marca..." className="w-full bg-white/5 border border-white/10 rounded-lg px-3 py-2 text-[10px] text-white focus:outline-none font-bold" />
-                <button onClick={saveFilament} className={`w-full ${editingFilamentId ? 'bg-yellow-600 hover:bg-yellow-500' : 'bg-pink-600 hover:bg-pink-500'} text-white rounded-lg py-2 flex items-center justify-center font-black text-[10px] transition-all`}>
-                   {editingFilamentId ? 'GUARDAR' : 'AGREGAR'}
+        {/* COL 3: STOCK (MINIMIZABLE / COLLAPSIBLE) */}
+        {isStockOpen && (
+          <div className="lg:col-span-3 bg-slate-900/50 backdrop-blur-2xl border border-white/10 rounded-2xl flex flex-col overflow-hidden shadow-xl animate-in fade-in duration-300">
+            <div className="px-3.5 py-2.5 border-b border-white/10 flex items-center justify-between bg-white/[0.02]">
+              <div className="flex items-center gap-1.5">
+                <Palette className="text-pink-400" size={15} />
+                <h3 className="text-xs font-black text-white uppercase italic">Mi Stock</h3>
+              </div>
+              <div className="flex items-center gap-1">
+                <span className="text-[9px] bg-pink-500/20 text-pink-300 border border-pink-500/30 px-1.5 py-0.5 rounded-full font-black">
+                  {myFilaments.length}
+                </span>
+                <button onClick={() => setIsStockOpen(false)} className="text-gray-400 hover:text-white p-1" title="Minimizar panel de stock">
+                  <ChevronUp size={14} />
                 </button>
-             </div>
+              </div>
+            </div>
+            <div className="p-3 flex flex-col gap-3 flex-1 overflow-y-auto custom-scrollbar">
+               <div className="space-y-2 pb-3 border-b border-white/5">
+                  <div className="flex gap-1.5">
+                     <select value={newFilament.material} onChange={e => setNewFilament({...newFilament, material: e.target.value})} className="flex-1 bg-slate-800 border border-white/10 rounded-lg px-2 py-1 text-xs text-white focus:outline-none font-bold h-[32px]">
+                        <option value="PLA">PLA</option><option value="PETG">PETG</option><option value="TPU">TPU</option>
+                     </select>
+                     <div 
+                        className="relative shrink-0 w-8 h-8 rounded-lg border border-white/20 overflow-hidden flex items-center justify-center" 
+                        style={{ background: newFilament.color || '#ffffff' }}
+                     >
+                        <input 
+                           type="color" 
+                           value={newFilament.color?.startsWith('linear-gradient') ? '#ffffff' : (newFilament.color || '#ffffff')} 
+                           onChange={e => handleColorChange(e.target.value)} 
+                           className="absolute inset-0 opacity-0 cursor-pointer w-full h-full" 
+                        />
+                        {newFilament.color?.startsWith('linear-gradient') && (
+                           <div className="absolute inset-0 pointer-events-none flex items-center justify-center bg-black/10">
+                              <span className="text-[7px] font-black text-white bg-slate-900/80 px-0.5 rounded uppercase tracking-tighter">EFX</span>
+                           </div>
+                        )}
+                     </div>
+                  </div>
 
-             {/* Filters and Copy */}
-             <div className="flex flex-col gap-2 pb-2 border-b border-white/5">
-                <div className="flex items-center justify-between gap-1.5">
-                   <div className="flex gap-0.5 bg-white/5 p-0.5 rounded-lg border border-white/5 flex-1">
-                      {(['all', 'PLA', 'PETG', 'TPU'] as const).map(f => (
-                         <button
-                           key={f}
-                           onClick={() => setFilamentFilter(f)}
-                           className={`flex-1 text-[8px] font-black uppercase tracking-tighter py-1 rounded-md transition-all ${filamentFilter === f ? 'bg-pink-600 text-white shadow-md' : 'text-gray-400 hover:text-white'}`}
-                         >
-                           {f === 'all' ? 'Todo' : f}
-                         </button>
-                      ))}
-                   </div>
-                   <button
-                      onClick={copyAvailableFilaments}
-                      className="p-1 bg-pink-500/10 hover:bg-pink-500/20 text-pink-400 border border-pink-500/20 rounded-lg transition-all flex items-center justify-center gap-1 text-[8px] font-black uppercase tracking-wider px-2 h-[24px]"
-                      title="Copiar lista de colores para cliente"
-                   >
-                      <Copy size={10} />
-                      <span>Copiar</span>
-                   </button>
-                </div>
-             </div>
-             
-             <div className="space-y-2">
-                {myFilaments
-                   .filter(fil => filamentFilter === 'all' || fil.material.toUpperCase() === filamentFilter.toUpperCase())
-                   .map(fil => {
-                      const isGradient = fil.color?.startsWith('linear-gradient');
-                      const borderColor = isGradient ? 'rgba(236, 72, 153, 0.2)' : `${fil.color}44`;
-                      const backgroundColor = isGradient ? 'rgba(236, 72, 153, 0.03)' : `${fil.color}08`;
-                      return (
-                        <div key={fil.id} style={{ borderColor, backgroundColor }} className="p-2 border rounded-2xl flex items-center justify-between group transition-all">
-                           <div className="flex items-center gap-2 overflow-hidden">
-                              <div className="w-3 h-3 rounded-full shrink-0 border border-white/20" style={{ background: fil.color }}></div>
-                              <div className="flex flex-col">
-                                 <span className="text-[10px] font-black text-white uppercase leading-none">{fil.material}</span>
-                                 {fil.customName && <span className="text-[8px] text-gray-400 font-bold italic truncate max-w-[80px]">({fil.customName})</span>}
-                              </div>
-                           </div>
-                           <div className="flex items-center gap-1 opacity-0 group-hover:opacity-100 transition-opacity">
-                              <button onClick={() => editFilament(fil)} className="text-blue-400 hover:text-blue-300 p-1"><Edit3 size={14}/></button>
-                              <button onClick={() => { const n = myFilaments.filter(i => i.id !== fil.id); setMyFilaments(n); syncData(printQueue, n); }} className="text-rose-500 hover:text-rose-400 p-1"><Trash2 size={14}/></button>
-                           </div>
-                        </div>
-                      );
-                   })
-                }
-             </div>
+                  <div className="space-y-1">
+                     <label className="text-[8px] font-black text-gray-500 uppercase tracking-widest ml-0.5">Efectos / Duplex</label>
+                     <div className="grid grid-cols-5 gap-1">
+                        {SPECIAL_COLORS.map(sc => (
+                           <button
+                              key={sc.name}
+                              type="button"
+                              onClick={() => handleColorChange(sc.value)}
+                              className={`w-5 h-5 rounded-full border transition-all hover:scale-110 shrink-0 ${newFilament.color === sc.value ? 'border-white scale-105 shadow-[0_0_6px_rgba(255,255,255,0.4)]' : 'border-white/10'}`}
+                              style={{ background: sc.value }}
+                              title={sc.name}
+                           />
+                        ))}
+                     </div>
+                  </div>
+
+                  <input type="text" value={newFilament.customName} onChange={e => setNewFilament({...newFilament, customName: e.target.value})} placeholder="Nombre/Marca..." className="w-full bg-white/5 border border-white/10 rounded-lg px-2 py-1 text-[10px] text-white focus:outline-none font-bold h-[30px]" />
+                  <button onClick={saveFilament} className={`w-full ${editingFilamentId ? 'bg-yellow-600 hover:bg-yellow-500' : 'bg-pink-600 hover:bg-pink-500'} text-white rounded-lg py-1.5 flex items-center justify-center font-black text-[9px] tracking-wider uppercase transition-all`}>
+                     {editingFilamentId ? 'GUARDAR' : 'AGREGAR FILAMENTO'}
+                  </button>
+               </div>
+
+               {/* Filters and Copy */}
+               <div className="flex flex-col gap-1.5 pb-2 border-b border-white/5">
+                  <div className="flex items-center justify-between gap-1">
+                     <div className="flex gap-0.5 bg-white/5 p-0.5 rounded-lg border border-white/5 flex-1">
+                        {(['all', 'PLA', 'PETG', 'TPU'] as const).map(f => (
+                           <button
+                             key={f}
+                             onClick={() => setFilamentFilter(f)}
+                             className={`flex-1 text-[7px] font-black uppercase tracking-tighter py-0.5 rounded transition-all ${filamentFilter === f ? 'bg-pink-600 text-white shadow-md' : 'text-gray-400 hover:text-white'}`}
+                           >
+                             {f === 'all' ? 'Todo' : f}
+                           </button>
+                        ))}
+                     </div>
+                     <button
+                        onClick={copyAvailableFilaments}
+                        className="p-1 bg-pink-500/10 hover:bg-pink-500/20 text-pink-400 border border-pink-500/20 rounded-lg transition-all flex items-center justify-center gap-1 text-[7px] font-black uppercase tracking-wider px-1.5 h-[22px]"
+                        title="Copiar lista de colores para cliente"
+                     >
+                        <Copy size={9} />
+                        <span>Copiar</span>
+                     </button>
+                  </div>
+               </div>
+               
+               <div className="space-y-1.5 max-h-[220px] overflow-y-auto custom-scrollbar">
+                  {myFilaments
+                     .filter(fil => filamentFilter === 'all' || fil.material.toUpperCase() === filamentFilter.toUpperCase())
+                     .map(fil => {
+                        const isGradient = fil.color?.startsWith('linear-gradient');
+                        const borderColor = isGradient ? 'rgba(236, 72, 153, 0.2)' : `${fil.color}44`;
+                        const backgroundColor = isGradient ? 'rgba(236, 72, 153, 0.03)' : `${fil.color}08`;
+                        return (
+                          <div key={fil.id} style={{ borderColor, backgroundColor }} className="p-1.5 border rounded-xl flex items-center justify-between group transition-all">
+                             <div className="flex items-center gap-1.5 overflow-hidden">
+                                <div className="w-2.5 h-2.5 rounded-full shrink-0 border border-white/20" style={{ background: fil.color }}></div>
+                                <div className="flex flex-col">
+                                   <span className="text-[9px] font-black text-white uppercase leading-none">{fil.material}</span>
+                                   {fil.customName && <span className="text-[7px] text-gray-400 font-bold italic truncate max-w-[70px]">({fil.customName})</span>}
+                                </div>
+                             </div>
+                             <div className="flex items-center gap-0.5 opacity-0 group-hover:opacity-100 transition-opacity">
+                                <button onClick={() => editFilament(fil)} className="text-blue-400 hover:text-blue-300 p-0.5"><Edit3 size={11}/></button>
+                                <button onClick={() => { const n = myFilaments.filter(i => i.id !== fil.id); setMyFilaments(n); syncData(printQueue, n); }} className="text-rose-500 hover:text-rose-400 p-0.5"><Trash2 size={11}/></button>
+                             </div>
+                          </div>
+                        );
+                     })
+                  }
+               </div>
+            </div>
           </div>
-        </div>
+        )}
 
       </div>
 
