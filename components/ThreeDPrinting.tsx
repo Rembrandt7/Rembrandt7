@@ -12,7 +12,7 @@ const libraries = [
     name: 'MakerWorld', 
     href: 'https://makerworld.com/es', 
     icon: (
-      <svg className="w-5 h-5 text-teal-400" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+      <svg className="w-5 h-5 text-teal-400" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round">
         <path d="M21 16V8a2 2 0 0 0-1-1.73l-7-4a2 2 0 0 0-2 0l-7 4A2 2 0 0 0 3 8v8a2 2 0 0 0 1 1.73l7 4a2 2 0 0 0 2 0l7-4A2 2 0 0 0 21 16z"></path>
         <polyline points="3.27 6.96 12 12.01 20.73 6.96"></polyline>
         <line x1="12" y1="22.08" x2="12" y2="12"></line>
@@ -23,13 +23,17 @@ const libraries = [
   { 
     name: 'Creality', 
     href: 'https://www.crealitycloud.com/es', 
-    icon: <Cloud size={19} className="text-cyan-400" />, 
+    icon: <Cloud size={20} className="text-cyan-400" />, 
     color: 'from-cyan-500/20 to-transparent' 
   },
   { 
     name: 'Anycubic', 
     href: 'https://www.makeronline.com/en/', 
-    icon: <Layout size={19} className="text-emerald-400" />, 
+    icon: (
+      <svg className="w-5 h-5 text-emerald-400" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round">
+        <path d="M12 2L2 7l10 5 10-5-10-5zM2 17l10 5 10-5M2 12l10 5 10-5"/>
+      </svg>
+    ), 
     color: 'from-emerald-500/20 to-transparent' 
   },
   { 
@@ -45,7 +49,7 @@ const libraries = [
   { 
     name: 'Printables', 
     href: 'https://www.printables.com/?lang=es', 
-    icon: <Globe size={19} className="text-orange-500" />, 
+    icon: <Globe size={20} className="text-orange-500" />, 
     color: 'from-orange-600/20 to-transparent' 
   },
   { 
@@ -84,37 +88,51 @@ const tools3D = [
   { 
     name: 'Meshy (IA)', 
     href: 'https://www.meshy.ai/workspace', 
-    icon: <img src="/meshy.jpg" alt="Meshy" className="w-5 h-5 rounded object-cover" />, 
+    icon: (
+      <img 
+        src="data:image/jpeg;base64,/9j/4AAQSkZJRgABAQEAYABgAAD/2wBDAAMCAgMCAgMDAwMEAwMEBQgFBQQEBQoHBwYIDAoMDAsKCwsNDhIQDQ4RDgsLEBYQERMUFRUVDA8XGBYUGBIUFRT/2wBDAQMEBAUEBQkFBQkUDQsNFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBQUFBT/wAARCACHAH0DASIAAhEBAxEB/8QAHwAAAQUBAQEBAQEAAAAAAAAAAAECAwQFBgcICQoL/8QAtRAAAgEDAwIEAwUFBAQAAAF9AQIDAAQRBRIhMUEGE1FhByJxFDKBkaEII0KxwRVS0fAkM2JyggkKFhcYGRolJicoKSo0NTY3ODk6Q0RFRkdISUpTVFVWV1hZWmNkZWZnaGlqc3R1dnd4eXqDhIWGh4iJipKTlJWWl5iZmqKjpKWmp6ipqrKztLW2t7i5usLDxMXGx8jJytLT1NXW19jZ2uHi4+Tl5ufo6erx8vP09fb3+Pn6/8QAHwEAAwEBAQEBAQEBAQAAAAAAAAECAwQFBgcICQoL/8QAtREAAgECBAQDBAcFBAQAAQJ3AAECAxEEBSExBhJBUQdhcRMiMoEIFEKRobHBCSMzUvAVYnLRChYkNOEl8RcYGRomJygpKjU2Nzg5OkNERUZHSElKU1RVVldYWVpjZGVmZ2hpanN0dXZ3eHl6goOEhYaHiImKkpOUlZaXmJmaoqOkpaanqKmqsrO0tba3uLm6wsPExcbHyMnK0tPU1dbX2Nna4uPk5ebn6Onq8vP09fb3+Pn6/9oADAMBAAIRAxEAPwD9U6KKKACimJIshYKwYqdrY7H0p9ABRRRQAUUVSvtZsdN/4+rqKFuu1m+b8utZ1KkKUeepJJd3oK9ty7RXPSeOtJT7ksk3/XOJv64p0XjjSpBlpJIh/txn+leV/bWW83L9Zhf/ABL/ADM/a0/5kb9FULHXdP1HAt7uORj0XOGP4Hmr9epTq060eelJSXdO5pe+wUUUVqMKKKKACsfWPFVho7PFJJ5lyBkQxgk/ieg/E1sVVvNNtNQXbc28c3bLKCfzrjxccRKi1hZJT6Nq6/B/12E720OH8NeLY9NkuBeeY6XEpfzEXdh2PP4V3trdRXkKywtvRuhwR/Oua8J+G0szdyXMQdxOyxl1H3QcAiupAC8AYFeBw7RzCjhFHGyT3sra79Xf9DGipqC5xay9a8RWehx5nfdKRlYU5Y+/sPc+lZPjDxhHosMsUE0ccyoWkmkI2Qgdz7/y718ka14z+JP7SF3c6b8I5F8PeFPNaC9+JOrRkifbkMNOhODNg5BlyEyODmox+c1HWlg8vSlNfFJ/DD17vy/4YU6mvLDc9M+Ov7W3g74R2YfxZ4kt9EkZPMTSbcmW9kGDn5FOSOepwv0r4/1z/go94i8WXElt8KfhRqmupzsu76GaYn0PlQBuPq4rsPip8Ffg5+xP8Objx/qnhO5+MPjGS8igGoeKrj7R5lxJuIkYFWRVABONjNwOe9ey/sv/ALRkvx0+HNvq1v4bs/B7RtsksLFw8e3c6jblVx9w9BXyuKwuGp4eWY42TxFnZtvS/ZJCjQlWpyrfEoav8j458RftM/td29s99J4Fk0iy/hK+GZMDPQfvCSTXD2P/AAUe+M2h6g8eqLoF+YZGSS3utKaNsqQCDsdWXkGvt39qv4lJ4b0GVLi4UwafA2oXRU/eYAlEP1I4+or8u/hPYya54q1DUbtFnXymkk8xQ6l5GPGD1/iz+FdPDkcFniqc+FjGEbJNLe+6+SOrJcG85xkcHCKXM7X/AK7H2v8ADX/gqDoGpyR2fjfwrd6CWZVOoaTIbyAEnvGwWRR9A+Pevtn4V/HTSvHWixar4V16z8U6Ow+9bSb/AC2/uPyWjb2OPpX4m/Fvwja6DNbalYx+Va3jGNoVX5UbGQQB0BBJx7Vg/D/4k+Kfhf4mh1vwpq9zomqxHcWiOFkB48uVDw6/XOK9fEcMRw0/bZVN0prs7xfqjpzTKK2U4qeGm7Sj9zXQ/ox0PxFaa9CWgbZKv34X4Zf8R71qV8Hfsl/tkaX+0BbrY3rw6H47s4xJNp8bnybpQOZ7Ynkr3KH5lPPTBb7V8L+Ik121IfC3cXEievuPaujKc6q1qzy/MIcldfdLzR50Kl3yy3NyiiivsDc57xT4gn0lrWK2t5JHkcFnC/Lgc7c+pxW1ZXX2y3WXy3i3fwSDBFPmt47hVEiBwrBhkdCO9SVwU6NeOJnVnUvB2tG23zFrcKw/Fmvf2LYhYj/pc3yx8ZwO7fh29yK2ZpUgieSRgkaKWZj0AHU15XqF+fEGsPcyuyQ87VB6IOg/mT7k187xNm7yzDKlRf72ppHy7v5dPMwrVPZx03Z5H8YtOuPE3gPxhrOq4k8K6FYXV8dOlZsa5dRRMwhlK8/ZAy7WUf64llOEBEnz5+xD+1l8RPjVrmraV4ovrB9KjWNbWysdPitlt1Ebnyk2AfKpVeDzgV77+114uTw5+zh8Q7oMsEUejTWsCdFDSL5KKB2JLAfjXyV/TJ8M3MUmpatJFlJDI6nHLKEWNef+BSflXymX1KMsjxLgvdimr9W7av7z0copU6sa0pxvGMJP52sn632PQP+CoWtJZ/A3QdOI3Tah4hiIQdfLihmZj+e3861v2HWi8C/s8nVb5/Ji2RuEPGWKvJtx6/P+td1+01+zZo/7QdpoEmueJr3QbHQZJpXSFUMcwfby5blThSOOu4+teDfGP4u6J8HfAcOlaY32m0t2ZdPs2AR72UgIHZf4Y1GAM9BgdTmvBw+LpYjJI5VhbyrTlqreeruclHF0aGXVqUXepOySW9k022ePftqfF2bV5D4cgk33+oSLe6kqNxHGD+6i/NensPWuM+GvhtfDfheI3AMV9dHz5FJwE4yoP0U/nmuU+Hvh28+IniW+8X688l1YxT+dLNPz9suOCkQB/hGBuXoFXFdB8WvE02j6ELaJgbvUCY9w42x4JYn37Z96/ZMiyuGUYKFFbrVvu3v/AA/VeDcshkuBqZ1i18K93zv1OL+KXjaLxDcQ6bYHdYW8m5pjwJHwVBA7AZP4ZrntV8KyeHtGtbjUwYry9Be2sF++E7ySH+HjoO9dZ8EfB0XiLxFJqV6rSWmnlSqsMq8pPC49Mg8fSuZ+ImsHxB411e78xpEFw0MYY5AjjOwEfln8aHjHiMa8NT2iryfrsj83zPNK2b4+deru9/LsjN8L+KNV8G+JNO1/Rb1tP1fT5hPbXSk5jcHPPqDjkdCMg1+1X7L/x+tvjR8NtC8Z2QW31DP2fUrFT/AKi4UfvY/oRh1PdWU9a/EXC/xLle+K+zP+CY/ASrnR/il4g8FXE3+h65Zvexo7Er9pgILEDplo2PPfYPSvB4nwPPhljqOlWk+ZPy6o8qvH3edbo/Ze3nS6hSWM7kcbgakrmfAN59o0ZoSSWgkK8+h5rpq+ky/FrHYSniV9pJ/5/ibwlzRTCiiivQLOd8cakllorREndcHy/lPIHUn+Q/GvnL/hcWm6b4+1jRtSvIdOtrVI0juJyFi80DMiluwwwHPHFe7fEiQGaxjPRVZv1X/Cvz08R3X9peItUvCd7XNzJKWbndliec9evevzutlsOIM5xNGu7Rpxiovs3rf8AE+54R4eo8Q1sTTr6KMUk+zeqfyPpL4jf8K/+KXhC/wDDPiW9tr7RrvaZoGmaIuUcOjBlI/iAIIPXFclo/ib4Wfs++HXtPDcKW9sseAdxjTAyeZHPQEknBPU9a+VdX+Enh3WJpGhW+0iWQktJpF7NaBmJ/uA7Cc+1cte/s2eFryaS41HUtauIgPnF1fA5x6sVya5ocC4uFOWGWLtSbu0lv+J21PDfPaPPRw1WPJLfW115o7f48ft2WF9vstGI1p0OI4IHK2cDD7pd8ZlOccAV846B8PPFPxs1qbxF4pvJrTSZCBLf3K7P3YPEduh6DBPTjnqelevab4R+HngeRZNL0aG+vl+7Nc7pmUjphnyB+FN17xHc65KGuHCQRj5UThFH419rk/DmCyeN6KvLrJ6t/wCXoj6PJfDejgZe3zGpzW3S2+bfQq3EljFa2+naXbrYaPZRlIIcALju7erE8mvnX4jeIm8T+Jp5YiBZwZt4fUgdW/Eg/pXV+P8A4rR3Szado7F42JSS8UkckYKx+ue5ry1sgEhcsBxX0FSWnKjzuMs/oYmMctwTTpxerW11sl5H0h8B7GKLwBa3Ctta6uZmfHGAGKj9EH518+a5avp+v6hDJxIk8iFfQB2/+tXsfwF8UWcmny+HpbkQzeY0lqDgF1b72Ce4PIHc1yHxuh0iLxnNPptxFLcSgG7ij5EchPIz6nrX5/lzqYfNsRCcX7+qfS3qfiVByjiJprc8/LFeQORzXtn7FF1Lb/tVfDkw53PdzQsBxujNrNnPqO/4V4m33TngetfUf/BOPwDP4t/aKi13yWWx8NWM13JIekcsqGKKMHuSGkP/AAA+tfQZzUhSy6vKbsuVr71Zfiz0ajtB3P2L+G7HztRGeMIce+W5rua5D4dWvl2d3cH/AJaycfQV19edwvTlTyigpdU397ZNFWpoKKKK+pNjhPiJD/p1lIx+Ro2TrjuO/wCNfnILpLyW4kRSjQ3E0EseSdjrI0boeOodWH0A9a/S74gaebjSUulGTbPlh/sHg/rtP4V+ffxX+KGqfsf/ABi1HU9T0Zta+FPje4+37kVTJpmpYUXAXjkOQJNnRjuYdGz+e/W6mU53iuWHM6sYyir2vbR2899D6jhviWXDWIqz5OdTS0vbY5hjnjLA9OeawfG2n3GpaKPJ5eN/M8tONy+lfRmj/Hr4QfErTPOht7TUElQFgtuhlTI+6QrbwfwFcT440zwrdSLN4Zg1Kycj/VXWChHohzuH4mvRwfGuFrVlQxdOVKW2q0v56H67lviblWOmqOKi6Unpd6r70fL3kbZCpQxyd1fivEviZ49n1m8l0ixeWPT7ZxEwjJ3TOeMe4r6A+N0y+H9LvNSjaOO4EMke0bdxc8KQvrmuo/4JUfs9WXxI+KGq+PddtfteleD2jFjHN8yyalJlg7Z+95SAMB/ekRuqivuqlTRcvU4OO86lRpwwWGlpNXbT3XQxvgx/wSs+KnxK8Nwa34g1DT/ANrcLut7HUoZJr5lI+88S4EIx0Bbd6qvQ4fxm/wCCb/xE+GMFxNpt9Y+J/LBkNvDE1vPIgHLRhmdHHtuB9q/bM4yK81+N1lFJoNlc4XzorjYsjDoGRsj8wv5VjHc/G8vp069eNCqrqWl+qfQ/nlDSQtlA0UkL4BwVZNp4ODyG4II7daQybn3MctkktkZ568n+tfQX7cvg618I/Hq4uLGEQW+tWEWpNGFATzyzxyH058sMfXca+sf2Tv2e/g18WPgT4V8T6h4CsbzWmie01CSS4nKPcQOySPs37CG2q2AOd/tXg5vmlHJ6SxNWLabtpbs/8jix1P6jWlTetnY/PH4d/DXxN8WvE0GheEtHutZv34KIjeXBk43TPwFUdSWxx0zX69/sq/s3WvwG8A2fh+0KX2uX8gudV1GMZ86YrgImekaL09RlurGqXgX4mfD/AMC+PLz4UyaNp3w+1232y2djbwR29pqkLZKTW7hQrFgCCjYIZWA3YBr6Y8B31lBO1vKAl25wkjHO7vt9jX51jMyq5/jKWX1v3VKVnq/iW6129DyXUdaSi9EdjpOnppdhFboANo5wMZNXKKK/W6VONGCpwVktD0NtAooorUYyaJJ4njkUPG4Ksp6EHqK8X+K3wh0nxR4c1DQdf0yPXvDl+oEsNyoI9jkcqy9Qw5BGRzXf+PPEX9mWv2WORYWeMySyMcbIxn+eDz6A1Q8A+L7HUNJtoHuUlgnQS20xOUkjbkDP4/qK/PM4xGX5ljo5dUk4VYaxn2lvy/Nf5bnJUlCc+R7rqfmP8TP+CX97b6k9/wDDnxTGsWC8Wn64GjljyeAs6ZyB23p+NeV3f7Df7RWmyGBLcXcP8LWuvgq34FlxX7U33gvS74swhNuzdTC20H8OlcZ4q0W00S5jitp2YlcuvAK+mT7/AKV5uYVM7yag61dwqwVldr3v0uYzjUpq7s0fiH8Yv2a/iJ8GdH0/WvHFvb29vqFy1nbKuoC5mMmwuxKqDhQFI5OMsK/UX/glP4SHh/8AZJ03UTHtl1zVb6+LFcFlWX7OhPr8sAx7Gvgj/god8aIPix8YrPw1oL/2jpvhZWso/sx3i5v5GAkCY+9giOMY6kSV+un7OPw4Pwi+BHgPwfKu260jSLeC5z/z32BpT/38LV95ldeviMHTq4pcspK9lpbt+B3QnKcU57npP4V5T8etags9BtbSRxGfMNw8jOqLHGgILMzcAfMOfY13XiTxTY+GdNnvLoyzeWBi3tIzNNIxOAqovJySOTgDqSACa/PL47fDX4+/tgeLLqO+Nn8Mfh35nlQaXdXQub6WDOFNwluSCW+8Y/MAUnG5sZrevmmDwetaql89fu3O7B4mnhK6rVPs6pd30PjX9rb4p5fxq+MkX/CMNNe6Vp8Mem2M1upZryTzG3NGP4gzttXHXb6Gv0h/ZJ+FV18FPgL4a8L6syR65N5t5eQhxxNKxcxg/wCwpUH3HvXzLHf/AB/YTkeXTp2+J3xSjTy42DRyC0cjg5X93bjtxufFeu/sa6r4x+Mlxrnxj8d3Pmf2lu07w/p8QZbaytQ+ZWhQno7qqlz8ziH7xzivznijFzzLBOok4UU1ZtWcn0SW9t3c8zMMRPGTlVlpd3PPP8AgqZ4Xtj4f8BeKoV8rVrXUZrBLlG2uEaMyjDDkEPGSD2LE969P/YH/aM1H40/Da4sdeuluvFHhqWK3nu+Q9zbsD5M57lvkZCeuVz3r5u/4KZfGCz8T+MNC+H2mTx3KeHd13qPlncFupAAkW7vsjJLe8mP4a6H/glX4eu21n4h+IpPMOmtBaWETMCFkkDO7DPcqpXPu1YVcGocLwqYjScNY91rovnc5XFqjeW5+tGjaguqabb3K/8ALRcn61drC8EwmHw7bA98kfnW7X6dl1WpXwdGrV+KUU362PQi24psKKKK9Eo//9k=" 
+        alt="Meshy" 
+        className="w-5 h-5 rounded object-cover" 
+      />
+    ), 
     color: 'from-purple-500/20 to-transparent' 
   },
   { 
     name: 'Hitem3D', 
     href: 'https://www.hitem3d.ai/create', 
-    icon: <img src="/hitem3d.png" alt="Hitem3D" className="w-5 h-5 rounded object-contain" />, 
+    icon: (
+      <svg className="w-5 h-5 text-blue-400" viewBox="0 0 24 24" fill="currentColor">
+        <path d="M12 2L2 7l10 5 10-5-10-5zm0 9l-8-4 8-4 8 4-8 4zm-8 3l8 4 8-4v3l-8 4-8-4v-3z"/>
+      </svg>
+    ), 
     color: 'from-blue-500/20 to-transparent' 
   },
   { 
     name: 'Tripo', 
     href: 'https://studio.tripo3d.ai/', 
-    icon: <img src="/tripio.jpg" alt="Tripo" className="w-5 h-5 rounded object-cover" />, 
+    icon: (
+      <svg className="w-5 h-5 text-yellow-400" viewBox="0 0 24 24" fill="currentColor">
+        <path d="M12 2L1 21h22L12 2zm0 4.5l6.5 11.5h-13L12 6.5z"/>
+      </svg>
+    ), 
     color: 'from-yellow-500/20 to-transparent' 
   },
   { 
     name: 'Dora', 
     href: 'https://www.3dkoneko.com/dora', 
-    icon: <Sparkles size={19} className="text-rose-400" />, 
+    icon: <Sparkles size={20} className="text-rose-400" />, 
     color: 'from-rose-500/20 to-transparent' 
   },
   { 
     name: 'Gridfinity', 
     href: 'https://gridfinitygenerator.com/es/editor', 
-    icon: <Database size={19} className="text-orange-400" />, 
+    icon: <Database size={20} className="text-orange-400" />, 
     color: 'from-orange-500/20 to-transparent' 
   },
   { 
     name: 'Multibuild', 
     href: 'https://multibuild.io/parts', 
-    icon: <Settings size={19} className="text-indigo-400" />, 
+    icon: <Settings size={20} className="text-indigo-400" />, 
     color: 'from-indigo-500/20 to-transparent' 
   },
   { 
@@ -131,7 +149,7 @@ const tools3D = [
   { 
     name: 'Bumpmesh', 
     href: 'https://bumpmesh.com/', 
-    icon: <Zap size={19} className="text-amber-400" />, 
+    icon: <Zap size={20} className="text-amber-400" />, 
     color: 'from-amber-500/20 to-transparent' 
   },
 ];
@@ -325,7 +343,7 @@ const ThreeDPrinting: React.FC = () => {
   return (
     <div className="p-4 space-y-6 animate-in fade-in slide-in-from-bottom-4 duration-500 max-w-[1600px] mx-auto pb-20">
       {/* Librerías */}
-      <div className="flex flex-col lg:flex-row lg:items-center justify-between gap-3 bg-blue-600/10 p-4 sm:p-5 rounded-2xl border border-blue-500/20 shadow-lg">
+      <div className="flex flex-col xl:flex-row xl:items-center justify-between gap-4 bg-blue-600/10 p-4 sm:p-5 rounded-2xl border border-blue-500/20 shadow-lg">
         <div className="flex items-center gap-3 shrink-0">
           <div className="p-2.5 bg-blue-600/20 rounded-xl border border-blue-500/30 shrink-0">
             <Globe size={22} className="text-blue-400" />
@@ -336,19 +354,19 @@ const ThreeDPrinting: React.FC = () => {
           </div>
         </div>
         
-        <div className="grid grid-cols-4 sm:grid-cols-4 lg:grid-cols-8 gap-2">
+        <div className="grid grid-cols-4 sm:grid-cols-4 lg:grid-cols-8 gap-2.5 flex-1 xl:max-w-[75%]">
           {libraries.map((tool, idx) => (
             <a
               key={idx}
               href={tool.href}
               target="_blank"
               rel="noopener noreferrer"
-              className={`flex flex-col items-center justify-center p-2 bg-gradient-to-b ${tool.color} border border-white/10 rounded-xl transition-all hover:scale-105 hover:border-white/30 group min-w-[65px] h-[70px]`}
+              className={`flex flex-col items-center justify-center p-2 bg-gradient-to-b ${tool.color} border border-white/10 rounded-2xl transition-all hover:scale-105 hover:border-white/30 group min-w-[65px] h-[78px] shadow-sm`}
             >
-              <div className="mb-1 p-1 bg-gray-900/50 rounded-lg group-hover:scale-110 transition-transform">
+              <div className="mb-1.5 p-1 bg-gray-900/60 rounded-xl group-hover:scale-110 transition-transform flex items-center justify-center w-8 h-8 shrink-0">
                 {tool.icon}
               </div>
-              <span className="text-[8.5px] font-black text-gray-400 group-hover:text-white uppercase tracking-wider text-center line-clamp-1">
+              <span className="text-[9px] font-bold text-gray-300 group-hover:text-white uppercase tracking-wider text-center line-clamp-1 w-full px-0.5">
                 {tool.name}
               </span>
             </a>
@@ -357,7 +375,7 @@ const ThreeDPrinting: React.FC = () => {
       </div>
 
       {/* Herramientas 3D */}
-      <div className="flex flex-col lg:flex-row lg:items-center justify-between gap-3 bg-purple-600/10 p-4 sm:p-5 rounded-2xl border border-purple-500/20 shadow-lg">
+      <div className="flex flex-col xl:flex-row xl:items-center justify-between gap-4 bg-purple-600/10 p-4 sm:p-5 rounded-2xl border border-purple-500/20 shadow-lg">
         <div className="flex items-center gap-3 shrink-0">
           <div className="p-2.5 bg-purple-600/20 rounded-xl border border-purple-500/30 shrink-0">
             <Wrench size={22} className="text-purple-400" />
@@ -368,19 +386,19 @@ const ThreeDPrinting: React.FC = () => {
           </div>
         </div>
         
-        <div className="grid grid-cols-4 sm:grid-cols-4 lg:grid-cols-8 gap-2">
+        <div className="grid grid-cols-4 sm:grid-cols-4 lg:grid-cols-8 gap-2.5 flex-1 xl:max-w-[75%]">
           {tools3D.map((tool, idx) => (
             <a
               key={idx}
               href={tool.href}
               target="_blank"
               rel="noopener noreferrer"
-              className={`flex flex-col items-center justify-center p-2 bg-gradient-to-b ${tool.color} border border-white/10 rounded-xl transition-all hover:scale-105 hover:border-white/30 group min-w-[65px] h-[70px]`}
+              className={`flex flex-col items-center justify-center p-2 bg-gradient-to-b ${tool.color} border border-white/10 rounded-2xl transition-all hover:scale-105 hover:border-white/30 group min-w-[65px] h-[78px] shadow-sm`}
             >
-              <div className="mb-1 p-1 bg-gray-900/50 rounded-lg group-hover:scale-110 transition-transform">
+              <div className="mb-1.5 p-1 bg-gray-900/60 rounded-xl group-hover:scale-110 transition-transform flex items-center justify-center w-8 h-8 shrink-0">
                 {tool.icon}
               </div>
-              <span className="text-[8.5px] font-black text-gray-400 group-hover:text-white uppercase tracking-wider text-center line-clamp-1">
+              <span className="text-[9px] font-bold text-gray-300 group-hover:text-white uppercase tracking-wider text-center line-clamp-1 w-full px-0.5">
                 {tool.name}
               </span>
             </a>
