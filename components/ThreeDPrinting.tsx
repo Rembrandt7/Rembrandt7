@@ -8,52 +8,132 @@ import ThreeDCalculator from './ThreeDCalculator';
    DATA - Audit and Corrected from PDF (stl_pack.pdf)
 ───────────────────────────────────────────────────────────────── */
 const libraries = [
-  { name: 'MakerWorld', href: 'https://makerworld.com/es', icon: <Package size={17} className="text-teal-400" />, color: 'from-teal-500/20 to-transparent' },
-  { name: 'Creality', href: 'https://www.crealitycloud.com/es', icon: <Cloud size={17} className="text-cyan-400" />, color: 'from-cyan-500/20 to-transparent' },
-  { name: 'Anycubic', href: 'https://www.makeronline.com/en/', icon: <Layout size={17} className="text-emerald-400" />, color: 'from-emerald-500/20 to-transparent' },
-  { name: 'Printables', href: 'https://www.printables.com/?lang=es', icon: <Globe size={17} className="text-orange-500" />, color: 'from-orange-600/20 to-transparent' },
-  { name: 'Thingiverse', href: 'https://www.thingiverse.com/', icon: <Box size={17} className="text-blue-500" />, color: 'from-blue-600/20 to-transparent' },
-  { name: 'MyMiniFactory', href: 'https://www.myminifactory.com/', icon: <Sparkles size={17} className="text-pink-400" />, color: 'from-pink-500/20 to-transparent' },
-  { name: 'Thangs', href: 'https://thangs.com/', icon: <Wrench size={17} className="text-cyan-400" />, color: 'from-cyan-500/20 to-transparent' },
-];
-
-const tools3D = [
-  { name: 'Meshy (IA)', href: 'https://www.meshy.ai/workspace', icon: <Sparkles size={17} className="text-purple-400" />, color: 'from-purple-500/20 to-transparent' },
-  { name: 'Hitem3D', href: 'https://www.hitem3d.ai/create', icon: <Move size={17} className="text-blue-400" />, color: 'from-blue-500/20 to-transparent' },
-  { name: 'Dora', href: 'https://www.3dkoneko.com/dora', icon: <Sparkles size={17} className="text-rose-400" />, color: 'from-rose-500/20 to-transparent' },
-  { name: 'Gridfinity', href: 'https://gridfinitygenerator.com/es/editor', icon: <Database size={17} className="text-orange-400" />, color: 'from-orange-500/20 to-transparent' },
-  { name: 'Multibuild', href: 'https://multibuild.io/parts', icon: <Settings size={17} className="text-indigo-400" />, color: 'from-indigo-500/20 to-transparent' },
   { 
-    name: 'Fusion', 
-    href: 'https://fusion.online.autodesk.com/', 
+    name: 'MakerWorld', 
+    href: 'https://makerworld.com/es', 
     icon: (
-      <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 100 100" className="w-4.5 h-4.5">
-        <defs>
-          <linearGradient id="fusion-3d-1" x1="0%" y1="0%" x2="100%" y2="100%">
-            <stop offset="0%" stopColor="#FF9B00"/>
-            <stop offset="50%" stopColor="#FF5100"/>
-            <stop offset="100%" stopColor="#D41400"/>
-          </linearGradient>
-          <linearGradient id="fusion-3d-2" x1="0%" y1="100%" x2="100%" y2="0%">
-            <stop offset="0%" stopColor="#D41400"/>
-            <stop offset="100%" stopColor="#FF5100"/>
-          </linearGradient>
-          <linearGradient id="fusion-3d-3" x1="100%" y1="0%" x2="0%" y2="100%">
-            <stop offset="0%" stopColor="#FF3300"/>
-            <stop offset="100%" stopColor="#5A0000"/>
-          </linearGradient>
-        </defs>
-        <polygon points="50,2 98,24 98,76 50,98 2,76 2,24" fill="url(#fusion-3d-1)" opacity="0.2" stroke="url(#fusion-3d-1)" strokeWidth="1.5"/>
-        <polygon points="8,8 92,8 92,26 34,26 34,46 82,46 82,64 34,64 34,92 8,92" fill="url(#fusion-3d-1)"/>
-        <polygon points="92,8 92,26 97,21 97,3" fill="url(#fusion-3d-2)"/>
-        <polygon points="82,46 82,64 87,59 87,41" fill="url(#fusion-3d-2)"/>
-        <polygon points="8,92 34,92 34,97 8,97" fill="url(#fusion-3d-2)"/>
-        <polygon points="8,8 34,26 34,97 8,92" fill="url(#fusion-3d-3)" opacity="0.3"/>
+      <svg className="w-5 h-5 text-teal-400" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+        <path d="M21 16V8a2 2 0 0 0-1-1.73l-7-4a2 2 0 0 0-2 0l-7 4A2 2 0 0 0 3 8v8a2 2 0 0 0 1 1.73l7 4a2 2 0 0 0 2 0l7-4A2 2 0 0 0 21 16z"></path>
+        <polyline points="3.27 6.96 12 12.01 20.73 6.96"></polyline>
+        <line x1="12" y1="22.08" x2="12" y2="12"></line>
+      </svg>
+    ), 
+    color: 'from-teal-500/20 to-transparent' 
+  },
+  { 
+    name: 'Creality', 
+    href: 'https://www.crealitycloud.com/es', 
+    icon: <Cloud size={19} className="text-cyan-400" />, 
+    color: 'from-cyan-500/20 to-transparent' 
+  },
+  { 
+    name: 'Anycubic', 
+    href: 'https://www.makeronline.com/en/', 
+    icon: <Layout size={19} className="text-emerald-400" />, 
+    color: 'from-emerald-500/20 to-transparent' 
+  },
+  { 
+    name: 'Cults3D', 
+    href: 'https://cults3d.com/es', 
+    icon: (
+      <svg className="w-5 h-5 text-purple-400" viewBox="0 0 24 24" fill="currentColor">
+        <path d="M12 2L4.5 20.29l.71.71L12 18l6.79 3 .71-.71L12 2z"/>
+      </svg>
+    ), 
+    color: 'from-purple-500/20 to-transparent' 
+  },
+  { 
+    name: 'Printables', 
+    href: 'https://www.printables.com/?lang=es', 
+    icon: <Globe size={19} className="text-orange-500" />, 
+    color: 'from-orange-600/20 to-transparent' 
+  },
+  { 
+    name: 'Thingiverse', 
+    href: 'https://www.thingiverse.com/', 
+    icon: (
+      <svg className="w-5 h-5 text-blue-400" viewBox="0 0 24 24" fill="currentColor">
+        <path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm0 18c-4.41 0-8-3.59-8-8s3.59-8 8-8 8 3.59 8 8-3.59 8-8 8zm-1-13h2v6h-2zm0 8h2v2h-2z"/>
+      </svg>
+    ), 
+    color: 'from-blue-600/20 to-transparent' 
+  },
+  { 
+    name: 'MyMiniFactory', 
+    href: 'https://www.myminifactory.com/', 
+    icon: (
+      <svg className="w-5 h-5 text-green-400" viewBox="0 0 24 24" fill="currentColor">
+        <path d="M12 2L2 19h20L12 2zm0 4.83L18.17 17H5.83L12 6.83z"/>
+      </svg>
+    ), 
+    color: 'from-green-500/20 to-transparent' 
+  },
+  { 
+    name: 'Thangs', 
+    href: 'https://thangs.com/', 
+    icon: (
+      <svg className="w-5 h-5 text-orange-400" viewBox="0 0 24 24" fill="currentColor">
+        <path d="M12 2L2 7v10l10 5 10-5V7l-10-5zm0 2.18L19.82 8 12 11.82 4.18 8 12 4.18zM4 15.18l7 3.5v-7.18l-7-3.5v7.18zm16 0l-7 3.5v-7.18l7-3.5v7.18z"/>
       </svg>
     ), 
     color: 'from-orange-500/20 to-transparent' 
   },
-  { name: 'Bumpmesh', href: 'https://bumpmesh.com/', icon: <Zap size={17} className="text-amber-400" />, color: 'from-amber-500/20 to-transparent' },
+];
+
+const tools3D = [
+  { 
+    name: 'Meshy (IA)', 
+    href: 'https://www.meshy.ai/workspace', 
+    icon: <img src="/meshy.jpg" alt="Meshy" className="w-5 h-5 rounded object-cover" />, 
+    color: 'from-purple-500/20 to-transparent' 
+  },
+  { 
+    name: 'Hitem3D', 
+    href: 'https://www.hitem3d.ai/create', 
+    icon: <img src="/hitem3d.png" alt="Hitem3D" className="w-5 h-5 rounded object-contain" />, 
+    color: 'from-blue-500/20 to-transparent' 
+  },
+  { 
+    name: 'Tripo', 
+    href: 'https://studio.tripo3d.ai/', 
+    icon: <img src="/tripio.jpg" alt="Tripo" className="w-5 h-5 rounded object-cover" />, 
+    color: 'from-yellow-500/20 to-transparent' 
+  },
+  { 
+    name: 'Dora', 
+    href: 'https://www.3dkoneko.com/dora', 
+    icon: <Sparkles size={19} className="text-rose-400" />, 
+    color: 'from-rose-500/20 to-transparent' 
+  },
+  { 
+    name: 'Gridfinity', 
+    href: 'https://gridfinitygenerator.com/es/editor', 
+    icon: <Database size={19} className="text-orange-400" />, 
+    color: 'from-orange-500/20 to-transparent' 
+  },
+  { 
+    name: 'Multibuild', 
+    href: 'https://multibuild.io/parts', 
+    icon: <Settings size={19} className="text-indigo-400" />, 
+    color: 'from-indigo-500/20 to-transparent' 
+  },
+  { 
+    name: 'Fusion', 
+    href: 'https://fusion.online.autodesk.com/', 
+    icon: (
+      <svg viewBox="0 0 24 24" className="w-5 h-5">
+        <rect width="24" height="24" rx="5" fill="#FF5100"/>
+        <path d="M6 5h12v3.5h-8.5v3h7v3.5h-7v4H6V5z" fill="#FFFFFF"/>
+      </svg>
+    ), 
+    color: 'from-orange-500/20 to-transparent' 
+  },
+  { 
+    name: 'Bumpmesh', 
+    href: 'https://bumpmesh.com/', 
+    icon: <Zap size={19} className="text-amber-400" />, 
+    color: 'from-amber-500/20 to-transparent' 
+  },
 ];
 
 // Helper to create reliable Drive links
@@ -256,7 +336,7 @@ const ThreeDPrinting: React.FC = () => {
           </div>
         </div>
         
-        <div className="grid grid-cols-3 sm:grid-cols-4 lg:grid-cols-7 gap-2">
+        <div className="grid grid-cols-4 sm:grid-cols-4 lg:grid-cols-8 gap-2">
           {libraries.map((tool, idx) => (
             <a
               key={idx}
@@ -288,7 +368,7 @@ const ThreeDPrinting: React.FC = () => {
           </div>
         </div>
         
-        <div className="grid grid-cols-3 sm:grid-cols-4 lg:grid-cols-7 gap-2">
+        <div className="grid grid-cols-4 sm:grid-cols-4 lg:grid-cols-8 gap-2">
           {tools3D.map((tool, idx) => (
             <a
               key={idx}
