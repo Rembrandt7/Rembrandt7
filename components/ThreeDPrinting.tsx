@@ -152,6 +152,30 @@ const tools3D = [
     icon: <Zap size={20} className="text-amber-400" />, 
     color: 'from-amber-500/20 to-transparent' 
   },
+  { 
+    name: 'Letras', 
+    href: 'https://proled3d.com/?lang=es', 
+    icon: (
+      <svg className="w-5 h-5 text-pink-400" viewBox="0 0 24 24" fill="currentColor">
+        <path d="M9.93 13.5h4.14L12 7.98 9.93 13.5zM20 2H4c-1.1 0-2 .9-2 2v16c0 1.1.9 2 2 2h16c1.1 0 2-.9 2-2V4c0-1.1-.9-2-2-2zm-4.05 16.5l-1.14-3H9.17l-1.12 3H5.96l5.11-13h1.86l5.11 13h-2.09z"/>
+      </svg>
+    ), 
+    color: 'from-pink-500/20 to-transparent' 
+  },
+  { 
+    name: 'Guilloche', 
+    href: 'https://guillochegenerator.com/', 
+    icon: (
+      <svg className="w-5 h-5 text-teal-300" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round">
+        <circle cx="12" cy="12" r="9" />
+        <ellipse cx="12" cy="12" rx="9" ry="4" transform="rotate(0 12 12)" />
+        <ellipse cx="12" cy="12" rx="9" ry="4" transform="rotate(45 12 12)" />
+        <ellipse cx="12" cy="12" rx="9" ry="4" transform="rotate(90 12 12)" />
+        <ellipse cx="12" cy="12" rx="9" ry="4" transform="rotate(135 12 12)" />
+      </svg>
+    ), 
+    color: 'from-teal-500/20 to-transparent' 
+  },
 ];
 
 // Helper to create reliable Drive links
@@ -386,14 +410,14 @@ const ThreeDPrinting: React.FC = () => {
           </div>
         </div>
         
-        <div className="grid grid-cols-4 sm:grid-cols-4 lg:grid-cols-8 gap-2.5 flex-1 xl:max-w-[75%]">
+        <div className="grid grid-cols-5 sm:grid-cols-5 lg:grid-cols-10 gap-2 flex-1 xl:max-w-[80%]">
           {tools3D.map((tool, idx) => (
             <a
               key={idx}
               href={tool.href}
               target="_blank"
               rel="noopener noreferrer"
-              className={`flex flex-col items-center justify-center p-2 bg-gradient-to-b ${tool.color} border border-white/10 rounded-2xl transition-all hover:scale-105 hover:border-white/30 group min-w-[65px] h-[78px] shadow-sm`}
+              className={`flex flex-col items-center justify-center p-2 bg-gradient-to-b ${tool.color} border border-white/10 rounded-2xl transition-all hover:scale-105 hover:border-white/30 group min-w-[58px] h-[78px] shadow-sm`}
             >
               <div className="mb-1.5 p-1 bg-gray-900/60 rounded-xl group-hover:scale-110 transition-transform flex items-center justify-center w-8 h-8 shrink-0">
                 {tool.icon}
