@@ -265,12 +265,14 @@ const INITIAL_CONFIG: AppConfig = {
     },
     {
         id: 'ut-5',
-        title: '3D',
+        title: 'Impresión 3D',
         gradient: 'from-indigo-400 to-blue-600',
         iconSvg: '<svg xmlns="http://www.w3.org/2000/svg" class="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M21 16V8a2 2 0 00-1-1.73l-7-4a2 2 0 00-2 0l-7 4A2 2 0 003 8v8a2 2 0 001 1.73l7 4a2 2 0 002 0l7-4A2 2 0 0021 16z" /></svg>',
         items: [
             { id: 'ut-5-sam', name: "Sam", description: "Segment Anything", href: "https://aidemos.meta.com/segment-anything/gallery/", colorClass: "hover:shadow-indigo-500/20", iconSvg: '<svg class="w-full h-full text-indigo-400" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M21 16V8a2 2 0 0 0-1-1.73l-7-4a2 2 0 0 0-2 0l-7 4A2 2 0 0 0 3 8v8a2 2 0 0 0 1 1.73l7 4a2 2 0 0 0 2 0l7-4A2 2 0 0 0 21 16z"></path><polyline points="3.27 6.96 12 12.01 20.73 6.96"></polyline><line x1="12" y1="22.08" x2="12" y2="12"></line></svg>' },
-            { id: 'ut-5-isoremb', name: "isoremb", description: "Isometrías Instalaciones", href: "https://isometrias-instalaciones.vercel.app/", colorClass: "hover:shadow-orange-500/20", iconSvg: '<svg class="w-full h-full text-orange-400" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><rect x="3" y="3" width="18" height="18" rx="4"></rect><path d="M7 7h10v10H7z"></path><path d="M7 12h10"></path></svg>' }
+            { id: 'ut-5-isoremb', name: "isoremb", description: "Isometrías Instalaciones", href: "https://isometrias-instalaciones.vercel.app/", colorClass: "hover:shadow-orange-500/20", iconSvg: '<svg class="w-full h-full text-orange-400" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><rect x="3" y="3" width="18" height="18" rx="4"></rect><path d="M7 7h10v10H7z"></path><path d="M7 12h10"></path></svg>' },
+            { id: 'ut-5-letras', name: "Letras", description: "ProLed3D Letras y Carteles", href: "https://proled3d.com/?lang=es", colorClass: "hover:shadow-pink-500/20", iconSvg: '<svg class="w-full h-full text-pink-400" viewBox="0 0 24 24" fill="currentColor"><path d="M9.93 13.5h4.14L12 7.98 9.93 13.5zM20 2H4c-1.1 0-2 .9-2 2v16c0 1.1.9 2 2 2h16c1.1 0 2-.9 2-2V4c0-1.1-.9-2-2-2zm-4.05 16.5l-1.14-3H9.17l-1.12 3H5.96l5.11-13h1.86l5.11 13h-2.09z"/></svg>' },
+            { id: 'ut-5-guilloche', name: "Guilloche", description: "Generador de Patrones", href: "https://guillochegenerator.com/", colorClass: "hover:shadow-teal-500/20", iconSvg: '<svg class="w-full h-full text-teal-300" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round"><circle cx="12" cy="12" r="9" /><ellipse cx="12" cy="12" rx="9" ry="4" transform="rotate(0 12 12)" /><ellipse cx="12" cy="12" rx="9" ry="4" transform="rotate(45 12 12)" /><ellipse cx="12" cy="12" rx="9" ry="4" transform="rotate(90 12 12)" /><ellipse cx="12" cy="12" rx="9" ry="4" transform="rotate(135 12 12)" /></svg>' }
         ]
     },
     {
