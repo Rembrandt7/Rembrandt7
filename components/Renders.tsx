@@ -163,7 +163,7 @@ const Renders: React.FC = () => {
       
       {/* Top Icons Bar */}
       <div className="flex flex-wrap justify-center gap-6 mb-8 pb-6 border-b border-gray-700">
-          <RenderLinkIcon href="https://app.rendair.ai/generate/image" name="Rendair" colorClass="text-teal-400 hover:border-teal-400">
+          <RenderLinkIcon href="https://rendair.ai/dashboard" name="Rendair" colorClass="text-teal-400 hover:border-teal-400">
               <svg className="h-8 w-8" viewBox="0 0 64 64" xmlns="http://www.w3.org/2000/svg">
                   <circle cx="32" cy="32" r="28" fill="currentColor"/>
                   <text x="32" y="42" fontFamily="Arial, sans-serif" fontSize="28" fontWeight="bold" fill="black" textAnchor="middle">r</text>

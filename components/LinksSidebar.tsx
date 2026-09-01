@@ -111,7 +111,7 @@ const LinksSidebar: React.FC<LinksSidebarProps> = ({ onClose }) => {
                     </LinkCard>
 
                     
-                    <LinkCard href="https://app.rendair.ai/generate/image" name="Rendair" description="Generador de imágenes de Rendair AI." hoverColor="hover:ring-2 hover:ring-teal-400 focus:ring-teal-400">
+                    <LinkCard href="https://rendair.ai/dashboard" name="Rendair" description="Generador de imágenes de Rendair AI." hoverColor="hover:ring-2 hover:ring-teal-400 focus:ring-teal-400">
                         <svg className="h-10 w-10 transition-transform group-hover:scale-110" viewBox="0 0 64 64" xmlns="http://www.w3.org/2000/svg">
                             <circle cx="32" cy="32" r="28" fill="#4fd1c5"/>
                             <text x="32" y="42" fontFamily="Arial, sans-serif" fontSize="28" fontWeight="bold" fill="black" textAnchor="middle">r</text>
