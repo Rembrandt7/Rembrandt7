@@ -9,7 +9,12 @@ import SmartTextarea from './common/SmartTextarea';
 import { SUPABASE_CONFIG } from '../utils/constants';
 import { useLinks } from '../contexts/LinkContext';
 import { cleanJsonResponse } from '../utils/jsonUtils';
-import { History, Trash2, Mail, MessageSquare, Star, Sparkles, Send, Check, RefreshCw, Pencil, Save, Copy, AlertTriangle, Mic, MicOff, RotateCcw, Bot, Newspaper, ExternalLink } from 'lucide-react';
+import { 
+  History, Trash2, Mail, MessageSquare, Star, Sparkles, Send, Check, 
+  RefreshCw, Pencil, Save, Copy, AlertTriangle, Mic, MicOff, RotateCcw, 
+  Bot, Newspaper, ExternalLink, Bookmark, FileCheck, FileCode, Layers, 
+  Building2, FileText, CheckCircle2, Clock
+} from 'lucide-react';
 import { motion, AnimatePresence } from 'motion/react';
 import { toast } from 'sonner';
 import { getFriendlyAiErrorMessage, isQuotaError } from '../utils/aiError';
@@ -26,6 +31,21 @@ interface GeneratedContent {
   improvedIdea?: string;
 }
 
+interface EmailPreset {
+  id: string;
+  title: string;
+  subtitle: string;
+  badgeBg: string;
+  icon: React.ReactNode;
+  generate: (greeting: string, project: string) => {
+    emailSubject: string;
+    emailBody: string;
+    whatsappMessage: string;
+    idea: string;
+    improvedIdea?: string;
+  };
+}
+
 interface EmailGeneratorProps {
     attachedImages: ReferenceImage[];
     onAttachmentsChange: (images: ReferenceImage[]) => void;
@@ -40,6 +60,123 @@ const DEFAULT_TITLES = ['', 'Sr.', 'Sra.', 'Lic.', 'Arq.', 'Ing.', 'Dr.', 'Dra.'
 const emailDomains = ['@javer', '@gmail', '@outlook', '@hotmail', 'Personalizado'];
 const emailTlds = ['.com.mx', '.com', '.es', '.mx'];
 const predefinedProjects = ['Valle de Los Encinos', 'Cumbre del Norte', 'Xandora'];
+
+const EMAIL_PRESETS: EmailPreset[] = [
+  {
+    id: 'revision',
+    title: 'Envío para Revisión',
+    subtitle: 'Validación y comentarios',
+    badgeBg: 'bg-blue-600/20 text-blue-400 border border-blue-500/30',
+    icon: <FileCheck size={18} className="text-blue-400" />,
+    generate: (greeting: string, project: string) => {
+      const projClean = project.trim();
+      const projText = projClean ? ` de ${projClean}` : '';
+      const projSubject = projClean ? ` - ${projClean}` : '';
+      return {
+        emailSubject: `Envío de Proyecto para Revisión${projSubject}`,
+        emailBody: `${greeting},\n\nPor medio del presente correo, te hago llegar el proyecto${projText} para su debida revisión y validación correspondiente.\n\nAgradezco de antemano tu tiempo para revisar la información y quedo a la espera de tus observaciones o visto bueno para continuar con las siguientes etapas.\n\nCualquier duda o comentario, quedo a tus órdenes.\n\nAtte.\n\nArq. Rembrandt Blanco Arrambide`,
+        whatsappMessage: `${greeting}, te acabo de enviar por correo el proyecto${projText} para su debida revisión. Quedo al pendiente de tus comentarios o visto bueno. ¡Saludos!`,
+        idea: `Envío de proyecto${projText} para su debida revisión, validación y visto bueno.`,
+        improvedIdea: `Envío formal de proyecto para validación técnica, revisión y visto bueno.`
+      };
+    }
+  },
+  {
+    id: 'autocad',
+    title: 'Proyecto en AutoCAD',
+    subtitle: 'Archivos .DWG de AutoCAD',
+    badgeBg: 'bg-red-600/20 text-red-400 border border-red-500/30',
+    icon: <FileCode size={18} className="text-red-400" />,
+    generate: (greeting: string, project: string) => {
+      const projClean = project.trim();
+      const projText = projClean ? ` correspondientes a ${projClean}` : '';
+      const projSubject = projClean ? ` - ${projClean}` : '';
+      return {
+        emailSubject: `Envío de Proyecto en AutoCAD${projSubject}`,
+        emailBody: `${greeting},\n\nAdjunto al presente correo te comparto los archivos del proyecto${projText} en formato AutoCAD (.dwg) para su integración y seguimiento técnico.\n\nPor favor me confirmas de recibido una vez que los hayas podido descargar y abrir correctamente.\n\nQuedo a tu disposición para cualquier duda o consulta técnica.\n\nAtte.\n\nArq. Rembrandt Blanco Arrambide`,
+        whatsappMessage: `${greeting}, te compartí por correo los archivos de AutoCAD (.dwg)${projClean ? ` de ${projClean}` : ''}. Por favor me confirmas de recibido cuando los puedas abrir. ¡Gracias!`,
+        idea: `Envío de archivos de proyecto en formato AutoCAD (.dwg) para su consulta técnica y seguimiento.`,
+        improvedIdea: `Envío de proyecto en formato editable AutoCAD (.dwg) con confirmación de recepción solicitada.`
+      };
+    }
+  },
+  {
+    id: 'dwg',
+    title: 'Archivos en DWG',
+    subtitle: 'Planos y editables DWG',
+    badgeBg: 'bg-amber-600/20 text-amber-400 border border-amber-500/30',
+    icon: <Layers size={18} className="text-amber-400" />,
+    generate: (greeting: string, project: string) => {
+      const projClean = project.trim();
+      const projText = projClean ? ` del proyecto ${projClean}` : '';
+      const projSubject = projClean ? ` - ${projClean}` : '';
+      return {
+        emailSubject: `Envío de Archivos DWG${projSubject}`,
+        emailBody: `${greeting},\n\nTe hago entrega de los archivos digitales editables en formato DWG${projText}, actualizados a la fecha y listos para su compatibilización y trabajo.\n\nQuedo al pendiente de cualquier ajuste o requerimiento adicional que se necesite.\n\nAtte.\n\nArq. Rembrandt Blanco Arrambide`,
+        whatsappMessage: `${greeting}, te he enviado los archivos DWG actualizados${projText} a tu correo. Quedo atento a cualquier detalle.`,
+        idea: `Envío de planos y archivos digitales editables en formato DWG para su compatibilización y seguimiento.`,
+        improvedIdea: `Entrega de planos y archivos DWG actualizados para compatibilización interdisciplinaria.`
+      };
+    }
+  },
+  {
+    id: 'areas-municipales',
+    title: 'Áreas Municipales',
+    subtitle: 'Cuadros y donaciones',
+    badgeBg: 'bg-emerald-600/20 text-emerald-400 border border-emerald-500/30',
+    icon: <Building2 size={18} className="text-emerald-400" />,
+    generate: (greeting: string, project: string) => {
+      const projClean = project.trim();
+      const projText = projClean ? ` ${projClean}` : '';
+      const projSubject = projClean ? ` - ${projClean}` : '';
+      return {
+        emailSubject: `Envío de Áreas Municipales${projSubject}`,
+        emailBody: `${greeting},\n\nPor medio de la presente, te hago entrega del desglose y cuadros de áreas municipales correspondientes al desarrollo${projText}, para su respectiva gestión y trámite correspondiente.\n\nAgradezco me informes si requieres alguna información complementaria o ajuste en la documentación para avanzar con el proceso.\n\nQuedo a tu disposición.\n\nAtte.\n\nArq. Rembrandt Blanco Arrambide`,
+        whatsappMessage: `${greeting}, te acabo de mandar por correo los cuadros de áreas municipales${projClean ? ` de ${projClean}` : ''}. Me avisas si requieres algún dato o documento adicional. ¡Saludos!`,
+        idea: `Envío de cuadro de áreas municipales, donaciones y superficies correspondientes al desarrollo para su trámite.`,
+        improvedIdea: `Entrega formal de cuadros de áreas municipales y donaciones para gestión de trámite institucional.`
+      };
+    }
+  },
+  {
+    id: 'info-solicitada',
+    title: 'Información Solicitada',
+    subtitle: 'Documentación requerida',
+    badgeBg: 'bg-purple-600/20 text-purple-400 border border-purple-500/30',
+    icon: <FileText size={18} className="text-purple-400" />,
+    generate: (greeting: string, project: string) => {
+      const projClean = project.trim();
+      const projText = projClean ? ` al proyecto ${projClean}` : '';
+      const projSubject = projClean ? ` - ${projClean}` : '';
+      return {
+        emailSubject: `Envío de Información Solicitada${projSubject}`,
+        emailBody: `${greeting},\n\nEn atención a lo solicitado, te comparto la información y documentación técnica correspondiente${projText} para su debido seguimiento y análisis.\n\nQuedo a tus órdenes en caso de requerir cualquier aclaración o información adicional.\n\nAtte.\n\nArq. Rembrandt Blanco Arrambide`,
+        whatsappMessage: `${greeting}, ya te mandé por correo la información técnica que me solicitaste${projClean ? ` de ${projClean}` : ''}. Quedo al pendiente de tus notas o comentarios. ¡Saludos!`,
+        idea: `Envío de la información y documentación técnica solicitada para dar seguimiento al proyecto.`,
+        improvedIdea: `Atención y entrega formal de la información técnica solicitada para el avance del proyecto.`
+      };
+    }
+  },
+  {
+    id: 'seguimiento',
+    title: 'Seguimiento de Proyecto',
+    subtitle: 'Estatus y visto bueno',
+    badgeBg: 'bg-cyan-600/20 text-cyan-400 border border-cyan-500/30',
+    icon: <Clock size={18} className="text-cyan-400" />,
+    generate: (greeting: string, project: string) => {
+      const projClean = project.trim();
+      const projText = projClean ? ` ${projClean}` : '';
+      const projSubject = projClean ? ` - ${projClean}` : '';
+      return {
+        emailSubject: `Seguimiento a Proyecto${projSubject}`,
+        emailBody: `${greeting},\n\nEspero te encuentres muy bien. Te contacto para dar seguimiento cordial al estatus del proyecto${projText} enviado anteriormente, y consultar si cuentas con alguna observación o visto bueno para continuar con el proceso.\n\nAgradezco tu tiempo y atención, quedando a tus órdenes para cualquier duda.\n\nAtte.\n\nArq. Rembrandt Blanco Arrambide`,
+        whatsappMessage: `${greeting}, gusto en saludarte. Quería consultar contigo si has tenido oportunidad de revisar el avance de ${projClean || 'el proyecto'}. Quedo a tus órdenes.`,
+        idea: `Seguimiento cordial para conocer el estatus y visto bueno del proyecto enviado.`,
+        improvedIdea: `Seguimiento ejecutivo cordial sobre el estatus de revisión y visto bueno del proyecto.`
+      };
+    }
+  }
+];
 
 const getDBValue = (obj: any, keysToCheck: string[] | string): any => {
     if (!obj) return undefined;
@@ -130,6 +267,7 @@ const EmailGenerator: React.FC<EmailGeneratorProps> = ({ attachedImages, onAttac
     const [generatedContent, setGeneratedContent] = useState<GeneratedContent | null>(null);
     const [originalContent, setOriginalContent] = useState<GeneratedContent | null>(null);
     const [copied, setCopied] = useState<CopiedState>(null);
+    const [selectedPreset, setSelectedPreset] = useState<string | null>(null);
     const [isDraggingOver, setIsDraggingOver] = useState(false);
     const [useNickname, setUseNickname] = useState(true);
     const [isAdjusting, setIsAdjusting] = useState<'email' | 'whatsapp' | null>(null);
@@ -246,6 +384,7 @@ const EmailGenerator: React.FC<EmailGeneratorProps> = ({ attachedImages, onAttac
         setRecipientEmailUser('');
         setCustomDomain('');
         setSuggestion('');
+        setSelectedPreset(null);
         onAttachmentsChange([]);
         toast.info("Todos los campos han sido reiniciados");
     }, [onAttachmentsChange]);
@@ -408,6 +547,41 @@ const EmailGenerator: React.FC<EmailGeneratorProps> = ({ attachedImages, onAttac
         const domainPart = recipientEmailDomain === 'Personalizado' ? `@${customDomain}` : recipientEmailDomain;
         return `${recipientEmailUser}${domainPart}${recipientEmailTld}`;
     }, [recipientEmailUser, recipientEmailDomain, customDomain, recipientEmailTld]);
+
+    const getPresetGreeting = useCallback(() => {
+        const hour = new Date().getHours();
+        const timeGreeting = hour < 12 ? 'Buen día' : hour < 19 ? 'Buenas tardes' : 'Buenas noches';
+        
+        const idx = parseInt(selectedContactIndex, 10);
+        const contact = !isNaN(idx) ? sortedContacts[idx] : null;
+        const dataApodo = contact ? getDBValue(contact, ['apodo', 'alias']) : null;
+        
+        const finalRecipient = (useNickname && dataApodo) 
+            ? dataApodo 
+            : (recipientName ? (recipientTitle ? `${recipientTitle} ${recipientName}` : recipientName) : '');
+        return finalRecipient ? `${timeGreeting} ${finalRecipient}` : timeGreeting;
+    }, [selectedContactIndex, sortedContacts, useNickname, recipientName, recipientTitle]);
+
+    const handleApplyPreset = (preset: EmailPreset) => {
+        setSelectedPreset(preset.id);
+        const currentGreeting = getPresetGreeting();
+        const content = preset.generate(currentGreeting, project);
+        
+        setIdea(content.idea);
+        const generated: GeneratedContent = {
+            emailSubject: content.emailSubject,
+            emailBody: content.emailBody,
+            whatsappMessage: content.whatsappMessage,
+            improvedIdea: content.improvedIdea
+        };
+        setGeneratedContent(generated);
+        setOriginalContent(generated);
+        toast.success(`Plantilla "${preset.title}" cargada en formato estándar`);
+    };
+
+    const handleClearPreset = () => {
+        setSelectedPreset(null);
+    };
 
     const handleGenerate = useCallback(async (overrideIdea?: string) => {
         const targetIdea = typeof overrideIdea === 'string' ? overrideIdea : idea;
@@ -907,6 +1081,74 @@ const EmailGenerator: React.FC<EmailGeneratorProps> = ({ attachedImages, onAttac
                             <select value={recipientEmailTld} onChange={e => setRecipientEmailTld(e.target.value)} className="bg-gray-900 p-1.5 rounded-md text-xs font-bold text-gray-400 outline-none">{emailTlds.map(t => <option key={t} value={t}>{t}</option>)}</select>
                         </div>
                     </div>
+
+                    {/* Tablitas de Correos Preestablecidos */}
+                    <div className="bg-gray-900/40 p-4 rounded-xl border border-gray-800/50 space-y-3">
+                        <div className="flex items-center justify-between">
+                            <div className="flex items-center gap-2">
+                                <div className="p-1.5 bg-gradient-to-br from-indigo-600/30 to-purple-600/30 text-indigo-400 rounded-lg border border-indigo-500/30">
+                                    <Bookmark size={15} />
+                                </div>
+                                <div>
+                                    <h3 className="text-xs font-black uppercase text-white tracking-wider flex items-center gap-2">
+                                        <span>Plantillas Preestablecidas</span>
+                                        <span className="text-[9px] text-purple-300 font-black bg-purple-500/20 px-2 py-0.5 rounded-full border border-purple-500/30">Formatos Estándar</span>
+                                    </h3>
+                                    <p className="text-[10px] text-gray-400">Pica cualquiera para cargar el formato listo para enviar o editar</p>
+                                </div>
+                            </div>
+                            {selectedPreset && (
+                                <button 
+                                    type="button"
+                                    onClick={handleClearPreset} 
+                                    className="text-[10px] font-black uppercase text-gray-400 hover:text-white px-2 py-1 rounded bg-gray-800 hover:bg-gray-700 transition-colors border border-gray-700 cursor-pointer"
+                                >
+                                    Quitar selección
+                                </button>
+                            )}
+                        </div>
+
+                        <div className="grid grid-cols-2 sm:grid-cols-3 gap-2">
+                            {EMAIL_PRESETS.map(preset => {
+                                const isSelected = selectedPreset === preset.id;
+                                return (
+                                    <button
+                                        key={preset.id}
+                                        type="button"
+                                        onClick={() => handleApplyPreset(preset)}
+                                        className={`flex flex-col text-left p-2.5 rounded-xl border transition-all duration-200 group relative overflow-hidden cursor-pointer ${
+                                            isSelected
+                                                ? 'bg-purple-600/20 border-purple-500 shadow-lg shadow-purple-500/20 ring-1 ring-purple-500/50 scale-[1.02]'
+                                                : 'bg-gray-800/60 border-gray-700/60 hover:border-purple-500/50 hover:bg-gray-800/90 hover:scale-[1.02]'
+                                        }`}
+                                    >
+                                        <div className="flex items-center justify-between mb-1.5 w-full">
+                                            <div className={`p-1.5 rounded-lg ${preset.badgeBg}`}>
+                                                {preset.icon}
+                                            </div>
+                                            {isSelected ? (
+                                                <span className="flex items-center gap-1 text-[9px] font-black uppercase tracking-wider px-1.5 py-0.5 rounded-full bg-purple-500 text-white shadow-sm">
+                                                    <CheckCircle2 size={10} />
+                                                    <span>Activo</span>
+                                                </span>
+                                            ) : (
+                                                <span className="text-[9px] font-bold text-gray-500 opacity-0 group-hover:opacity-100 uppercase transition-opacity">
+                                                    Cargar ⚡
+                                                </span>
+                                            )}
+                                        </div>
+                                        <span className="text-xs font-black text-white group-hover:text-purple-300 transition-colors line-clamp-1 leading-tight">
+                                            {preset.title}
+                                        </span>
+                                        <span className="text-[10px] text-gray-400 group-hover:text-gray-300 line-clamp-1 mt-0.5">
+                                            {preset.subtitle}
+                                        </span>
+                                    </button>
+                                );
+                            })}
+                        </div>
+                    </div>
+
                     <div className="bg-gray-900/40 p-4 rounded-xl border border-gray-800/50 space-y-3">
                             <div className="flex items-center justify-between px-1">
                                 <label className="text-xs font-black uppercase text-gray-400 tracking-wider flex items-center gap-1.5">
