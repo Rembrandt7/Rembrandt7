@@ -208,6 +208,21 @@ const stripHtml = (html: string): string => {
     }
 };
 
+interface EmailGeneratorProps {
+    attachedImages: ReferenceImage[];
+    onAttachmentsChange: (images: ReferenceImage[]) => void;
+}
+
+interface Contact {
+    id: string | number;
+    [key: string]: any;
+}
+
+const DEFAULT_TITLES = ['', 'Sr.', 'Sra.', 'Lic.', 'Arq.', 'Ing.', 'Dr.', 'Dra.', 'C.P.'];
+const emailDomains = ['@javer', '@gmail', '@outlook', '@hotmail', 'Personalizado'];
+const emailTlds = ['.com.mx', '.com', '.es', '.mx'];
+const predefinedProjects = ['Valle de Los Encinos', 'Cumbre del Norte', 'Xandora'];
+
 const EmailGenerator: React.FC<EmailGeneratorProps> = ({ attachedImages, onAttachmentsChange }) => {
     const { config, updateConfig, googleApiConfig } = useLinks();
     const [idea, setIdea] = useState('');
