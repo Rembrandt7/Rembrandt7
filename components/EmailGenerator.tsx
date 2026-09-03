@@ -1431,18 +1431,18 @@ const EmailGenerator: React.FC<EmailGeneratorProps> = ({ attachedImages, onAttac
                             </div>
                         </div>
 
-                        {/* Filas de Configuración: Entregables en fila, Métodos en fila, Proyecto en fila */}
-                        <div className="space-y-3 pt-1">
-                            {/* Fila 1: Entregables / Formatos (uno o varios) */}
-                            <div className="bg-gray-950/40 p-3.5 rounded-xl border border-gray-800/80 space-y-2">
-                                <div className="flex items-center justify-between">
-                                    <span className="text-xs font-black uppercase tracking-wider text-blue-400 flex items-center gap-1.5">
-                                        <span className="w-5 h-5 rounded-full bg-blue-600/20 border border-blue-500/30 flex items-center justify-center text-[10px]">1</span>
-                                        <span>Entregables / Formatos</span>
+                        {/* Cuadrícula de 3 Columnas: Entregables (vertical) | Método (vertical) | Proyecto (selecciona arriba / escribe abajo) */}
+                        <div className="grid grid-cols-1 md:grid-cols-3 gap-4 items-stretch pt-1">
+                            {/* Columna 1: Entregables / Formatos (vertical) */}
+                            <div className="bg-gray-950/50 p-4 rounded-xl border border-gray-800/80 flex flex-col space-y-3">
+                                <div className="flex items-center justify-between pb-2 border-b border-gray-800/60">
+                                    <span className="text-xs font-black uppercase tracking-wider text-blue-400 flex items-center gap-2">
+                                        <span className="w-5 h-5 rounded-full bg-blue-600/20 border border-blue-500/30 flex items-center justify-center text-[10px] font-bold">1</span>
+                                        <span>Entregable(s)</span>
                                     </span>
-                                    <span className="text-[10px] text-gray-500 font-bold">Selecciona uno o varios</span>
+                                    <span className="text-[10px] text-blue-300/80 bg-blue-500/10 px-2 py-0.5 rounded font-bold">Uno o varios</span>
                                 </div>
-                                <div className="flex flex-wrap gap-2">
+                                <div className="flex flex-col gap-2 flex-grow">
                                     {DELIVERABLE_OPTIONS.map(d => {
                                         const isSelected = selectedDeliverables.includes(d);
                                         return (
@@ -1450,98 +1450,148 @@ const EmailGenerator: React.FC<EmailGeneratorProps> = ({ attachedImages, onAttac
                                                 key={d}
                                                 type="button"
                                                 onClick={() => toggleDeliverable(d)}
-                                                className={`px-3 py-1.5 rounded-lg text-xs font-bold border transition-all cursor-pointer flex items-center gap-1.5 ${
+                                                className={`w-full px-3.5 py-2.5 rounded-xl text-xs font-bold border transition-all cursor-pointer flex items-center justify-between gap-3 text-left ${
                                                     isSelected
-                                                        ? 'bg-blue-600/25 text-blue-200 border-blue-500 shadow-sm ring-1 ring-blue-500/40'
-                                                        : 'bg-gray-800/60 text-gray-400 border-gray-700/70 hover:border-gray-500 hover:text-gray-200'
+                                                        ? 'bg-blue-600/20 text-blue-100 border-blue-500 shadow-sm ring-1 ring-blue-500/40'
+                                                        : 'bg-gray-900/60 text-gray-400 border-gray-800 hover:border-gray-700 hover:bg-gray-800/60 hover:text-gray-200'
                                                 }`}
                                             >
-                                                <div className={`w-3.5 h-3.5 rounded-sm border flex items-center justify-center text-[9px] ${
-                                                    isSelected ? 'bg-blue-500 border-blue-400 text-white' : 'border-gray-600'
-                                                }`}>
-                                                    {isSelected && '✓'}
+                                                <div className="flex items-center gap-2.5">
+                                                    <div className={`w-4 h-4 rounded border flex items-center justify-center text-[10px] transition-colors ${
+                                                        isSelected ? 'bg-blue-500 border-blue-400 text-white shadow' : 'border-gray-600 bg-gray-800/80'
+                                                    }`}>
+                                                        {isSelected && '✓'}
+                                                    </div>
+                                                    <span className="truncate">{d}</span>
                                                 </div>
-                                                <span>{d}</span>
                                             </button>
                                         );
                                     })}
                                 </div>
                             </div>
 
-                            {/* Fila 2: Método de entrega (solo uno) */}
-                            <div className="bg-gray-950/40 p-3.5 rounded-xl border border-gray-800/80 space-y-2">
-                                <div className="flex items-center justify-between">
-                                    <span className="text-xs font-black uppercase tracking-wider text-amber-400 flex items-center gap-1.5">
-                                        <span className="w-5 h-5 rounded-full bg-amber-600/20 border border-amber-500/30 flex items-center justify-center text-[10px]">2</span>
+                            {/* Columna 2: Método de entrega (vertical) */}
+                            <div className="bg-gray-950/50 p-4 rounded-xl border border-gray-800/80 flex flex-col space-y-3">
+                                <div className="flex items-center justify-between pb-2 border-b border-gray-800/60">
+                                    <span className="text-xs font-black uppercase tracking-wider text-amber-400 flex items-center gap-2">
+                                        <span className="w-5 h-5 rounded-full bg-amber-600/20 border border-amber-500/30 flex items-center justify-center text-[10px] font-bold">2</span>
                                         <span>Método de Entrega</span>
                                     </span>
-                                    <span className="text-[10px] text-amber-500/80 font-bold">Solo uno</span>
+                                    <span className="text-[10px] text-amber-300/80 bg-amber-500/10 px-2 py-0.5 rounded font-bold">Solo uno</span>
                                 </div>
-                                <div className="flex flex-wrap gap-2">
+                                <div className="flex flex-col gap-2 flex-grow">
                                     {METHOD_OPTIONS.map(m => {
                                         const isSelected = selectedMethod === m;
+                                        const descriptions: Record<DeliveryMethod, string> = {
+                                            'Revisión': 'Para observaciones y comentarios',
+                                            'Entrega': 'Envío formal definitivo',
+                                            'Proyecto': 'Archivos generales del proyecto',
+                                            'Anteproyecto': 'Propuesta y conceptualización'
+                                        };
                                         return (
                                             <button
                                                 key={m}
                                                 type="button"
                                                 onClick={() => handleSelectMethod(m)}
-                                                className={`px-3 py-1.5 rounded-lg text-xs font-bold border transition-all cursor-pointer flex items-center gap-1.5 ${
+                                                className={`w-full px-3.5 py-3 rounded-xl text-xs font-bold border transition-all cursor-pointer flex items-center justify-between gap-3 text-left ${
                                                     isSelected
-                                                        ? 'bg-amber-600/25 text-amber-200 border-amber-500 shadow-sm ring-1 ring-amber-500/40'
-                                                        : 'bg-gray-800/60 text-gray-400 border-gray-700/70 hover:border-gray-500 hover:text-gray-200'
+                                                        ? 'bg-amber-600/20 text-amber-100 border-amber-500 shadow-sm ring-1 ring-amber-500/40'
+                                                        : 'bg-gray-900/60 text-gray-400 border-gray-800 hover:border-gray-700 hover:bg-gray-800/60 hover:text-gray-200'
                                                 }`}
                                             >
-                                                <div className={`w-3.5 h-3.5 rounded-full border flex items-center justify-center ${
-                                                    isSelected ? 'border-amber-400' : 'border-gray-600'
-                                                }`}>
-                                                    {isSelected && <div className="w-1.5 h-1.5 rounded-full bg-amber-400" />}
+                                                <div className="flex flex-col">
+                                                    <span className="text-sm font-bold text-white">{m}</span>
+                                                    <span className="text-[10px] text-gray-400 font-normal">{descriptions[m]}</span>
                                                 </div>
-                                                <span>{m}</span>
+                                                <div className={`w-4 h-4 rounded-full border flex items-center justify-center shrink-0 ${
+                                                    isSelected ? 'border-amber-400' : 'border-gray-600 bg-gray-800/80'
+                                                }`}>
+                                                    {isSelected && <div className="w-2 h-2 rounded-full bg-amber-400 shadow" />}
+                                                </div>
                                             </button>
                                         );
                                     })}
                                 </div>
                             </div>
 
-                            {/* Fila 3: Proyecto / Fraccionamiento */}
-                            <div className="bg-gray-950/40 p-3.5 rounded-xl border border-gray-800/80 space-y-2">
-                                <div className="flex items-center justify-between">
-                                    <span className="text-xs font-black uppercase tracking-wider text-emerald-400 flex items-center gap-1.5">
-                                        <span className="w-5 h-5 rounded-full bg-emerald-600/20 border border-emerald-500/30 flex items-center justify-center text-[10px]">3</span>
+                            {/* Columna 3: Proyecto / Fraccionamiento (selecciona arriba / escribe abajo) */}
+                            <div className="bg-gray-950/50 p-4 rounded-xl border border-gray-800/80 flex flex-col space-y-4">
+                                <div className="flex items-center justify-between pb-2 border-b border-gray-800/60">
+                                    <span className="text-xs font-black uppercase tracking-wider text-emerald-400 flex items-center gap-2">
+                                        <span className="w-5 h-5 rounded-full bg-emerald-600/20 border border-emerald-500/30 flex items-center justify-center text-[10px] font-bold">3</span>
                                         <span>Proyecto / Fraccionamiento</span>
                                     </span>
-                                    <span className="text-[10px] text-gray-500 font-bold">Opcional para el asunto y mensaje</span>
+                                    <span className="text-[10px] text-emerald-300/80 bg-emerald-500/10 px-2 py-0.5 rounded font-bold">Opcional</span>
                                 </div>
-                                <div className="grid grid-cols-1 sm:grid-cols-2 gap-2.5 items-center">
-                                    <div className="relative">
+
+                                <div className="flex flex-col gap-3.5 flex-grow justify-between">
+                                    {/* Parte 1: Selecciona de la lista */}
+                                    <div className="space-y-1.5">
+                                        <label className="text-[11px] font-bold uppercase tracking-wider text-gray-300 flex items-center gap-1.5">
+                                            <Building2 size={13} className="text-emerald-400" />
+                                            <span>1. Selecciona de la lista:</span>
+                                        </label>
                                         <select
                                             value={fraccionamientosList.includes(project) ? project : ''}
                                             onChange={e => { if (e.target.value) setProject(e.target.value); }}
-                                            className="w-full p-2 bg-gray-800 border border-gray-700 rounded-lg text-xs font-bold text-white outline-none focus:border-emerald-500/50"
+                                            className="w-full p-2.5 bg-gray-900 border border-gray-700/80 rounded-xl text-xs font-bold text-white outline-none focus:border-emerald-500 transition-colors shadow-inner"
                                         >
-                                            <option value="">Seleccionar de lista de proyectos...</option>
+                                            <option value="">-- Elige un fraccionamiento / proyecto --</option>
                                             {fraccionamientosList.map(f => (
                                                 <option key={f} value={f}>{f}</option>
                                             ))}
                                         </select>
                                     </div>
-                                    <div className="relative flex items-center">
-                                        <input
-                                            list="project-list-bottom"
-                                            value={project}
-                                            onChange={e => setProject(e.target.value)}
-                                            placeholder="O escribe el nombre del proyecto..."
-                                            className="w-full p-2 pr-8 bg-gray-800 border border-gray-700 rounded-lg text-xs font-bold text-white outline-none focus:border-emerald-500/50 placeholder-gray-500"
-                                        />
-                                        <datalist id="project-list-bottom">
-                                            {fraccionamientosList.map(f => <option key={f} value={f} />)}
-                                        </datalist>
+
+                                    {/* Separador "o escribe el nombre" */}
+                                    <div className="flex items-center gap-3">
+                                        <div className="h-px bg-gray-800 flex-grow" />
+                                        <span className="text-[10px] font-black uppercase text-gray-500 tracking-wider">o escribe el nombre</span>
+                                        <div className="h-px bg-gray-800 flex-grow" />
+                                    </div>
+
+                                    {/* Parte 2: Escribe o edita el nombre */}
+                                    <div className="space-y-1.5">
+                                        <label className="text-[11px] font-bold uppercase tracking-wider text-gray-300 flex items-center justify-between">
+                                            <span>2. Escribe o edita el nombre:</span>
+                                            {project && (
+                                                <button
+                                                    type="button"
+                                                    onClick={() => setProject('')}
+                                                    className="text-[10px] text-red-400 hover:text-red-300 font-bold"
+                                                >
+                                                    Limpiar
+                                                </button>
+                                            )}
+                                        </label>
+                                        <div className="relative">
+                                            <input
+                                                list="project-list-vertical"
+                                                value={project}
+                                                onChange={e => setProject(e.target.value)}
+                                                placeholder="Ej. Bosques de San Juan, Privada..."
+                                                className="w-full p-2.5 bg-gray-900 border border-gray-700/80 rounded-xl text-xs font-bold text-white outline-none focus:border-emerald-500 transition-colors shadow-inner placeholder-gray-500"
+                                            />
+                                            <datalist id="project-list-vertical">
+                                                {fraccionamientosList.map(f => <option key={f} value={f} />)}
+                                            </datalist>
+                                        </div>
+                                    </div>
+
+                                    {/* Resumen del proyecto activo */}
+                                    <div className="p-3 bg-gray-900/80 rounded-xl border border-gray-800/80 flex items-center justify-between gap-2 mt-auto">
+                                        <div className="truncate">
+                                            <span className="text-[10px] font-bold uppercase text-gray-500 block">Proyecto activo en correo:</span>
+                                            <span className={`text-xs font-bold truncate ${project ? 'text-emerald-300' : 'text-gray-500 italic'}`}>
+                                                {project || 'Ninguno (sin nombre de proyecto)'}
+                                            </span>
+                                        </div>
                                         {project && (
                                             <button
                                                 type="button"
                                                 onClick={() => setProject('')}
-                                                className="absolute right-2 text-gray-500 hover:text-white text-xs font-bold"
-                                                title="Limpiar proyecto"
+                                                className="w-5 h-5 rounded-full bg-gray-800 hover:bg-red-500/20 text-gray-400 hover:text-red-300 flex items-center justify-center text-xs transition-colors shrink-0"
+                                                title="Quitar proyecto"
                                             >
                                                 ✕
                                             </button>
