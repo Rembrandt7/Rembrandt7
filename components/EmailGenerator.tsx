@@ -111,12 +111,21 @@ const QUICK_PRESETS: QuickPreset[] = [
   }
 ];
 
+interface PresetOptions {
+  cloudLink?: string;
+  deadline?: string;
+  toneStyle?: 'colaborativo' | 'formal';
+}
+
 const buildPresetMessage = (
   deliverables: DeliverableType[],
   method: DeliveryMethod,
   greeting: string,
-  projectName: string
+  projectName: string,
+  options?: PresetOptions
 ) => {
+  const { cloudLink = '', deadline = '', toneStyle = 'colaborativo' } = options || {};
+
   const formatList = (items: string[]) => {
     if (items.length === 0) return '';
     if (items.length === 1) return items[0];
@@ -138,31 +147,65 @@ const buildPresetMessage = (
 
   let subject = '';
   let actionText = '';
-  let closingText = 'Quedo a la espera de tus comentarios o visto bueno.';
+  let closingText = 'Quedo a la espera de tus observaciones o visto bueno para continuar.';
 
   if (method === 'Revisión') {
     subject = `Envío de ${deliverableTitle} para Revisión${projSubject}`;
-    actionText = `te hago llegar los archivos de ${deliverableText} para su debida revisión y comentarios${projText}.`;
-    closingText = 'Quedo a la espera de tus observaciones o visto bueno para continuar.';
+    if (toneStyle === 'formal') {
+      actionText = `por medio del presente correo, me permito remitir a usted los archivos correspondientes a ${deliverableText} para su debida revisión y comentarios${projText}.`;
+      closingText = 'Quedo a su disposición para cualquier duda o retroalimentación respectiva.';
+    } else {
+      actionText = `te hago llegar los archivos de ${deliverableText} para su debida revisión y comentarios${projText}.`;
+      closingText = 'Quedo a la espera de tus observaciones o visto bueno para continuar.';
+    }
   } else if (method === 'Entrega') {
     subject = `Entrega de ${deliverableTitle}${projSubject}`;
-    actionText = `te hago entrega formal de ${deliverableText}${projText}.`;
-    closingText = 'Quedo a tu disposición para cualquier duda o consulta.';
+    if (toneStyle === 'formal') {
+      actionText = `por medio de la presente, se hace entrega formal de ${deliverableText}${projText}.`;
+      closingText = 'Quedo a su entera disposición para cualquier aclaración o seguimiento.';
+    } else {
+      actionText = `te hago entrega formal de ${deliverableText}${projText}.`;
+      closingText = 'Quedo a tu disposición para cualquier duda o consulta.';
+    }
   } else if (method === 'Proyecto') {
     subject = `Envío de Proyecto (${deliverableTitle})${projSubject}`;
-    actionText = `te comparto los archivos del proyecto (${deliverableText})${projText}.`;
-    closingText = 'Quedo a tus órdenes ante cualquier duda o seguimiento.';
+    if (toneStyle === 'formal') {
+      actionText = `se comparten los archivos correspondientes al proyecto (${deliverableText})${projText}.`;
+      closingText = 'Quedo a sus órdenes ante cualquier inquietud o seguimiento requerido.';
+    } else {
+      actionText = `te comparto los archivos del proyecto (${deliverableText})${projText}.`;
+      closingText = 'Quedo a tus órdenes ante cualquier duda o seguimiento.';
+    }
   } else if (method === 'Anteproyecto') {
     subject = `Envío de Anteproyecto (${deliverableTitle})${projSubject}`;
-    actionText = `te hago entrega del anteproyecto (${deliverableText})${projText}.`;
-    closingText = 'Quedo al pendiente de tus notas o visto bueno para avanzar.';
+    if (toneStyle === 'formal') {
+      actionText = `por medio del presente, se remite la propuesta de anteproyecto (${deliverableText})${projText}.`;
+      closingText = 'Quedo atento a sus observaciones y comentarios para dar continuidad.';
+    } else {
+      actionText = `te hago entrega del anteproyecto (${deliverableText})${projText}.`;
+      closingText = 'Quedo al pendiente de tus notas o visto bueno para avanzar.';
+    }
   }
 
-  const emailBody = `${greeting},\n\nPor medio del presente correo, ${actionText}\n\n${closingText}\n\nAtte.\n\nArq. Rembrandt Blanco Arrambide`;
-  
-  const whatsappMessage = `${greeting}, te acabo de enviar por correo ${deliverableText} (${method.toLowerCase()})${projClean ? ` de ${projClean}` : ''}. ${closingText} ¡Saludos!`;
+  // Enlace opcional de OneDrive / SharePoint / WeTransfer
+  const cleanLink = cloudLink.trim();
+  const linkSection = cleanLink 
+    ? `\n\nPuedes consultar o descargar los archivos completos en el siguiente enlace:\n${cleanLink}`
+    : '';
 
-  const idea = `Envío de ${deliverableText} para ${method.toLowerCase()}${projText}.`;
+  // Fecha compromiso / límite opcional
+  const cleanDeadline = deadline.trim();
+  const deadlineSection = cleanDeadline
+    ? `\n\nAgradeceré contar con tus comentarios o visto bueno a más tardar el ${cleanDeadline} para dar continuidad al programa.`
+    : '';
+
+  const emailBody = `${greeting},\n\n${actionText}${linkSection}\n\n${closingText}${deadlineSection}\n\nAtte.\n\nArq. Rembrandt Blanco Arrambide`;
+  
+  const whatsappLink = cleanLink ? ` Enlace: ${cleanLink}` : '';
+  const whatsappDeadline = cleanDeadline ? ` (Meta: ${cleanDeadline})` : '';
+  const whatsappMessage = `${greeting}, te acabo de enviar por correo ${deliverableText} (${method.toLowerCase()})${projClean ? ` de ${projClean}` : ''}.${whatsappLink}${whatsappDeadline} ${closingText} ¡Saludos!`;
+
+  const idea = `Envío de ${deliverableText} para ${method.toLowerCase()}${projText}.${cleanLink ? ` Descarga: ${cleanLink}` : ''}${cleanDeadline ? ` Plazo: ${cleanDeadline}` : ''}`;
 
   return {
     emailSubject: subject,
@@ -281,6 +324,17 @@ const EmailGenerator: React.FC<EmailGeneratorProps> = ({ attachedImages, onAttac
     const [selectedDeliverables, setSelectedDeliverables] = useState<DeliverableType[]>(['Planos en AutoCAD', 'Planos en PDF']);
     const [selectedMethod, setSelectedMethod] = useState<DeliveryMethod>('Revisión');
     const [activePresetId, setActivePresetId] = useState<string | null>('qp-3');
+    const [cloudLink, setCloudLink] = useState('');
+    const [deadline, setDeadline] = useState('');
+    const [templateTone, setTemplateTone] = useState<'colaborativo' | 'formal'>('colaborativo');
+    const [customPresets, setCustomPresets] = useState<QuickPreset[]>(() => {
+        try {
+            const saved = localStorage.getItem('custom-quick-presets');
+            return saved ? JSON.parse(saved) : [];
+        } catch {
+            return [];
+        }
+    });
     const [isDraggingOver, setIsDraggingOver] = useState(false);
     const [useNickname, setUseNickname] = useState(true);
     const [isAdjusting, setIsAdjusting] = useState<'email' | 'whatsapp' | null>(null);
@@ -566,6 +620,9 @@ const EmailGenerator: React.FC<EmailGeneratorProps> = ({ attachedImages, onAttac
         setIdea('');
         setPreviousEmail('');
         setProject('');
+        setCloudLink('');
+        setDeadline('');
+        setTemplateTone('colaborativo');
         setGeneratedContent(null);
         setOriginalContent(null);
         setError(null);
@@ -601,6 +658,44 @@ const EmailGenerator: React.FC<EmailGeneratorProps> = ({ attachedImages, onAttac
         return `${recipientEmailUser}${domainPart}${recipientEmailTld}`;
     }, [recipientEmailUser, recipientEmailDomain, customDomain, recipientEmailTld]);
 
+    const quickContacts = useMemo(() => {
+        const list: { name: string; index: number; isErik: boolean }[] = [];
+        const seenNames = new Set<string>();
+
+        // 1. Siempre incluir a Erik primero
+        const erikIdx = sortedContacts.findIndex(c => {
+            const n = String(getDBValue(c, ['cliente', 'nombre']) || '').toLowerCase();
+            return n.includes('erik') || n.includes('eric');
+        });
+        if (erikIdx !== -1) {
+            const name = String(getDBValue(sortedContacts[erikIdx], ['cliente', 'nombre']) || 'Erik Gabino');
+            seenNames.add(name.toLowerCase());
+            list.push({ name, index: erikIdx, isErik: true });
+        }
+
+        // 2. Favoritos marcados con estrella
+        favorites.forEach(favName => {
+            if (seenNames.has(favName.toLowerCase())) return;
+            const idx = sortedContacts.findIndex(c => String(getDBValue(c, ['cliente', 'nombre']) || '').trim() === favName.trim());
+            if (idx !== -1 && list.length < 5) {
+                seenNames.add(favName.toLowerCase());
+                list.push({ name: favName, index: idx, isErik: false });
+            }
+        });
+
+        // 3. Primeros de la lista si hay espacio
+        sortedContacts.forEach((c, idx) => {
+            if (list.length >= 5) return;
+            const name = String(getDBValue(c, ['cliente', 'nombre']) || '').trim();
+            if (name && !seenNames.has(name.toLowerCase())) {
+                seenNames.add(name.toLowerCase());
+                list.push({ name, index: idx, isErik: false });
+            }
+        });
+
+        return list;
+    }, [sortedContacts, favorites]);
+
     const getPresetGreeting = useCallback(() => {
         const hour = new Date().getHours();
         const timeGreeting = hour < 12 ? 'Buen día' : hour < 19 ? 'Buenas tardes' : 'Buenas noches';
@@ -629,9 +724,22 @@ const EmailGenerator: React.FC<EmailGeneratorProps> = ({ attachedImages, onAttac
         setSelectedMethod(m);
     }, []);
 
+    const livePreview = useMemo(() => {
+        const greeting = getPresetGreeting();
+        return buildPresetMessage(selectedDeliverables, selectedMethod, greeting, project, {
+            cloudLink,
+            deadline,
+            toneStyle: templateTone
+        });
+    }, [getPresetGreeting, selectedDeliverables, selectedMethod, project, cloudLink, deadline, templateTone]);
+
     const handleApplyCustomFormat = useCallback(() => {
         const greeting = getPresetGreeting();
-        const content = buildPresetMessage(selectedDeliverables, selectedMethod, greeting, project);
+        const content = buildPresetMessage(selectedDeliverables, selectedMethod, greeting, project, {
+            cloudLink,
+            deadline,
+            toneStyle: templateTone
+        });
         
         setIdea(content.idea);
         const generated: GeneratedContent = {
@@ -644,7 +752,7 @@ const EmailGenerator: React.FC<EmailGeneratorProps> = ({ attachedImages, onAttac
         setOriginalContent(generated);
         toast.success('Formato estándar cargado al correo');
         window.scrollTo({ top: 0, behavior: 'smooth' });
-    }, [getPresetGreeting, selectedDeliverables, selectedMethod, project]);
+    }, [getPresetGreeting, selectedDeliverables, selectedMethod, project, cloudLink, deadline, templateTone]);
 
     const handleSelectQuickPreset = useCallback((qp: QuickPreset) => {
         setActivePresetId(qp.id);
@@ -652,7 +760,11 @@ const EmailGenerator: React.FC<EmailGeneratorProps> = ({ attachedImages, onAttac
         setSelectedMethod(qp.method);
         
         const greeting = getPresetGreeting();
-        const content = buildPresetMessage(qp.deliverables, qp.method, greeting, project);
+        const content = buildPresetMessage(qp.deliverables, qp.method, greeting, project, {
+            cloudLink,
+            deadline,
+            toneStyle: templateTone
+        });
         
         setIdea(content.idea);
         const generated: GeneratedContent = {
@@ -665,12 +777,55 @@ const EmailGenerator: React.FC<EmailGeneratorProps> = ({ attachedImages, onAttac
         setOriginalContent(generated);
         toast.success(`Plantilla "${qp.name}" cargada`);
         window.scrollTo({ top: 0, behavior: 'smooth' });
-    }, [getPresetGreeting, project]);
+    }, [getPresetGreeting, project, cloudLink, deadline, templateTone]);
 
-    const livePreview = useMemo(() => {
+    const handleSaveCustomPreset = useCallback(() => {
+        const name = window.prompt("Nombre para tu nueva plantilla rápida (ej. Planos DWG + PDF a Obra):");
+        if (!name || !name.trim()) return;
+        const newPreset: QuickPreset = {
+            id: 'custom-' + Date.now(),
+            name: name.trim(),
+            deliverables: [...selectedDeliverables],
+            method: selectedMethod
+        };
+        const updated = [...customPresets, newPreset];
+        setCustomPresets(updated);
+        localStorage.setItem('custom-quick-presets', JSON.stringify(updated));
+        setActivePresetId(newPreset.id);
+        toast.success(`Plantilla "${newPreset.name}" guardada en favoritas`);
+    }, [selectedDeliverables, selectedMethod, customPresets]);
+
+    const handleDeleteCustomPreset = useCallback((e: React.MouseEvent, id: string) => {
+        e.stopPropagation();
+        const updated = customPresets.filter(p => p.id !== id);
+        setCustomPresets(updated);
+        localStorage.setItem('custom-quick-presets', JSON.stringify(updated));
+        if (activePresetId === id) setActivePresetId(null);
+        toast.info("Plantilla personalizada eliminada");
+    }, [customPresets, activePresetId]);
+
+    const handleOpenOutlookWeb = useCallback(() => {
+        if (!generatedContent) return;
+        const subject = encodeURIComponent(generatedContent.emailSubject);
+        const body = encodeURIComponent(stripHtml(generatedContent.emailBody));
+        const to = encodeURIComponent(fullRecipientEmail);
+        const url = `https://outlook.office.com/mail/deeplink/compose?to=${to}&subject=${subject}&body=${body}`;
+        window.open(url, '_blank');
+    }, [generatedContent, fullRecipientEmail]);
+
+    const handleOpenOutlookWebFromPreset = useCallback(() => {
         const greeting = getPresetGreeting();
-        return buildPresetMessage(selectedDeliverables, selectedMethod, greeting, project);
-    }, [getPresetGreeting, selectedDeliverables, selectedMethod, project]);
+        const content = buildPresetMessage(selectedDeliverables, selectedMethod, greeting, project, {
+            cloudLink,
+            deadline,
+            toneStyle: templateTone
+        });
+        const subject = encodeURIComponent(content.emailSubject);
+        const body = encodeURIComponent(stripHtml(content.emailBody));
+        const to = encodeURIComponent(fullRecipientEmail);
+        const url = `https://outlook.office.com/mail/deeplink/compose?to=${to}&subject=${subject}&body=${body}`;
+        window.open(url, '_blank');
+    }, [getPresetGreeting, selectedDeliverables, selectedMethod, project, cloudLink, deadline, templateTone, fullRecipientEmail]);
 
     const handleGenerate = useCallback(async (overrideIdea?: string) => {
         const targetIdea = typeof overrideIdea === 'string' ? overrideIdea : idea;
@@ -1166,6 +1321,31 @@ const EmailGenerator: React.FC<EmailGeneratorProps> = ({ attachedImages, onAttac
                             </div>
                             <button onClick={() => setUseNickname(!useNickname)} className={`h-[42px] px-4 rounded-lg border transition-all font-black text-xs uppercase ${useNickname ? 'border-yellow-500 text-yellow-500 bg-yellow-500/10' : 'border-gray-700 text-gray-500 hover:text-gray-300'}`}>{useNickname ? 'Apodo' : 'Nombre'}</button>
                         </div>
+
+                        {/* Píldoras de Contactos Frecuentes (1 Clic) */}
+                        {quickContacts.length > 0 && (
+                            <div className="flex items-center gap-1.5 flex-wrap pt-0.5 pb-1">
+                                <span className="text-[10px] text-gray-500 font-bold uppercase tracking-wider mr-1">Rápidos:</span>
+                                {quickContacts.map(qc => {
+                                    const isSelected = selectedContactIndex !== '' && parseInt(selectedContactIndex, 10) === qc.index;
+                                    return (
+                                        <button
+                                            key={qc.name}
+                                            type="button"
+                                            onClick={() => selectContactByIndex(qc.index, sortedContacts)}
+                                            className={`px-2.5 py-1 rounded-full text-xs font-bold transition-all cursor-pointer flex items-center gap-1 ${
+                                                isSelected 
+                                                    ? 'bg-purple-600 text-white shadow-sm ring-1 ring-purple-400' 
+                                                    : 'bg-gray-800/80 text-gray-300 hover:bg-gray-700 hover:text-white border border-gray-700/60'
+                                            }`}
+                                        >
+                                            {qc.isErik && <span className="text-[10px]">⭐</span>}
+                                            <span>{qc.name}</span>
+                                        </button>
+                                    );
+                                })}
+                            </div>
+                        )}
                         <div className="flex gap-2 items-center">
                             <button onClick={handleSaveNewContact} disabled={isSavingContact} className="p-2.5 bg-gray-800 border border-gray-700 rounded-lg text-purple-400 hover:text-purple-300 transition-colors">
                                 {isSavingContact ? <Spinner size="4" /> : <Save size={18} />}
@@ -1290,7 +1470,16 @@ const EmailGenerator: React.FC<EmailGeneratorProps> = ({ attachedImages, onAttac
                                 <div className="p-4 space-y-3">
                                     <input value={generatedContent.emailSubject} onChange={e => setGeneratedContent({ ...generatedContent, emailSubject: e.target.value })} onContextMenu={e => handleContextMenu(e, 'email', 'emailSubject')} className="w-full bg-gray-800/40 border border-gray-700/50 rounded-lg px-4 py-2 text-sm text-white font-black outline-none focus:border-purple-500" placeholder="Asunto..."/>
                                     <textarea value={generatedContent.emailBody} onChange={e => setGeneratedContent({ ...generatedContent, emailBody: e.target.value })} onContextMenu={e => handleContextMenu(e, 'email', 'emailBody')} className="w-full h-64 bg-gray-800/40 border border-gray-700/50 rounded-lg px-4 py-3 text-[14px] text-gray-200 font-medium resize-none outline-none focus:border-purple-500 leading-relaxed" placeholder="Edita aquí..."/>
-                                    <button onClick={handleSendEmail} className="w-full py-3 bg-gradient-to-r from-purple-600 to-indigo-700 text-white rounded-lg font-black text-xs uppercase tracking-widest shadow-md flex justify-center gap-2 hover:scale-[1.01] active:scale-[0.99] transition-all"><Send size={16}/> Despachar</button>
+                                    <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
+                                        <button onClick={handleOpenOutlookWeb} className="py-3 bg-gradient-to-r from-blue-600 to-indigo-600 hover:from-blue-500 hover:to-indigo-500 text-white rounded-lg font-black text-xs uppercase tracking-wider shadow-md flex items-center justify-center gap-2 hover:scale-[1.01] active:scale-[0.99] transition-all cursor-pointer">
+                                            <ExternalLink size={15}/>
+                                            <span>Outlook Web (Javer 365)</span>
+                                        </button>
+                                        <button onClick={handleSendEmail} className="py-3 bg-gradient-to-r from-purple-600 to-indigo-700 hover:from-purple-500 hover:to-indigo-600 text-white rounded-lg font-black text-xs uppercase tracking-wider shadow-md flex items-center justify-center gap-2 hover:scale-[1.01] active:scale-[0.99] transition-all cursor-pointer">
+                                            <Send size={15}/>
+                                            <span>Despachar (App Correo)</span>
+                                        </button>
+                                    </div>
                                 </div>
                             </div>
                             <div className="bg-gray-900/60 rounded-xl border border-gray-800 overflow-hidden shadow-xl">
@@ -1403,13 +1592,58 @@ const EmailGenerator: React.FC<EmailGeneratorProps> = ({ attachedImages, onAttac
                     </div>
                 ) : (
                     <>
-                        {/* Plantillas Sugeridas Rápidas (1 Clic) */}
+                        {/* Plantillas Sugeridas Rápidas (1 Clic) y Favoritas */}
                         <div className="space-y-2">
-                            <div className="flex items-center gap-2 text-xs font-black uppercase tracking-wider text-purple-300">
-                                <Sparkles size={14} />
-                                <span>Sugerencias Rápidas (1 Clic):</span>
+                            <div className="flex items-center justify-between flex-wrap gap-2">
+                                <div className="flex items-center gap-2 text-xs font-black uppercase tracking-wider text-purple-300">
+                                    <Sparkles size={14} />
+                                    <span>Sugerencias Rápidas y Favoritas:</span>
+                                </div>
+                                <button
+                                    type="button"
+                                    onClick={handleSaveCustomPreset}
+                                    className="text-[11px] font-bold text-amber-300 hover:text-white bg-amber-500/10 hover:bg-amber-500/25 border border-amber-500/30 px-2.5 py-1 rounded-lg transition-all flex items-center gap-1.5 cursor-pointer shadow-sm"
+                                    title="Guardar los entregables y método actuales como tu plantilla personalizada"
+                                >
+                                    <Star size={12} fill="currentColor" />
+                                    <span>⭐ Guardar actual como favorita</span>
+                                </button>
                             </div>
                             <div className="flex flex-wrap gap-2">
+                                {/* Plantillas personalizadas guardadas por el usuario */}
+                                {customPresets.map(cp => {
+                                    const isSelected = activePresetId === cp.id;
+                                    return (
+                                        <div key={cp.id} className="inline-flex items-center">
+                                            <button
+                                                type="button"
+                                                onClick={() => handleSelectQuickPreset(cp)}
+                                                className={`px-3 py-1.5 rounded-l-xl text-xs font-bold border-y border-l transition-all cursor-pointer flex items-center gap-1.5 ${
+                                                    isSelected
+                                                        ? 'bg-amber-500 text-slate-950 border-amber-400 shadow-md shadow-amber-500/20 font-black'
+                                                        : 'bg-gray-800/90 text-amber-300 border-gray-700/80 hover:border-amber-500/40 hover:bg-gray-800'
+                                                }`}
+                                            >
+                                                <Star size={11} fill="currentColor" />
+                                                <span>{cp.name}</span>
+                                            </button>
+                                            <button
+                                                type="button"
+                                                onClick={(e) => handleDeleteCustomPreset(e, cp.id)}
+                                                className={`px-2 py-1.5 rounded-r-xl text-xs font-bold border-y border-r border-l-0 transition-all cursor-pointer ${
+                                                    isSelected
+                                                        ? 'bg-amber-600 text-white border-amber-400 hover:bg-red-600'
+                                                        : 'bg-gray-800/90 text-gray-500 hover:text-red-400 border-gray-700/80 hover:bg-gray-700'
+                                                }`}
+                                                title="Eliminar plantilla favorita"
+                                            >
+                                                ✕
+                                            </button>
+                                        </div>
+                                    );
+                                })}
+
+                                {/* Plantillas estándar del sistema */}
                                 {QUICK_PRESETS.map(qp => {
                                     const isSelected = activePresetId === qp.id;
                                     return (
@@ -1601,29 +1835,150 @@ const EmailGenerator: React.FC<EmailGeneratorProps> = ({ attachedImages, onAttac
                             </div>
                         </div>
 
-                        {/* Barra de Vista Previa y Botón de Carga */}
-                        <div className="p-4 bg-gray-950/80 rounded-xl border border-gray-800 flex flex-col md:flex-row items-start md:items-center justify-between gap-4">
-                            <div className="space-y-1 overflow-hidden flex-grow">
+                        {/* Opciones de Redacción y Entrega (Opcional) */}
+                        <div className="bg-gray-950/40 p-4 rounded-xl border border-gray-800/80 space-y-3">
+                            <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2">
+                                <span className="text-xs font-black uppercase tracking-wider text-purple-300 flex items-center gap-1.5">
+                                    <Sparkles size={13} className="text-purple-400" />
+                                    <span>Opciones de Redacción y Entrega (Opcional)</span>
+                                </span>
+                                {/* Selector de Tono */}
+                                <div className="flex bg-gray-900 rounded-lg p-0.5 border border-gray-800 self-start sm:self-auto">
+                                    <button
+                                        type="button"
+                                        onClick={() => setTemplateTone('colaborativo')}
+                                        className={`px-3 py-1 rounded-md text-xs font-bold transition-all cursor-pointer ${
+                                            templateTone === 'colaborativo'
+                                                ? 'bg-purple-600 text-white shadow'
+                                                : 'text-gray-400 hover:text-white'
+                                        }`}
+                                    >
+                                        Colaborativo (Interno)
+                                    </button>
+                                    <button
+                                        type="button"
+                                        onClick={() => setTemplateTone('formal')}
+                                        className={`px-3 py-1 rounded-md text-xs font-bold transition-all cursor-pointer ${
+                                            templateTone === 'formal'
+                                                ? 'bg-purple-600 text-white shadow'
+                                                : 'text-gray-400 hover:text-white'
+                                        }`}
+                                    >
+                                        Formal (Institucional)
+                                    </button>
+                                </div>
+                            </div>
+
+                            <div className="grid grid-cols-1 md:grid-cols-2 gap-3 pt-1">
+                                {/* Enlace a archivos pesados en OneDrive / SharePoint */}
+                                <div className="space-y-1">
+                                    <label className="text-[11px] font-bold text-gray-300 flex items-center gap-1.5">
+                                        <ExternalLink size={12} className="text-blue-400" />
+                                        <span>Enlace OneDrive / SharePoint / WeTransfer:</span>
+                                    </label>
+                                    <input
+                                        type="url"
+                                        value={cloudLink}
+                                        onChange={e => setCloudLink(e.target.value)}
+                                        placeholder="https://javer-my.sharepoint.com/..."
+                                        className="w-full p-2.5 bg-gray-900 border border-gray-700/80 rounded-xl text-xs font-medium text-white outline-none focus:border-purple-500 placeholder-gray-500 shadow-inner"
+                                    />
+                                </div>
+
+                                {/* Fecha o Plazo de Respuesta */}
+                                <div className="space-y-1">
+                                    <div className="flex items-center justify-between">
+                                        <label className="text-[11px] font-bold text-gray-300 flex items-center gap-1.5">
+                                            <Clock size={12} className="text-amber-400" />
+                                            <span>Fecha límite o plazo de revisión:</span>
+                                        </label>
+                                        {/* Atajos de plazo rápido */}
+                                        <div className="flex items-center gap-1">
+                                            {['este viernes', 'en 3 días hábiles'].map(d => (
+                                                <button
+                                                    key={d}
+                                                    type="button"
+                                                    onClick={() => setDeadline(d)}
+                                                    className="text-[9px] px-1.5 py-0.5 rounded bg-gray-800 hover:bg-gray-700 text-gray-300 font-bold cursor-pointer"
+                                                >
+                                                    {d}
+                                                </button>
+                                            ))}
+                                        </div>
+                                    </div>
+                                    <input
+                                        type="text"
+                                        value={deadline}
+                                        onChange={e => setDeadline(e.target.value)}
+                                        placeholder="Ej. este viernes antes de las 2:00 PM..."
+                                        className="w-full p-2.5 bg-gray-900 border border-gray-700/80 rounded-xl text-xs font-medium text-white outline-none focus:border-purple-500 placeholder-gray-500 shadow-inner"
+                                    />
+                                </div>
+                            </div>
+                        </div>
+
+                        {/* Vista Previa Estilo "Tarjeta de Correo Outlook" */}
+                        <div className="bg-gray-950 rounded-2xl border border-gray-800 overflow-hidden shadow-2xl">
+                            {/* Cabecera estilo ventana de correo */}
+                            <div className="bg-gray-900/90 px-4 py-2.5 border-b border-gray-800 flex items-center justify-between text-xs text-gray-400">
+                                <div className="flex items-center gap-3">
+                                    <div className="flex items-center gap-1.5">
+                                        <span className="w-2.5 h-2.5 rounded-full bg-red-500/70" />
+                                        <span className="w-2.5 h-2.5 rounded-full bg-yellow-500/70" />
+                                        <span className="w-2.5 h-2.5 rounded-full bg-green-500/70" />
+                                    </div>
+                                    <span className="font-bold text-gray-300 flex items-center gap-1.5">
+                                        <Mail size={13} className="text-purple-400" />
+                                        <span>Vista Previa del Correo</span>
+                                    </span>
+                                </div>
+                                <div className="flex items-center gap-2">
+                                    <span className="text-[11px] font-medium text-gray-400">
+                                        Para: <strong className="text-white">{fullRecipientEmail || recipientName || 'Destinatario'}</strong>
+                                    </span>
+                                </div>
+                            </div>
+
+                            {/* Asunto y Cuerpo formateado */}
+                            <div className="p-4 space-y-3">
                                 <div className="flex items-center gap-2 flex-wrap">
                                     <span className="text-[10px] font-black uppercase tracking-wider text-purple-400 bg-purple-500/15 px-2 py-0.5 rounded border border-purple-500/30">
-                                        Asunto Listo
+                                        Asunto
                                     </span>
                                     <span className="font-bold text-sm text-white truncate">
                                         {livePreview.emailSubject}
                                     </span>
                                 </div>
-                                <p className="text-xs text-gray-400 italic truncate max-w-2xl">
-                                    "{livePreview.idea}"
-                                </p>
+                                <div className="p-3.5 bg-gray-900/50 rounded-xl border border-gray-800/60 text-xs text-gray-200 whitespace-pre-line leading-relaxed max-h-48 overflow-y-auto font-sans shadow-inner">
+                                    {livePreview.emailBody}
+                                </div>
                             </div>
-                            <button
-                                type="button"
-                                onClick={handleApplyCustomFormat}
-                                className="w-full md:w-auto shrink-0 px-6 py-3 bg-gradient-to-r from-purple-600 to-indigo-600 hover:from-purple-500 hover:to-indigo-500 text-white rounded-xl font-black text-xs uppercase tracking-widest shadow-xl flex items-center justify-center gap-2 transition-all hover:scale-[1.02] active:scale-[0.98] cursor-pointer"
-                            >
-                                <Send size={15} />
-                                <span>Cargar al Redactor y Enviar</span>
-                            </button>
+
+                            {/* Pie de acciones rápidas */}
+                            <div className="bg-gray-900/70 px-4 py-3 border-t border-gray-800 flex flex-col sm:flex-row items-center justify-between gap-3">
+                                <div className="text-xs text-gray-400 italic">
+                                    Abre directo en tu Outlook Web de Javer o cárgalo al redactor superior.
+                                </div>
+                                <div className="flex items-center gap-2 w-full sm:w-auto">
+                                    <button
+                                        type="button"
+                                        onClick={handleOpenOutlookWebFromPreset}
+                                        className="flex-1 sm:flex-initial px-4 py-2.5 bg-blue-600/20 hover:bg-blue-600 text-blue-300 hover:text-white rounded-xl text-xs font-bold border border-blue-500/40 transition-all flex items-center justify-center gap-1.5 cursor-pointer shadow-sm"
+                                        title="Abrir directamente en Outlook Web Javer (Office 365)"
+                                    >
+                                        <ExternalLink size={13} />
+                                        <span>Outlook Web (Javer 365)</span>
+                                    </button>
+                                    <button
+                                        type="button"
+                                        onClick={handleApplyCustomFormat}
+                                        className="flex-1 sm:flex-initial px-6 py-2.5 bg-gradient-to-r from-purple-600 to-indigo-600 hover:from-purple-500 hover:to-indigo-500 text-white rounded-xl font-black text-xs uppercase tracking-wider shadow-xl flex items-center justify-center gap-2 transition-all hover:scale-[1.02] active:scale-[0.98] cursor-pointer"
+                                    >
+                                        <Send size={14} />
+                                        <span>Cargar al Redactor y Enviar</span>
+                                    </button>
+                                </div>
+                            </div>
                         </div>
                     </>
                 )}
