@@ -243,14 +243,14 @@ const EmailGenerator: React.FC<EmailGeneratorProps> = ({ attachedImages, onAttac
     const [selectedContactIndex, setSelectedContactIndex] = useState<string>('');
     const [isContactsLoading, setIsContactsLoading] = useState(false);
     const [isSavingContact, setIsSavingContact] = useState(false);
-    const [recipientTitle, setRecipientTitle] = useState('');
+    const [recipientTitle, setRecipientTitle] = useState('Arq.');
     const [titlesList, setTitlesList] = useState<string[]>(DEFAULT_TITLES);
-    const [recipientName, setRecipientName] = useState('');
+    const [recipientName, setRecipientName] = useState('Erik Gabino');
     const [recipientGender, setRecipientGender] = useState<Gender>('M');
-    const [recipientEmailUser, setRecipientEmailUser] = useState('');
-    const [recipientEmailDomain, setRecipientEmailDomain] = useState(emailDomains[0]);
+    const [recipientEmailUser, setRecipientEmailUser] = useState('egabino');
+    const [recipientEmailDomain, setRecipientEmailDomain] = useState('@javer');
     const [customDomain, setCustomDomain] = useState('');
-    const [recipientEmailTld, setRecipientEmailTld] = useState(emailTlds[0]);
+    const [recipientEmailTld, setRecipientEmailTld] = useState('.com.mx');
     const [isLoading, setIsLoading] = useState(false);
     const [error, setError] = useState<string | null>(null);
     const [generatedContent, setGeneratedContent] = useState<GeneratedContent | null>(null);
@@ -363,26 +363,6 @@ const EmailGenerator: React.FC<EmailGeneratorProps> = ({ attachedImages, onAttac
     const aiRecognitionRef = useRef<any>(null);
     const baseAiInputRef = useRef<string>('');
 
-    const handleResetAll = useCallback(() => {
-        setIdea('');
-        setPreviousEmail('');
-        setProject('');
-        setGeneratedContent(null);
-        setOriginalContent(null);
-        setError(null);
-        setSelectedContactIndex('');
-        setRecipientName('');
-        setRecipientTitle('');
-        setRecipientEmailUser('');
-        setCustomDomain('');
-        setSuggestion('');
-        setSelectedDeliverables(['Planos']);
-        setSelectedMethod('Revisión');
-        setSelectedFormats(['DWG', 'PDF']);
-        setActivePresetId('qp-1');
-        onAttachmentsChange([]);
-        toast.info("Todos los campos han sido reiniciados");
-    }, [onAttachmentsChange]);
 
     const toggleAiListening = useCallback(() => {
         const SpeechRecognition = (window as any).SpeechRecognition || (window as any).webkitSpeechRecognition;
@@ -510,32 +490,90 @@ const EmailGenerator: React.FC<EmailGeneratorProps> = ({ attachedImages, onAttac
         });
     }, [contacts, favorites]);
 
+    const selectContactByIndex = useCallback((idx: number, list: Contact[]) => {
+        const contact = list[idx];
+        if (!contact) return;
+        setSelectedContactIndex(String(idx));
+        setRecipientName(String(getDBValue(contact, ['cliente', 'nombre']) || ''));
+        const dbTitle = getDBValue(contact, ['lic', 'titulo']) || '';
+        setRecipientTitle(dbTitle);
+        const gen = String(getDBValue(contact, 'genero') || '').toLowerCase();
+        setRecipientGender(gen.startsWith('m') || gen.includes('fem') || gen.includes('femenino') ? 'F' : 'M');
+        const email = getDBValue(contact, 'correo') || '';
+        if (email && email.includes('@')) {
+            const [u, dFull] = email.split('@');
+            setRecipientEmailUser(u);
+            if (dFull.includes('javer')) setRecipientEmailDomain('@javer');
+            else if (dFull.includes('gmail')) setRecipientEmailDomain('@gmail');
+            else if (dFull.includes('outlook')) setRecipientEmailDomain('@outlook');
+            else if (dFull.includes('hotmail')) setRecipientEmailDomain('@hotmail');
+            else { setRecipientEmailDomain('Personalizado'); setCustomDomain(dFull.split('.')[0]); }
+            if (dFull.endsWith('.com.mx')) setRecipientEmailTld('.com.mx');
+            else if (dFull.endsWith('.com')) setRecipientEmailTld('.com');
+        }
+    }, []);
+
     const handleContactSelect = (e: React.ChangeEvent<HTMLSelectElement>) => {
         const idxVal = e.target.value;
-        setSelectedContactIndex(idxVal);
-        if (idxVal === '') { setRecipientName(''); setRecipientTitle(''); return; }
+        if (idxVal === '') {
+            setSelectedContactIndex('');
+            setRecipientName('');
+            setRecipientTitle('');
+            setRecipientEmailUser('');
+            return;
+        }
         const idx = parseInt(idxVal, 10);
-        const contact = sortedContacts[idx];
-        if (contact) {
-            setRecipientName(String(getDBValue(contact, ['cliente', 'nombre']) || ''));
-            const dbTitle = getDBValue(contact, ['lic', 'titulo']) || '';
-            setRecipientTitle(dbTitle);
-            const gen = String(getDBValue(contact, 'genero') || '').toLowerCase();
-            setRecipientGender(gen.startsWith('m') || gen.includes('fem') || gen.includes('femenino') ? 'F' : 'M');
-            const email = getDBValue(contact, 'correo') || '';
-            if (email.includes('@')) {
-                const [u, dFull] = email.split('@');
-                setRecipientEmailUser(u);
-                if (dFull.includes('javer')) setRecipientEmailDomain('@javer');
-                else if (dFull.includes('gmail')) setRecipientEmailDomain('@gmail');
-                else if (dFull.includes('outlook')) setRecipientEmailDomain('@outlook');
-                else if (dFull.includes('hotmail')) setRecipientEmailDomain('@hotmail');
-                else { setRecipientEmailDomain('Personalizado'); setCustomDomain(dFull.split('.')[0]); }
-                if (dFull.endsWith('.com.mx')) setRecipientEmailTld('.com.mx');
-                else if (dFull.endsWith('.com')) setRecipientEmailTld('.com');
+        selectContactByIndex(idx, sortedContacts);
+    };
+
+    // Seleccionar a Erik automáticamente por defecto al cargar contactos
+    const hasAutoSelectedErikRef = useRef(false);
+    useEffect(() => {
+        if (sortedContacts.length > 0 && !hasAutoSelectedErikRef.current) {
+            const erikIdx = sortedContacts.findIndex(c => {
+                const name = String(getDBValue(c, ['cliente', 'nombre']) || '').toLowerCase();
+                return name.includes('erik') || name.includes('eric');
+            });
+            if (erikIdx !== -1) {
+                hasAutoSelectedErikRef.current = true;
+                selectContactByIndex(erikIdx, sortedContacts);
             }
         }
-    };
+    }, [sortedContacts, selectContactByIndex]);
+
+    const handleResetAll = useCallback(() => {
+        setIdea('');
+        setPreviousEmail('');
+        setProject('');
+        setGeneratedContent(null);
+        setOriginalContent(null);
+        setError(null);
+        setSuggestion('');
+        setSelectedDeliverables(['Planos']);
+        setSelectedMethod('Revisión');
+        setSelectedFormats(['DWG', 'PDF']);
+        setActivePresetId('qp-1');
+        onAttachmentsChange([]);
+
+        // Restablecer a Erik por defecto
+        const erikIdx = sortedContacts.findIndex(c => {
+            const name = String(getDBValue(c, ['cliente', 'nombre']) || '').toLowerCase();
+            return name.includes('erik') || name.includes('eric');
+        });
+        if (erikIdx !== -1) {
+            selectContactByIndex(erikIdx, sortedContacts);
+        } else {
+            setSelectedContactIndex('');
+            setRecipientName('Erik Gabino');
+            setRecipientTitle('Arq.');
+            setRecipientGender('M');
+            setRecipientEmailUser('egabino');
+            setRecipientEmailDomain('@javer');
+            setRecipientEmailTld('.com.mx');
+        }
+
+        toast.info("Campos reiniciados (Erik seleccionado por defecto)");
+    }, [onAttachmentsChange, sortedContacts, selectContactByIndex]);
 
     const fullRecipientEmail = useMemo(() => {
         if (!recipientEmailUser) return '';
@@ -926,11 +964,23 @@ const EmailGenerator: React.FC<EmailGeneratorProps> = ({ attachedImages, onAttac
                     </a>
                 </div>
                 <div className="flex items-center gap-2">
+                    <button 
+                        type="button"
+                        onClick={() => {
+                            const el = document.getElementById('plantillas-preestablecidas');
+                            if (el) el.scrollIntoView({ behavior: 'smooth' });
+                        }} 
+                        className="px-3 py-2 bg-gradient-to-r from-purple-600/30 to-indigo-600/30 hover:from-purple-600 hover:to-indigo-600 text-purple-200 hover:text-white rounded-lg text-xs font-black uppercase border border-purple-500/40 transition-all flex items-center gap-1.5 cursor-pointer shadow-sm"
+                        title="Ir al constructor de plantillas y formatos al fondo"
+                    >
+                        <Bookmark size={14} />
+                        <span className="hidden sm:inline">Plantillas</span>
+                    </button>
                     <button onClick={() => handleGenerate()} disabled={isLoading} className="px-4 py-2 bg-gradient-to-r from-purple-600 via-indigo-600 to-blue-600 text-white rounded-lg font-black text-xs uppercase tracking-wider shadow-md flex items-center gap-2 hover:scale-[1.02] active:scale-[0.98] transition-all disabled:opacity-50">
                         {isLoading ? <RefreshCw className="animate-spin" size={16}/> : <><Sparkles size={16}/> <span>Generar</span></>}
                     </button>
                     <button onClick={() => setShowHistory(!showHistory)} className="px-4 py-2 bg-gray-800 rounded-lg text-xs font-black uppercase text-gray-400 border border-gray-700 hover:bg-gray-700 transition-colors">Historial</button>
-                    <button onClick={handleResetAll} title="Reiniciar todos los campos" className="px-3 py-2 bg-gray-800 hover:bg-red-600/20 text-gray-400 hover:text-red-400 rounded-lg text-xs font-black uppercase border border-gray-700 hover:border-red-500/40 transition-all flex items-center gap-1.5">
+                    <button onClick={handleResetAll} title="Reiniciar todos los campos (Erik por defecto)" className="px-3 py-2 bg-gray-800 hover:bg-red-600/20 text-gray-400 hover:text-red-400 rounded-lg text-xs font-black uppercase border border-gray-700 hover:border-red-500/40 transition-all flex items-center gap-1.5">
                         <RotateCcw size={14} />
                         <span>Reset</span>
                     </button>
@@ -1253,7 +1303,7 @@ const EmailGenerator: React.FC<EmailGeneratorProps> = ({ attachedImages, onAttac
             {/* ========================================================================= */}
             {/* PLANTILLAS Y CORREOS PREESTABLECIDOS (HASTA MERO ABAJO) */}
             {/* ========================================================================= */}
-            <div className="mt-8 bg-gray-900/60 p-5 sm:p-6 rounded-2xl border border-gray-800 shadow-2xl space-y-6">
+            <div id="plantillas-preestablecidas" className="mt-8 bg-gray-900/60 p-5 sm:p-6 rounded-2xl border border-gray-800 shadow-2xl space-y-6 scroll-mt-6">
                 {/* Encabezado */}
                 <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 pb-4 border-b border-gray-800">
                     <div className="flex items-center gap-3">
@@ -1271,6 +1321,13 @@ const EmailGenerator: React.FC<EmailGeneratorProps> = ({ attachedImages, onAttac
                         </div>
                     </div>
                     <div className="flex items-center gap-2">
+                        <button
+                            type="button"
+                            onClick={() => window.scrollTo({ top: 0, behavior: 'smooth' })}
+                            className="px-3 py-1.5 rounded-lg text-xs font-bold text-purple-300 hover:text-white bg-purple-600/20 hover:bg-purple-600/40 border border-purple-500/40 transition-colors cursor-pointer flex items-center gap-1"
+                        >
+                            <span>▲ Subir al redactor</span>
+                        </button>
                         <button
                             type="button"
                             onClick={() => {
