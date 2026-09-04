@@ -406,7 +406,71 @@ const ThreeDPrinting: React.FC = () => {
 
   return (
     <div className="p-4 space-y-5 animate-in fade-in slide-in-from-bottom-4 duration-500 max-w-[1600px] mx-auto pb-20">
-      {/* Barra de Sub-Pestañas Superior */}
+      {/* Librerías (Siempre visible arriba) */}
+      <div className="flex flex-col xl:flex-row xl:items-center justify-between gap-4 bg-blue-600/10 p-4 sm:p-5 rounded-2xl border border-blue-500/20 shadow-lg">
+        <div className="flex items-center gap-3 shrink-0">
+          <div className="p-2.5 bg-blue-600/20 rounded-xl border border-blue-500/30 shrink-0">
+            <Globe size={22} className="text-blue-400" />
+          </div>
+          <div>
+            <h2 className="text-base sm:text-lg font-bold text-white leading-tight">Librerías</h2>
+            <p className="text-xs text-gray-400">Plataformas y repositorios de modelos 3D.</p>
+          </div>
+        </div>
+        
+        <div className="grid grid-cols-4 sm:grid-cols-4 lg:grid-cols-8 gap-2.5 flex-1 xl:max-w-[75%]">
+          {filteredLibraries.map((tool, idx) => (
+            <a
+              key={idx}
+              href={tool.href}
+              target="_blank"
+              rel="noopener noreferrer"
+              className={`flex flex-col items-center justify-center p-2 bg-gradient-to-b ${tool.color} border border-white/10 rounded-2xl transition-all hover:scale-105 hover:border-white/30 group min-w-[65px] h-[78px] shadow-sm`}
+            >
+              <div className="mb-1.5 p-1 bg-gray-900/60 rounded-xl group-hover:scale-110 transition-transform flex items-center justify-center w-8 h-8 shrink-0">
+                {tool.icon}
+              </div>
+              <span className="text-[9px] font-bold text-gray-300 group-hover:text-white uppercase tracking-wider text-center line-clamp-1 w-full px-0.5">
+                {tool.name}
+              </span>
+            </a>
+          ))}
+        </div>
+      </div>
+
+      {/* Herramientas 3D (Siempre visible arriba) */}
+      <div className="flex flex-col xl:flex-row xl:items-center justify-between gap-4 bg-purple-600/10 p-4 sm:p-5 rounded-2xl border border-purple-500/20 shadow-lg">
+        <div className="flex items-center gap-3 shrink-0">
+          <div className="p-2.5 bg-purple-600/20 rounded-xl border border-purple-500/30 shrink-0">
+            <Wrench size={22} className="text-purple-400" />
+          </div>
+          <div>
+            <h2 className="text-base sm:text-lg font-bold text-white leading-tight">Herramientas 3D</h2>
+            <p className="text-xs text-gray-400">Generadores con IA y editores de modelos.</p>
+          </div>
+        </div>
+        
+        <div className="grid grid-cols-5 sm:grid-cols-5 lg:grid-cols-10 gap-2 flex-1 xl:max-w-[80%]">
+          {filteredTools.map((tool, idx) => (
+            <a
+              key={idx}
+              href={tool.href}
+              target="_blank"
+              rel="noopener noreferrer"
+              className={`flex flex-col items-center justify-center p-2 bg-gradient-to-b ${tool.color} border border-white/10 rounded-2xl transition-all hover:scale-105 hover:border-white/30 group min-w-[58px] h-[78px] shadow-sm`}
+            >
+              <div className="mb-1.5 p-1 bg-gray-900/60 rounded-xl group-hover:scale-110 transition-transform flex items-center justify-center w-8 h-8 shrink-0">
+                {tool.icon}
+              </div>
+              <span className="text-[9px] font-bold text-gray-300 group-hover:text-white uppercase tracking-wider text-center line-clamp-1 w-full px-0.5">
+                {tool.name}
+              </span>
+            </a>
+          ))}
+        </div>
+      </div>
+
+      {/* Barra de Sub-Pestañas */}
       <div className="flex flex-col md:flex-row items-center justify-between gap-3 bg-slate-900/70 backdrop-blur-xl p-2.5 rounded-2xl border border-white/10 shadow-xl">
         <div className="flex items-center gap-1.5 p-1 bg-white/5 rounded-xl border border-white/5 w-full md:w-auto overflow-x-auto scrollbar-none">
           <button
@@ -442,7 +506,7 @@ const ThreeDPrinting: React.FC = () => {
             }`}
           >
             <FolderArchive size={15} />
-            <span>Catálogo & Librerías</span>
+            <span>Catálogo STL (+90k)</span>
           </button>
 
           <button
@@ -459,28 +523,31 @@ const ThreeDPrinting: React.FC = () => {
           </button>
         </div>
 
-        {/* Buscador de modelos/librerías visible en catálogo o ver todo */}
-        {(activeTab === 'catalogo' || activeTab === 'todo') && (
-          <div className="relative w-full md:w-80">
-            <Search size={14} className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400" />
-            <input
-              type="text"
-              value={searchQuery}
-              onChange={e => setSearchQuery(e.target.value)}
-              placeholder="Buscar STL o librería (Vader, Naruto, Cosplay...)"
-              className="w-full bg-white/5 border border-white/10 rounded-xl pl-9 pr-8 py-2 text-xs font-bold text-white placeholder:text-gray-500 focus:outline-none focus:border-purple-500/50 transition-all"
-            />
-            {searchQuery && (
-              <button
-                onClick={() => setSearchQuery('')}
-                className="absolute right-2.5 top-1/2 -translate-y-1/2 text-gray-400 hover:text-white p-0.5"
-                title="Limpiar búsqueda"
-              >
-                <X size={13} />
-              </button>
-            )}
-          </div>
-        )}
+        {/* Buscador de modelos STL y herramientas */}
+        <div className="relative w-full md:w-80">
+          <Search size={14} className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400" />
+          <input
+            type="text"
+            value={searchQuery}
+            onChange={e => {
+              setSearchQuery(e.target.value);
+              if (e.target.value.trim() && activeTab !== 'catalogo' && activeTab !== 'todo') {
+                setActiveTab('catalogo');
+              }
+            }}
+            placeholder="Buscar STL (Vader, Naruto, Cosplay...)"
+            className="w-full bg-white/5 border border-white/10 rounded-xl pl-9 pr-8 py-2 text-xs font-bold text-white placeholder:text-gray-500 focus:outline-none focus:border-purple-500/50 transition-all"
+          />
+          {searchQuery && (
+            <button
+              onClick={() => setSearchQuery('')}
+              className="absolute right-2.5 top-1/2 -translate-y-1/2 text-gray-400 hover:text-white p-0.5"
+              title="Limpiar búsqueda"
+            >
+              <X size={13} />
+            </button>
+          )}
+        </div>
       </div>
 
       {/* RENDER CALCULADORA (TALLER / VENTAS / TODO) */}
@@ -491,7 +558,7 @@ const ThreeDPrinting: React.FC = () => {
         />
       )}
 
-      {/* RENDER CATÁLOGO Y LIBRERÍAS (CATÁLOGO / TODO) */}
+      {/* RENDER CATÁLOGO DE MODELOS STL (CATÁLOGO / TODO) */}
       {(activeTab === 'catalogo' || activeTab === 'todo') && (
         <div className="space-y-6 animate-in fade-in duration-300">
           {/* Alerta de resultados de búsqueda */}
@@ -510,74 +577,6 @@ const ThreeDPrinting: React.FC = () => {
               >
                 Limpiar filtro
               </button>
-            </div>
-          )}
-
-          {/* Librerías */}
-          {filteredLibraries.length > 0 && (
-            <div className="flex flex-col xl:flex-row xl:items-center justify-between gap-4 bg-blue-600/10 p-4 sm:p-5 rounded-2xl border border-blue-500/20 shadow-lg">
-              <div className="flex items-center gap-3 shrink-0">
-                <div className="p-2.5 bg-blue-600/20 rounded-xl border border-blue-500/30 shrink-0">
-                  <Globe size={22} className="text-blue-400" />
-                </div>
-                <div>
-                  <h2 className="text-base sm:text-lg font-bold text-white leading-tight">Librerías</h2>
-                  <p className="text-xs text-gray-400">Plataformas y repositorios de modelos 3D.</p>
-                </div>
-              </div>
-              
-              <div className="grid grid-cols-4 sm:grid-cols-4 lg:grid-cols-8 gap-2.5 flex-1 xl:max-w-[75%]">
-                {filteredLibraries.map((tool, idx) => (
-                  <a
-                    key={idx}
-                    href={tool.href}
-                    target="_blank"
-                    rel="noopener noreferrer"
-                    className={`flex flex-col items-center justify-center p-2 bg-gradient-to-b ${tool.color} border border-white/10 rounded-2xl transition-all hover:scale-105 hover:border-white/30 group min-w-[65px] h-[78px] shadow-sm`}
-                  >
-                    <div className="mb-1.5 p-1 bg-gray-900/60 rounded-xl group-hover:scale-110 transition-transform flex items-center justify-center w-8 h-8 shrink-0">
-                      {tool.icon}
-                    </div>
-                    <span className="text-[9px] font-bold text-gray-300 group-hover:text-white uppercase tracking-wider text-center line-clamp-1 w-full px-0.5">
-                      {tool.name}
-                    </span>
-                  </a>
-                ))}
-              </div>
-            </div>
-          )}
-
-          {/* Herramientas 3D */}
-          {filteredTools.length > 0 && (
-            <div className="flex flex-col xl:flex-row xl:items-center justify-between gap-4 bg-purple-600/10 p-4 sm:p-5 rounded-2xl border border-purple-500/20 shadow-lg">
-              <div className="flex items-center gap-3 shrink-0">
-                <div className="p-2.5 bg-purple-600/20 rounded-xl border border-purple-500/30 shrink-0">
-                  <Wrench size={22} className="text-purple-400" />
-                </div>
-                <div>
-                  <h2 className="text-base sm:text-lg font-bold text-white leading-tight">Herramientas 3D</h2>
-                  <p className="text-xs text-gray-400">Generadores con IA y editores de modelos.</p>
-                </div>
-              </div>
-              
-              <div className="grid grid-cols-5 sm:grid-cols-5 lg:grid-cols-10 gap-2 flex-1 xl:max-w-[80%]">
-                {filteredTools.map((tool, idx) => (
-                  <a
-                    key={idx}
-                    href={tool.href}
-                    target="_blank"
-                    rel="noopener noreferrer"
-                    className={`flex flex-col items-center justify-center p-2 bg-gradient-to-b ${tool.color} border border-white/10 rounded-2xl transition-all hover:scale-105 hover:border-white/30 group min-w-[58px] h-[78px] shadow-sm`}
-                  >
-                    <div className="mb-1.5 p-1 bg-gray-900/60 rounded-xl group-hover:scale-110 transition-transform flex items-center justify-center w-8 h-8 shrink-0">
-                      {tool.icon}
-                    </div>
-                    <span className="text-[9px] font-bold text-gray-300 group-hover:text-white uppercase tracking-wider text-center line-clamp-1 w-full px-0.5">
-                      {tool.name}
-                    </span>
-                  </a>
-                ))}
-              </div>
             </div>
           )}
 
