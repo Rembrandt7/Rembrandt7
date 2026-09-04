@@ -1,5 +1,5 @@
-import React from 'react';
-import { Box, Wrench, Layout, Sparkles, Move, Star, Shield, Zap, Package, Key, Sword, Globe, ChevronRight, Settings, Database, ExternalLink, Cloud } from 'lucide-react';
+import React, { useState, useMemo } from 'react';
+import { Box, Wrench, Layout, Sparkles, Move, Star, Shield, Zap, Package, Key, Sword, Globe, ChevronRight, Settings, Database, ExternalLink, Cloud, Search, X, Calculator, TrendingUp, FolderArchive, Layers } from 'lucide-react';
 import { motion } from 'motion/react';
 
 import ThreeDCalculator from './ThreeDCalculator';
@@ -330,141 +330,307 @@ const CustomIcon = ({ type, src, index = 0 }: { type: keyof typeof ICONS, src?: 
   );
 };
 
-const GroupCard = ({ group, className }: { group: typeof groups[0], className?: string }) => (
-  <div className={`p-4 bg-slate-900/10 rounded-2xl border ${group.color} transition-all duration-300 hover:bg-slate-900/20 flex flex-col justify-between h-full ${className}`}>
-    <div>
-      <div className="flex items-center justify-between mb-3">
-        <h3 className="font-bold text-[10px] text-white flex items-center gap-2 uppercase tracking-widest opacity-80">
-          {group.title}
-          <div className="h-px flex-1 bg-white/5 min-w-[5px] ml-2" />
-        </h3>
-      </div>
-      <div className="grid grid-cols-4 sm:grid-cols-6 md:grid-cols-5 lg:grid-cols-6 xl:grid-cols-4 gap-2">
-        {group.items.map((item, iIdx) => (
-          <motion.a
-            key={iIdx}
-            href={item.href}
-            target="_blank"
-            rel="noopener noreferrer"
-            whileHover={{ scale: 1.05, backgroundColor: 'rgba(255,255,255,0.08)' }}
-            className="flex flex-col items-center p-1 bg-white/5 border border-white/5 rounded-xl group transition-all text-center relative"
-          >
-            <CustomIcon type={item.type as any} index={item.index} />
-            <span className="text-[8px] font-bold text-gray-500 group-hover:text-white uppercase tracking-tighter line-clamp-1 mt-1.5 w-full px-0.5">
-              {item.name}
-            </span>
-            <div className="absolute top-0.5 right-0.5 opacity-0 group-hover:opacity-100 transition-opacity">
-              <ExternalLink size={6} className="text-blue-400" />
-            </div>
-          </motion.a>
-        ))}
+const GroupCard = ({ group, className, itemsOverride }: { group: typeof groups[0], className?: string, itemsOverride?: typeof groups[0]['items'] }) => {
+  const displayItems = itemsOverride || group.items;
+  if (displayItems.length === 0) return null;
+
+  return (
+    <div className={`p-4 bg-slate-900/10 rounded-2xl border ${group.color} transition-all duration-300 hover:bg-slate-900/20 flex flex-col justify-between h-full ${className || ''}`}>
+      <div>
+        <div className="flex items-center justify-between mb-3">
+          <h3 className="font-bold text-[10px] text-white flex items-center gap-2 uppercase tracking-widest opacity-80">
+            {group.title}
+            <div className="h-px flex-1 bg-white/5 min-w-[5px] ml-2" />
+          </h3>
+        </div>
+        <div className="grid grid-cols-4 sm:grid-cols-6 md:grid-cols-5 lg:grid-cols-6 xl:grid-cols-4 gap-2">
+          {displayItems.map((item, iIdx) => (
+            <motion.a
+              key={iIdx}
+              href={item.href}
+              target="_blank"
+              rel="noopener noreferrer"
+              whileHover={{ scale: 1.05, backgroundColor: 'rgba(255,255,255,0.08)' }}
+              className="flex flex-col items-center p-1 bg-white/5 border border-white/5 rounded-xl group transition-all text-center relative"
+            >
+              <CustomIcon type={item.type as any} index={item.index} />
+              <span className="text-[8px] font-bold text-gray-400 group-hover:text-white uppercase tracking-tighter line-clamp-1 mt-1.5 w-full px-0.5">
+                {item.name}
+              </span>
+              <div className="absolute top-0.5 right-0.5 opacity-0 group-hover:opacity-100 transition-opacity">
+                <ExternalLink size={6} className="text-blue-400" />
+              </div>
+            </motion.a>
+          ))}
+        </div>
       </div>
     </div>
-  </div>
-);
+  );
+};
+
+type SubTab = 'taller' | 'ventas' | 'catalogo' | 'todo';
 
 const ThreeDPrinting: React.FC = () => {
+  const [activeTab, setActiveTab] = useState<SubTab>('taller');
+  const [searchQuery, setSearchQuery] = useState('');
+
+  const cleanQuery = searchQuery.trim().toLowerCase();
+
+  const filteredGroups = useMemo(() => {
+    if (!cleanQuery) return groups;
+    return groups
+      .map(g => ({
+        ...g,
+        items: g.items.filter(item => 
+          item.name.toLowerCase().includes(cleanQuery) || 
+          g.title.toLowerCase().includes(cleanQuery)
+        )
+      }))
+      .filter(g => g.items.length > 0);
+  }, [cleanQuery]);
+
+  const filteredLibraries = useMemo(() => {
+    if (!cleanQuery) return libraries;
+    return libraries.filter(l => l.name.toLowerCase().includes(cleanQuery));
+  }, [cleanQuery]);
+
+  const filteredTools = useMemo(() => {
+    if (!cleanQuery) return tools3D;
+    return tools3D.filter(t => t.name.toLowerCase().includes(cleanQuery));
+  }, [cleanQuery]);
+
+  const totalMatches = useMemo(() => {
+    const groupMatches = filteredGroups.reduce((acc, g) => acc + g.items.length, 0);
+    return groupMatches + filteredLibraries.length + filteredTools.length;
+  }, [filteredGroups, filteredLibraries, filteredTools]);
+
   return (
-    <div className="p-4 space-y-6 animate-in fade-in slide-in-from-bottom-4 duration-500 max-w-[1600px] mx-auto pb-20">
-      {/* Librerías */}
-      <div className="flex flex-col xl:flex-row xl:items-center justify-between gap-4 bg-blue-600/10 p-4 sm:p-5 rounded-2xl border border-blue-500/20 shadow-lg">
-        <div className="flex items-center gap-3 shrink-0">
-          <div className="p-2.5 bg-blue-600/20 rounded-xl border border-blue-500/30 shrink-0">
-            <Globe size={22} className="text-blue-400" />
-          </div>
-          <div>
-            <h2 className="text-base sm:text-lg font-bold text-white leading-tight">Librerías</h2>
-            <p className="text-xs text-gray-400">Plataformas y repositorios de modelos 3D.</p>
-          </div>
+    <div className="p-4 space-y-5 animate-in fade-in slide-in-from-bottom-4 duration-500 max-w-[1600px] mx-auto pb-20">
+      {/* Barra de Sub-Pestañas Superior */}
+      <div className="flex flex-col md:flex-row items-center justify-between gap-3 bg-slate-900/70 backdrop-blur-xl p-2.5 rounded-2xl border border-white/10 shadow-xl">
+        <div className="flex items-center gap-1.5 p-1 bg-white/5 rounded-xl border border-white/5 w-full md:w-auto overflow-x-auto scrollbar-none">
+          <button
+            onClick={() => setActiveTab('taller')}
+            className={`flex items-center gap-2 px-3.5 py-2 rounded-lg text-xs font-black uppercase tracking-wider transition-all shrink-0 ${
+              activeTab === 'taller'
+                ? 'bg-gradient-to-r from-blue-600 to-indigo-600 text-white shadow-md'
+                : 'text-gray-400 hover:text-white hover:bg-white/5'
+            }`}
+          >
+            <Calculator size={15} />
+            <span>Taller & Cotizador</span>
+          </button>
+
+          <button
+            onClick={() => setActiveTab('ventas')}
+            className={`flex items-center gap-2 px-3.5 py-2 rounded-lg text-xs font-black uppercase tracking-wider transition-all shrink-0 ${
+              activeTab === 'ventas'
+                ? 'bg-gradient-to-r from-emerald-600 to-teal-600 text-white shadow-md'
+                : 'text-gray-400 hover:text-white hover:bg-white/5'
+            }`}
+          >
+            <TrendingUp size={15} />
+            <span>Ventas & Pedidos</span>
+          </button>
+
+          <button
+            onClick={() => setActiveTab('catalogo')}
+            className={`flex items-center gap-2 px-3.5 py-2 rounded-lg text-xs font-black uppercase tracking-wider transition-all shrink-0 ${
+              activeTab === 'catalogo'
+                ? 'bg-gradient-to-r from-purple-600 to-pink-600 text-white shadow-md'
+                : 'text-gray-400 hover:text-white hover:bg-white/5'
+            }`}
+          >
+            <FolderArchive size={15} />
+            <span>Catálogo & Librerías</span>
+          </button>
+
+          <button
+            onClick={() => setActiveTab('todo')}
+            className={`flex items-center gap-1.5 px-3 py-2 rounded-lg text-xs font-black uppercase tracking-wider transition-all shrink-0 ${
+              activeTab === 'todo'
+                ? 'bg-white/20 text-white shadow-md'
+                : 'text-gray-400 hover:text-white hover:bg-white/5'
+            }`}
+            title="Ver todas las secciones en una sola pantalla continua"
+          >
+            <Layers size={14} />
+            <span>Ver Todo</span>
+          </button>
         </div>
-        
-        <div className="grid grid-cols-4 sm:grid-cols-4 lg:grid-cols-8 gap-2.5 flex-1 xl:max-w-[75%]">
-          {libraries.map((tool, idx) => (
-            <a
-              key={idx}
-              href={tool.href}
-              target="_blank"
-              rel="noopener noreferrer"
-              className={`flex flex-col items-center justify-center p-2 bg-gradient-to-b ${tool.color} border border-white/10 rounded-2xl transition-all hover:scale-105 hover:border-white/30 group min-w-[65px] h-[78px] shadow-sm`}
-            >
-              <div className="mb-1.5 p-1 bg-gray-900/60 rounded-xl group-hover:scale-110 transition-transform flex items-center justify-center w-8 h-8 shrink-0">
-                {tool.icon}
-              </div>
-              <span className="text-[9px] font-bold text-gray-300 group-hover:text-white uppercase tracking-wider text-center line-clamp-1 w-full px-0.5">
-                {tool.name}
+
+        {/* Buscador de modelos/librerías visible en catálogo o ver todo */}
+        {(activeTab === 'catalogo' || activeTab === 'todo') && (
+          <div className="relative w-full md:w-80">
+            <Search size={14} className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400" />
+            <input
+              type="text"
+              value={searchQuery}
+              onChange={e => setSearchQuery(e.target.value)}
+              placeholder="Buscar STL o librería (Vader, Naruto, Cosplay...)"
+              className="w-full bg-white/5 border border-white/10 rounded-xl pl-9 pr-8 py-2 text-xs font-bold text-white placeholder:text-gray-500 focus:outline-none focus:border-purple-500/50 transition-all"
+            />
+            {searchQuery && (
+              <button
+                onClick={() => setSearchQuery('')}
+                className="absolute right-2.5 top-1/2 -translate-y-1/2 text-gray-400 hover:text-white p-0.5"
+                title="Limpiar búsqueda"
+              >
+                <X size={13} />
+              </button>
+            )}
+          </div>
+        )}
+      </div>
+
+      {/* RENDER CALCULADORA (TALLER / VENTAS / TODO) */}
+      {(activeTab === 'taller' || activeTab === 'ventas' || activeTab === 'todo') && (
+        <ThreeDCalculator
+          viewMode={activeTab === 'todo' ? 'all' : activeTab}
+          onSwitchView={(newView) => setActiveTab(newView as SubTab)}
+        />
+      )}
+
+      {/* RENDER CATÁLOGO Y LIBRERÍAS (CATÁLOGO / TODO) */}
+      {(activeTab === 'catalogo' || activeTab === 'todo') && (
+        <div className="space-y-6 animate-in fade-in duration-300">
+          {/* Alerta de resultados de búsqueda */}
+          {cleanQuery && (
+            <div className="flex items-center justify-between p-3.5 bg-purple-500/10 border border-purple-500/20 rounded-2xl text-xs">
+              <span className="text-purple-300 font-bold flex items-center gap-2">
+                <Search size={14} />
+                <span>
+                  Resultados para "<strong className="text-white">{searchQuery}</strong>":{' '}
+                  <span className="text-emerald-400 font-black">{totalMatches} encontrados</span>
+                </span>
               </span>
-            </a>
-          ))}
-        </div>
-      </div>
+              <button
+                onClick={() => setSearchQuery('')}
+                className="text-[10px] font-black uppercase text-gray-400 hover:text-white bg-white/5 hover:bg-white/10 px-2.5 py-1 rounded-lg transition-all"
+              >
+                Limpiar filtro
+              </button>
+            </div>
+          )}
 
-      {/* Herramientas 3D */}
-      <div className="flex flex-col xl:flex-row xl:items-center justify-between gap-4 bg-purple-600/10 p-4 sm:p-5 rounded-2xl border border-purple-500/20 shadow-lg">
-        <div className="flex items-center gap-3 shrink-0">
-          <div className="p-2.5 bg-purple-600/20 rounded-xl border border-purple-500/30 shrink-0">
-            <Wrench size={22} className="text-purple-400" />
-          </div>
-          <div>
-            <h2 className="text-base sm:text-lg font-bold text-white leading-tight">Herramientas 3D</h2>
-            <p className="text-xs text-gray-400">Generadores con IA y editores de modelos.</p>
-          </div>
-        </div>
-        
-        <div className="grid grid-cols-5 sm:grid-cols-5 lg:grid-cols-10 gap-2 flex-1 xl:max-w-[80%]">
-          {tools3D.map((tool, idx) => (
-            <a
-              key={idx}
-              href={tool.href}
-              target="_blank"
-              rel="noopener noreferrer"
-              className={`flex flex-col items-center justify-center p-2 bg-gradient-to-b ${tool.color} border border-white/10 rounded-2xl transition-all hover:scale-105 hover:border-white/30 group min-w-[58px] h-[78px] shadow-sm`}
-            >
-              <div className="mb-1.5 p-1 bg-gray-900/60 rounded-xl group-hover:scale-110 transition-transform flex items-center justify-center w-8 h-8 shrink-0">
-                {tool.icon}
+          {/* Librerías */}
+          {filteredLibraries.length > 0 && (
+            <div className="flex flex-col xl:flex-row xl:items-center justify-between gap-4 bg-blue-600/10 p-4 sm:p-5 rounded-2xl border border-blue-500/20 shadow-lg">
+              <div className="flex items-center gap-3 shrink-0">
+                <div className="p-2.5 bg-blue-600/20 rounded-xl border border-blue-500/30 shrink-0">
+                  <Globe size={22} className="text-blue-400" />
+                </div>
+                <div>
+                  <h2 className="text-base sm:text-lg font-bold text-white leading-tight">Librerías</h2>
+                  <p className="text-xs text-gray-400">Plataformas y repositorios de modelos 3D.</p>
+                </div>
               </div>
-              <span className="text-[9px] font-bold text-gray-300 group-hover:text-white uppercase tracking-wider text-center line-clamp-1 w-full px-0.5">
-                {tool.name}
-              </span>
-            </a>
-          ))}
-        </div>
-      </div>
+              
+              <div className="grid grid-cols-4 sm:grid-cols-4 lg:grid-cols-8 gap-2.5 flex-1 xl:max-w-[75%]">
+                {filteredLibraries.map((tool, idx) => (
+                  <a
+                    key={idx}
+                    href={tool.href}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    className={`flex flex-col items-center justify-center p-2 bg-gradient-to-b ${tool.color} border border-white/10 rounded-2xl transition-all hover:scale-105 hover:border-white/30 group min-w-[65px] h-[78px] shadow-sm`}
+                  >
+                    <div className="mb-1.5 p-1 bg-gray-900/60 rounded-xl group-hover:scale-110 transition-transform flex items-center justify-center w-8 h-8 shrink-0">
+                      {tool.icon}
+                    </div>
+                    <span className="text-[9px] font-bold text-gray-300 group-hover:text-white uppercase tracking-wider text-center line-clamp-1 w-full px-0.5">
+                      {tool.name}
+                    </span>
+                  </a>
+                ))}
+              </div>
+            </div>
+          )}
 
-      {/* Calculator Section */}
-      <ThreeDCalculator />
+          {/* Herramientas 3D */}
+          {filteredTools.length > 0 && (
+            <div className="flex flex-col xl:flex-row xl:items-center justify-between gap-4 bg-purple-600/10 p-4 sm:p-5 rounded-2xl border border-purple-500/20 shadow-lg">
+              <div className="flex items-center gap-3 shrink-0">
+                <div className="p-2.5 bg-purple-600/20 rounded-xl border border-purple-500/30 shrink-0">
+                  <Wrench size={22} className="text-purple-400" />
+                </div>
+                <div>
+                  <h2 className="text-base sm:text-lg font-bold text-white leading-tight">Herramientas 3D</h2>
+                  <p className="text-xs text-gray-400">Generadores con IA y editores de modelos.</p>
+                </div>
+              </div>
+              
+              <div className="grid grid-cols-5 sm:grid-cols-5 lg:grid-cols-10 gap-2 flex-1 xl:max-w-[80%]">
+                {filteredTools.map((tool, idx) => (
+                  <a
+                    key={idx}
+                    href={tool.href}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    className={`flex flex-col items-center justify-center p-2 bg-gradient-to-b ${tool.color} border border-white/10 rounded-2xl transition-all hover:scale-105 hover:border-white/30 group min-w-[58px] h-[78px] shadow-sm`}
+                  >
+                    <div className="mb-1.5 p-1 bg-gray-900/60 rounded-xl group-hover:scale-110 transition-transform flex items-center justify-center w-8 h-8 shrink-0">
+                      {tool.icon}
+                    </div>
+                    <span className="text-[9px] font-bold text-gray-300 group-hover:text-white uppercase tracking-wider text-center line-clamp-1 w-full px-0.5">
+                      {tool.name}
+                    </span>
+                  </a>
+                ))}
+              </div>
+            </div>
+          )}
 
-      {/* Main Grid Reorganized - 4 Symmetrical Balanced Columns */}
-      <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-4 gap-6">
-        {/* Column 1 (Total: 12 items) */}
-        <div className="flex flex-col gap-6">
-          <GroupCard group={groups[0]} /> {/* Mega Pack: 10 items */}
-          <GroupCard group={groups[5]} /> {/* Articulados: 2 items */}
-        </div>
+          {/* Mensaje cuando no hay resultados en la búsqueda */}
+          {cleanQuery && totalMatches === 0 && (
+            <div className="p-12 text-center bg-slate-900/30 border border-white/5 rounded-3xl space-y-2">
+              <p className="text-base font-bold text-gray-400">No se encontraron modelos ni herramientas con "{searchQuery}".</p>
+              <p className="text-xs text-gray-500">Prueba buscando por categoría como "Anime", "Star Wars", "Macetas", "Chibis" o el nombre de un personaje.</p>
+            </div>
+          )}
 
-        {/* Column 2 (Total: 11 items) */}
-        <div className="flex flex-col gap-6">
-          <GroupCard group={groups[1]} /> {/* Anime Legends: 7 items */}
-          <GroupCard group={groups[2]} /> {/* Pokémon World: 4 items */}
-        </div>
+          {/* Grid de STLs */}
+          {cleanQuery ? (
+            <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-4 gap-6">
+              {filteredGroups.map((group, idx) => (
+                <GroupCard key={idx} group={group} itemsOverride={group.items} />
+              ))}
+            </div>
+          ) : (
+            <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-4 gap-6">
+              {/* Column 1 (Total: 12 items) */}
+              <div className="flex flex-col gap-6">
+                <GroupCard group={groups[0]} /> {/* Mega Pack: 10 items */}
+                <GroupCard group={groups[5]} /> {/* Articulados: 2 items */}
+              </div>
 
-        {/* Column 3 (Total: 11 items) */}
-        <div className="flex flex-col gap-6">
-          <GroupCard group={groups[7]} /> {/* Star Wars: 7 items */}
-          <GroupCard group={groups[4]} /> {/* Marvel & DC: 4 items */}
-        </div>
+              {/* Column 2 (Total: 11 items) */}
+              <div className="flex flex-col gap-6">
+                <GroupCard group={groups[1]} /> {/* Anime Legends: 7 items */}
+                <GroupCard group={groups[2]} /> {/* Pokémon World: 4 items */}
+              </div>
 
-        {/* Column 4 (Total: 12 items) */}
-        <div className="flex flex-col gap-6">
-          <GroupCard group={groups[3]} /> {/* Máscaras 3D: 6 items */}
-          <GroupCard group={groups[6]} /> {/* Llaveros: 6 items */}
+              {/* Column 3 (Total: 11 items) */}
+              <div className="flex flex-col gap-6">
+                <GroupCard group={groups[7]} /> {/* Star Wars: 7 items */}
+                <GroupCard group={groups[4]} /> {/* Marvel & DC: 4 items */}
+              </div>
+
+              {/* Column 4 (Total: 12 items) */}
+              <div className="flex flex-col gap-6">
+                <GroupCard group={groups[3]} /> {/* Máscaras 3D: 6 items */}
+                <GroupCard group={groups[6]} /> {/* Llaveros: 6 items */}
+              </div>
+            </div>
+          )}
+
+          <div className="p-6 bg-gradient-to-r from-purple-600/10 to-blue-600/10 rounded-3xl border border-white/10 text-center">
+            <p className="text-sm text-gray-400">
+              Recursos 3D optimizados con enlaces directos a Google Drive y repositorios oficiales.
+            </p>
+          </div>
         </div>
-      </div>
-      
-      <div className="p-6 bg-gradient-to-r from-purple-600/10 to-blue-600/10 rounded-3xl border border-white/10 text-center">
-        <p className="text-sm text-gray-400">
-          Recursos 3D optimizados para alta densidad de información.
-        </p>
-      </div>
+      )}
     </div>
   );
 };

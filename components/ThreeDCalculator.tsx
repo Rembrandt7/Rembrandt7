@@ -113,7 +113,12 @@ const MATERIAL_POWER = {
   PETG: 155,
 };
 
-const ThreeDCalculator: React.FC = () => {
+export interface ThreeDCalculatorProps {
+  viewMode?: 'all' | 'taller' | 'ventas';
+  onSwitchView?: (view: 'taller' | 'ventas' | 'catalogo' | 'todo') => void;
+}
+
+const ThreeDCalculator: React.FC<ThreeDCalculatorProps> = ({ viewMode = 'all', onSwitchView }) => {
   const [pieceName, setPieceName] = useState('');
   const [material, setMaterial] = useState<keyof typeof MATERIAL_POWER>('PLA');
   const [selectedFilamentId, setSelectedFilamentId] = useState<string>(''); // For stock selection
@@ -571,11 +576,33 @@ const ThreeDCalculator: React.FC = () => {
     toast.success('¡Cotización para WhatsApp copiada!');
   };
 
+  const handleTransferToSales = () => {
+    const finalPieceName = pieceName.trim() || 'Impresión 3D';
+    setSaleName(finalPieceName);
+    setSaleCost(Number(results.baseCost.toFixed(2)));
+    setSalePrice(Number(results.commercialPrice.toFixed(2)));
+    setSaleAdvance(Number(results.commercialPrice.toFixed(2)));
+    setSalePaid(true);
+    setSaleDate(new Date().toISOString().split('T')[0]);
+    setEditingSaleId(null);
+
+    if (onSwitchView) {
+      onSwitchView('ventas');
+    } else {
+      setTimeout(() => {
+        const heading = document.getElementById('sales-form-heading');
+        heading?.scrollIntoView({ behavior: 'smooth' });
+      }, 100);
+    }
+    toast.success(`¡"${finalPieceName}" cargada al Registro de Ventas!`);
+  };
+
   const formatCurrency = (val: number) => new Intl.NumberFormat('es-MX', { style: 'currency', currency: 'MXN' }).format(val);
 
   return (
     <div className="w-full h-full p-2 flex flex-col">
-      <div className="grid grid-cols-1 lg:grid-cols-12 gap-3.5 max-w-[1600px] mx-auto w-full">
+      {(viewMode === 'all' || viewMode === 'taller') && (
+        <div className="grid grid-cols-1 lg:grid-cols-12 gap-3.5 max-w-[1600px] mx-auto w-full">
         
         {/* COL 1: CALCULADORA */}
         <div className={`${isStockOpen ? 'lg:col-span-5' : 'lg:col-span-7'} bg-slate-950/85 backdrop-blur-3xl border border-white/10 rounded-2xl flex flex-col overflow-hidden shadow-xl transition-all duration-300`}>
@@ -664,6 +691,31 @@ const ThreeDCalculator: React.FC = () => {
                      </select>
                   </div>
                </div>
+
+                {/* Presets Rápidos */}
+                <div className="flex items-center gap-1.5 overflow-x-auto pb-0.5 scrollbar-none">
+                   <span className="text-[8px] font-black text-gray-500 uppercase tracking-widest shrink-0">Presets:</span>
+                   {[
+                     { label: '🔑 Llavero', weight: 15, h: 0, m: 45 },
+                     { label: '🗿 Fig. Chica', weight: 55, h: 2, m: 30 },
+                     { label: '🎭 Estándar', weight: 120, h: 5, m: 0 },
+                     { label: '🪖 Casco/Grande', weight: 450, h: 18, m: 0 },
+                   ].map((p, idx) => (
+                     <button
+                       key={idx}
+                       type="button"
+                       onClick={() => {
+                         setWeightUsed(p.weight);
+                         setPrintHours(p.h);
+                         setPrintMinutes(p.m);
+                         toast.info(`Preset: ${p.label} (${p.weight}g, ${p.h}h ${p.m}m)`);
+                       }}
+                       className="px-2 py-0.5 bg-white/5 hover:bg-blue-600/20 text-gray-300 hover:text-blue-300 border border-white/10 hover:border-blue-500/30 rounded-lg text-[8px] font-black uppercase tracking-wider shrink-0 transition-all active:scale-95"
+                     >
+                       {p.label}
+                     </button>
+                   ))}
+                </div>
 
                {/* Fila 2: Precio/kg, Gramos, Tiempo */}
                <div className="grid grid-cols-3 gap-2.5">
@@ -761,13 +813,21 @@ const ThreeDCalculator: React.FC = () => {
                           <span className="text-[10px] text-green-400 font-black">+{formatCurrency(results.profit)}</span>
                        </div>
                     </div>
-                    <div className="flex gap-1.5">
-                       <button onClick={() => copyQuoteForWhatsApp('comercial')} className="px-2.5 py-2 bg-green-600 hover:bg-green-500 text-white rounded-lg text-[9px] font-black uppercase tracking-wider flex items-center gap-1 shadow-md transition-all" title="Copiar cotización para WhatsApp">
-                          <MessageSquare size={13} />
-                          <span>WhatsApp</span>
-                       </button>
-                       <button onClick={() => handleCopy(results.commercialPrice, 'comercial')} className="p-2 bg-blue-600 hover:bg-blue-500 text-white rounded-lg text-xs font-black transition-all" title="Copiar precio comercial"><Copy size={15}/></button>
-                    </div>
+                     <div className="flex gap-1.5 items-center">
+                        <button 
+                           onClick={handleTransferToSales} 
+                           className="px-2 py-2 bg-gradient-to-r from-emerald-600 to-teal-600 hover:from-emerald-500 hover:to-teal-500 text-white rounded-lg text-[9px] font-black uppercase tracking-wider flex items-center gap-1 shadow-md transition-all active:scale-95 shrink-0" 
+                           title="Registrar esta cotización en el Panel de Ventas"
+                        >
+                           <TrendingUp size={13} />
+                           <span>A Ventas</span>
+                        </button>
+                        <button onClick={() => copyQuoteForWhatsApp('comercial')} className="px-2.5 py-2 bg-green-600 hover:bg-green-500 text-white rounded-lg text-[9px] font-black uppercase tracking-wider flex items-center gap-1 shadow-md transition-all shrink-0" title="Copiar cotización para WhatsApp">
+                           <MessageSquare size={13} />
+                           <span>WhatsApp</span>
+                        </button>
+                        <button onClick={() => handleCopy(results.commercialPrice, 'comercial')} className="p-2 bg-blue-600 hover:bg-blue-500 text-white rounded-lg text-xs font-black transition-all shrink-0" title="Copiar precio comercial"><Copy size={15}/></button>
+                     </div>
                  </div>
             </div>
           </div>
@@ -955,9 +1015,11 @@ const ThreeDCalculator: React.FC = () => {
         )}
 
       </div>
+      )}
 
       {/* REGISTRO FINANCIERO DE VENTAS Y COSTOS 3D */}
-      <div className="mt-8 bg-slate-950/80 backdrop-blur-3xl border border-white/10 rounded-3xl p-6 shadow-2xl max-w-[1600px] mx-auto w-full animate-in fade-in duration-500">
+      {(viewMode === 'all' || viewMode === 'ventas') && (
+      <div className={`${viewMode === 'all' ? 'mt-8' : 'mt-1'} bg-slate-950/80 backdrop-blur-3xl border border-white/10 rounded-3xl p-6 shadow-2xl max-w-[1600px] mx-auto w-full animate-in fade-in duration-500`}>
         <div className="flex flex-col md:flex-row md:items-center justify-between gap-4 border-b border-white/10 pb-4 mb-6">
           <div>
             <h3 className="text-lg font-black text-white uppercase tracking-widest italic flex items-center gap-2">
@@ -1299,6 +1361,7 @@ const ThreeDCalculator: React.FC = () => {
           </div>
         </div>
       </div>
+      )}
     </div>
   );
 };
