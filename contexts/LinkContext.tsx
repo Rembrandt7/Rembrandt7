@@ -227,7 +227,8 @@ const INITIAL_CONFIG: AppConfig = {
     { id: 'gd-15', name: "Stitch", href: "https://stitch.withgoogle.com/?pli=1", colorClass: "text-pink-500", iconSvg: '<svg viewBox="0 0 24 24" class="w-8 h-8 fill-none stroke-current stroke-2" strokeLinecap="round" strokeLinejoin="round"><rect x="2" y="2" width="20" height="20" rx="5" ry="5"></rect><path d="M16 11.37A4 4 0 1 1 12.63 8 4 4 0 0 1 16 11.37z"></path><line x1="17.5" y1="6.5" x2="17.51" y2="6.5"></line></svg>' },
     { id: 'gd-17', name: "Word", href: "https://docs.google.com", colorClass: "text-blue-500", iconSvg: '<svg viewBox="0 0 24 24" class="w-8 h-8 fill-blue-500"><path d="M14 2H6c-1.1 0-1.99.9-1.99 2L4 20c0 1.1.89 2 1.99 2H18c1.1 0 2-.9 2-2V8l-6-6zm2 16H8v-2h8v2zm0-4H8v-2h8v2zm-3-5V3.5L18.5 9H13z"/></svg>' },
     { id: 'gd-18', name: "Excel", href: "https://sheets.google.com", colorClass: "text-green-600", iconSvg: '<svg viewBox="0 0 24 24" class="w-8 h-8 fill-green-500"><path d="M14 2H6c-1.1 0-1.99.9-1.99 2L4 20c0 1.1.89 2 1.99 2H18c1.1 0 2-.9 2-2V8l-6-6zm2 16H8v-2h8v2zm0-4H8v-2h8v2zm-3-5V3.5L18.5 9H13z"/></svg>' },
-    { id: 'gd-19', name: "PowerPoint", href: "https://slides.google.com", colorClass: "text-yellow-500", iconSvg: '<svg viewBox="0 0 24 24" class="w-8 h-8 fill-yellow-500"><path d="M19 3H5c-1.1 0-2 .9-2 2v14c0 1.1.9 2 2 2h14c1.1 0 2-.9 2-2V5c0-1.1-.9-2-2-2zM9 15c-1.1 0-2-.9-2-2s.9-2 2-2 2 .9 2 2-.9 2-2zm3-6c-1.1 0-2-.9-2-2s.9-2 2-2 2 .9 2 2-.9 2-2zm3 6c-1.1 0-2-.9-2-2s.9-2 2-2 2 .9 2 2-.9 2-2z"/></svg>' }
+    { id: 'gd-19', name: "PowerPoint", href: "https://slides.google.com", colorClass: "text-yellow-500", iconSvg: '<svg viewBox="0 0 24 24" class="w-8 h-8 fill-yellow-500"><path d="M19 3H5c-1.1 0-2 .9-2 2v14c0 1.1.9 2 2 2h14c1.1 0 2-.9 2-2V5c0-1.1-.9-2-2-2zM9 15c-1.1 0-2-.9-2-2s.9-2 2-2 2 .9 2 2-.9 2-2zm3-6c-1.1 0-2-.9-2-2s.9-2 2-2 2 .9 2 2-.9 2-2zm3 6c-1.1 0-2-.9-2-2s.9-2 2-2 2 .9 2 2-.9 2-2z"/></svg>' },
+    { id: 'gd-20', name: "Google Pics", href: "https://docs.google.com/images/d/1VlJezSYwZmBuHFpmfmpeW7Mj0_7-z9ls-Y_PrTT294E/edit?pli=1", colorClass: "text-red-500", iconSvg: '<svg viewBox="0 0 24 24" class="w-8 h-8 fill-red-500"><path d="M14 2H6c-1.1 0-1.99.9-1.99 2L4 20c0 1.1.89 2 1.99 2H18c1.1 0 2-.9 2-2V8l-6-6zm-1 7V3.5L18.5 9H13zm5 9H6V4h7v5h5v9z"/><circle cx="9.5" cy="11.5" r="1.5"/><path d="M8 16h8l-3-4-2 2.5-1.5-1.5z"/></svg>' }
   ],
   usefulTools: [
     {
@@ -586,6 +587,16 @@ export const LinkProvider: React.FC<{ children: React.ReactNode }> = ({ children
 
         if (!finalConfig.googleDock || !Array.isArray(finalConfig.googleDock)) {
           finalConfig.googleDock = INITIAL_CONFIG.googleDock;
+        } else {
+          const hasPics = finalConfig.googleDock.some(
+            (item: any) => item.name?.toLowerCase().includes('pics') || item.href?.includes('1VlJezSYwZmBuHFpmfmpeW7Mj0_7-z9ls-Y_PrTT294E')
+          );
+          if (!hasPics) {
+            const picsItem = INITIAL_CONFIG.googleDock.find(i => i.id === 'gd-20');
+            if (picsItem) {
+              finalConfig.googleDock.push(picsItem);
+            }
+          }
         }
         
         // Ensure commands exist
@@ -861,6 +872,21 @@ export const LinkProvider: React.FC<{ children: React.ReactNode }> = ({ children
 
             if (missingLinks.length > 0) {
               parsed.linksBar = [...parsed.linksBar, ...missingLinks];
+            }
+          }
+
+          // Add missing links to googleDock (including Google Pics)
+          if (!parsed.googleDock || !Array.isArray(parsed.googleDock)) {
+            parsed.googleDock = INITIAL_CONFIG.googleDock;
+          } else {
+            const hasPics = parsed.googleDock.some(
+              (item: any) => item.id === 'gd-20' || item.name === 'Google Pics' || item.href?.includes('1VlJezSYwZmBuHFpmfmpeW7Mj0_7-z9ls-Y_PrTT294E')
+            );
+            if (!hasPics) {
+              const picsItem = INITIAL_CONFIG.googleDock.find(i => i.id === 'gd-20');
+              if (picsItem) {
+                parsed.googleDock.push(picsItem);
+              }
             }
           }
 
@@ -1427,6 +1453,16 @@ export const LinkProvider: React.FC<{ children: React.ReactNode }> = ({ children
         // Ensure googleDock exists
         if (!json.googleDock || !Array.isArray(json.googleDock)) {
           json.googleDock = INITIAL_CONFIG.googleDock;
+        } else {
+          const hasPics = json.googleDock.some(
+            (item: any) => item.id === 'gd-20' || item.name === 'Google Pics' || item.href?.includes('1VlJezSYwZmBuHFpmfmpeW7Mj0_7-z9ls-Y_PrTT294E')
+          );
+          if (!hasPics) {
+            const picsItem = INITIAL_CONFIG.googleDock.find(i => i.id === 'gd-20');
+            if (picsItem) {
+              json.googleDock.push(picsItem);
+            }
+          }
         }
 
         // Ensure commands exist
@@ -1527,6 +1563,16 @@ export const LinkProvider: React.FC<{ children: React.ReactNode }> = ({ children
 
       if (!json.googleDock || !Array.isArray(json.googleDock)) {
         json.googleDock = INITIAL_CONFIG.googleDock;
+      } else {
+        const hasPics = json.googleDock.some(
+          (item: any) => item.id === 'gd-20' || item.name === 'Google Pics' || item.href?.includes('1VlJezSYwZmBuHFpmfmpeW7Mj0_7-z9ls-Y_PrTT294E')
+        );
+        if (!hasPics) {
+          const picsItem = INITIAL_CONFIG.googleDock.find(i => i.id === 'gd-20');
+          if (picsItem) {
+            json.googleDock.push(picsItem);
+          }
+        }
       }
       
       // Ensure commands exist
