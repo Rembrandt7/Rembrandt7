@@ -108,6 +108,12 @@ const tools3D = [
     color: 'from-blue-500/20 to-transparent' 
   },
   { 
+    name: 'STLBuddy', 
+    href: 'https://stlbuddy.com/model-splitter', 
+    icon: <Scissors size={20} className="text-cyan-400" />, 
+    color: 'from-cyan-500/20 to-transparent' 
+  },
+  { 
     name: 'Tripo', 
     href: 'https://studio.tripo3d.ai/', 
     icon: (
@@ -175,12 +181,6 @@ const tools3D = [
       </svg>
     ), 
     color: 'from-teal-500/20 to-transparent' 
-  },
-  { 
-    name: 'STLBuddy', 
-    href: 'https://stlbuddy.com/model-splitter', 
-    icon: <Scissors size={20} className="text-cyan-400" />, 
-    color: 'from-cyan-500/20 to-transparent' 
   },
 ];
 
@@ -456,7 +456,7 @@ const ThreeDPrinting: React.FC = () => {
           </div>
         </div>
         
-        <div className="grid grid-cols-4 sm:grid-cols-6 lg:grid-cols-11 gap-2 flex-1 xl:max-w-[85%]">
+        <div className="grid grid-cols-4 sm:grid-cols-6 lg:grid-cols-11 gap-2 flex-1">
           {filteredTools.map((tool, idx) => (
             <a
               key={idx}

@@ -207,7 +207,8 @@ const INITIAL_CONFIG: AppConfig = {
             { id: 'rs-4-5', href: "https://aidemos.meta.com/segment-anything/gallery/" , name: "Sam", description: "Segment Anything", colorClass: "hover:text-indigo-500", iconSvg: '<svg class="w-full h-full" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M21 16V8a2 2 0 0 0-1-1.73l-7-4a2 2 0 0 0-2 0l-7 4A2 2 0 0 0 3 8v8a2 2 0 0 0 1 1.73l7 4a2 2 0 0 0 2 0l7-4A2 2 0 0 0 21 16z"></path><polyline points="3.27 6.96 12 12.01 20.73 6.96"></polyline><line x1="12" y1="22.08" x2="12" y2="12"></line></svg>' },
             { id: 'rs-4-6', href: "https://magiceraser.org/es/remove-watermark-from-video/", name: "Magic Eraser", description: "Quita marcas", colorClass: "hover:text-orange-400", iconSvg: '<svg class="w-full h-full" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round"><path d="M20 5H9l-7 7 7 7h11a2 2 0 0 0 2-2V7a2 2 0 0 0-2-2Z" /><line x1="18" y1="9" x2="12" y2="15" /><line x1="12" y1="9" x2="18" y2="15" /></svg>' },
             { id: 'rs-4-7', href: "https://www.clicmayores.com/xprompt.html", name: "Prompt Video", description: "Herramienta", colorClass: "hover:text-orange-500", iconSvg: '<svg class="w-full h-full" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><rect x="2" y="2" width="20" height="20" rx="2.18" ry="2.18"></rect><line x1="7" y1="2" x2="7" y2="22"></line><line x1="17" y1="2" x2="17" y2="22"></line><line x1="2" y1="12" x2="22" y2="12"></line><line x1="2" y1="7" x2="7" y2="7"></line><line x1="2" y1="17" x2="7" y2="17"></line><line x1="17" y1="17" x2="22" y2="17"></line><line x1="17" y1="7" x2="22" y2="7"></line></svg>' },
-            { id: 'rs-4-8', href: "https://www.clicmayores.com/x.html", name: "Click Mayores", description: "Recursos", colorClass: "hover:text-emerald-500", iconSvg: '<svg class="w-full h-full" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M12 2a10 10 0 1 0 10 10A10 10 0 0 0 12 2zm0 14a4 4 0 1 1 4-4 4 4 0 0 1-4 4z" /><path d="M10 9l5 3-5 3z" /></svg>' }
+            { id: 'rs-4-8', href: "https://www.clicmayores.com/x.html", name: "Click Mayores", description: "Recursos", colorClass: "hover:text-emerald-500", iconSvg: '<svg class="w-full h-full" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M12 2a10 10 0 1 0 10 10A10 10 0 0 0 12 2zm0 14a4 4 0 1 1 4-4 4 4 0 0 1-4 4z" /><path d="M10 9l5 3-5 3z" /></svg>' },
+            { id: 'rs-4-stlbuddy', href: "https://stlbuddy.com/model-splitter", name: "STLBuddy", description: "Cortador de modelos 3D", colorClass: "hover:text-cyan-400", iconSvg: '<svg class="w-full h-full text-cyan-400" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><circle cx="6" cy="6" r="3"/><circle cx="6" cy="18" r="3"/><line x1="20" y1="4" x2="8.12" y2="15.88"/><line x1="14.47" y1="14.48" x2="20" y2="20"/><line x1="8.12" y1="8.12" x2="12" y2="12"/></svg>' }
         ]
     }
   ],
@@ -273,7 +274,8 @@ const INITIAL_CONFIG: AppConfig = {
             { id: 'ut-5-sam', name: "Sam", description: "Segment Anything", href: "https://aidemos.meta.com/segment-anything/gallery/", colorClass: "hover:shadow-indigo-500/20", iconSvg: '<svg class="w-full h-full text-indigo-400" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M21 16V8a2 2 0 0 0-1-1.73l-7-4a2 2 0 0 0-2 0l-7 4A2 2 0 0 0 3 8v8a2 2 0 0 0 1 1.73l7 4a2 2 0 0 0 2 0l7-4A2 2 0 0 0 21 16z"></path><polyline points="3.27 6.96 12 12.01 20.73 6.96"></polyline><line x1="12" y1="22.08" x2="12" y2="12"></line></svg>' },
             { id: 'ut-5-isoremb', name: "isoremb", description: "Isometrías Instalaciones", href: "https://isometrias-instalaciones.vercel.app/", colorClass: "hover:shadow-orange-500/20", iconSvg: '<svg class="w-full h-full text-orange-400" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><rect x="3" y="3" width="18" height="18" rx="4"></rect><path d="M7 7h10v10H7z"></path><path d="M7 12h10"></path></svg>' },
             { id: 'ut-5-letras', name: "Letras", description: "ProLed3D Letras y Carteles", href: "https://proled3d.com/?lang=es", colorClass: "hover:shadow-pink-500/20", iconSvg: '<svg class="w-full h-full text-pink-400" viewBox="0 0 24 24" fill="currentColor"><path d="M9.93 13.5h4.14L12 7.98 9.93 13.5zM20 2H4c-1.1 0-2 .9-2 2v16c0 1.1.9 2 2 2h16c1.1 0 2-.9 2-2V4c0-1.1-.9-2-2-2zm-4.05 16.5l-1.14-3H9.17l-1.12 3H5.96l5.11-13h1.86l5.11 13h-2.09z"/></svg>' },
-            { id: 'ut-5-guilloche', name: "Guilloche", description: "Generador de Patrones", href: "https://guillochegenerator.com/", colorClass: "hover:shadow-teal-500/20", iconSvg: '<svg class="w-full h-full text-teal-300" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round"><circle cx="12" cy="12" r="9" /><ellipse cx="12" cy="12" rx="9" ry="4" transform="rotate(0 12 12)" /><ellipse cx="12" cy="12" rx="9" ry="4" transform="rotate(45 12 12)" /><ellipse cx="12" cy="12" rx="9" ry="4" transform="rotate(90 12 12)" /><ellipse cx="12" cy="12" rx="9" ry="4" transform="rotate(135 12 12)" /></svg>' }
+            { id: 'ut-5-guilloche', name: "Guilloche", description: "Generador de Patrones", href: "https://guillochegenerator.com/", colorClass: "hover:shadow-teal-500/20", iconSvg: '<svg class="w-full h-full text-teal-300" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round"><circle cx="12" cy="12" r="9" /><ellipse cx="12" cy="12" rx="9" ry="4" transform="rotate(0 12 12)" /><ellipse cx="12" cy="12" rx="9" ry="4" transform="rotate(45 12 12)" /><ellipse cx="12" cy="12" rx="9" ry="4" transform="rotate(90 12 12)" /><ellipse cx="12" cy="12" rx="9" ry="4" transform="rotate(135 12 12)" /></svg>' },
+            { id: 'ut-5-stlbuddy', name: "STLBuddy", description: "Cortador y Divisor de Modelos 3D", href: "https://stlbuddy.com/model-splitter", colorClass: "hover:shadow-cyan-500/20", iconSvg: '<svg class="w-full h-full text-cyan-400" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><circle cx="6" cy="6" r="3"/><circle cx="6" cy="18" r="3"/><line x1="20" y1="4" x2="8.12" y2="15.88"/><line x1="14.47" y1="14.48" x2="20" y2="20"/><line x1="8.12" y1="8.12" x2="12" y2="12"/></svg>' }
         ]
     },
     {
@@ -705,6 +707,17 @@ export const LinkProvider: React.FC<{ children: React.ReactNode }> = ({ children
           }
         }
 
+        if (finalConfig.rightSidebar && Array.isArray(finalConfig.rightSidebar)) {
+          const herramCat = finalConfig.rightSidebar.find((c: any) => c.id === 'rs-4' || c.title?.toLowerCase().includes('herramientas'));
+          if (herramCat && herramCat.items) {
+            const hasSTL = herramCat.items.some((i: any) => i.name?.toLowerCase().includes('stlbuddy') || i.href?.includes('stlbuddy'));
+            if (!hasSTL) {
+              const stlItem = INITIAL_CONFIG.rightSidebar.find(c => c.id === 'rs-4')?.items.find(i => i.id === 'rs-4-stlbuddy');
+              if (stlItem) herramCat.items.push(stlItem);
+            }
+          }
+        }
+
         if (finalConfig.aiSidebar && finalConfig.aiSidebar.quickAccess) {
           const hasJaver = finalConfig.aiSidebar.quickAccess.some((l: any) => l.name === 'Javer Data Center' || l.href.includes('3a3196da-cb37-40b8-9a5d-48e74634248d'));
           if (!hasJaver) {
@@ -840,6 +853,26 @@ export const LinkProvider: React.FC<{ children: React.ReactNode }> = ({ children
                 parsed.usefulTools.push(section);
               }
             });
+            const section3D = parsed.usefulTools.find((s: any) => s.id === 'ut-5');
+            if (section3D) {
+              const default3D = INITIAL_CONFIG.usefulTools.find(s => s.id === 'ut-5')?.items || [];
+              default3D.forEach(defaultItem => {
+                if (!section3D.items.find((l: any) => l.name === defaultItem.name)) {
+                  section3D.items.push(defaultItem);
+                }
+              });
+            }
+          }
+
+          if (parsed.rightSidebar && Array.isArray(parsed.rightSidebar)) {
+            const herramCat = parsed.rightSidebar.find((c: any) => c.id === 'rs-4' || c.title?.toLowerCase().includes('herramientas'));
+            if (herramCat && herramCat.items) {
+              const hasSTL = herramCat.items.some((i: any) => i.name?.toLowerCase().includes('stlbuddy') || i.href?.includes('stlbuddy'));
+              if (!hasSTL) {
+                const stlItem = INITIAL_CONFIG.rightSidebar.find(c => c.id === 'rs-4')?.items.find(i => i.id === 'rs-4-stlbuddy');
+                if (stlItem) herramCat.items.push(stlItem);
+              }
+            }
           }
           // Ensure commands exist
           if (!parsed.commands || !Array.isArray(parsed.commands)) {
