@@ -1,5 +1,5 @@
 import React, { useState, useMemo } from 'react';
-import { Box, Wrench, Layout, Sparkles, Move, Star, Shield, Zap, Package, Key, Sword, Globe, ChevronRight, Settings, Database, ExternalLink, Cloud, Search, X, Calculator, TrendingUp, FolderArchive, Layers } from 'lucide-react';
+import { Box, Wrench, Layout, Sparkles, Move, Star, Shield, Zap, Package, Key, Sword, Globe, ChevronRight, Settings, Database, ExternalLink, Cloud, Search, X, Calculator, TrendingUp, FolderArchive, Layers, Scissors } from 'lucide-react';
 import { motion } from 'motion/react';
 
 import ThreeDCalculator from './ThreeDCalculator';
@@ -175,6 +175,12 @@ const tools3D = [
       </svg>
     ), 
     color: 'from-teal-500/20 to-transparent' 
+  },
+  { 
+    name: 'STLBuddy', 
+    href: 'https://stlbuddy.com/model-splitter', 
+    icon: <Scissors size={20} className="text-cyan-400" />, 
+    color: 'from-cyan-500/20 to-transparent' 
   },
 ];
 
@@ -450,7 +456,7 @@ const ThreeDPrinting: React.FC = () => {
           </div>
         </div>
         
-        <div className="grid grid-cols-5 sm:grid-cols-5 lg:grid-cols-10 gap-2 flex-1 xl:max-w-[80%]">
+        <div className="grid grid-cols-4 sm:grid-cols-6 lg:grid-cols-11 gap-2 flex-1 xl:max-w-[85%]">
           {filteredTools.map((tool, idx) => (
             <a
               key={idx}
