@@ -20,7 +20,7 @@ async function getOAuth2Client(req: VercelRequest) {
     }
   }
   
-  const redirectUri = `${baseUrl.replace(/\/$/, '')}/api/auth/callback`;
+  const redirectUri = (req.query?.redirect_uri as string) || (req.headers["x-redirect-uri"] as string) || `${baseUrl.replace(/\/$/, '')}/api/auth/callback`;
   console.log(`[CALENDAR] Using Redirect URI: ${redirectUri}`);
 
   const clientId = (req.headers["x-client-id"] as string) || process.env.CLIENT_ID;
@@ -290,6 +290,25 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
 
   } catch (error: any) {
     console.error("Calendar sync error:", error);
-    res.status(500).json({ error: error.message });
+    const errorMsg = error?.message || error?.toString() || '';
+    const errorData = error?.response?.data;
+    const isAuthError = 
+      errorMsg.includes('invalid_grant') || 
+      errorMsg.includes('invalid_token') || 
+      error?.code === 401 || 
+      error?.status === 401 ||
+      error?.response?.status === 401 ||
+      errorData?.error === 'invalid_grant' ||
+      errorData?.error === 'unauthorized_client';
+
+    if (isAuthError) {
+      console.warn("[CALENDAR] Auth expired or revoked. Returning 401 for client auto-recovery.");
+      return res.status(401).json({ 
+        error: "invalid_grant", 
+        message: "Sesión de Google Calendar expirada o revocada. Se requiere volver a conectar la cuenta." 
+      });
+    }
+
+    res.status(500).json({ error: errorMsg, details: errorData });
   }
 }

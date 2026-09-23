@@ -460,8 +460,6 @@ export const LinkProvider: React.FC<{ children: React.ReactNode }> = ({ children
   const [isEditing, setIsEditing] = useState(false);
   const [isShoppingEditMode, setShoppingEditMode] = useState(false);
   const [isNotesEditMode, setNotesEditMode] = useState(false);
-  const [isEstudiosEditMode, setEstudiosEditMode] = useState(false);
-
   const [googleApiConfig, setGoogleApiConfigState] = useState<GoogleApiConfig | null>(() => {
     try {
       const stored = localStorage.getItem('googleApiConfig');

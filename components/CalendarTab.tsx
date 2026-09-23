@@ -29,6 +29,7 @@ import {
 } from 'lucide-react';
 import CalendarAiAssistant from './CalendarAiAssistant';
 import WeatherForecast from './WeatherForecast';
+import { toast } from 'sonner';
 
 const CalendarTab: React.FC = () => {
   const { config, updateConfig, saveToSupabase, isEditing, googleApiConfig } = useLinks();
@@ -311,27 +312,46 @@ const CalendarTab: React.FC = () => {
   }, [selectedDate, currentDate, isModalOpen]);
 
   const [isSyncing, setIsSyncing] = useState(false);
+  const [lastSyncTime, setLastSyncTime] = useState<string | null>(() => {
+    return localStorage.getItem('lastGoogleCalendarSync') || null;
+  });
 
-  const handleSyncGoogleCalendar = async () => {
+  const handleSyncGoogleCalendar = async (options: { 
+    silent?: boolean; 
+    forceAuth?: boolean;
+    customEvents?: CalendarEvent[];
+    customTokens?: any[];
+  } = {}) => {
+    const { silent = false, forceAuth = false, customEvents, customTokens } = options;
+
+    if (isSyncing) return false;
+
+    let tokens = forceAuth ? null : config.googleCalendarTokens;
+
+    // If silent and no tokens exist, do not attempt sync or popup
+    if (silent && !tokens) {
+      return false;
+    }
+
     setIsSyncing(true);
+
     try {
-      let tokens = config.googleCalendarTokens;
-      
       if (!tokens) {
-        // 1. Fetch the OAuth URL from your server
+        // 1. Fetch the OAuth URL from server
         const response = await fetch('/api/auth/url', {
           headers: {
             'x-client-id': googleApiConfig?.clientId || '',
-            'x-client-secret': googleApiConfig?.clientSecret || ''
+            'x-client-secret': googleApiConfig?.clientSecret || '',
+            'x-redirect-uri': `${window.location.origin}/api/auth/callback`
           }
         });
         if (!response.ok) {
           const errorData = await response.json().catch(() => ({}));
-          throw new Error(errorData.error || 'Error al obtener la URL de autenticación. Verifica la configuración de Google API en tu perfil.');
+          throw new Error(errorData.error || 'Error al obtener la URL de autenticación. Verifica las credenciales de Google API.');
         }
         const { url } = await response.json();
 
-        // 2. Open the OAuth PROVIDER's URL directly in popup
+        // 2. Open popup
         const authWindow = window.open(
           url,
           'oauth_popup',
@@ -339,13 +359,13 @@ const CalendarTab: React.FC = () => {
         );
 
         if (!authWindow) {
-          alert('Por favor, permite las ventanas emergentes (popups) para conectar tu cuenta.');
+          if (!silent) toast.error('Permite las ventanas emergentes (popups) para conectar tu cuenta de Google.');
           setIsSyncing(false);
-          return;
+          return false;
         }
 
-        // Wait for the popup to send the code back
-        const code = await new Promise((resolve, reject) => {
+        // Wait for code from popup
+        const code = await new Promise<string>((resolve, reject) => {
           const handleMessage = (event: MessageEvent) => {
             const origin = event.origin;
             if (origin !== window.location.origin) {
@@ -360,7 +380,7 @@ const CalendarTab: React.FC = () => {
             }
           };
           window.addEventListener('message', handleMessage);
-          
+
           const checkClosed = setInterval(() => {
             if (authWindow.closed) {
               window.removeEventListener('message', handleMessage);
@@ -376,21 +396,22 @@ const CalendarTab: React.FC = () => {
           }, 5 * 60 * 1000);
         });
 
-        // Use the code to get tokens
+        // Exchange code for tokens
         const exchangeResponse = await fetch('/api/auth/exchange', {
           method: 'POST',
           headers: {
             'Content-Type': 'application/json',
             'x-client-id': googleApiConfig?.clientId || '',
-            'x-client-secret': googleApiConfig?.clientSecret || ''
+            'x-client-secret': googleApiConfig?.clientSecret || '',
+            'x-redirect-uri': `${window.location.origin}/api/auth/callback`
           },
           body: JSON.stringify({ code })
         });
-        
+
         if (!exchangeResponse.ok) {
-           throw new Error('Error al intercambiar el código. Verifica tus credenciales de Google API en tu perfil.');
+          throw new Error('Error al intercambiar el código. Verifica tus credenciales de Google API.');
         }
-        
+
         const exchangeData = await exchangeResponse.json();
         tokens = exchangeData.tokens || exchangeData;
 
@@ -400,37 +421,46 @@ const CalendarTab: React.FC = () => {
         await saveToSupabase(updatedConfigWithTokens);
       }
 
-      // Sync with the server
+      // Sync with server
       const syncResponse = await fetch('/api/calendar/sync', {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
           'x-client-id': googleApiConfig?.clientId || '',
-          'x-client-secret': googleApiConfig?.clientSecret || ''
+          'x-client-secret': googleApiConfig?.clientSecret || '',
+          'x-redirect-uri': `${window.location.origin}/api/auth/callback`
         },
         body: JSON.stringify({
           tokens,
-          localEvents: config.calendarEvents || [],
-          localTokens: config.calendarTokens || [],
+          localEvents: customEvents || config.calendarEvents || [],
+          localTokens: customTokens || config.calendarTokens || [],
           timeZone: Intl.DateTimeFormat().resolvedOptions().timeZone
         })
       });
 
       if (!syncResponse.ok) {
-        const errorData = await syncResponse.json().catch(() => ({}));
         if (syncResponse.status === 401) {
-          // Tokens might be expired or invalid, clear them and retry
+          // Tokens expired or invalid -> Clear them so user can easily reconnect
+          console.warn("[CALENDAR] Token expired or invalid. Resetting googleCalendarTokens.");
           const updatedConfig = { ...config, googleCalendarTokens: null };
           updateConfig(updatedConfig);
           await saveToSupabase(updatedConfig);
-          throw new Error('Sesión expirada. Por favor, intenta sincronizar de nuevo.');
+          
+          if (!silent) {
+            toast.error('Tu sesión de Google Calendar ha caducado. Vuelve a hacer clic para reconectar tu cuenta.', {
+              duration: 5000
+            });
+          }
+          return false;
         }
+
+        const errorData = await syncResponse.json().catch(() => ({}));
         throw new Error(errorData.details || errorData.error || 'Error sincronizando con Google Calendar');
       }
 
       const responseData = await syncResponse.json();
       const { events: syncedEvents, tokens: syncedTokens, googleCalendarTokens: updatedGoogleTokens } = responseData;
-      
+
       const finalConfig = { 
         ...config, 
         calendarEvents: syncedEvents,
@@ -439,17 +469,55 @@ const CalendarTab: React.FC = () => {
       };
       updateConfig(finalConfig);
       await saveToSupabase(finalConfig);
-      
-      alert('¡Sincronización con Google Calendar completada!');
-    } catch (error: any) {
-      if (!error.message?.includes('Sesión expirada')) {
-        console.error('Sync error:', error);
+
+      const nowTime = new Date().toLocaleTimeString('es-MX', { hour: '2-digit', minute: '2-digit' });
+      setLastSyncTime(nowTime);
+      localStorage.setItem('lastGoogleCalendarSync', nowTime);
+
+      if (!silent) {
+        toast.success(`¡Sincronizado con Google Calendar! (${nowTime})`);
       }
-      alert(error.message || 'Error al sincronizar con Google Calendar. Revisa que tu dominio esté autorizado en Google Cloud Console.');
+      return true;
+    } catch (error: any) {
+      console.error('Calendar sync error:', error);
+      if (!silent) {
+        toast.error(error.message || 'Error al sincronizar con Google Calendar.');
+      }
+      return false;
     } finally {
       setIsSyncing(false);
     }
   };
+
+  // Auto-sync 1: On component mount if tokens exist
+  useEffect(() => {
+    if (config.googleCalendarTokens) {
+      handleSyncGoogleCalendar({ silent: true });
+    }
+  }, []);
+
+  // Auto-sync 2: Periodic background sync every 5 minutes
+  useEffect(() => {
+    if (!config.googleCalendarTokens) return;
+    const interval = setInterval(() => {
+      handleSyncGoogleCalendar({ silent: true });
+    }, 5 * 60 * 1000);
+    return () => clearInterval(interval);
+  }, [config.googleCalendarTokens]);
+
+  // Auto-sync 3: On window focus (returning to tab with 60s debounce)
+  useEffect(() => {
+    let lastFocusSync = Date.now();
+    const handleFocus = () => {
+      const now = Date.now();
+      if (config.googleCalendarTokens && (now - lastFocusSync > 60 * 1000)) {
+        lastFocusSync = now;
+        handleSyncGoogleCalendar({ silent: true });
+      }
+    };
+    window.addEventListener('focus', handleFocus);
+    return () => window.removeEventListener('focus', handleFocus);
+  }, [config.googleCalendarTokens]);
 
   const daysInMonth = useMemo(() => {
     const year = currentDate.getFullYear();
@@ -550,6 +618,13 @@ const CalendarTab: React.FC = () => {
     
     // Explicitly save to database
     setTimeout(() => saveToSupabase(), 100);
+
+    // Auto-sync with Google Calendar in background if connected
+    if (config.googleCalendarTokens) {
+      setTimeout(() => {
+        handleSyncGoogleCalendar({ silent: true, customEvents: updatedEvents });
+      }, 300);
+    }
   };
 
   const handleAddToken = async () => {
@@ -584,6 +659,13 @@ const CalendarTab: React.FC = () => {
       reminderTime: '09:00'
     });
     setTimeout(() => saveToSupabase(), 100);
+
+    // Auto-sync with Google Calendar in background if connected
+    if (config.googleCalendarTokens) {
+      setTimeout(() => {
+        handleSyncGoogleCalendar({ silent: true, customTokens: updatedTokens });
+      }, 300);
+    }
   };
 
   const handleToggleToken = (id: string, completed: boolean) => {
@@ -755,6 +837,13 @@ const CalendarTab: React.FC = () => {
     
     // Explicitly save to database
     setTimeout(() => saveToSupabase(), 100);
+
+    // Auto-sync with Google Calendar in background if connected
+    if (config.googleCalendarTokens) {
+      setTimeout(() => {
+        handleSyncGoogleCalendar({ silent: true, customEvents: updatedEvents });
+      }, 300);
+    }
   };
 
   const openEditModal = (event: CalendarEvent) => {
@@ -1016,13 +1105,26 @@ const CalendarTab: React.FC = () => {
             </div>
             
             <button
-              onClick={handleSyncGoogleCalendar}
+              onClick={() => handleSyncGoogleCalendar({ silent: false, forceAuth: !config.googleCalendarTokens })}
               disabled={isSyncing}
-              className="flex items-center justify-center gap-1.5 px-2 py-1 bg-blue-600 hover:bg-blue-700 text-white rounded-md transition-all shadow-md font-black text-[9px] uppercase tracking-tighter disabled:opacity-50 w-[88px]"
-              title="Sincronizar con Google Calendar"
+              className={`flex items-center justify-center gap-1.5 px-2 py-1 text-white rounded-md transition-all shadow-md font-black text-[9px] uppercase tracking-tighter disabled:opacity-50 min-w-[88px] ${
+                config.googleCalendarTokens 
+                  ? 'bg-blue-600 hover:bg-blue-700 border border-blue-500/40' 
+                  : 'bg-amber-600 hover:bg-amber-500 border border-amber-400/50 animate-pulse'
+              }`}
+              title={
+                config.googleCalendarTokens
+                  ? `Google Calendar Conectado${lastSyncTime ? ` (Última: ${lastSyncTime})` : ''}. Clic para forzar sincronización manual.`
+                  : 'Conectar con Google Calendar'
+              }
             >
               <RefreshCw size={10} className={isSyncing ? 'animate-spin' : ''} />
-              {isSyncing ? 'Sync...' : 'Google Sync'}
+              <div className="flex flex-col items-center leading-none">
+                <span>{isSyncing ? 'Sync...' : config.googleCalendarTokens ? 'Google Sync' : 'Conectar'}</span>
+                {config.googleCalendarTokens && lastSyncTime && (
+                  <span className="text-[7px] text-blue-200/90 font-normal mt-0.5">{lastSyncTime}</span>
+                )}
+              </div>
             </button>
           </div>
         </div>

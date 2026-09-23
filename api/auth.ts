@@ -20,7 +20,7 @@ async function getOAuth2Client(req: VercelRequest) {
     }
   }
   
-  const redirectUri = `${baseUrl.replace(/\/$/, '')}/api/auth/callback`;
+  const redirectUri = (req.query?.redirect_uri as string) || (req.headers["x-redirect-uri"] as string) || `${baseUrl.replace(/\/$/, '')}/api/auth/callback`;
   console.log(`[AUTH] Using Redirect URI: ${redirectUri}`);
 
   const clientId = (req.headers["x-client-id"] as string) || process.env.CLIENT_ID;
