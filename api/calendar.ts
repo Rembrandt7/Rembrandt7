@@ -74,9 +74,9 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
         id: `token-${t.id}`,
         title: `TOKEN: ${t.name}`,
         date: t.currentActiveDate,
-        time: t.reminderTime || "",
+        time: t.reminderTime || "20:00",
         description: `Token recurrente cada ${t.intervalDays} días.`,
-        reminderMinutes: t.reminderMinutes,
+        reminderMinutes: t.reminderMinutes !== undefined ? t.reminderMinutes : 0,
         type: 'event',
         googleEventId: t.googleEventId
       }))
@@ -158,6 +158,7 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
         // A.1: Brand new local item -> Insert in Google
         try {
           const { start, end } = getEventDateTime(item.date, item.time);
+          const reminderMinutes = item.reminderMinutes !== undefined ? item.reminderMinutes : 0;
           const created = await calendar.events.insert({
             calendarId: "primary",
             requestBody: {
@@ -165,7 +166,13 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
               description: item.description || "",
               extendedProperties: { private: { localId: item.id } },
               start,
-              end
+              end,
+              reminders: {
+                useDefault: false,
+                overrides: [
+                  { method: 'popup', minutes: reminderMinutes }
+                ]
+              }
             }
           });
           syncedItems.push({
@@ -197,6 +204,7 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
             // Update Google Calendar with local values
             try {
               const { start, end } = getEventDateTime(item.date, item.time);
+              const reminderMinutes = item.reminderMinutes !== undefined ? item.reminderMinutes : 0;
               await calendar.events.patch({
                 calendarId: "primary",
                 eventId: item.googleEventId,
@@ -204,7 +212,13 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
                   summary: item.title,
                   description: item.description || "",
                   start,
-                  end
+                  end,
+                  reminders: {
+                    useDefault: false,
+                    overrides: [
+                      { method: 'popup', minutes: reminderMinutes }
+                    ]
+                  }
                 }
               });
             } catch (err) {

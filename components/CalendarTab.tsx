@@ -50,6 +50,7 @@ const CalendarTab: React.FC = () => {
   const [isNotesOpen, setIsNotesOpen] = useState(false);
   const [isTokenModalOpen, setIsTokenModalOpen] = useState(false);
   const [editingToken, setEditingToken] = useState<any | null>(null);
+  const [dismissedOverdueTokenIds, setDismissedOverdueTokenIds] = useState<string[]>([]);
   const [editingHeaderBtn, setEditingHeaderBtn] = useState<'save' | 'notes' | 'ai' | null>(null);
   const [visibleTypes, setVisibleTypes] = useState<string[]>(['event', 'holiday', 'vacation', 'mountain', 'party', 'off', 'medical', 'birthday', 'payment', 'ingreso']);
   
@@ -80,7 +81,7 @@ const CalendarTab: React.FC = () => {
     startDate: selectedDate,
     color: '#f59e0b',
     reminderMinutes: 30,
-    reminderTime: '09:00'
+    reminderTime: '20:00'
   });
 
   const getIcon = (iconName: string, size: number = 24) => {
@@ -185,20 +186,27 @@ const CalendarTab: React.FC = () => {
     const targetDateStr = formatDate(targetDate);
     const activeDateStr = token.currentActiveDate;
     
-    // Direct match with active date
-    if (targetDateStr === activeDateStr) return true;
-    
-    // Logic for "Pending" tokens: If the token's active date is in the past,
-    // show it on TODAY so the user sees they have a pending task.
     const today = new Date();
-    const todayStr = formatDate(today);
+    today.setHours(0, 0, 0, 0);
+    const currentTodayStr = formatDate(today);
     
-    if (targetDateStr === todayStr && activeDateStr < todayStr) {
-        return true;
+    // Logic for "Pending / Overdue" tokens:
+    // If the token's active date is in the past, it rolls forward to TODAY
+    // and NEVER clutters past days!
+    if (activeDateStr < currentTodayStr) {
+      if (targetDateStr < currentTodayStr) {
+        return false; // Do NOT show on past days!
+      }
+      if (targetDateStr === currentTodayStr) {
+        return true; // Show on today!
+      }
+    } else {
+      if (targetDateStr === activeDateStr) return true;
     }
     
-    // Also show the next occurrence for planning purposes
-    const nextDate = new Date(activeDateStr + 'T00:00:00');
+    // Also show the next occurrence for planning purposes (projected from max(activeDate, today))
+    const baseDateStr = activeDateStr < currentTodayStr ? currentTodayStr : activeDateStr;
+    const nextDate = new Date(baseDateStr + 'T00:00:00');
     nextDate.setDate(nextDate.getDate() + (token.intervalDays || 1));
     const nextDateStr = formatDate(nextDate);
     
@@ -668,19 +676,91 @@ const CalendarTab: React.FC = () => {
     }
   };
 
-  const handleToggleToken = (id: string, completed: boolean) => {
+  // Find overdue tokens where active date is in the past (< todayStr)
+  const currentOverdueToken = useMemo(() => {
+    const allTokens = config.calendarTokens || [];
+    return allTokens.find((t: any) => t.currentActiveDate < todayStr && !dismissedOverdueTokenIds.includes(t.id));
+  }, [config.calendarTokens, todayStr, dismissedOverdueTokenIds]);
+
+  const handleResolveOverdueToken = (id: string, alreadyCompleted: boolean) => {
     const tokens = config.calendarTokens || [];
+    const today = new Date();
+    today.setHours(0, 0, 0, 0);
+    const currentTodayStr = formatDate(today);
+
+    let nextTargetDateStr = currentTodayStr;
+
     const updatedTokens = tokens.map((t: any) => {
       if (t.id === id) {
-        const activeDate = new Date(t.currentActiveDate + 'T00:00:00');
-        if (completed) {
-          // Move to next interval
-          activeDate.setDate(activeDate.getDate() + t.intervalDays);
+        if (alreadyCompleted) {
+          // Mover a hoy + intervalDays (ej. 3 días después) a las 8:00 PM
+          const nextDate = new Date(currentTodayStr + 'T00:00:00');
+          nextDate.setDate(nextDate.getDate() + (t.intervalDays || 3));
+          nextTargetDateStr = formatDate(nextDate);
+          return {
+            ...t,
+            currentActiveDate: nextTargetDateStr,
+            reminderTime: t.reminderTime || '20:00'
+          };
         } else {
-          // Move to tomorrow
-          activeDate.setDate(activeDate.getDate() + 1);
+          // Aún no -> mover a HOY a las 8:00 PM
+          nextTargetDateStr = currentTodayStr;
+          return {
+            ...t,
+            currentActiveDate: currentTodayStr,
+            reminderTime: t.reminderTime || '20:00'
+          };
         }
-        return { ...t, currentActiveDate: formatDate(activeDate) };
+      }
+      return t;
+    });
+
+    setDismissedOverdueTokenIds(prev => [...prev, id]);
+
+    updateConfig({
+      ...config,
+      calendarTokens: updatedTokens
+    });
+    setTimeout(() => saveToSupabase(), 100);
+
+    if (config.googleCalendarTokens) {
+      setTimeout(() => {
+        handleSyncGoogleCalendar({ silent: true, customTokens: updatedTokens });
+      }, 300);
+    }
+
+    if (alreadyCompleted) {
+      toast.success(`¡Excelente! Programado para el ${nextTargetDateStr} a las 8:00 PM con alerta a tu celular.`);
+    } else {
+      toast.info(`Recordatorio reprogramado para HOY a las 8:00 PM en tu celular.`);
+    }
+  };
+
+  const handleToggleToken = (id: string, completed: boolean) => {
+    const tokens = config.calendarTokens || [];
+    const today = new Date();
+    today.setHours(0, 0, 0, 0);
+    const currentTodayStr = formatDate(today);
+
+    const updatedTokens = tokens.map((t: any) => {
+      if (t.id === id) {
+        // Base is today if active date was in the past
+        const baseDateStr = t.currentActiveDate < currentTodayStr ? currentTodayStr : t.currentActiveDate;
+        const activeDate = new Date(baseDateStr + 'T00:00:00');
+        if (completed) {
+          // Move to next interval from today
+          activeDate.setDate(activeDate.getDate() + (t.intervalDays || 3));
+        } else {
+          // Move to tomorrow from today
+          const tomorrow = new Date(currentTodayStr + 'T00:00:00');
+          tomorrow.setDate(tomorrow.getDate() + 1);
+          activeDate.setTime(tomorrow.getTime());
+        }
+        return { 
+          ...t, 
+          currentActiveDate: formatDate(activeDate),
+          reminderTime: t.reminderTime || '20:00'
+        };
       }
       return t;
     });
@@ -690,6 +770,13 @@ const CalendarTab: React.FC = () => {
       calendarTokens: updatedTokens
     });
     setTimeout(() => saveToSupabase(), 100);
+
+    // Auto-sync with Google Calendar in background if connected
+    if (config.googleCalendarTokens) {
+      setTimeout(() => {
+        handleSyncGoogleCalendar({ silent: true, customTokens: updatedTokens });
+      }, 300);
+    }
   };
 
   const handleDeleteToken = (id: string) => {
@@ -2143,6 +2230,64 @@ const CalendarTab: React.FC = () => {
                   className="w-full py-3 bg-amber-600 hover:bg-amber-700 text-white rounded-xl font-bold transition-all shadow-lg mt-4"
                 >
                   {editingToken ? 'Guardar Cambios' : 'Crear Token'}
+                </button>
+              </div>
+            </motion.div>
+          </div>
+        )}
+      </AnimatePresence>
+
+      {/* Overdue Token Interactive Prompt Modal */}
+      <AnimatePresence>
+        {currentOverdueToken && (
+          <div className="fixed inset-0 z-[250] flex items-center justify-center p-4 bg-black/75 backdrop-blur-md">
+            <motion.div
+              initial={{ opacity: 0, scale: 0.9, y: 20 }}
+              animate={{ opacity: 1, scale: 1, y: 0 }}
+              exit={{ opacity: 0, scale: 0.9, y: 20 }}
+              className="bg-gray-850 bg-gradient-to-b from-gray-800 to-gray-900 rounded-2xl p-6 sm:p-8 w-full max-w-lg border border-amber-500/40 shadow-[0_0_50px_rgba(245,158,11,0.2)]"
+            >
+              <div className="flex items-center gap-4 mb-4">
+                <div 
+                  className="w-12 h-12 rounded-xl flex items-center justify-center shadow-lg shrink-0 animate-bounce"
+                  style={{ backgroundColor: currentOverdueToken.color || '#f59e0b' }}
+                >
+                  {getIcon(currentOverdueToken.symbol || 'Zap', 24)}
+                </div>
+                <div>
+                  <span className="text-[10px] uppercase font-black tracking-widest text-amber-400 bg-amber-500/10 px-2.5 py-0.5 rounded-full border border-amber-500/20">
+                    Recordatorio de Pendiente
+                  </span>
+                  <h3 className="text-xl sm:text-2xl font-black text-white mt-1">
+                    {currentOverdueToken.name.toLowerCase().includes('carro') 
+                      ? '¿Ya cargaste el carro?' 
+                      : `¿Realizaste "${currentOverdueToken.name}"?`}
+                  </h3>
+                </div>
+              </div>
+
+              <p className="text-sm text-gray-300 mb-6 leading-relaxed bg-gray-800/60 p-4 rounded-xl border border-gray-700/60">
+                Este recordatorio estaba programado anteriormente (<span className="text-amber-400 font-bold">{currentOverdueToken.currentActiveDate}</span>). 
+                {currentOverdueToken.name.toLowerCase().includes('carro')
+                  ? ' Si ya lo cargaste, se programará automáticamente para dentro de 3 días a las 8:00 PM. Si aún no, te recordaremos hoy a las 8:00 PM.'
+                  : ` Si ya lo hiciste, se moverá a ${currentOverdueToken.intervalDays || 3} días después. Si aún no, te recordará hoy a las 8:00 PM.`}
+              </p>
+
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                <button
+                  onClick={() => handleResolveOverdueToken(currentOverdueToken.id, true)}
+                  className="flex items-center justify-center gap-2 py-3.5 px-4 bg-emerald-600 hover:bg-emerald-500 active:scale-[0.98] text-white rounded-xl font-bold transition-all shadow-lg shadow-emerald-900/40 text-sm"
+                >
+                  <CheckCircle2 size={18} />
+                  <span>Sí, ya lo cargué</span>
+                </button>
+
+                <button
+                  onClick={() => handleResolveOverdueToken(currentOverdueToken.id, false)}
+                  className="flex items-center justify-center gap-2 py-3.5 px-4 bg-amber-600/25 hover:bg-amber-600/40 border border-amber-500/40 text-amber-200 hover:text-white rounded-xl font-bold transition-all text-sm"
+                >
+                  <Clock size={18} />
+                  <span>Aún no (Recordar hoy 8 PM)</span>
                 </button>
               </div>
             </motion.div>
