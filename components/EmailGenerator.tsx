@@ -17,7 +17,25 @@ import {
 } from 'lucide-react';
 import { motion, AnimatePresence } from 'motion/react';
 import { toast } from 'sonner';
-import { getFriendlyAiErrorMessage, isQuotaError } from '../utils/aiError';
+import { getFriendlyAiErrorMessage, isQuotaError, isUnavailableError } from '../utils/aiError';
+
+async function generateContentWithFallback(ai: GoogleGenAI, params: any) {
+  const primaryModel = params.model || 'gemini-3.1-flash-lite';
+  const fallbackModel = 'gemini-3.1-flash-preview';
+
+  try {
+    return await ai.models.generateContent(params);
+  } catch (err: any) {
+    if (isUnavailableError(err)) {
+      console.warn(`[AI] Primary model ${primaryModel} unavailable (503 / high demand). Falling back to ${fallbackModel}...`);
+      return await ai.models.generateContent({
+        ...params,
+        model: fallbackModel
+      });
+    }
+    throw err;
+  }
+}
 
 type Tone = 'Profesional' | 'Casual';
 type MessageLength = 'Reducido' | 'Medio' | 'Detallado';
@@ -861,7 +879,7 @@ const EmailGenerator: React.FC<EmailGeneratorProps> = ({ attachedImages, onAttac
 
             Genera un objeto JSON con: emailSubject, emailBody (con doble salto de línea), whatsappMessage, improvedIdea.`;
 
-            const response = await ai.models.generateContent({
+            const response = await generateContentWithFallback(ai, {
                 model: 'gemini-3.1-flash-lite',
                 contents: [{ role: 'user', parts: [{ text: userPrompt }] }],
                 config: {
@@ -925,7 +943,7 @@ const EmailGenerator: React.FC<EmailGeneratorProps> = ({ attachedImages, onAttac
             1. adviceText: Tu consejo estratégico breve (máximo 2 párrafos).
             2. refinedIdea: La sugerencia pulida y explícita de la idea o instrucción para colocar en el redactor y generar el correo en ese tono específico.`;
 
-            const response = await ai.models.generateContent({
+            const response = await generateContentWithFallback(ai, {
                 model: 'gemini-3.1-flash-lite',
                 contents: [{ role: 'user', parts: [{ text: `Mensaje del usuario: "${messageText}". Conversación previa: ${JSON.stringify(newMessages.slice(-3))}` }] }],
                 config: {
@@ -1025,7 +1043,7 @@ const EmailGenerator: React.FC<EmailGeneratorProps> = ({ attachedImages, onAttac
             const apiKey = googleApiConfig?.apiKey || process.env.GEMINI_API_KEY;
             const ai = new GoogleGenAI({ apiKey, baseUrl: `${window.location.origin}/api/proxy/google` });
             const prompt = `Contexto: "${generatedContent[contextMenu.field]}". Acción: ${action} sobre "${contextMenu.selectedText}". ${payload ? `Usar: ${payload}` : ''}. Responde solo el texto completo ajustado.`;
-            const response = await ai.models.generateContent({
+            const response = await generateContentWithFallback(ai, {
                 model: "gemini-3.1-flash-lite",
                 contents: [{ role: 'user', parts: [{ text: prompt }] }]
             });
@@ -1061,7 +1079,7 @@ const EmailGenerator: React.FC<EmailGeneratorProps> = ({ attachedImages, onAttac
             
             Entrega ÚNICAMENTE el texto final completamente pulido y limpio, sin introducciones, explicaciones ni etiquetas HTML adicionales.`;
 
-            const response = await ai.models.generateContent({
+            const response = await generateContentWithFallback(ai, {
                 model: "gemini-3.1-flash-lite",
                 contents: [{ role: 'user', parts: [{ text: prompt }] }]
             });
