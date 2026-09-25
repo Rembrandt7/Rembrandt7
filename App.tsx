@@ -233,8 +233,7 @@ const TabLoadingFallback: React.FC<{ message?: string }> = ({ message = 'Cargand
 );
 
 const MainLayout: React.FC = () => {
-  const { config, updateConfig, isEditing, toggleEditing, saveToSupabase, fetchConfigFromSupabaseManual, updateNotifications } = useLinks();
-  const [activeTabId, setActiveTabId] = useState<string>('email-gen');
+  const { config, updateConfig, isEditing, toggleEditing, saveToSupabase, fetchConfigFromSupabaseManual, updateNotifications, activeTabId, setActiveTabId } = useLinks();
   const [previousActiveTabId, setPreviousActiveTabId] = useState<string>('email-gen');
 
   const isDbTab = (t: { id?: string; label?: string; componentKey?: string }) => {

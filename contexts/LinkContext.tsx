@@ -346,6 +346,8 @@ interface LinkContextType {
   setEstudiosEditMode: (val: boolean) => void;
   googleApiConfig: GoogleApiConfig | null;
   updateGoogleApiConfig: (config: GoogleApiConfig | null) => void;
+  activeTabId: string;
+  setActiveTabId: (id: string) => void;
 }
 
 const LinkContext = createContext<LinkContextType | undefined>(undefined);
@@ -458,6 +460,7 @@ export const LinkProvider: React.FC<{ children: React.ReactNode }> = ({ children
   }, [config]);
 
   const [isEditing, setIsEditing] = useState(false);
+  const [activeTabId, setActiveTabId] = useState<string>('email-gen');
   const [isShoppingEditMode, setShoppingEditMode] = useState(false);
   const [isNotesEditMode, setNotesEditMode] = useState(false);
   const [isEstudiosEditMode, setEstudiosEditMode] = useState(false);
@@ -1755,8 +1758,10 @@ export const LinkProvider: React.FC<{ children: React.ReactNode }> = ({ children
     isEstudiosEditMode,
     setEstudiosEditMode,
     googleApiConfig,
-    updateGoogleApiConfig
-  }), [config, isEditing, updateConfig, toggleEditing, configFilename, nutritionData, updateNutritionData, saveNutritionDataToSupabase, fetchNutritionDataFromSupabase, saveNotesToSupabase, fetchNotesFromSupabase, saveShoppingToSupabase, fetchShoppingFromSupabase, saveEstudiosToSupabase, fetchEstudiosFromSupabase, updateNotifications, isShoppingEditMode, isNotesEditMode, isEstudiosEditMode, googleApiConfig]);
+    updateGoogleApiConfig,
+    activeTabId,
+    setActiveTabId
+  }), [config, isEditing, updateConfig, toggleEditing, configFilename, nutritionData, updateNutritionData, saveNutritionDataToSupabase, fetchNutritionDataFromSupabase, saveNotesToSupabase, fetchNotesFromSupabase, saveShoppingToSupabase, fetchShoppingFromSupabase, saveEstudiosToSupabase, fetchEstudiosFromSupabase, updateNotifications, isShoppingEditMode, isNotesEditMode, isEstudiosEditMode, googleApiConfig, activeTabId]);
 
   return (
     <LinkContext.Provider value={value}>
