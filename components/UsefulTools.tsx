@@ -15,38 +15,40 @@ const ToolCard: React.FC<{
     count?: number;
 }> = ({ item, isEditing, onEdit, onDelete }) => {
     return (
-        <div className="relative group w-24 h-24 sm:w-28 sm:h-28 flex-shrink-0">
+        <div className="relative group w-[68px] h-[68px] sm:w-[74px] sm:h-[74px] flex-shrink-0">
             <a 
                 href={item.href} 
                 target="_blank" 
                 rel="noopener noreferrer" 
-                className={`group relative flex flex-col items-center justify-center p-2.5 bg-gray-800/80 hover:bg-gray-700/90 rounded-xl transition-all duration-300 border border-gray-700 hover:border-gray-500 hover:shadow-xl hover:-translate-y-1 w-full h-full ${item.colorClass || ''} ${isEditing ? 'opacity-50 pointer-events-none' : ''}`}
+                className={`group relative flex flex-col items-center justify-center p-1 bg-gray-800/80 hover:bg-gray-700/90 rounded-lg transition-all duration-200 border border-gray-700/70 hover:border-gray-500 hover:shadow-md hover:-translate-y-0.5 w-full h-full ${item.colorClass || ''} ${isEditing ? 'opacity-50 pointer-events-none' : ''}`}
             >
                 <div 
-                    className="w-10 h-10 sm:w-11 sm:h-11 mb-1.5 transform transition-transform group-hover:scale-110 duration-300 flex items-center justify-center [&>svg]:w-full [&>svg]:h-full flex-shrink-0" 
+                    className="w-6 h-6 sm:w-7 sm:h-7 mb-0.5 transform transition-transform group-hover:scale-110 duration-200 flex items-center justify-center [&>svg]:w-full [&>svg]:h-full flex-shrink-0" 
                     style={{
                         filter: item.outlineColor && item.outlineWidth ? `drop-shadow(0 0 ${item.outlineWidth}px ${item.outlineColor})` : undefined
                     }}
                     dangerouslySetInnerHTML={{ __html: item.iconSvg }} 
                 />
-                <h3 className="text-[11px] sm:text-xs font-semibold text-white text-center leading-tight truncate w-full px-1">{item.name}</h3>
+                <h3 className="text-[9.5px] sm:text-[10.5px] font-semibold text-white text-center leading-tight truncate w-full px-0.5">{item.name}</h3>
             </a>
-            <div className="absolute top-1 right-1 flex gap-1 z-10 opacity-0 group-hover:opacity-100 transition-opacity">
+            <div className="absolute top-0.5 right-0.5 flex gap-0.5 z-10 opacity-0 group-hover:opacity-100 transition-opacity">
                 <button 
                     onPointerDown={(e) => e.stopPropagation()}
                     onMouseDown={(e) => e.stopPropagation()}
                     onClick={(e) => { e.preventDefault(); e.stopPropagation(); onEdit(item); }}
-                    className="p-1 bg-blue-600 rounded-full text-white hover:bg-blue-500 shadow-md"
+                    className="p-0.5 bg-blue-600 rounded-full text-white hover:bg-blue-500 shadow-md"
+                    title="Editar"
                 >
-                    <Edit size={10} />
+                    <Edit size={8} />
                 </button>
                 <button 
                     onPointerDown={(e) => e.stopPropagation()}
                     onMouseDown={(e) => e.stopPropagation()}
                     onClick={(e) => { e.preventDefault(); e.stopPropagation(); onDelete(item.id); }}
-                    className="p-1 bg-red-600 rounded-full text-white hover:bg-red-500 shadow-md"
+                    className="p-0.5 bg-red-600 rounded-full text-white hover:bg-red-500 shadow-md"
+                    title="Eliminar"
                 >
-                    <Trash2 size={10} />
+                    <Trash2 size={8} />
                 </button>
             </div>
         </div>
@@ -231,58 +233,58 @@ const UsefulTools: React.FC = () => {
     const modalCurrentSection = sectionIndex !== -1 ? `usefulTools.${sectionIndex}` : undefined;
 
     return (
-        <div className="w-full p-4 overflow-y-auto min-h-full">
+        <div className="w-full px-2 py-2 sm:px-3 sm:py-2.5 overflow-y-auto min-h-full">
             {isEditing && (
-                <div className="mb-6 flex justify-center">
+                <div className="mb-3 flex justify-center">
                     <button 
                         onClick={handleAddSection}
-                        className="flex items-center gap-2 px-6 py-3 bg-green-600 hover:bg-green-500 text-white font-bold rounded-xl shadow-lg transition-all transform hover:scale-105 active:scale-95"
+                        className="flex items-center gap-1.5 px-4 py-2 bg-green-600 hover:bg-green-500 text-white text-sm font-bold rounded-lg shadow-md transition-all transform hover:scale-105 active:scale-95"
                     >
-                        <Plus size={20} />
+                        <Plus size={16} />
                         Nueva Sección de Herramientas
                     </button>
                 </div>
             )}
-            {/* Paneles horizontales organizados verticalmente */}
-            <div className="flex flex-col gap-6 pb-12 w-full">
+            {/* Paneles horizontales compactos organizados verticalmente */}
+            <div className="flex flex-col gap-2.5 sm:gap-3 pb-8 w-full">
                 {config.usefulTools.map((section, idx) => (
                     <div 
                         key={section.id} 
-                        className="bg-gray-900/50 border border-gray-800 hover:border-gray-700/80 rounded-2xl p-4 sm:p-5 flex flex-col shadow-xl transition-all duration-300 w-full"
+                        className="bg-gray-900/50 border border-gray-800/80 hover:border-gray-700/80 rounded-xl p-2.5 sm:p-3 flex flex-col shadow-md transition-all duration-200 w-full"
                     >
-                        {/* Header de la Sección (Título arriba) */}
-                        <div className="flex items-center justify-between mb-4 pb-2.5 border-b border-gray-800">
-                            <div className="flex items-center gap-3 overflow-hidden">
-                                <span className="text-white opacity-80 p-2 bg-gray-800 rounded-lg flex-shrink-0" dangerouslySetInnerHTML={{ __html: section.iconSvg || '' }} />
-                                <h2 className={`text-lg sm:text-xl font-black text-transparent bg-clip-text bg-gradient-to-r ${section.gradient} truncate`}>
+                        {/* Header de la Sección (Título arriba, compacto) */}
+                        <div className="flex items-center justify-between mb-2 pb-1.5 border-b border-gray-800/70">
+                            <div className="flex items-center gap-2 overflow-hidden">
+                                <span className="text-white opacity-85 p-1 sm:p-1.5 bg-gray-800/90 rounded-md flex-shrink-0 [&>svg]:w-4 [&>svg]:h-4" dangerouslySetInnerHTML={{ __html: section.iconSvg || '' }} />
+                                <h2 className={`text-sm sm:text-base font-bold text-transparent bg-clip-text bg-gradient-to-r ${section.gradient} truncate`}>
                                     {section.title}
                                 </h2>
-                                <span className="text-xs text-gray-500 font-semibold px-2 py-0.5 rounded-full bg-gray-800/80 border border-gray-700/60">
+                                <span className="text-[10px] text-gray-400 font-semibold px-1.5 py-0.5 rounded-full bg-gray-800/80 border border-gray-700/60">
                                     {section.items.length}
                                 </span>
                             </div>
-                            <div className="flex items-center gap-1.5">
+                            <div className="flex items-center gap-1">
                                 {isEditing && (
                                     <>
-                                        <button onClick={() => handleEditSection(section.id)} className="text-blue-400 hover:text-blue-300 p-1.5 rounded-lg hover:bg-gray-800 transition-colors" title="Editar Título">
-                                            <Edit size={16} />
+                                        <button onClick={() => handleEditSection(section.id)} className="text-blue-400 hover:text-blue-300 p-1 rounded hover:bg-gray-800 transition-colors" title="Editar Título">
+                                            <Edit size={14} />
                                         </button>
-                                        <button onClick={() => handleDeleteSection(section.id)} className="text-red-400 hover:text-red-300 p-1.5 rounded-lg hover:bg-gray-800 transition-colors" title="Eliminar Sección">
-                                            <Trash2 size={16} />
+                                        <button onClick={() => handleDeleteSection(section.id)} className="text-red-400 hover:text-red-300 p-1 rounded hover:bg-gray-800 transition-colors" title="Eliminar Sección">
+                                            <Trash2 size={14} />
                                         </button>
                                         <button 
                                             onClick={() => openModal(section.id)} 
-                                            className="text-green-400 hover:text-green-300 p-1.5 rounded-lg hover:bg-gray-800 transition-colors" 
+                                            className="text-green-400 hover:text-green-300 p-1 rounded hover:bg-gray-800 transition-colors" 
                                             title="Agregar Herramienta"
                                         >
-                                            <Plus size={20} />
+                                            <Plus size={18} />
                                         </button>
                                     </>
                                 )}
                             </div>
                         </div>
 
-                        {/* Fila horizontal de herramientas con tamaño uniforme */}
+                        {/* Fila horizontal de herramientas con tamaño uniforme y espacio reducido */}
                         <div className="w-full">
                             <SortableLinkList 
                                 id={`usefulTools.${idx}`}
@@ -290,7 +292,7 @@ const UsefulTools: React.FC = () => {
                                 isEditing={isEditing}
                                 onReorder={(newItems) => handleReorder(section.id, newItems)}
                                 strategy={rectSortingStrategy}
-                                className="flex flex-wrap gap-3 items-center"
+                                className="flex flex-wrap gap-2 items-center"
                                 renderItem={(tool) => (
                                     <ToolCard 
                                         key={tool.id} 
@@ -303,7 +305,7 @@ const UsefulTools: React.FC = () => {
                             />
                             
                             {section.items.length === 0 && (
-                                <div className="py-6 flex items-center justify-center text-gray-500 text-xs italic">
+                                <div className="py-2.5 flex items-center justify-center text-gray-500 text-xs italic">
                                     {isEditing ? "Haz clic en '+' para agregar herramientas a esta categoría" : "Sección vacía"}
                                 </div>
                             )}
