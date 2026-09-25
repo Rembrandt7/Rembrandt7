@@ -6,7 +6,7 @@ import { toast } from 'sonner';
 const INITIAL_TABS: TabConfig[] = [
     { id: 'email-gen', label: 'Email', type: 'system', componentKey: 'Generador de Email', isVisible: true, icon: 'Mail' },
     { id: 'commands', label: 'Comandos', type: 'system', componentKey: 'Comandos', isVisible: true, icon: 'Terminal' },
-    { id: 'database', label: 'Base de Datos', type: 'system', componentKey: 'Base de Datos', isVisible: true, icon: 'Database' },
+    { id: 'database', label: 'Base de Datos', type: 'system', componentKey: 'Base de Datos', isVisible: false, icon: 'Database' },
     { id: 'useful-tools', label: 'Herramientas Útiles', type: 'system', componentKey: 'Herramientas Útiles', isVisible: true, icon: 'Briefcase' },
     { id: 'calendar', label: 'Calendario', type: 'system', componentKey: 'Calendario', isVisible: true, icon: 'Calendar' },
     { id: 'credenciales', label: 'Credenciales', type: 'system', componentKey: 'Credenciales', isVisible: true, icon: 'Lock' },

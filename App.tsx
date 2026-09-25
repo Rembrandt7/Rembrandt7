@@ -226,6 +226,17 @@ const SortableTab: React.FC<{
 const MainLayout: React.FC = () => {
   const { config, updateConfig, isEditing, toggleEditing, saveToSupabase, fetchConfigFromSupabaseManual, updateNotifications } = useLinks();
   const [activeTabId, setActiveTabId] = useState<string>('email-gen');
+  const [previousActiveTabId, setPreviousActiveTabId] = useState<string>('email-gen');
+
+  const handleToggleDatabaseTab = () => {
+    if (activeTabId === 'database') {
+      const fallbackTab = config.tabs.find(t => t.isVisible && t.id !== 'database')?.id || 'email-gen';
+      setActiveTabId(previousActiveTabId && previousActiveTabId !== 'database' ? previousActiveTabId : fallbackTab);
+    } else {
+      setPreviousActiveTabId(activeTabId);
+      setActiveTabId('database');
+    }
+  };
   const [imagesForEmail, setImagesForEmail] = useState<ReferenceImage[]>([]);
   const [editingTabId, setEditingTabId] = useState<string | null>(null);
   const [tempTabName, setTempTabName] = useState('');
@@ -415,7 +426,7 @@ const MainLayout: React.FC = () => {
   useEffect(() => {
     if (config.tabs.length > 0) {
       const currentTabExists = config.tabs.some(t => t.id === activeTabId);
-      if (!currentTabExists) {
+      if (!currentTabExists && activeTabId !== 'database') {
         setActiveTabId(config.tabs[0].id);
       }
       
@@ -498,6 +509,9 @@ const MainLayout: React.FC = () => {
   };
 
   const renderContent = () => {
+    if (activeTabId === 'database') {
+      return <DatabaseViewer />;
+    }
     const activeTab = config.tabs.find(t => t.id === activeTabId);
     if (!activeTab) return null;
 
@@ -623,7 +637,17 @@ const MainLayout: React.FC = () => {
                     <motion.button whileHover={{ scale: 1.1 }} whileTap={{ scale: 0.9 }} onClick={toggleEditing} className="p-1.5 hover:bg-white/10 rounded-lg transition-colors" title="Personalizar">
                       <Settings size={18} />
                     </motion.button>
-                    <motion.button whileHover={{ scale: 1.1 }} whileTap={{ scale: 0.9 }} onClick={() => window.dispatchEvent(new CustomEvent('open-google-config'))} className="p-1.5 hover:bg-blue-500/20 rounded-lg transition-colors text-blue-400" title="Configurar APIs (Google/Gemini)">
+                    <motion.button 
+                      whileHover={{ scale: 1.1 }} 
+                      whileTap={{ scale: 0.9 }} 
+                      onClick={handleToggleDatabaseTab} 
+                      className={`p-1.5 rounded-lg transition-all ${
+                        activeTabId === 'database' 
+                          ? 'bg-blue-600 shadow-[0_0_15px_rgba(37,99,235,0.6)] text-white ring-2 ring-blue-400' 
+                          : 'hover:bg-blue-500/20 text-blue-400'
+                      }`} 
+                      title={activeTabId === 'database' ? "Cerrar Base de Datos" : "Base de Datos & Cloud (Supabase, Google APIs, Vercel, GitHub)"}
+                    >
                       <Database size={18} />
                     </motion.button>
                     <motion.button whileHover={{ scale: 1.1 }} whileTap={{ scale: 0.9 }} onClick={() => saveToSupabase()} className="p-1.5 hover:bg-white/10 rounded-lg transition-colors" title="Guardar Cambios">
@@ -639,10 +663,10 @@ const MainLayout: React.FC = () => {
                   <main className="w-full pb-8">
                       <nav className="w-full mb-4 flex flex-wrap justify-center gap-2 items-center">
                           <SortableContext 
-                            items={config.tabs.filter(t => t.isVisible).map(t => t.id)} 
+                            items={config.tabs.filter(t => t.isVisible && t.id !== 'database').map(t => t.id)} 
                             strategy={horizontalListSortingStrategy}
                           >
-                            {config.tabs.filter(t => t.isVisible).map((tab, index) => (
+                            {config.tabs.filter(t => t.isVisible && t.id !== 'database').map((tab, index) => (
                               <SortableTab 
                                   key={tab.id}
                                   tab={tab}

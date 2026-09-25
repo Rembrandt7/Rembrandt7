@@ -1,6 +1,6 @@
 
 import React, { useState, useEffect, useMemo } from 'react';
-import { Plus, Pencil, X, Lock, Unlock, Sparkles } from 'lucide-react';
+import { Plus, Pencil, X, Lock, Unlock, Sparkles, Database, ExternalLink, Settings, Key, Globe, GitBranch, Server } from 'lucide-react';
 import IconButton from './common/IconButton';
 import Spinner from './common/Spinner';
 import { SUPABASE_CONFIG } from '../utils/constants';
@@ -532,7 +532,158 @@ Respuesta esperada:
     return (
         <div className="max-w-7xl mx-auto p-4 flex flex-col gap-6 h-[85vh]">
             
-            {/* 1. Configuración (Colapsable) */}
+            {/* Panel de Control Cloud & Datos Unificados */}
+            <div className="bg-gradient-to-r from-gray-900 via-gray-800 to-gray-900 rounded-2xl border border-gray-700/80 shadow-2xl p-5 shrink-0">
+                <div className="flex flex-wrap items-center justify-between gap-4 mb-4 border-b border-gray-700/50 pb-4">
+                    <div className="flex items-center gap-3">
+                        <div className="p-2.5 bg-blue-500/10 text-blue-400 rounded-xl border border-blue-500/20 shadow-inner">
+                            <Database size={24} />
+                        </div>
+                        <div>
+                            <div className="flex items-center gap-2">
+                                <h2 className="text-lg font-black text-white tracking-wide">
+                                    Centro de Datos & Conexiones Cloud
+                                </h2>
+                                <span className="text-[10px] uppercase font-black tracking-widest px-2 py-0.5 rounded-full bg-emerald-500/10 text-emerald-400 border border-emerald-500/20">
+                                    Unificado
+                                </span>
+                            </div>
+                            <p className="text-xs text-gray-400 mt-0.5">
+                                Consolas y credenciales integradas: Google Cloud APIs, Vercel, GitHub y Base de Datos Supabase.
+                            </p>
+                        </div>
+                    </div>
+
+                    <div className="flex items-center gap-2">
+                        {/* Botón que abre la consola / modal de Google APIs (lo que hacía antes el botón del header) */}
+                        <button
+                            onClick={() => window.dispatchEvent(new CustomEvent('open-google-config'))}
+                            className="flex items-center gap-2 px-4 py-2.5 bg-blue-600 hover:bg-blue-500 text-white rounded-xl text-xs font-bold transition-all shadow-lg shadow-blue-900/30 active:scale-95 group"
+                            title="Configurar credenciales de Google Calendar, Gmail y Gemini"
+                        >
+                            <Key size={15} className="group-hover:rotate-12 transition-transform" />
+                            <span>Configurar Google APIs</span>
+                        </button>
+                    </div>
+                </div>
+
+                {/* Grid de Accesos Rápidos Cloud */}
+                <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3.5">
+                    {/* 1. Google Cloud Console & Gemini */}
+                    <div className="bg-gray-850/90 hover:bg-gray-800/90 p-4 rounded-xl border border-blue-500/20 transition-all flex flex-col justify-between group">
+                        <div className="flex items-center justify-between mb-2">
+                            <div className="flex items-center gap-2 text-xs font-bold text-blue-400">
+                                <Globe size={16} />
+                                <span>Google Cloud & Gemini</span>
+                            </div>
+                            <span className="text-[10px] px-1.5 py-0.5 rounded bg-blue-500/10 text-blue-300 border border-blue-500/20 font-mono">APIs</span>
+                        </div>
+                        <p className="text-[11px] text-gray-400 mb-3 leading-relaxed">
+                            OAuth para Google Calendar, Gmail API y clave de Google AI Studio.
+                        </p>
+                        <div className="flex items-center gap-2 mt-auto">
+                            <a 
+                                href="https://console.cloud.google.com/apis/credentials" 
+                                target="_blank" 
+                                rel="noopener noreferrer"
+                                className="flex-1 flex items-center justify-center gap-1.5 py-2 px-3 bg-blue-600 hover:bg-blue-500 text-white rounded-lg text-xs font-semibold transition-colors shadow-sm"
+                            >
+                                <span>Cloud Console</span>
+                                <ExternalLink size={12} />
+                            </a>
+                            <a 
+                                href="https://aistudio.google.com/app/apikey" 
+                                target="_blank" 
+                                rel="noopener noreferrer"
+                                className="flex items-center justify-center p-2 bg-gray-750 hover:bg-gray-700 text-blue-300 rounded-lg text-xs transition-colors border border-gray-700"
+                                title="Google AI Studio (Gemini API Key)"
+                            >
+                                <Key size={14} />
+                            </a>
+                        </div>
+                    </div>
+
+                    {/* 2. Vercel Platform */}
+                    <div className="bg-gray-850/90 hover:bg-gray-800/90 p-4 rounded-xl border border-gray-700/60 transition-all flex flex-col justify-between group">
+                        <div className="flex items-center justify-between mb-2">
+                            <div className="flex items-center gap-2 text-xs font-bold text-white">
+                                <Server size={16} className="text-gray-300" />
+                                <span>Vercel Platform</span>
+                            </div>
+                            <span className="text-[10px] px-1.5 py-0.5 rounded bg-white/10 text-gray-200 border border-white/20 font-mono">Deploy</span>
+                        </div>
+                        <p className="text-[11px] text-gray-400 mb-3 leading-relaxed">
+                            Panel de despliegues en producción, logs del backend y variables de entorno.
+                        </p>
+                        <a 
+                            href="https://vercel.com/dashboard" 
+                            target="_blank" 
+                            rel="noopener noreferrer"
+                            className="flex items-center justify-center gap-1.5 py-2 px-3 bg-gray-750 hover:bg-gray-700 border border-gray-600 text-white rounded-lg text-xs font-semibold transition-colors mt-auto"
+                        >
+                            <span>Vercel Dashboard</span>
+                            <ExternalLink size={12} />
+                        </a>
+                    </div>
+
+                    {/* 3. GitHub Repository */}
+                    <div className="bg-gray-850/90 hover:bg-gray-800/90 p-4 rounded-xl border border-purple-500/20 transition-all flex flex-col justify-between group">
+                        <div className="flex items-center justify-between mb-2">
+                            <div className="flex items-center gap-2 text-xs font-bold text-purple-400">
+                                <GitBranch size={16} />
+                                <span>GitHub Repository</span>
+                            </div>
+                            <span className="text-[10px] px-1.5 py-0.5 rounded bg-purple-500/10 text-purple-300 border border-purple-500/20 font-mono">Git</span>
+                        </div>
+                        <p className="text-[11px] text-gray-400 mb-3 leading-relaxed">
+                            Código fuente de Rembrandt7, historial de commits y sincronización.
+                        </p>
+                        <a 
+                            href="https://github.com/Rembrandt7/Rembrandt7" 
+                            target="_blank" 
+                            rel="noopener noreferrer"
+                            className="flex items-center justify-center gap-1.5 py-2 px-3 bg-purple-600/80 hover:bg-purple-600 text-white rounded-lg text-xs font-semibold transition-colors mt-auto shadow-sm"
+                        >
+                            <span>Repositorio GitHub</span>
+                            <ExternalLink size={12} />
+                        </a>
+                    </div>
+
+                    {/* 4. Supabase Cloud DB */}
+                    <div className="bg-gray-850/90 hover:bg-gray-800/90 p-4 rounded-xl border border-emerald-500/20 transition-all flex flex-col justify-between group">
+                        <div className="flex items-center justify-between mb-2">
+                            <div className="flex items-center gap-2 text-xs font-bold text-emerald-400">
+                                <div className={`w-2 h-2 rounded-full ${isConnected ? 'bg-emerald-500 shadow-[0_0_8px_rgba(16,185,129,0.7)]' : 'bg-red-500'}`} />
+                                <span>Supabase Postgres</span>
+                            </div>
+                            <span className="text-[10px] px-1.5 py-0.5 rounded bg-emerald-500/10 text-emerald-300 border border-emerald-500/20 font-mono">DB</span>
+                        </div>
+                        <p className="text-[11px] text-gray-400 mb-3 leading-relaxed">
+                            Base de datos relacional, storage buckets y JSON de configuración.
+                        </p>
+                        <div className="flex items-center gap-2 mt-auto">
+                            <a 
+                                href="https://supabase.com/dashboard/project/humndjymddoitxxkgtyt" 
+                                target="_blank" 
+                                rel="noopener noreferrer"
+                                className="flex-1 flex items-center justify-center gap-1.5 py-2 px-3 bg-emerald-600 hover:bg-emerald-500 text-white rounded-lg text-xs font-semibold transition-colors shadow-sm"
+                            >
+                                <span>Dashboard</span>
+                                <ExternalLink size={12} />
+                            </a>
+                            <button 
+                                onClick={() => setIsConfigOpen(!isConfigOpen)}
+                                className={`flex items-center justify-center p-2 rounded-lg text-xs border transition-colors ${isConfigOpen ? 'bg-emerald-900/60 border-emerald-500 text-emerald-300' : 'bg-gray-750 hover:bg-gray-700 border-gray-600 text-gray-300'}`}
+                                title="Configurar credenciales de Supabase (URL / API Key)"
+                            >
+                                <Settings size={14} />
+                            </button>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            {/* 1. Configuración Supabase (Colapsable) */}
             <div className="bg-gray-800 rounded-lg border border-gray-700 shadow-md overflow-hidden shrink-0">
                 <div className="w-full flex items-center justify-between p-3 bg-gray-900 border-b border-gray-800">
                     <button 
