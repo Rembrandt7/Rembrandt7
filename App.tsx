@@ -78,6 +78,7 @@ import { LinkProvider, useLinks } from './contexts/LinkContext';
 import { Toaster } from 'sonner';
 import { GlobalSearch } from './components/GlobalSearch';
 import { PwaInstallPrompt } from './components/PwaInstallPrompt';
+import { MobileNavigation } from './components/MobileNavigation';
 import {
   DndContext,
   closestCenter,
@@ -652,14 +653,14 @@ const MainLayout: React.FC = () => {
 
         <div className="flex-1 flex flex-col overflow-y-auto h-full relative w-full lg:w-auto">
           <ShortcutListener />
-          <div className="flex flex-col items-center p-4 min-h-full pb-24"> 
-              <header className="w-full max-w-screen-2xl mb-6 pt-4 px-2 md:px-6 flex justify-between items-center gap-2">
-                  <button 
-                    onClick={() => setLeftSidebarOpen(!leftSidebarOpen)} 
-                    className="lg:hidden p-2 hover:bg-gray-800 rounded-lg text-gray-400 hover:text-white transition-colors"
-                  >
-                    <Menu size={24} />
-                  </button>
+          <MobileNavigation 
+            onToggleSidebar={() => setLeftSidebarOpen(prev => !prev)} 
+            tabIcons={tabIcons} 
+            isDatabaseActive={isDatabaseActive} 
+            onToggleDatabase={handleToggleDatabaseTab} 
+          />
+          <div className="flex flex-col items-center p-2 sm:p-4 min-h-full pb-24"> 
+              <header className="hidden lg:flex w-full max-w-screen-2xl mb-6 pt-4 px-6 justify-between items-center gap-2">
                   <h1 className="text-2xl md:text-4xl lg:text-5xl font-bold text-transparent bg-clip-text bg-gradient-to-r from-purple-400 to-pink-600 truncate">
                     Rembrandt IA Studio
                   </h1>
@@ -730,7 +731,7 @@ const MainLayout: React.FC = () => {
               
               <div className="w-full max-w-screen-2xl flex-grow">
                   <main className="w-full pb-8">
-                      <nav className="w-full mb-4 flex flex-wrap justify-center gap-2 items-center">
+                      <nav className="hidden lg:flex w-full mb-4 flex-wrap justify-center gap-2 items-center">
                           <SortableContext 
                             items={config.tabs.filter(t => t.isVisible && !isDbTab(t)).map(t => t.id)} 
                             strategy={horizontalListSortingStrategy}
@@ -796,7 +797,7 @@ const MainLayout: React.FC = () => {
             whileHover={{ scale: 1.1, boxShadow: "0px 0px 20px rgba(147, 51, 234, 0.6)" }}
             whileTap={{ scale: 0.9 }}
             onClick={() => setIsAssistantOpen(true)}
-            className="fixed bottom-6 right-6 p-4 bg-gradient-to-r from-purple-600 to-pink-600 text-white rounded-full shadow-2xl z-50 pointer-events-auto"
+            className="fixed bottom-20 lg:bottom-6 right-4 lg:right-6 p-3.5 lg:p-4 bg-gradient-to-r from-purple-600 to-pink-600 text-white rounded-full shadow-2xl z-40 pointer-events-auto"
             title="Abrir Asistente IA"
           >
             <MessageSquare size={24} />
@@ -811,7 +812,7 @@ const MainLayout: React.FC = () => {
               animate={{ opacity: 1, y: 0, scale: 1 }}
               exit={{ opacity: 0, y: 50, scale: 0.9 }}
               transition={{ type: 'spring', damping: 25, stiffness: 300 }}
-              className="fixed bottom-4 right-4 w-[450px] h-[650px] glass-panel-heavy rounded-3xl shadow-2xl flex flex-col z-40 overflow-hidden ring-1 ring-white/10"
+              className="fixed bottom-20 lg:bottom-4 right-2 sm:right-4 w-[calc(100vw-16px)] sm:w-[450px] max-w-[450px] h-[75vh] sm:h-[650px] glass-panel-heavy rounded-3xl shadow-2xl flex flex-col z-40 overflow-hidden ring-1 ring-white/10"
             >
               <Suspense fallback={<TabLoadingFallback message="Cargando asistente..." />}>
                 <CalendarAiAssistant onClose={() => setIsAssistantOpen(false)} />

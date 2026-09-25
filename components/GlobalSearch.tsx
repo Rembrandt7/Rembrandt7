@@ -59,7 +59,7 @@ export const GlobalSearch: React.FC = () => {
   const listRef = useRef<HTMLDivElement>(null);
   const selectedItemRef = useRef<HTMLDivElement>(null);
 
-  // Keyboard shortcut Ctrl+K / Cmd+K and Esc
+  // Keyboard shortcut Ctrl+K / Cmd+K, Esc, and custom open-global-search event for mobile
   useEffect(() => {
     const handleKeyDown = (e: KeyboardEvent) => {
       if ((e.metaKey || e.ctrlKey) && e.key.toLowerCase() === 'k') {
@@ -70,8 +70,14 @@ export const GlobalSearch: React.FC = () => {
         setIsOpen(false);
       }
     };
+    const handleOpenCustom = () => setIsOpen(true);
+
     window.addEventListener('keydown', handleKeyDown);
-    return () => window.removeEventListener('keydown', handleKeyDown);
+    window.addEventListener('open-global-search', handleOpenCustom);
+    return () => {
+      window.removeEventListener('keydown', handleKeyDown);
+      window.removeEventListener('open-global-search', handleOpenCustom);
+    };
   }, []);
 
   // Focus input and reset selection when modal opens
