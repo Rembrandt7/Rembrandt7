@@ -1468,6 +1468,7 @@ const EmailGenerator: React.FC<EmailGeneratorProps> = ({ attachedImages, onAttac
                     {/* ========================================================================= */}
                     {/* SECCIÓN 1: REDACTOR LIBRE CON IA (ARRIBA) */}
                     {/* ========================================================================= */}
+                    {activeMode === 'ai' && (
                     <div id="section-redactor-libre" className="bg-gray-900/60 rounded-2xl border border-purple-500/30 p-4 sm:p-5 shadow-xl space-y-4">
                         <div className="flex items-center justify-between pb-3 border-b border-gray-800/80">
                             <div className="flex items-center gap-2.5">
@@ -1792,10 +1793,12 @@ const EmailGenerator: React.FC<EmailGeneratorProps> = ({ attachedImages, onAttac
                             </div>
                         )}
                     </div>
+                    )}
 
                     {/* ========================================================================= */}
-                    {/* SECCIÓN 2: ENTREGAS Y FORMATOS (0s) (ABAJO) */}
+                    {/* SECCIÓN 2: ENTREGAS Y FORMATOS (0s) */}
                     {/* ========================================================================= */}
+                    {activeMode === 'quick' && (
                     <div id="section-entregas-formatos" className="bg-gray-900/60 rounded-2xl border border-amber-500/30 p-4 sm:p-5 shadow-xl space-y-4">
                         <div className="flex items-center justify-between pb-3 border-b border-gray-800/80">
                             <div className="flex items-center gap-2.5">
@@ -2194,6 +2197,7 @@ const EmailGenerator: React.FC<EmailGeneratorProps> = ({ attachedImages, onAttac
                             </div>
                         )}
                     </div>
+                    )}
                 </div>
 
                 {/* ========================================================================= */}
