@@ -1,5 +1,5 @@
 
-import React, { useState, useCallback, useEffect } from 'react';
+import React, { useState, useCallback, useEffect, lazy, Suspense } from 'react';
 import { 
   Mail, 
   Image as ImageIcon, 
@@ -38,36 +38,38 @@ import {
 import { Tab, TabConfig, LinkItem } from './types';
 import { AnimatePresence, motion } from 'motion/react';
 import TabButton from './components/common/TabButton';
-import VideoGenerator from './components/VideoGenerator';
-import EmailGenerator from './components/EmailGenerator';
-// import MessageImprover from './components/MessageImprover'; // Integrated into EmailGenerator
-import TextToSpeech from './components/TextToSpeech';
-import Whiteboard from './components/Whiteboard';
-import Renders from './components/Renders';
-import Prompts from './components/Prompts';
-import Engineer from './components/Engineer';
-import CommandsTab from './components/CommandsTab';
-import UsefulTools from './components/UsefulTools';
-import Credenciales from './components/Credenciales';
-import Dashboard from './components/Dashboard';
-import Finanzas from './components/Finanzas';
+
+// Lazy-loaded tab components for optimized startup performance and reduced memory footprint
+const VideoGenerator = lazy(() => import('./components/VideoGenerator'));
+const EmailGenerator = lazy(() => import('./components/EmailGenerator'));
+const TextToSpeech = lazy(() => import('./components/TextToSpeech'));
+const Whiteboard = lazy(() => import('./components/Whiteboard'));
+const Renders = lazy(() => import('./components/Renders'));
+const Prompts = lazy(() => import('./components/Prompts'));
+const Engineer = lazy(() => import('./components/Engineer'));
+const CommandsTab = lazy(() => import('./components/CommandsTab'));
+const UsefulTools = lazy(() => import('./components/UsefulTools'));
+const Credenciales = lazy(() => import('./components/Credenciales'));
+const Dashboard = lazy(() => import('./components/Dashboard'));
+const Finanzas = lazy(() => import('./components/Finanzas'));
+const DatabaseViewer = lazy(() => import('./components/DatabaseViewer'));
+const CustomTabContent = lazy(() => import('./components/CustomTabContent'));
+const CalendarTab = lazy(() => import('./components/CalendarTab'));
+const NotesTab = lazy(() => import('./components/NotesTab'));
+const Nutricion = lazy(() => import('./components/Nutricion'));
+const ThreeDPrinting = lazy(() => import('./components/ThreeDPrinting'));
+const CalendarAiAssistant = lazy(() => import('./components/CalendarAiAssistant'));
+
 import LinksBar from './components/LinksBar';
 import AiSidebar from './components/AiSidebar';
 import CalculatorWidget from './components/CalculatorWidget';
 import GoogleDock from './components/GoogleDock'; 
-import DatabaseViewer from './components/DatabaseViewer'; 
 import Clock from './components/common/Clock';
 import ReminderDisplay from './components/common/ReminderDisplay';
 import ShortcutListener from './components/ShortcutListener';
 import { EditModeBanner } from './components/common/EditModeBanner';
 import { ReferenceImage } from './components/common/ReferenceImageManager';
 import { GoogleApiConfigModal } from './components/common/GoogleApiConfigModal';
-import CustomTabContent from './components/CustomTabContent';
-import CalendarTab from './components/CalendarTab';
-import NotesTab from './components/NotesTab';
-import Nutricion from './components/Nutricion';
-import ThreeDPrinting from './components/ThreeDPrinting';
-import CalendarAiAssistant from './components/CalendarAiAssistant';
 import NotificationManager from './components/NotificationManager';
 import NotificationOverlay from './components/NotificationOverlay';
 import { Message } from './types';
@@ -222,6 +224,13 @@ const SortableTab: React.FC<{
         </div>
     );
 };
+
+const TabLoadingFallback: React.FC<{ message?: string }> = ({ message = 'Cargando módulo...' }) => (
+  <div className="flex flex-col items-center justify-center min-h-[350px] w-full p-12 text-gray-400 gap-3">
+    <div className="w-10 h-10 border-4 border-purple-500/20 border-t-purple-500 rounded-full animate-spin" />
+    <span className="text-sm font-medium text-purple-300/80 tracking-wide animate-pulse">{message}</span>
+  </div>
+);
 
 const MainLayout: React.FC = () => {
   const { config, updateConfig, isEditing, toggleEditing, saveToSupabase, fetchConfigFromSupabaseManual, updateNotifications } = useLinks();
@@ -739,7 +748,9 @@ const MainLayout: React.FC = () => {
                             transition={{ duration: 0.2 }}
                             className="w-full h-full"
                           >
-                            {renderContent()}
+                            <Suspense fallback={<TabLoadingFallback />}>
+                              {renderContent()}
+                            </Suspense>
                           </motion.div>
                         </AnimatePresence>
                       </div>
@@ -772,7 +783,9 @@ const MainLayout: React.FC = () => {
               transition={{ type: 'spring', damping: 25, stiffness: 300 }}
               className="fixed bottom-4 right-4 w-[450px] h-[650px] glass-panel-heavy rounded-3xl shadow-2xl flex flex-col z-40 overflow-hidden ring-1 ring-white/10"
             >
-              <CalendarAiAssistant onClose={() => setIsAssistantOpen(false)} />
+              <Suspense fallback={<TabLoadingFallback message="Cargando asistente..." />}>
+                <CalendarAiAssistant onClose={() => setIsAssistantOpen(false)} />
+              </Suspense>
             </motion.div>
           )}
         </AnimatePresence>

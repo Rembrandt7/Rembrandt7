@@ -59,7 +59,7 @@ interface ToolSectionPanelProps {
     section: {
         id: string;
         title: string;
-        gradient: string;
+        gradient?: string;
         iconSvg?: string;
         items: LinkItem[];
     };
