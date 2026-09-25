@@ -298,6 +298,8 @@ const EmailGenerator: React.FC<EmailGeneratorProps> = ({ attachedImages, onAttac
     
     // Modo de trabajo: 'ai' = Redactor Libre con IA (primero por defecto), 'quick' = Entregas y Formatos (0s)
     const [activeMode, setActiveMode] = useState<'ai' | 'quick'>('ai');
+    const [isAiSectionOpen, setIsAiSectionOpen] = useState(true);
+    const [isQuickSectionOpen, setIsQuickSectionOpen] = useState(true);
 
     const [idea, setIdea] = useState('');
     const [previousEmail, setPreviousEmail] = useState('');
