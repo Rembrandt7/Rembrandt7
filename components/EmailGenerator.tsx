@@ -9,7 +9,7 @@ import {
   Trash2, Mail, MessageSquare, Star, Sparkles, Send, 
   RefreshCw, Pencil, Save, Copy, AlertTriangle, Mic, MicOff, RotateCcw, 
   Bot, Newspaper, ExternalLink, Bookmark, Building2, CheckCircle2, 
-  Clock, Zap, Search, Image as ImageIcon
+  Clock, Zap, Search, Image as ImageIcon, Users, ChevronDown, ChevronUp
 } from 'lucide-react';
 import { motion, AnimatePresence } from 'motion/react';
 import { toast } from 'sonner';
@@ -1223,6 +1223,11 @@ const EmailGenerator: React.FC<EmailGeneratorProps> = ({ attachedImages, onAttac
             setSuggestion('');
             toast.success("Sugerencia autocompletada");
         }
+    };
+
+    const handleApplyAlternativeSubject = (newSubject: string) => {
+        setGeneratedContent(prev => prev ? ({ ...prev, emailSubject: newSubject }) : null);
+        toast.success("Asunto aplicado");
     };
 
     const acceptSuggestion = () => {
