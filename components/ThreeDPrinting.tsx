@@ -1,5 +1,5 @@
 import React, { useState, useMemo } from 'react';
-import { Box, Wrench, Layout, Sparkles, Move, Star, Shield, Zap, Package, Key, Sword, Globe, ChevronRight, Settings, Database, ExternalLink, Cloud, Search, X, Calculator, TrendingUp, FolderArchive, Layers, Scissors } from 'lucide-react';
+import { Box, Wrench, Layout, Sparkles, Move, Star, Shield, Zap, Package, Key, Sword, Globe, ChevronRight, Settings, Database, ExternalLink, Cloud, Search, X, Calculator, TrendingUp, FolderArchive, Layers, Scissors, Eye } from 'lucide-react';
 import { motion } from 'motion/react';
 
 import ThreeDCalculator from './ThreeDCalculator';
@@ -85,6 +85,17 @@ const libraries = [
 ];
 
 const tools3D = [
+  { 
+    name: 'Visualizador 3D', 
+    href: '/visualizador3d/index.html', 
+    isInternal: true,
+    icon: (
+      <svg className="w-5 h-5 text-cyan-400" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round">
+        <path d="M12 2L2 7l10 5 10-5-10-5zM2 17l10 5 10-5M2 12l10 5 10-5"/>
+      </svg>
+    ), 
+    color: 'from-cyan-500/20 to-transparent' 
+  },
   { 
     name: 'Meshy (IA)', 
     href: 'https://www.meshy.ai/workspace', 
@@ -374,7 +385,7 @@ const GroupCard = ({ group, className, itemsOverride }: { group: typeof groups[0
   );
 };
 
-type SubTab = 'taller' | 'ventas' | 'catalogo' | 'todo';
+type SubTab = 'taller' | 'ventas' | 'catalogo' | 'visualizador' | 'todo';
 
 const ThreeDPrinting: React.FC = () => {
   const [activeTab, setActiveTab] = useState<SubTab>('taller');
@@ -456,22 +467,37 @@ const ThreeDPrinting: React.FC = () => {
           </div>
         </div>
         
-        <div className="grid grid-cols-4 sm:grid-cols-6 lg:grid-cols-11 gap-2 flex-1">
+        <div className="grid grid-cols-4 sm:grid-cols-6 lg:grid-cols-12 gap-2 flex-1">
           {filteredTools.map((tool, idx) => (
-            <a
-              key={idx}
-              href={tool.href}
-              target="_blank"
-              rel="noopener noreferrer"
-              className={`flex flex-col items-center justify-center p-2 bg-gradient-to-b ${tool.color} border border-white/10 rounded-2xl transition-all hover:scale-105 hover:border-white/30 group min-w-[58px] h-[78px] shadow-sm`}
-            >
-              <div className="mb-1.5 p-1 bg-gray-900/60 rounded-xl group-hover:scale-110 transition-transform flex items-center justify-center w-8 h-8 shrink-0">
-                {tool.icon}
-              </div>
-              <span className="text-[9px] font-bold text-gray-300 group-hover:text-white uppercase tracking-wider text-center line-clamp-1 w-full px-0.5">
-                {tool.name}
-              </span>
-            </a>
+            (tool as any).isInternal ? (
+              <button
+                key={idx}
+                onClick={() => setActiveTab('visualizador')}
+                className={`flex flex-col items-center justify-center p-2 bg-gradient-to-b ${tool.color} border border-cyan-500/30 rounded-2xl transition-all hover:scale-105 hover:border-cyan-400 group min-w-[58px] h-[78px] shadow-sm text-center`}
+              >
+                <div className="mb-1.5 p-1 bg-gray-900/60 rounded-xl group-hover:scale-110 transition-transform flex items-center justify-center w-8 h-8 shrink-0">
+                  {tool.icon}
+                </div>
+                <span className="text-[9px] font-bold text-cyan-300 group-hover:text-white uppercase tracking-wider text-center line-clamp-1 w-full px-0.5">
+                  {tool.name}
+                </span>
+              </button>
+            ) : (
+              <a
+                key={idx}
+                href={tool.href}
+                target="_blank"
+                rel="noopener noreferrer"
+                className={`flex flex-col items-center justify-center p-2 bg-gradient-to-b ${tool.color} border border-white/10 rounded-2xl transition-all hover:scale-105 hover:border-white/30 group min-w-[58px] h-[78px] shadow-sm`}
+              >
+                <div className="mb-1.5 p-1 bg-gray-900/60 rounded-xl group-hover:scale-110 transition-transform flex items-center justify-center w-8 h-8 shrink-0">
+                  {tool.icon}
+                </div>
+                <span className="text-[9px] font-bold text-gray-300 group-hover:text-white uppercase tracking-wider text-center line-clamp-1 w-full px-0.5">
+                  {tool.name}
+                </span>
+              </a>
+            )
           ))}
         </div>
       </div>
@@ -489,6 +515,18 @@ const ThreeDPrinting: React.FC = () => {
           >
             <Calculator size={15} />
             <span>Taller & Cotizador</span>
+          </button>
+
+          <button
+            onClick={() => setActiveTab('visualizador')}
+            className={`flex items-center gap-2 px-3.5 py-2 rounded-lg text-xs font-black uppercase tracking-wider transition-all shrink-0 ${
+              activeTab === 'visualizador'
+                ? 'bg-gradient-to-r from-cyan-600 to-blue-600 text-white shadow-md'
+                : 'text-gray-400 hover:text-white hover:bg-white/5'
+            }`}
+          >
+            <Eye size={15} />
+            <span>Visualizador 3D (STL/3MF)</span>
           </button>
 
           <button
@@ -562,6 +600,52 @@ const ThreeDPrinting: React.FC = () => {
           viewMode={activeTab === 'todo' ? 'all' : activeTab}
           onSwitchView={(newView) => setActiveTab(newView as SubTab)}
         />
+      )}
+
+      {/* RENDER VISUALIZADOR 3D (VISUALIZADOR / TODO) */}
+      {(activeTab === 'visualizador' || activeTab === 'todo') && (
+        <div className="space-y-4 animate-in fade-in duration-300">
+          <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3 p-4 bg-slate-900/60 border border-white/10 rounded-2xl shadow-lg backdrop-blur-xl">
+            <div className="flex items-center gap-3">
+              <div className="p-2.5 bg-cyan-600/20 rounded-xl border border-cyan-500/30">
+                <Box size={22} className="text-cyan-400" />
+              </div>
+              <div>
+                <h3 className="text-sm font-black text-white flex flex-wrap items-center gap-2">
+                  <span>Visualizador STL & 3MF</span>
+                  <span className="text-[10px] font-bold px-2 py-0.5 rounded-full bg-cyan-500/20 text-cyan-300 border border-cyan-500/30">
+                    A1 mini · Kobra X · A2L
+                  </span>
+                </h3>
+                <p className="text-xs text-gray-400">
+                  Arrastra cualquier modelo .STL o .3MF para rotar, verificar dimensiones, volumen y compatibilidad con tus impresoras.
+                </p>
+              </div>
+            </div>
+
+            <div className="flex items-center gap-2 self-end sm:self-auto">
+              <a
+                href="/visualizador3d/index.html"
+                target="_blank"
+                rel="noopener noreferrer"
+                className="flex items-center gap-1.5 px-3 py-1.5 bg-white/10 hover:bg-white/20 border border-white/15 rounded-xl text-xs font-bold text-white transition-all shadow-sm hover:scale-105"
+                title="Abrir en ventana o pestaña independiente completa"
+              >
+                <ExternalLink size={14} />
+                <span>Pestaña Nueva</span>
+              </a>
+            </div>
+          </div>
+
+          <div className="relative w-full h-[760px] md:h-[840px] bg-slate-950 rounded-2xl border border-white/10 overflow-hidden shadow-2xl">
+            <iframe
+              src="/visualizador3d/index.html"
+              className="w-full h-full border-none"
+              title="Visualizador 3D STL & 3MF"
+              allow="fullscreen"
+            />
+          </div>
+        </div>
       )}
 
       {/* RENDER CATÁLOGO DE MODELOS STL (CATÁLOGO / TODO) */}
