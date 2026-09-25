@@ -228,13 +228,35 @@ const MainLayout: React.FC = () => {
   const [activeTabId, setActiveTabId] = useState<string>('email-gen');
   const [previousActiveTabId, setPreviousActiveTabId] = useState<string>('email-gen');
 
+  const isDbTab = (t: { id?: string; label?: string; componentKey?: string }) => {
+    if (!t) return false;
+    const id = (t.id || '').toLowerCase();
+    const label = (t.label || '').toLowerCase();
+    const componentKey = (t.componentKey || '').toLowerCase();
+    return (
+      id === 'database' ||
+      id === 'datos' ||
+      id.includes('database') ||
+      id.includes('dato') ||
+      label === 'datos' ||
+      label === 'base de datos' ||
+      label.includes('dato') ||
+      componentKey === 'base de datos' ||
+      componentKey.includes('database') ||
+      componentKey.includes('dato')
+    );
+  };
+
+  const isDatabaseActive = isDbTab({ id: activeTabId });
+
   const handleToggleDatabaseTab = () => {
-    if (activeTabId === 'database') {
-      const fallbackTab = config.tabs.find(t => t.isVisible && t.id !== 'database')?.id || 'email-gen';
-      setActiveTabId(previousActiveTabId && previousActiveTabId !== 'database' ? previousActiveTabId : fallbackTab);
+    if (isDatabaseActive) {
+      const fallbackTab = config.tabs.find(t => t.isVisible && !isDbTab(t))?.id || 'email-gen';
+      setActiveTabId(previousActiveTabId && !isDbTab({ id: previousActiveTabId }) ? previousActiveTabId : fallbackTab);
     } else {
       setPreviousActiveTabId(activeTabId);
-      setActiveTabId('database');
+      const existingDbTab = config.tabs.find(isDbTab);
+      setActiveTabId(existingDbTab?.id || 'database');
     }
   };
   const [imagesForEmail, setImagesForEmail] = useState<ReferenceImage[]>([]);
@@ -425,9 +447,17 @@ const MainLayout: React.FC = () => {
   // Ensure activeTabId is valid
   useEffect(() => {
     if (config.tabs.length > 0) {
+      const isCurrentDb = isDbTab({ id: activeTabId });
       const currentTabExists = config.tabs.some(t => t.id === activeTabId);
-      if (!currentTabExists && activeTabId !== 'database') {
+      if (!currentTabExists && !isCurrentDb) {
         setActiveTabId(config.tabs[0].id);
+      }
+      
+      // Auto-hide any database / datos tab from the horizontal tabs bar
+      const hasVisibleDbTab = config.tabs.some(t => t.isVisible && isDbTab(t));
+      if (hasVisibleDbTab) {
+        const newTabs = config.tabs.map(t => isDbTab(t) ? { ...t, isVisible: false } : t);
+        updateConfig({ ...config, tabs: newTabs });
       }
       
       // Auto-rename Dashboard tab to Noticias if it's still named Dashboard
@@ -509,7 +539,7 @@ const MainLayout: React.FC = () => {
   };
 
   const renderContent = () => {
-    if (activeTabId === 'database') {
+    if (activeTabId === 'database' || isDbTab({ id: activeTabId })) {
       return <DatabaseViewer />;
     }
     const activeTab = config.tabs.find(t => t.id === activeTabId);
@@ -642,11 +672,11 @@ const MainLayout: React.FC = () => {
                       whileTap={{ scale: 0.9 }} 
                       onClick={handleToggleDatabaseTab} 
                       className={`p-1.5 rounded-lg transition-all ${
-                        activeTabId === 'database' 
+                        isDatabaseActive 
                           ? 'bg-blue-600 shadow-[0_0_15px_rgba(37,99,235,0.6)] text-white ring-2 ring-blue-400' 
                           : 'hover:bg-blue-500/20 text-blue-400'
                       }`} 
-                      title={activeTabId === 'database' ? "Cerrar Base de Datos" : "Base de Datos & Cloud (Supabase, Google APIs, Vercel, GitHub)"}
+                      title={isDatabaseActive ? "Cerrar Base de Datos" : "Base de Datos & Cloud (Supabase, Google APIs, Vercel, GitHub)"}
                     >
                       <Database size={18} />
                     </motion.button>
@@ -663,10 +693,10 @@ const MainLayout: React.FC = () => {
                   <main className="w-full pb-8">
                       <nav className="w-full mb-4 flex flex-wrap justify-center gap-2 items-center">
                           <SortableContext 
-                            items={config.tabs.filter(t => t.isVisible && t.id !== 'database').map(t => t.id)} 
+                            items={config.tabs.filter(t => t.isVisible && !isDbTab(t)).map(t => t.id)} 
                             strategy={horizontalListSortingStrategy}
                           >
-                            {config.tabs.filter(t => t.isVisible && t.id !== 'database').map((tab, index) => (
+                            {config.tabs.filter(t => t.isVisible && !isDbTab(t)).map((tab, index) => (
                               <SortableTab 
                                   key={tab.id}
                                   tab={tab}
