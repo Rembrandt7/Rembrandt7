@@ -8,6 +8,7 @@ import { arrayMove, SortableContext, sortableKeyboardCoordinates, verticalListSo
 import { CSS } from '@dnd-kit/utilities';
 import Markdown from 'react-markdown';
 import remarkGfm from 'remark-gfm';
+import { normalizeAndDeduplicateNotes } from '../utils/noteUtils';
 
 const SortableNote = ({ note, toggleComplete, startEdit, removeNote, editingId, editText, setEditText, saveEdit, editFields, setEditFields, isEditMode }: any) => {
   const { attributes, listeners, setNodeRef, transform, transition } = useSortable({ id: note.id });
@@ -276,6 +277,7 @@ const NotesTab: React.FC = () => {
   const [editText, setEditText] = useState('');
   const [editFields, setEditFields] = useState({ title: '', progress: 0, link: '', quantity: '', startDate: '' });
   const [addingToCategory, setAddingToCategory] = useState<'estudios' | 'recientes' | 'notas' | 'trabajo' | 'compras' | null>(null);
+  const [activeCategoryFilter, setActiveCategoryFilter] = useState<'todas' | 'notas' | 'trabajo' | 'estudios' | 'compras'>('todas');
 
   // Helper to check if a category is in edit mode
   const isCategoryEditMode = (category: string) => {
@@ -553,50 +555,102 @@ const NotesTab: React.FC = () => {
     );
   }
 
-  // Deduplicate notes by ID to prevent displaying 1062 identical copies of a note
-  const uniqueNotes = React.useMemo(() => {
-    const seen = new Set<string>();
-    return (config.notes || []).filter(n => {
-      if (!n || !n.id) return false;
-      if (seen.has(n.id)) return false;
-      seen.add(n.id);
-      return true;
-    });
+  // Normalize and deduplicate notes by ID using shared noteUtils
+  const cleanNotes = React.useMemo(() => {
+    return normalizeAndDeduplicateNotes(config.notes || []);
   }, [config.notes]);
 
-  const estudiosNotes = uniqueNotes.filter(n => ['estudios', 'estudiar', 'investigacion'].includes(n.category));
-  const generalNotes = uniqueNotes.filter(n => 
-    n.category === 'notas' || 
-    !['estudios', 'estudiar', 'investigacion', 'trabajo', 'compras'].includes(n.category)
-  );
-  const comprasNotes = uniqueNotes.filter(n => n.category === 'compras');
-  const trabajoNotes = uniqueNotes.filter(n => n.category === 'trabajo');
+  const estudiosNotes = cleanNotes.filter(n => n.category === 'estudios');
+  const generalNotes = cleanNotes.filter(n => n.category === 'notas');
+  const comprasNotes = cleanNotes.filter(n => n.category === 'compras');
+  const trabajoNotes = cleanNotes.filter(n => n.category === 'trabajo');
 
   return (
-    <div className="p-6 space-y-6 overflow-x-auto">
-      <div className="flex justify-between items-center">
-        <h2 className="text-2xl font-bold text-white">Notas y Trabajo</h2>
-        <div className="flex items-center gap-4">
+    <div className="p-4 sm:p-6 space-y-4 w-full">
+      <div className="flex flex-wrap justify-between items-center gap-3">
+        <h2 className="text-xl sm:text-2xl font-bold text-white flex items-center gap-2">
+          Notas & Trabajo
+          <span className="text-xs font-normal text-purple-400 bg-purple-500/10 px-2 py-0.5 rounded-full border border-purple-500/20">
+            {cleanNotes.length} notas
+          </span>
+        </h2>
+        <div className="flex items-center gap-3">
           <div className="flex items-center gap-2 px-3 py-1 bg-gray-800 rounded-full border border-gray-700">
             <div className={`w-2 h-2 rounded-full ${isShoppingEditMode ? 'bg-green-500 animate-pulse' : 'bg-gray-500'}`} />
             <span className="text-[10px] text-gray-400 uppercase font-bold">Compras Sync</span>
           </div>
-          <button onClick={refreshData} className="bg-gray-700 text-white px-4 py-2 rounded-lg text-sm hover:bg-gray-600 transition-colors">
+          <button onClick={refreshData} className="bg-gray-700 hover:bg-gray-600 text-white px-3 py-1.5 rounded-lg text-xs sm:text-sm transition-colors">
             Actualizar
           </button>
         </div>
       </div>
+
+      {/* Category filter tabs (Responsive: perfect for mobile & Galaxy Fold) */}
+      <div className="flex items-center gap-2 overflow-x-auto no-scrollbar pb-1 w-full">
+        <button
+          onClick={() => setActiveCategoryFilter('todas')}
+          className={`px-3 py-1.5 rounded-xl text-xs font-bold transition-all whitespace-nowrap ${
+            activeCategoryFilter === 'todas'
+              ? 'bg-purple-600 text-white shadow-lg shadow-purple-600/30'
+              : 'bg-white/5 text-gray-400 hover:text-white hover:bg-white/10'
+          }`}
+        >
+          Todas ({cleanNotes.length})
+        </button>
+        <button
+          onClick={() => setActiveCategoryFilter('notas')}
+          className={`px-3 py-1.5 rounded-xl text-xs font-bold transition-all whitespace-nowrap ${
+            activeCategoryFilter === 'notas'
+              ? 'bg-green-600 text-white shadow-lg shadow-green-600/30'
+              : 'bg-white/5 text-gray-400 hover:text-white hover:bg-white/10'
+          }`}
+        >
+          Notas ({generalNotes.length})
+        </button>
+        <button
+          onClick={() => setActiveCategoryFilter('trabajo')}
+          className={`px-3 py-1.5 rounded-xl text-xs font-bold transition-all whitespace-nowrap ${
+            activeCategoryFilter === 'trabajo'
+              ? 'bg-orange-600 text-white shadow-lg shadow-orange-600/30'
+              : 'bg-white/5 text-gray-400 hover:text-white hover:bg-white/10'
+          }`}
+        >
+          Trabajo ({trabajoNotes.length})
+        </button>
+        <button
+          onClick={() => setActiveCategoryFilter('estudios')}
+          className={`px-3 py-1.5 rounded-xl text-xs font-bold transition-all whitespace-nowrap ${
+            activeCategoryFilter === 'estudios'
+              ? 'bg-purple-600 text-white shadow-lg shadow-purple-600/30'
+              : 'bg-white/5 text-gray-400 hover:text-white hover:bg-white/10'
+          }`}
+        >
+          Estudios ({estudiosNotes.length})
+        </button>
+        <button
+          onClick={() => setActiveCategoryFilter('compras')}
+          className={`px-3 py-1.5 rounded-xl text-xs font-bold transition-all whitespace-nowrap ${
+            activeCategoryFilter === 'compras'
+              ? 'bg-red-600 text-white shadow-lg shadow-red-600/30'
+              : 'bg-white/5 text-gray-400 hover:text-white hover:bg-white/10'
+          }`}
+        >
+          Compras ({comprasNotes.length})
+        </button>
+      </div>
+
       <DndContext sensors={sensors} collisionDetection={closestCenter} onDragOver={handleDragOver} onDragEnd={handleDragEnd}>
-        <div className="flex gap-4 items-start min-w-[1200px]">
-          <DroppableNoteContainer 
-            id="estudios" 
-            title="Estudios" 
-            icon={<BookOpen size={20} />} 
-            colorClass="bg-purple-900/20 border-purple-700"
-            onAdd={() => toggleCategoryEditMode('estudios')}
-            isEditMode={isEstudiosEditMode}
-            jsonFile="estudios.json"
-          >
+        <div className={`w-full ${activeCategoryFilter === 'todas' ? 'grid grid-cols-1 md:grid-cols-2 xl:grid-cols-4 gap-4 items-start' : 'flex flex-col gap-4'}`}>
+          {(activeCategoryFilter === 'todas' || activeCategoryFilter === 'estudios') && (
+            <DroppableNoteContainer 
+              id="estudios" 
+              title="Estudios" 
+              icon={<BookOpen size={20} />} 
+              colorClass="bg-purple-900/20 border-purple-700"
+              onAdd={() => toggleCategoryEditMode('estudios')}
+              isEditMode={isEstudiosEditMode}
+              jsonFile="estudios.json"
+            >
             {isEstudiosEditMode && (
               <div className="bg-gray-800 p-4 rounded-xl border border-purple-500 space-y-3 mb-3 shadow-xl">
                 <input
@@ -659,7 +713,9 @@ const NotesTab: React.FC = () => {
               ))}
             </SortableContext>
           </DroppableNoteContainer>
+          )}
 
+          {(activeCategoryFilter === 'todas' || activeCategoryFilter === 'notas') && (
           <DroppableNoteContainer 
             id="notas" 
             title="Notas" 
@@ -720,7 +776,9 @@ const NotesTab: React.FC = () => {
               ))}
             </SortableContext>
           </DroppableNoteContainer>
+          )}
 
+          {(activeCategoryFilter === 'todas' || activeCategoryFilter === 'trabajo') && (
           <DroppableNoteContainer 
             id="trabajo" 
             title="Trabajo" 
@@ -813,7 +871,9 @@ const NotesTab: React.FC = () => {
               ))}
             </SortableContext>
           </DroppableNoteContainer>
+          )}
 
+          {(activeCategoryFilter === 'todas' || activeCategoryFilter === 'compras') && (
           <DroppableNoteContainer 
             id="compras" 
             title="Compras" 
@@ -864,6 +924,7 @@ const NotesTab: React.FC = () => {
               ))}
             </SortableContext>
           </DroppableNoteContainer>
+          )}
         </div>
       </DndContext>
     </div>

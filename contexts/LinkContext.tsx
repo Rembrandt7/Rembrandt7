@@ -2,6 +2,7 @@ import React, { createContext, useContext, useState, useEffect, useRef } from 'r
 import { AppConfig, LinkItem, LinkSection, TabConfig, NutritionData, Note, AppNotification, GoogleApiConfig } from '../types';
 import { supabase } from '../services/supabaseClient';
 import { toast } from 'sonner';
+import { normalizeAndDeduplicateNotes } from '../utils/noteUtils';
 
 const INITIAL_TABS: TabConfig[] = [
     { id: 'email-gen', label: 'Email', type: 'system', componentKey: 'Generador de Email', isVisible: true, icon: 'Mail' },
@@ -622,19 +623,7 @@ export const LinkProvider: React.FC<{ children: React.ReactNode }> = ({ children
         }
 
         // Ensure notes exist and deduplicate by ID
-        if (!finalConfig.notes || !Array.isArray(finalConfig.notes)) {
-          finalConfig.notes = [];
-        } else {
-          const seenNoteIds = new Set<string>();
-          finalConfig.notes = finalConfig.notes
-            .filter((n: any) => {
-              if (!n || !n.id) return false;
-              if (seenNoteIds.has(n.id)) return false;
-              seenNoteIds.add(n.id);
-              return true;
-            })
-            .map((n: any) => ({ ...n, category: n.category || 'notas' }));
-        }
+        finalConfig.notes = normalizeAndDeduplicateNotes(finalConfig.notes || []);
         
         // Migration: Tabs
         if (!finalConfig.tabs || !Array.isArray(finalConfig.tabs)) {
@@ -948,19 +937,7 @@ export const LinkProvider: React.FC<{ children: React.ReactNode }> = ({ children
           }
 
           // Ensure notes exist and deduplicate
-          if (!parsed.notes || !Array.isArray(parsed.notes)) {
-            parsed.notes = [];
-          } else {
-            const seenNoteIds = new Set<string>();
-            parsed.notes = parsed.notes
-              .filter((n: any) => {
-                if (!n || !n.id) return false;
-                if (seenNoteIds.has(n.id)) return false;
-                seenNoteIds.add(n.id);
-                return true;
-              })
-              .map((n: any) => ({ ...n, category: n.category || 'notas' }));
-          }
+          parsed.notes = normalizeAndDeduplicateNotes(parsed.notes || []);
           
           // Add missing links to linksBar
           if (parsed.linksBar && Array.isArray(parsed.linksBar)) {
@@ -1488,7 +1465,11 @@ export const LinkProvider: React.FC<{ children: React.ReactNode }> = ({ children
     const executeSave = async () => {
       try {
         setSyncStatus('saving');
-        const configToSave = configOverride || configRef.current;
+        const rawConfig = configOverride || configRef.current;
+        const configToSave: AppConfig = {
+          ...rawConfig,
+          notes: normalizeAndDeduplicateNotes(rawConfig.notes || [])
+        };
         const jsonString = JSON.stringify(configToSave, null, 2);
 
         // Skip re-uploading if payload is identical to what's already saved in Supabase
@@ -1744,21 +1725,8 @@ export const LinkProvider: React.FC<{ children: React.ReactNode }> = ({ children
         });
       }
 
-      // Ensure notes exist
-      if (!json.notes || !Array.isArray(json.notes)) {
-        json.notes = [];
-      } else {
-        // Cleanup: remove AI database entries from notes
-        json.notes = json.notes.filter((n: any) => {
-          if (n.category === 'trabajo') {
-            const content = (n.title + ' ' + n.text).toLowerCase();
-            if (content.includes('memoria_ia') || content.length > 1000) {
-              return false;
-            }
-          }
-          return true;
-        });
-      }
+      // Ensure notes exist and deduplicate
+      json.notes = normalizeAndDeduplicateNotes(json.notes || []);
 
       // Ensure calendarTokens exist
       if (!json.calendarTokens || !Array.isArray(json.calendarTokens)) {
