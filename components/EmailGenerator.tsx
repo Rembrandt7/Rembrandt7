@@ -14,24 +14,7 @@ import {
 import { motion, AnimatePresence } from 'motion/react';
 import { toast } from 'sonner';
 import { getFriendlyAiErrorMessage, isQuotaError, isUnavailableError } from '../utils/aiError';
-
-async function generateContentWithFallback(ai: GoogleGenAI, params: any) {
-  const primaryModel = params.model || 'gemini-3.1-flash-lite';
-  const fallbackModel = 'gemini-3.1-flash-preview';
-
-  try {
-    return await ai.models.generateContent(params);
-  } catch (err: any) {
-    if (isUnavailableError(err)) {
-      console.warn(`[AI] Primary model ${primaryModel} unavailable (503 / high demand). Falling back to ${fallbackModel}...`);
-      return await ai.models.generateContent({
-        ...params,
-        model: fallbackModel
-      });
-    }
-    throw err;
-  }
-}
+import { generateContentWithFallback, getGeminiClient, GEMINI_MODELS } from '../services/geminiService';
 
 type Tone = 'Profesional' | 'Casual';
 type MessageLength = 'Reducido' | 'Medio' | 'Detallado';

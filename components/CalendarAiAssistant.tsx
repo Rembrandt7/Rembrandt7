@@ -1,6 +1,7 @@
 
 import React, { useState, useRef, useEffect } from 'react';
-import { GoogleGenAI, Type, GenerateContentResponse } from "@google/genai";
+import { Type, GenerateContentResponse } from "@google/genai";
+import { generateContentWithFallback, getGeminiClient, GEMINI_MODELS } from '../services/geminiService';
 import { useLinks } from '../contexts/LinkContext';
 import { CalendarEvent, Note } from '../types';
 import { loadADN } from '../services/memoriaService';
@@ -83,13 +84,8 @@ const CalendarAiAssistant: React.FC<CalendarAiAssistantProps> = ({ onClose }) =>
     setIsLoading(true);
 
     try {
-      const apiKey = googleApiConfig?.apiKey || process.env.GEMINI_API_KEY;
-      if (!apiKey) throw new Error("API_KEY de Gemini no configurada en tu perfil.");
-      
-      const ai = new GoogleGenAI({ 
-        apiKey,
-        baseUrl: `${window.location.origin}/api/proxy/google`
-      });
+      const apiKey = googleApiConfig?.apiKey;
+      const ai = getGeminiClient(apiKey);
       
       const weatherData = localStorage.getItem('weatherData');
       const grokNews = config.grokEmail || 'No hay noticias de Grok recientes.';
@@ -165,8 +161,8 @@ Contexto actual:
 - Pendientes de Trabajo: ${JSON.stringify(workPending)}
 `;
 
-      const response = await ai.models.generateContent({
-        model: "gemini-3.1-flash-preview",
+      const response = await generateContentWithFallback({
+        model: GEMINI_MODELS.PRIMARY,
         contents: [
           ...messages.map(m => ({ role: m.role, parts: [{ text: m.content }] })),
           { role: 'user', parts: [{ text: userMessage }] }
@@ -324,7 +320,7 @@ Contexto actual:
             ]
           }]
         }
-      });
+      }, { apiKey });
 
       const functionCalls = response.functionCalls;
       let imageResult: { data: string; mimeType: string } | null = null;

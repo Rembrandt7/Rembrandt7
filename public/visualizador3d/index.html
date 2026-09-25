@@ -1,0 +1,1798 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Visualizador 3D STL & 3MF - Impresión 3D</title>
+  <link rel="icon" type="image/x-icon" href="icono_stl.ico">
+  <style>
+    :root {
+      --bg-dark: #0b0f17;
+      --panel-bg: rgba(17, 24, 39, 0.9);
+      --panel-border: rgba(255, 255, 255, 0.1);
+      --accent: #2563eb;
+      --accent-hover: #1d4ed8;
+      --accent-glow: rgba(37, 99, 235, 0.35);
+      --success: #10b981;
+      --warning: #f59e0b;
+      --danger: #ef4444;
+      --text-main: #f1f5f9;
+      --text-muted: #94a3b8;
+    }
+
+    * {
+      box-sizing: border-box;
+      margin: 0;
+      padding: 0;
+      user-select: none;
+    }
+
+    body, html {
+      width: 100%;
+      height: 100%;
+      overflow: hidden;
+      font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
+      background-color: var(--bg-dark);
+      color: var(--text-main);
+    }
+
+    #canvas-container {
+      width: 100%;
+      height: 100%;
+      position: absolute;
+      top: 0;
+      left: 0;
+      z-index: 1;
+    }
+
+    /* Header Bar */
+    header {
+      position: absolute;
+      top: 0;
+      left: 0;
+      right: 0;
+      height: 64px;
+      padding: 0 24px;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      background: linear-gradient(180deg, rgba(11, 15, 23, 0.95) 0%, rgba(11, 15, 23, 0) 100%);
+      z-index: 10;
+      pointer-events: none;
+    }
+
+    .brand {
+      display: flex;
+      align-items: center;
+      gap: 12px;
+      pointer-events: auto;
+    }
+
+    .brand-icon {
+      width: 40px;
+      height: 40px;
+      background: linear-gradient(135deg, #3b82f6, #1d4ed8);
+      border-radius: 10px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      box-shadow: 0 4px 14px var(--accent-glow);
+    }
+
+    .brand-icon img {
+      width: 28px;
+      height: 28px;
+    }
+
+    .brand-title {
+      font-size: 18px;
+      font-weight: 700;
+      letter-spacing: -0.02em;
+      color: #fff;
+      display: flex;
+      align-items: center;
+      gap: 8px;
+    }
+
+    .brand-badge {
+      font-size: 10px;
+      font-weight: 700;
+      padding: 2px 7px;
+      border-radius: 6px;
+      background: linear-gradient(135deg, #10b981, #059669);
+      color: white;
+      letter-spacing: 0.05em;
+    }
+
+    .brand-subtitle {
+      font-size: 11px;
+      color: var(--text-muted);
+      text-transform: uppercase;
+      letter-spacing: 0.05em;
+    }
+
+    .header-actions {
+      display: flex;
+      gap: 10px;
+      pointer-events: auto;
+    }
+
+    .btn {
+      display: inline-flex;
+      align-items: center;
+      gap: 8px;
+      padding: 8px 16px;
+      background: var(--panel-bg);
+      border: 1px solid var(--panel-border);
+      border-radius: 8px;
+      color: var(--text-main);
+      font-size: 13px;
+      font-weight: 500;
+      cursor: pointer;
+      backdrop-filter: blur(12px);
+      transition: all 0.2s ease;
+    }
+
+    .btn:hover {
+      background: rgba(255, 255, 255, 0.12);
+      border-color: rgba(255, 255, 255, 0.25);
+      transform: translateY(-1px);
+    }
+
+    .btn-primary {
+      background: var(--accent);
+      border-color: var(--accent);
+      box-shadow: 0 4px 14px var(--accent-glow);
+    }
+
+    .btn-primary:hover {
+      background: var(--accent-hover);
+      border-color: var(--accent-hover);
+    }
+
+    /* Panels Layout */
+    .floating-panel {
+      position: absolute;
+      z-index: 10;
+      background: var(--panel-bg);
+      backdrop-filter: blur(16px);
+      -webkit-backdrop-filter: blur(16px);
+      border: 1px solid var(--panel-border);
+      border-radius: 12px;
+      box-shadow: 0 16px 36px rgba(0, 0, 0, 0.45);
+      padding: 16px;
+      transition: all 0.3s cubic-bezier(0.16, 1, 0.3, 1);
+    }
+
+    /* Left Info Panel */
+    #info-panel {
+      top: 75px;
+      left: 20px;
+      width: 330px;
+      max-height: calc(100vh - 110px);
+      overflow-y: auto;
+      display: none;
+    }
+
+    /* Right Controls Panel */
+    #controls-panel {
+      top: 75px;
+      right: 20px;
+      width: 310px;
+      max-height: calc(100vh - 110px);
+      overflow-y: auto;
+    }
+
+    .panel-title {
+      font-size: 12px;
+      font-weight: 700;
+      text-transform: uppercase;
+      letter-spacing: 0.05em;
+      color: var(--text-muted);
+      margin-bottom: 10px;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+    }
+
+    .panel-section {
+      margin-bottom: 14px;
+      padding-bottom: 12px;
+      border-bottom: 1px solid rgba(255, 255, 255, 0.06);
+    }
+
+    .panel-section:last-child {
+      margin-bottom: 0;
+      padding-bottom: 0;
+      border-bottom: none;
+    }
+
+    .info-row {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      margin-bottom: 6px;
+      font-size: 12px;
+    }
+
+    .info-label {
+      color: var(--text-muted);
+    }
+
+    .info-value {
+      font-weight: 600;
+      font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace;
+    }
+
+    .badge-dims {
+      display: grid;
+      grid-template-columns: 1fr 1fr 1fr;
+      gap: 6px;
+      margin-top: 6px;
+    }
+
+    .dim-box {
+      background: rgba(0, 0, 0, 0.3);
+      padding: 6px 8px;
+      border-radius: 6px;
+      text-align: center;
+      border: 1px solid rgba(255, 255, 255, 0.06);
+    }
+
+    .dim-axis {
+      font-size: 10px;
+      font-weight: 700;
+      display: block;
+    }
+    .axis-x { color: #f87171; }
+    .axis-y { color: #4ade80; }
+    .axis-z { color: #60a5fa; }
+
+    .dim-num {
+      font-size: 12px;
+      font-weight: 700;
+      font-family: monospace;
+    }
+
+    /* Printer Compatibility Cards */
+    .printer-card {
+      background: rgba(0, 0, 0, 0.25);
+      border: 1px solid rgba(255, 255, 255, 0.08);
+      border-radius: 8px;
+      padding: 8px 10px;
+      margin-bottom: 6px;
+      cursor: pointer;
+      transition: all 0.2s ease;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+    }
+
+    .printer-card:hover {
+      background: rgba(255, 255, 255, 0.06);
+      border-color: rgba(255, 255, 255, 0.2);
+    }
+
+    .printer-card.active {
+      border-color: var(--accent);
+      background: rgba(37, 99, 235, 0.15);
+      box-shadow: 0 0 10px rgba(37, 99, 235, 0.25);
+    }
+
+    .printer-name {
+      font-size: 12px;
+      font-weight: 600;
+      color: #fff;
+    }
+
+    .printer-specs {
+      font-size: 10px;
+      color: var(--text-muted);
+      margin-top: 2px;
+      font-family: monospace;
+    }
+
+    .status-badge {
+      font-size: 11px;
+      font-weight: 700;
+      padding: 3px 8px;
+      border-radius: 12px;
+      white-space: nowrap;
+    }
+
+    .status-badge.ok {
+      background: rgba(16, 185, 129, 0.2);
+      color: #34d399;
+      border: 1px solid rgba(16, 185, 129, 0.4);
+    }
+
+    .status-badge.fail {
+      background: rgba(239, 68, 68, 0.2);
+      color: #f87171;
+      border: 1px solid rgba(239, 68, 68, 0.4);
+    }
+
+    /* Controls Styling */
+    .control-group {
+      margin-bottom: 10px;
+    }
+
+    .control-label {
+      display: block;
+      font-size: 11px;
+      font-weight: 600;
+      color: var(--text-muted);
+      margin-bottom: 5px;
+    }
+
+    .btn-grid {
+      display: grid;
+      grid-template-columns: repeat(4, 1fr);
+      gap: 5px;
+    }
+
+    .btn-compact {
+      padding: 6px 4px;
+      font-size: 11px;
+      font-weight: 600;
+      text-align: center;
+      border-radius: 6px;
+      background: rgba(255, 255, 255, 0.06);
+      border: 1px solid rgba(255, 255, 255, 0.08);
+      color: var(--text-main);
+      cursor: pointer;
+      transition: all 0.15s ease;
+    }
+
+    .btn-compact:hover {
+      background: rgba(255, 255, 255, 0.15);
+      border-color: rgba(255, 255, 255, 0.2);
+    }
+
+    .btn-compact.active {
+      background: var(--accent);
+      border-color: var(--accent);
+      color: white;
+    }
+
+    /* Color Palette */
+    .color-swatches {
+      display: grid;
+      grid-template-columns: repeat(7, 1fr);
+      gap: 6px;
+      align-items: center;
+    }
+
+    .color-swatch {
+      width: 28px;
+      height: 28px;
+      border-radius: 50%;
+      border: 2px solid rgba(255, 255, 255, 0.2);
+      cursor: pointer;
+      transition: transform 0.15s, border-color 0.15s;
+    }
+
+    .color-swatch:hover, .color-swatch.active {
+      transform: scale(1.15);
+      border-color: #fff;
+      box-shadow: 0 0 10px rgba(255, 255, 255, 0.4);
+    }
+
+    .color-picker-input {
+      width: 28px;
+      height: 28px;
+      border-radius: 50%;
+      border: 2px solid rgba(255, 255, 255, 0.2);
+      cursor: pointer;
+      padding: 0;
+      background: none;
+      overflow: hidden;
+    }
+
+    /* Form inputs */
+    select, input[type="range"] {
+      width: 100%;
+      background: rgba(0, 0, 0, 0.3);
+      border: 1px solid rgba(255, 255, 255, 0.12);
+      border-radius: 6px;
+      color: var(--text-main);
+      padding: 6px 10px;
+      font-size: 12px;
+      outline: none;
+    }
+
+    select option {
+      background: #1e293b;
+      color: white;
+    }
+
+    .checkbox-row {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      margin-bottom: 8px;
+      font-size: 12px;
+      cursor: pointer;
+    }
+
+    .checkbox-row input {
+      accent-color: var(--accent);
+      width: 15px;
+      height: 15px;
+      cursor: pointer;
+    }
+
+    /* Bottom Quick Instructions / Tooltip */
+    #bottom-bar {
+      position: absolute;
+      bottom: 18px;
+      left: 50%;
+      transform: translateX(-50%);
+      background: var(--panel-bg);
+      backdrop-filter: blur(12px);
+      border: 1px solid var(--panel-border);
+      border-radius: 30px;
+      padding: 7px 22px;
+      display: flex;
+      align-items: center;
+      gap: 18px;
+      z-index: 10;
+      font-size: 12px;
+      color: var(--text-muted);
+      box-shadow: 0 10px 25px rgba(0, 0, 0, 0.5);
+    }
+
+    .hint-item {
+      display: flex;
+      align-items: center;
+      gap: 6px;
+    }
+
+    .hint-item strong {
+      color: var(--text-main);
+    }
+
+    /* Drag & Drop Overlay and Initial Placeholder */
+    #drop-zone-overlay {
+      position: absolute;
+      top: 0;
+      left: 0;
+      width: 100%;
+      height: 100%;
+      background: rgba(11, 15, 23, 0.88);
+      border: 3px dashed var(--accent);
+      box-sizing: border-box;
+      z-index: 100;
+      display: none;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      gap: 16px;
+      pointer-events: none;
+    }
+
+    #drop-zone-overlay.active {
+      display: flex;
+    }
+
+    #initial-empty-state {
+      position: absolute;
+      top: 50%;
+      left: 50%;
+      transform: translate(-50%, -50%);
+      z-index: 5;
+      text-align: center;
+      background: var(--panel-bg);
+      backdrop-filter: blur(20px);
+      border: 2px dashed rgba(255, 255, 255, 0.2);
+      border-radius: 20px;
+      padding: 38px 46px;
+      max-width: 500px;
+      cursor: pointer;
+      transition: all 0.3s ease;
+      box-shadow: 0 20px 50px rgba(0, 0, 0, 0.5);
+    }
+
+    #initial-empty-state:hover {
+      border-color: var(--accent);
+      transform: translate(-50%, -52%);
+      box-shadow: 0 25px 60px var(--accent-glow);
+    }
+
+    .empty-icon {
+      width: 76px;
+      height: 76px;
+      margin: 0 auto 16px;
+      background: linear-gradient(135deg, rgba(37, 99, 235, 0.2), rgba(59, 130, 246, 0.1));
+      border: 1px solid rgba(59, 130, 246, 0.3);
+      border-radius: 50%;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+    }
+
+    .empty-icon img {
+      width: 48px;
+      height: 48px;
+    }
+
+    .empty-title {
+      font-size: 21px;
+      font-weight: 700;
+      margin-bottom: 8px;
+      color: #fff;
+    }
+
+    .empty-subtitle {
+      font-size: 13px;
+      color: var(--text-muted);
+      margin-bottom: 22px;
+      line-height: 1.5;
+    }
+
+    .empty-actions {
+      display: flex;
+      flex-direction: column;
+      gap: 10px;
+      align-items: center;
+    }
+
+    /* Toast Notification */
+    #toast {
+      position: absolute;
+      top: 75px;
+      left: 50%;
+      transform: translateX(-50%) translateY(-20px);
+      background: rgba(16, 185, 129, 0.9);
+      color: white;
+      padding: 10px 22px;
+      border-radius: 8px;
+      font-size: 13px;
+      font-weight: 600;
+      box-shadow: 0 10px 25px rgba(0, 0, 0, 0.4);
+      z-index: 200;
+      opacity: 0;
+      pointer-events: none;
+      transition: all 0.3s ease;
+    }
+
+    #toast.show {
+      transform: translateX(-50%) translateY(0);
+      opacity: 1;
+    }
+
+    #toast.error {
+      background: rgba(239, 68, 68, 0.9);
+    }
+
+    /* Hidden File Input */
+    #file-input {
+      display: none;
+    }
+
+    /* Loading Spinner */
+    #loading-overlay {
+      position: absolute;
+      top: 0;
+      left: 0;
+      width: 100%;
+      height: 100%;
+      background: rgba(11, 15, 23, 0.75);
+      backdrop-filter: blur(8px);
+      display: none;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      gap: 16px;
+      z-index: 150;
+    }
+
+    .spinner {
+      width: 44px;
+      height: 44px;
+      border: 4px solid rgba(255, 255, 255, 0.1);
+      border-top-color: var(--accent);
+      border-radius: 50%;
+      animation: spin 0.8s linear infinite;
+    }
+
+    @keyframes spin {
+      to { transform: rotate(360deg); }
+    }
+
+    /* Print bed alert */
+    .alert-overflow {
+      margin-top: 8px;
+      padding: 8px;
+      border-radius: 6px;
+      background: rgba(239, 68, 68, 0.2);
+      border: 1px solid rgba(239, 68, 68, 0.4);
+      color: #fca5a5;
+      font-size: 11px;
+      display: none;
+      line-height: 1.4;
+    }
+
+    .alert-ok {
+      margin-top: 8px;
+      padding: 8px;
+      border-radius: 6px;
+      background: rgba(16, 185, 129, 0.2);
+      border: 1px solid rgba(16, 185, 129, 0.4);
+      color: #86efac;
+      font-size: 11px;
+      display: none;
+      line-height: 1.4;
+    }
+  </style>
+</head>
+<body>
+
+  <!-- Three.js Canvas Container -->
+  <div id="canvas-container"></div>
+
+  <!-- Header -->
+  <header>
+    <div class="brand">
+      <div class="brand-icon">
+        <img src="icono_stl.png" alt="STL & 3MF Icon">
+      </div>
+      <div>
+        <div class="brand-title">
+          Visualizador 3D
+          <span class="brand-badge">STL & 3MF</span>
+        </div>
+        <div class="brand-subtitle">Control & Análisis de Impresión 3D</div>
+      </div>
+    </div>
+
+    <div class="header-actions">
+      <!-- File input supporting both STL and 3MF -->
+      <input type="file" id="file-input" accept=".stl,.3mf">
+      <button class="btn btn-primary" onclick="document.getElementById('file-input').click()">
+        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+          <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4M17 8l-5-5-5 5M12 3v12"/>
+        </svg>
+        Abrir STL o 3MF
+      </button>
+      <button class="btn" onclick="takeScreenshot()" title="Capturar imagen en alta resolución">
+        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+          <path d="M23 19a2 2 0 0 1-2 2H3a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h4l2-3h6l2 3h4a2 2 0 0 1 2 2z"/>
+          <circle cx="12" cy="13" r="4"/>
+        </svg>
+        Captura
+      </button>
+      <button class="btn" onclick="toggleFullscreen()" title="Pantalla completa">
+        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+          <path d="M8 3H5a2 2 0 0 0-2 2v3m18 0V5a2 2 0 0 0-2-2h-3m0 18h3a2 2 0 0 0 2-2v-3M3 16v3a2 2 0 0 0 2 2h3"/>
+        </svg>
+      </button>
+    </div>
+  </header>
+
+  <!-- Left Model Stats Panel -->
+  <div id="info-panel" class="floating-panel">
+    <div class="panel-title">
+      <span>Datos del Modelo</span>
+      <span id="badge-filesize" style="color: #60a5fa; font-weight: normal; font-size: 11px;"></span>
+    </div>
+    
+    <div class="panel-section">
+      <div class="info-row">
+        <span class="info-label">Archivo:</span>
+        <span class="info-value" id="info-name" style="max-width: 170px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap;">-</span>
+      </div>
+      <div class="info-row">
+        <span class="info-label">Formato:</span>
+        <span class="info-value" id="info-format" style="color: #38bdf8;">-</span>
+      </div>
+      <div class="info-row">
+        <span class="info-label">Triángulos:</span>
+        <span class="info-value" id="info-triangles">-</span>
+      </div>
+      <div class="info-row">
+        <span class="info-label">Vértices:</span>
+        <span class="info-value" id="info-vertices">-</span>
+      </div>
+    </div>
+
+    <!-- Dimensions Section -->
+    <div class="panel-section">
+      <span class="control-label">Dimensiones de la Pieza</span>
+      <div class="badge-dims">
+        <div class="dim-box">
+          <span class="dim-axis axis-x">X (Ancho)</span>
+          <span class="dim-num" id="dim-x">0 mm</span>
+        </div>
+        <div class="dim-box">
+          <span class="dim-axis axis-y">Y (Profund.)</span>
+          <span class="dim-num" id="dim-y">0 mm</span>
+        </div>
+        <div class="dim-box">
+          <span class="dim-axis axis-z">Z (Altura)</span>
+          <span class="dim-num" id="dim-z">0 mm</span>
+        </div>
+      </div>
+      
+      <div id="overflow-alert" class="alert-overflow">
+        ⚠️ <strong>Atención:</strong> La pieza excede el volumen de la impresora activa.
+      </div>
+      <div id="ok-alert" class="alert-ok">
+        ✅ <strong>Perfecto:</strong> La pieza cabe dentro del área y altura de impresión.
+      </div>
+    </div>
+
+    <!-- Multi-Printer Compatibility Section -->
+    <div class="panel-section">
+      <div class="panel-title">
+        <span>Tus Impresoras 3D</span>
+        <span style="font-size: 10px; color: #93c5fd; text-transform: none;">Clic para cambiar</span>
+      </div>
+      
+      <!-- Bambu Lab A1 mini -->
+      <div id="card-a1_mini" class="printer-card" onclick="selectPrinter('a1_mini')">
+        <div>
+          <div class="printer-name">Bambu Lab A1 mini</div>
+          <div class="printer-specs">180 × 180 × 180 mm · 5.8 L</div>
+        </div>
+        <span id="badge-a1_mini" class="status-badge ok">Cabe</span>
+      </div>
+
+      <!-- Anycubic Kobra X -->
+      <div id="card-kobra_x" class="printer-card active" onclick="selectPrinter('kobra_x')">
+        <div>
+          <div class="printer-name">Anycubic Kobra X</div>
+          <div class="printer-specs">260 × 260 × 260 mm · 17.6 L</div>
+        </div>
+        <span id="badge-kobra_x" class="status-badge ok">Cabe</span>
+      </div>
+
+      <!-- Bambu Lab A2L -->
+      <div id="card-a2l" class="printer-card" onclick="selectPrinter('a2l')">
+        <div>
+          <div class="printer-name">Bambu Lab A2L</div>
+          <div class="printer-specs">330 × 320 × 325 mm · 34.3 L</div>
+        </div>
+        <span id="badge-a2l" class="status-badge ok">Cabe</span>
+      </div>
+    </div>
+
+    <!-- Filament & Weight Calc -->
+    <div class="panel-section">
+      <div class="panel-title">Estimación de Filamento</div>
+      <div class="info-row">
+        <span class="info-label">Volumen neto:</span>
+        <span class="info-value" id="info-volume">0.00 cm³</span>
+      </div>
+      <div class="control-group" style="margin-top: 6px;">
+        <div style="display: flex; justify-content: space-between; font-size: 11px; margin-bottom: 3px;">
+          <span class="info-label">Relleno (Infill):</span>
+          <span id="infill-val" style="font-weight: 600;">20%</span>
+        </div>
+        <input type="range" id="infill-slider" min="5" max="100" value="20" oninput="updateWeightCalc()">
+      </div>
+      <div class="control-group">
+        <span class="control-label">Material:</span>
+        <select id="material-select" onchange="updateWeightCalc()">
+          <option value="1.24">PLA (1.24 g/cm³)</option>
+          <option value="1.27">PETG (1.27 g/cm³)</option>
+          <option value="1.04">ABS (1.04 g/cm³)</option>
+          <option value="1.21">TPU / Flexible (1.21 g/cm³)</option>
+          <option value="1.15">Resina UV (1.15 g/cm³)</option>
+        </select>
+      </div>
+      <div class="info-row" style="margin-top: 8px; background: rgba(37,99,235,0.15); padding: 7px 10px; border-radius: 6px;">
+        <span class="info-label" style="color: #93c5fd; font-weight: 600;">Peso aproximado:</span>
+        <span class="info-value" id="info-weight" style="color: #60a5fa; font-size: 13px;">0.0 g</span>
+      </div>
+    </div>
+  </div>
+
+  <!-- Right View & Appearance Panel -->
+  <div id="controls-panel" class="floating-panel">
+    <div class="panel-title">Visualización & Orientación</div>
+
+    <!-- Quick Views -->
+    <div class="panel-section">
+      <span class="control-label">Vistas Rápidas</span>
+      <div class="btn-grid">
+        <button class="btn-compact" onclick="setView('iso')">ISO</button>
+        <button class="btn-compact" onclick="setView('top')">Arriba</button>
+        <button class="btn-compact" onclick="setView('front')">Frente</button>
+        <button class="btn-compact" onclick="setView('side')">Lado</button>
+      </div>
+      <div style="margin-top: 6px;">
+        <button class="btn-compact" style="width: 100%;" onclick="resetCamera()">🔄 Re-centrar Cámara</button>
+      </div>
+    </div>
+
+    <!-- Rotate Model on Bed -->
+    <div class="panel-section">
+      <span class="control-label">Rotar Pieza en la Cama (90°)</span>
+      <div class="btn-grid" style="grid-template-columns: repeat(3, 1fr);">
+        <button class="btn-compact" onclick="rotateModel('x', 90)" title="Voltear en eje X">🔄 X (90°)</button>
+        <button class="btn-compact" onclick="rotateModel('y', 90)" title="Girar en eje Y">🔄 Y (90°)</button>
+        <button class="btn-compact" onclick="rotateModel('z', 90)" title="Girar en eje Z">🔄 Z (90°)</button>
+      </div>
+    </div>
+
+    <!-- Render Modes -->
+    <div class="panel-section">
+      <span class="control-label">Modo de Superficie</span>
+      <div class="btn-grid" style="grid-template-columns: 1fr 1fr;">
+        <button id="mode-smooth" class="btn-compact active" onclick="setRenderMode('smooth')">Sólido</button>
+        <button id="mode-wire" class="btn-compact" onclick="setRenderMode('wireframe')">Malla (Wire)</button>
+        <button id="mode-flat" class="btn-compact" onclick="setRenderMode('flat')">Facetado</button>
+        <button id="mode-normals" class="btn-compact" onclick="setRenderMode('normals')">Normales</button>
+      </div>
+      <div class="control-group" style="margin-top: 8px;">
+        <div style="display: flex; justify-content: space-between; font-size: 11px; margin-bottom: 3px;">
+          <span class="info-label">Opacidad:</span>
+          <span id="opacity-val" style="font-weight: 600;">100%</span>
+        </div>
+        <input type="range" id="opacity-slider" min="15" max="100" value="100" oninput="updateOpacity(this.value)">
+      </div>
+    </div>
+
+    <!-- Color Palettes & 3MF Color Options -->
+    <div class="panel-section">
+      <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 6px;">
+        <span class="control-label" style="margin-bottom: 0;">Color del Filamento</span>
+        <button id="btn-orig-colors" class="btn-compact" style="font-size: 10px; display: none;" onclick="restoreOriginal3MFColors()">🎨 Colores 3MF</button>
+      </div>
+      <div class="color-swatches">
+        <div class="color-swatch active" style="background: #3b82f6;" onclick="setModelColor('#3b82f6', this)"></div>
+        <div class="color-swatch" style="background: #f97316;" onclick="setModelColor('#f97316', this)"></div>
+        <div class="color-swatch" style="background: #ef4444;" onclick="setModelColor('#ef4444', this)"></div>
+        <div class="color-swatch" style="background: #10b981;" onclick="setModelColor('#10b981', this)"></div>
+        <div class="color-swatch" style="background: #e2e8f0;" onclick="setModelColor('#e2e8f0', this)"></div>
+        <div class="color-swatch" style="background: #475569;" onclick="setModelColor('#475569', this)"></div>
+        <input type="color" id="custom-color-picker" class="color-picker-input" value="#3b82f6" onchange="setModelColor(this.value, null)" title="Color personalizado">
+      </div>
+    </div>
+
+    <!-- Bed & Scene Options -->
+    <div class="panel-section">
+      <span class="control-label">Configuración de Cama 3D</span>
+      <label class="checkbox-row">
+        <input type="checkbox" id="check-grid" checked onchange="toggleGrid(this.checked)">
+        <span>Mostrar Cama y Cuadrícula</span>
+      </label>
+      <label class="checkbox-row">
+        <input type="checkbox" id="check-height-cage" checked onchange="toggleBuildVolumeCage(this.checked)">
+        <span>Mostrar Jaula de Altura Máxima (Z)</span>
+      </label>
+      <label class="checkbox-row">
+        <input type="checkbox" id="check-shadows" checked onchange="toggleShadows(this.checked)">
+        <span>Sombras en la base</span>
+      </label>
+      <label class="checkbox-row">
+        <input type="checkbox" id="check-autorotate" onchange="toggleAutoRotate(this.checked)">
+        <span>Rotación Automática (360°)</span>
+      </label>
+    </div>
+  </div>
+
+  <!-- Bottom Quick Controls / Mouse Instructions -->
+  <div id="bottom-bar">
+    <div class="hint-item">
+      <span>🖱️ <strong>Click Izquierdo:</strong> Girar / Rotar</span>
+    </div>
+    <div class="hint-item">
+      <span>✋ <strong>Click Derecho:</strong> Mover / Desplazar</span>
+    </div>
+    <div class="hint-item">
+      <span>🔍 <strong>Rueda:</strong> Acercar / Alejar</span>
+    </div>
+  </div>
+
+  <!-- Initial Empty State -->
+  <div id="initial-empty-state" onclick="document.getElementById('file-input').click()">
+    <div class="empty-icon">
+      <img src="icono_stl.png" alt="STL & 3MF Icon">
+    </div>
+    <div class="empty-title">Arrastra tu archivo STL o 3MF aquí</div>
+    <div class="empty-subtitle">
+      Suelta cualquier archivo <strong>.STL</strong> o <strong>.3MF</strong> (Bambu Studio, Anycubic, Prusa) para visualizarlo en 3D, girarlo, acercarlo y comprobar el espacio en tus impresoras <strong>A1 mini</strong>, <strong>Kobra X</strong> y <strong>A2L</strong>.
+    </div>
+    <div class="empty-actions">
+      <button class="btn btn-primary" onclick="event.stopPropagation(); document.getElementById('file-input').click()">
+        📁 Seleccionar archivo STL o 3MF en tu equipo
+      </button>
+      <div style="display: flex; gap: 8px;">
+        <button class="btn" onclick="event.stopPropagation(); loadSampleModel('stl')" style="font-size: 11px; opacity: 0.9;">
+          🎲 Probar Cubo (.STL)
+        </button>
+        <button class="btn" onclick="event.stopPropagation(); loadSampleModel('3mf')" style="font-size: 11px; opacity: 0.9;">
+          📦 Probar Cubo (.3MF)
+        </button>
+      </div>
+    </div>
+  </div>
+
+  <!-- Drag and drop whole page overlay -->
+  <div id="drop-zone-overlay">
+    <svg width="64" height="64" viewBox="0 0 24 24" fill="none" stroke="#3b82f6" stroke-width="2">
+      <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4M17 8l-5-5-5 5M12 3v12"/>
+    </svg>
+    <div style="font-size: 24px; font-weight: 700; color: #fff;">Suelta tu archivo .STL o .3MF aquí</div>
+  </div>
+
+  <!-- Loading Overlay -->
+  <div id="loading-overlay">
+    <div class="spinner"></div>
+    <div id="loading-text" style="font-size: 14px; font-weight: 500; color: white;">Cargando modelo 3D...</div>
+  </div>
+
+  <!-- Toast Notification -->
+  <div id="toast">Mensaje de notificación</div>
+
+  <!-- Three.js & Loaders (Offline local libs) -->
+  <script src="libs/three.min.js"></script>
+  <script src="libs/OrbitControls.js"></script>
+  <script src="libs/STLLoader.js"></script>
+  <script src="libs/jszip.min.js"></script>
+  <script src="libs/3MFLoader.js"></script>
+
+  <script>
+    // Printer Specifications Database
+    const PRINTERS = {
+      'a1_mini': {
+        id: 'a1_mini',
+        name: 'Bambu Lab A1 mini',
+        width: 180,   // X
+        depth: 180,   // Y (Z in Three.js)
+        height: 180,  // Z (Y in Three.js)
+        volumeL: 5.83,
+        color: 0x10b981
+      },
+      'kobra_x': {
+        id: 'kobra_x',
+        name: 'Anycubic Kobra X',
+        width: 260,
+        depth: 260,
+        height: 260,
+        volumeL: 17.58,
+        color: 0x3b82f6
+      },
+      'a2l': {
+        id: 'a2l',
+        name: 'Bambu Lab A2L',
+        width: 330,
+        depth: 320,
+        height: 325,
+        volumeL: 34.32,
+        color: 0x8b5cf6
+      }
+    };
+
+    // Global Three.js State
+    let scene, camera, renderer, controls;
+    let currentModel = null;
+    let currentModelType = 'stl';
+    let originalMaterials = [];
+    let bedGroup = null;
+    let buildCage = null;
+    let activePrinterKey = 'kobra_x';
+    let currentColor = '#3b82f6';
+    let currentMode = 'smooth';
+    let modelVolumeCm3 = 0;
+    let boundingBox = null;
+    let showCage = true;
+
+    function init() {
+      const container = document.getElementById('canvas-container');
+
+      // 1. Scene
+      scene = new THREE.Scene();
+      scene.background = new THREE.Color(0x0b0f17);
+
+      // 2. Camera
+      camera = new THREE.PerspectiveCamera(45, window.innerWidth / window.innerHeight, 0.1, 5000);
+      camera.position.set(240, 220, 280);
+
+      // 3. Renderer
+      renderer = new THREE.WebGLRenderer({ antialias: true, preserveDrawingBuffer: true });
+      renderer.setPixelRatio(Math.min(window.devicePixelRatio, 2));
+      renderer.setSize(window.innerWidth, window.innerHeight);
+      renderer.shadowMap.enabled = true;
+      renderer.shadowMap.type = THREE.PCFSoftShadowMap;
+      renderer.toneMapping = THREE.ACESFilmicToneMapping;
+      renderer.toneMappingExposure = 1.15;
+      container.appendChild(renderer.domElement);
+
+      // 4. Orbit Controls (Rotate, Zoom, Pan)
+      controls = new THREE.OrbitControls(camera, renderer.domElement);
+      controls.enableDamping = true;
+      controls.dampingFactor = 0.06;
+      controls.screenSpacePanning = true;
+      controls.maxPolarAngle = Math.PI / 2 + 0.05; // don't go below ground
+      controls.minDistance = 5;
+      controls.maxDistance = 2000;
+      controls.target.set(0, 50, 0);
+
+      // 5. Lighting Setup
+      setupLights();
+
+      // 6. Build Plate & Height Cage
+      rebuildPrinterScene();
+
+      // 7. Event Listeners
+      window.addEventListener('resize', onWindowResize);
+      setupDragAndDrop();
+      setupFileInput();
+
+      // 8. Animation Loop
+      animate();
+    }
+
+    function setupLights() {
+      const ambientLight = new THREE.AmbientLight(0xffffff, 0.45);
+      scene.add(ambientLight);
+
+      const keyLight = new THREE.DirectionalLight(0xffffff, 0.9);
+      keyLight.position.set(200, 350, 220);
+      keyLight.castShadow = true;
+      keyLight.shadow.mapSize.width = 2048;
+      keyLight.shadow.mapSize.height = 2048;
+      keyLight.shadow.camera.near = 10;
+      keyLight.shadow.camera.far = 1200;
+      const d = 300;
+      keyLight.shadow.camera.left = -d;
+      keyLight.shadow.camera.right = d;
+      keyLight.shadow.camera.top = d;
+      keyLight.shadow.camera.bottom = -d;
+      keyLight.shadow.bias = -0.0005;
+      scene.add(keyLight);
+
+      const fillLight = new THREE.DirectionalLight(0x93c5fd, 0.4);
+      fillLight.position.set(-250, 150, -180);
+      scene.add(fillLight);
+
+      const rimLight = new THREE.DirectionalLight(0xffedd5, 0.35);
+      rimLight.position.set(0, -100, -250);
+      scene.add(rimLight);
+    }
+
+    function rebuildPrinterScene() {
+      const printer = PRINTERS[activePrinterKey];
+      const w = printer.width;  // X
+      const d = printer.depth;  // Z in 3D
+      const h = printer.height; // Y in 3D
+
+      if (bedGroup) scene.remove(bedGroup);
+      if (buildCage) scene.remove(buildCage);
+
+      bedGroup = new THREE.Group();
+
+      // 1. Bed Plate Mesh
+      const plateGeo = new THREE.BoxGeometry(w, 2, d);
+      const plateMat = new THREE.MeshStandardMaterial({
+        color: 0x141b26,
+        roughness: 0.85,
+        metalness: 0.1
+      });
+      const plate = new THREE.Mesh(plateGeo, plateMat);
+      plate.position.y = -1.05;
+      plate.receiveShadow = true;
+      bedGroup.add(plate);
+
+      // 2. Custom Rectangular Grid Lines (every 10mm)
+      const gridGeo = new THREE.BufferGeometry();
+      const gridPoints = [];
+      const halfW = w / 2;
+      const halfD = d / 2;
+
+      for (let x = -halfW; x <= halfW + 0.01; x += 10) {
+        gridPoints.push(new THREE.Vector3(x, 0.05, -halfD));
+        gridPoints.push(new THREE.Vector3(x, 0.05, halfD));
+      }
+      for (let z = -halfD; z <= halfD + 0.01; z += 10) {
+        gridPoints.push(new THREE.Vector3(-halfW, 0.05, z));
+        gridPoints.push(new THREE.Vector3(halfW, 0.05, z));
+      }
+
+      gridGeo.setFromPoints(gridPoints);
+      const gridMat = new THREE.LineBasicMaterial({
+        color: 0x1e3a5f,
+        transparent: true,
+        opacity: 0.8
+      });
+      const gridLines = new THREE.LineSegments(gridGeo, gridMat);
+      bedGroup.add(gridLines);
+
+      // 3. Center Cross
+      const axesGeo = new THREE.BufferGeometry();
+      const axesPoints = [
+        new THREE.Vector3(-18, 0.1, 0), new THREE.Vector3(18, 0.1, 0),
+        new THREE.Vector3(0, 0.1, -18), new THREE.Vector3(0, 0.1, 18)
+      ];
+      axesGeo.setFromPoints(axesPoints);
+      const axesMat = new THREE.LineBasicMaterial({ color: 0x38bdf8, linewidth: 2 });
+      const centerCross = new THREE.LineSegments(axesGeo, axesMat);
+      bedGroup.add(centerCross);
+
+      scene.add(bedGroup);
+
+      // 4. Build Volume Boundary Cage
+      const cageGeo = new THREE.BoxGeometry(w, h, d);
+      const wireGeo = new THREE.WireframeGeometry(cageGeo);
+      const cageMat = new THREE.LineBasicMaterial({
+        color: 0x38bdf8,
+        transparent: true,
+        opacity: 0.25
+      });
+      buildCage = new THREE.LineSegments(wireGeo, cageMat);
+      buildCage.position.set(0, h / 2, 0);
+      buildCage.visible = showCage;
+      scene.add(buildCage);
+
+      checkAllPrintersCompatibility();
+    }
+
+    function selectPrinter(printerKey) {
+      if (!PRINTERS[printerKey]) return;
+      activePrinterKey = printerKey;
+
+      document.querySelectorAll('.printer-card').forEach(card => card.classList.remove('active'));
+      const activeCard = document.getElementById(`card-${printerKey}`);
+      if (activeCard) activeCard.classList.add('active');
+
+      rebuildPrinterScene();
+      showToast(`Impresora activa: ${PRINTERS[printerKey].name}`);
+    }
+
+    function toggleGrid(show) {
+      if (bedGroup) bedGroup.visible = show;
+    }
+
+    function toggleBuildVolumeCage(show) {
+      showCage = show;
+      if (buildCage) buildCage.visible = show;
+    }
+
+    function toggleShadows(enable) {
+      renderer.shadowMap.enabled = enable;
+      scene.traverse(node => {
+        if (node.isMesh) {
+          node.castShadow = enable;
+          node.receiveShadow = enable;
+        }
+      });
+    }
+
+    function toggleAutoRotate(enable) {
+      controls.autoRotate = enable;
+      controls.autoRotateSpeed = 2.5;
+    }
+
+    function getModelMaterial(mode, color) {
+      const opacity = parseInt(document.getElementById('opacity-slider').value, 10) / 100;
+      const transparent = opacity < 1.0;
+
+      if (mode === 'normals') {
+        return new THREE.MeshNormalMaterial({
+          wireframe: false,
+          transparent: transparent,
+          opacity: opacity
+        });
+      }
+
+      if (mode === 'wireframe') {
+        return new THREE.MeshBasicMaterial({
+          color: color,
+          wireframe: true,
+          transparent: transparent,
+          opacity: opacity
+        });
+      }
+
+      return new THREE.MeshStandardMaterial({
+        color: new THREE.Color(color),
+        roughness: 0.35,
+        metalness: 0.15,
+        flatShading: (mode === 'flat'),
+        wireframe: false,
+        transparent: transparent,
+        opacity: opacity,
+        side: THREE.DoubleSide
+      });
+    }
+
+    // Unified Model Setup (Supports both STL Geometry and 3MF Groups)
+    function setupLoadedModel(rootObject, fileName, fileSize, fileType) {
+      if (currentModel) {
+        scene.remove(currentModel);
+        disposeHierarchy(currentModel);
+      }
+
+      currentModel = rootObject;
+      currentModelType = fileType;
+      originalMaterials = [];
+
+      let totalTriangles = 0;
+      let totalVertices = 0;
+      let totalVolume = 0;
+      let hasCustomMaterials = false;
+
+      // Ensure shadows, normals, and count vertices/faces
+      currentModel.traverse((child) => {
+        if (child.isMesh) {
+          child.castShadow = true;
+          child.receiveShadow = true;
+
+          if (child.geometry) {
+            if (!child.geometry.attributes.normal) {
+              child.geometry.computeVertexNormals();
+            }
+            const count = child.geometry.attributes.position ? child.geometry.attributes.position.count : 0;
+            totalVertices += count;
+            totalTriangles += (child.geometry.index ? child.geometry.index.count / 3 : count / 3);
+            totalVolume += computeMeshVolume(child.geometry, child.matrixWorld);
+          }
+
+          if (child.material) {
+            originalMaterials.push({
+              mesh: child,
+              material: Array.isArray(child.material) ? child.material.map(m => m.clone()) : child.material.clone()
+            });
+            if (fileType === '3mf') hasCustomMaterials = true;
+          }
+        }
+      });
+
+      // Show/hide 3MF color restore button
+      const btnOrigColors = document.getElementById('btn-orig-colors');
+      if (hasCustomMaterials) {
+        btnOrigColors.style.display = 'block';
+      } else {
+        btnOrigColors.style.display = 'none';
+      }
+
+      // If STL or user didn't specify 3MF materials, apply active material
+      if (fileType === 'stl' || !hasCustomMaterials) {
+        applyMaterialToModel(getModelMaterial(currentMode, currentColor));
+      }
+
+      // Place base of model onto print bed (Y=0 in Three.js)
+      alignModelToBed();
+
+      // Update UI panels
+      document.getElementById('initial-empty-state').style.display = 'none';
+      document.getElementById('info-panel').style.display = 'block';
+
+      const bbox = new THREE.Box3().setFromObject(currentModel);
+      boundingBox = bbox;
+      const size = bbox.getSize(new THREE.Vector3());
+
+      updateModelStats(fileName, fileSize, totalTriangles, totalVertices, size, totalVolume, fileType);
+      fitCameraToObject(currentModel);
+
+      showLoading(false);
+      showToast(`¡Modelo ${fileType.toUpperCase()} "${fileName}" cargado exitosamente!`);
+    }
+
+    // Align base of current model to Bed (Y=0) and center on X, Z
+    function alignModelToBed() {
+      if (!currentModel) return;
+      currentModel.updateMatrixWorld(true);
+      const box = new THREE.Box3().setFromObject(currentModel);
+      const center = box.getCenter(new THREE.Vector3());
+
+      // Move center of bounding box to (0, 0) on X and Z, and place min.y at 0
+      currentModel.position.x -= center.x;
+      currentModel.position.z -= center.z;
+      currentModel.position.y -= box.min.y;
+      currentModel.updateMatrixWorld(true);
+
+      boundingBox = new THREE.Box3().setFromObject(currentModel);
+    }
+
+    // Rotate model by 90 degrees on the specified axis and re-align to bed
+    function rotateModel(axis, degrees = 90) {
+      if (!currentModel) return;
+      const rad = THREE.MathUtils.degToRad(degrees);
+
+      if (axis === 'x') currentModel.rotateX(rad);
+      if (axis === 'y') currentModel.rotateY(rad);
+      if (axis === 'z') currentModel.rotateZ(rad);
+
+      currentModel.updateMatrixWorld(true);
+      alignModelToBed();
+
+      const size = boundingBox.getSize(new THREE.Vector3());
+      updateDimensionsDisplay(size);
+      checkAllPrintersCompatibility();
+      showToast(`Modelo rotado ${degrees}° en eje ${axis.toUpperCase()}`);
+    }
+
+    function applyMaterialToModel(material) {
+      if (!currentModel) return;
+      currentModel.traverse(child => {
+        if (child.isMesh) {
+          child.material = material;
+        }
+      });
+    }
+
+    function restoreOriginal3MFColors() {
+      if (originalMaterials.length === 0) return;
+      originalMaterials.forEach(item => {
+        item.mesh.material = Array.isArray(item.material) ? item.material.map(m => m.clone()) : item.material.clone();
+      });
+      document.querySelectorAll('#controls-panel .btn-grid .btn-compact').forEach(b => b.classList.remove('active'));
+      document.querySelectorAll('.color-swatch').forEach(sw => sw.classList.remove('active'));
+      showToast('Colores originales de 3MF restaurados.');
+    }
+
+    // Load STL via STLLoader
+    function loadSTLBuffer(buffer, fileName, fileSize) {
+      showLoading(true, 'Procesando archivo STL...');
+      setTimeout(() => {
+        try {
+          const loader = new THREE.STLLoader();
+          const geometry = loader.parse(buffer);
+
+          if (!geometry || !geometry.attributes.position || geometry.attributes.position.count === 0) {
+            throw new Error('El archivo STL no contiene geometría válida.');
+          }
+
+          geometry.computeVertexNormals();
+          geometry.center();
+
+          const material = getModelMaterial(currentMode, currentColor);
+          const mesh = new THREE.Mesh(geometry, material);
+          const group = new THREE.Group();
+          group.add(mesh);
+
+          setupLoadedModel(group, fileName, fileSize, 'stl');
+        } catch (err) {
+          showLoading(false);
+          console.error(err);
+          showToast(`Error al leer archivo STL: ${err.message}`, true);
+        }
+      }, 40);
+    }
+
+    // Load 3MF via 3MFLoader
+    function load3MFBuffer(buffer, fileName, fileSize) {
+      showLoading(true, 'Extrayendo y procesando archivo 3MF...');
+      setTimeout(() => {
+        try {
+          const loader = new THREE.3MFLoader();
+          const object = loader.parse(buffer);
+
+          if (!object) {
+            throw new Error('No se pudo interpretar el archivo 3MF.');
+          }
+
+          let meshCount = 0;
+          object.traverse(child => {
+            if (child.isMesh) meshCount++;
+          });
+
+          if (meshCount === 0) {
+            throw new Error('El archivo 3MF no contiene mallas geométricas legibles.');
+          }
+
+          setupLoadedModel(object, fileName, fileSize, '3mf');
+        } catch (err) {
+          showLoading(false);
+          console.error(err);
+          showToast(`Error al leer archivo 3MF: ${err.message}`, true);
+        }
+      }, 40);
+    }
+
+    function fitCameraToObject(rootObj) {
+      const box = new THREE.Box3().setFromObject(rootObj);
+      const size = box.getSize(new THREE.Vector3());
+      const center = box.getCenter(new THREE.Vector3());
+
+      const maxDim = Math.max(size.x, size.y, size.z, 30);
+      const fov = camera.fov * (Math.PI / 180);
+      let cameraDistance = Math.abs(maxDim / Math.sin(fov / 2)) * 0.95;
+
+      cameraDistance = Math.max(cameraDistance, 70);
+
+      camera.position.set(center.x + cameraDistance * 0.8, center.y + cameraDistance * 0.7, center.z + cameraDistance * 0.9);
+      controls.target.set(center.x, center.y * 0.8, center.z);
+      controls.update();
+    }
+
+    function computeMeshVolume(geometry, matrix) {
+      const pos = geometry.attributes.position;
+      let totalVolume = 0;
+
+      const p1 = new THREE.Vector3();
+      const p2 = new THREE.Vector3();
+      const p3 = new THREE.Vector3();
+
+      if (geometry.index) {
+        const indices = geometry.index.array;
+        for (let i = 0; i < indices.length; i += 3) {
+          p1.fromBufferAttribute(pos, indices[i]).applyMatrix4(matrix);
+          p2.fromBufferAttribute(pos, indices[i + 1]).applyMatrix4(matrix);
+          p3.fromBufferAttribute(pos, indices[i + 2]).applyMatrix4(matrix);
+          totalVolume += signedVolumeOfTriangle(p1, p2, p3);
+        }
+      } else {
+        for (let i = 0; i < pos.count; i += 3) {
+          p1.fromBufferAttribute(pos, i).applyMatrix4(matrix);
+          p2.fromBufferAttribute(pos, i + 1).applyMatrix4(matrix);
+          p3.fromBufferAttribute(pos, i + 2).applyMatrix4(matrix);
+          totalVolume += signedVolumeOfTriangle(p1, p2, p3);
+        }
+      }
+
+      return Math.abs(totalVolume) / 1000; // cm³
+    }
+
+    function signedVolumeOfTriangle(p1, p2, p3) {
+      return p1.dot(p2.cross(p3)) / 6.0;
+    }
+
+    function updateDimensionsDisplay(dimensions) {
+      const xMm = dimensions.x.toFixed(1);
+      const yMm = dimensions.z.toFixed(1); // 3D printer depth
+      const zMm = dimensions.y.toFixed(1); // 3D printer height
+
+      document.getElementById('dim-x').textContent = `${xMm} mm`;
+      document.getElementById('dim-y').textContent = `${yMm} mm`;
+      document.getElementById('dim-z').textContent = `${zMm} mm`;
+    }
+
+    function updateModelStats(fileName, fileSize, triangles, vertices, dimensions, volume, format) {
+      document.getElementById('info-name').textContent = fileName;
+      document.getElementById('info-name').title = fileName;
+      document.getElementById('info-format').textContent = format.toUpperCase();
+
+      if (fileSize) {
+        const sizeKb = (fileSize / 1024).toFixed(1);
+        const sizeMb = (fileSize / (1024 * 1024)).toFixed(2);
+        document.getElementById('badge-filesize').textContent = fileSize > 1048576 ? `${sizeMb} MB` : `${sizeKb} KB`;
+      } else {
+        document.getElementById('badge-filesize').textContent = '';
+      }
+
+      document.getElementById('info-triangles').textContent = Math.round(triangles).toLocaleString();
+      document.getElementById('info-vertices').textContent = vertices.toLocaleString();
+
+      updateDimensionsDisplay(dimensions);
+
+      modelVolumeCm3 = volume;
+      document.getElementById('info-volume').textContent = `${modelVolumeCm3.toFixed(2)} cm³`;
+
+      updateWeightCalc();
+      checkAllPrintersCompatibility();
+    }
+
+    function updateWeightCalc() {
+      if (!modelVolumeCm3) return;
+      const infillPercent = parseInt(document.getElementById('infill-slider').value, 10);
+      document.getElementById('infill-val').textContent = `${infillPercent}%`;
+
+      const density = parseFloat(document.getElementById('material-select').value);
+      const effectiveRatio = 0.20 + (0.80 * (infillPercent / 100));
+      const estimatedWeightGrams = modelVolumeCm3 * density * effectiveRatio;
+
+      document.getElementById('info-weight').textContent = `${estimatedWeightGrams.toFixed(1)} g`;
+    }
+
+    function checkAllPrintersCompatibility() {
+      if (!boundingBox) return;
+      const size = new THREE.Vector3();
+      boundingBox.getSize(size);
+
+      const modelW = size.x; // X width
+      const modelD = size.z; // Y depth in printer
+      const modelH = size.y; // Z height in printer
+
+      const activePrinter = PRINTERS[activePrinterKey];
+      let activeFits = true;
+
+      for (const [key, p] of Object.entries(PRINTERS)) {
+        const fitsNormal = (modelW <= p.width && modelD <= p.depth);
+        const fitsRotated = (modelW <= p.depth && modelD <= p.width);
+        const fitsBed = fitsNormal || fitsRotated;
+        const fitsHeight = (modelH <= p.height);
+        const fitsAll = fitsBed && fitsHeight;
+
+        const badge = document.getElementById(`badge-${key}`);
+        if (badge) {
+          if (fitsAll) {
+            badge.className = 'status-badge ok';
+            badge.textContent = '✅ Cabe';
+          } else {
+            badge.className = 'status-badge fail';
+            if (!fitsHeight && !fitsBed) {
+              badge.textContent = '❌ Base y Altura';
+            } else if (!fitsHeight) {
+              badge.textContent = '❌ Excede Altura';
+            } else {
+              badge.textContent = '❌ Excede Base';
+            }
+          }
+        }
+
+        if (key === activePrinterKey) {
+          activeFits = fitsAll;
+        }
+      }
+
+      const alertOver = document.getElementById('overflow-alert');
+      const alertOk = document.getElementById('ok-alert');
+
+      if (!activeFits) {
+        let reasons = [];
+        if (modelW > activePrinter.width && modelW > activePrinter.depth) {
+          reasons.push(`Ancho X (${modelW.toFixed(1)} > ${activePrinter.width}mm)`);
+        }
+        if (modelD > activePrinter.depth && modelD > activePrinter.width) {
+          reasons.push(`Profundidad Y (${modelD.toFixed(1)} > ${activePrinter.depth}mm)`);
+        }
+        if (modelH > activePrinter.height) {
+          reasons.push(`Altura Z (${modelH.toFixed(1)} > ${activePrinter.height}mm)`);
+        }
+
+        alertOver.innerHTML = `⚠️ <strong>Excede ${activePrinter.name}:</strong><br>${reasons.join('<br>')}`;
+        alertOver.style.display = 'block';
+        alertOk.style.display = 'none';
+
+        if (buildCage) {
+          buildCage.material.color.setHex(0xef4444);
+          buildCage.material.opacity = 0.45;
+        }
+      } else {
+        alertOver.style.display = 'none';
+        alertOk.innerHTML = `✅ <strong>Cabe en ${activePrinter.name}:</strong><br>Espacio restante en Z: ${(activePrinter.height - modelH).toFixed(1)} mm`;
+        alertOk.style.display = 'block';
+
+        if (buildCage) {
+          buildCage.material.color.setHex(0x38bdf8);
+          buildCage.material.opacity = 0.25;
+        }
+      }
+    }
+
+    function setView(viewType) {
+      if (!currentModel) return;
+      const box = new THREE.Box3().setFromObject(currentModel);
+      const center = box.getCenter(new THREE.Vector3());
+      const size = box.getSize(new THREE.Vector3());
+      const maxDim = Math.max(size.x, size.y, size.z, 40);
+      const dist = maxDim * 2.2;
+
+      switch (viewType) {
+        case 'iso':
+          camera.position.set(center.x + dist * 0.7, center.y + dist * 0.7, center.z + dist * 0.7);
+          break;
+        case 'top':
+          camera.position.set(center.x, center.y + dist * 1.4, center.z + 0.001);
+          break;
+        case 'front':
+          camera.position.set(center.x, center.y, center.z + dist);
+          break;
+        case 'side':
+          camera.position.set(center.x + dist, center.y, center.z);
+          break;
+      }
+      controls.target.copy(center);
+      controls.update();
+    }
+
+    function resetCamera() {
+      if (currentModel) {
+        fitCameraToObject(currentModel);
+      } else {
+        camera.position.set(240, 220, 280);
+        controls.target.set(0, 50, 0);
+        controls.update();
+      }
+    }
+
+    function setRenderMode(mode) {
+      currentMode = mode;
+      document.querySelectorAll('#controls-panel .btn-grid .btn-compact').forEach(b => b.classList.remove('active'));
+      const activeBtn = document.getElementById(`mode-${mode}`);
+      if (activeBtn) activeBtn.classList.add('active');
+
+      if (currentModel) {
+        applyMaterialToModel(getModelMaterial(currentMode, currentColor));
+      }
+    }
+
+    function setModelColor(colorHex, element) {
+      currentColor = colorHex;
+      document.querySelectorAll('.color-swatch').forEach(sw => sw.classList.remove('active'));
+      if (element) {
+        element.classList.add('active');
+        document.getElementById('custom-color-picker').value = colorHex;
+      }
+      if (currentModel) {
+        applyMaterialToModel(getModelMaterial(currentMode, currentColor));
+      }
+    }
+
+    function updateOpacity(val) {
+      document.getElementById('opacity-val').textContent = `${val}%`;
+      if (currentModel) {
+        applyMaterialToModel(getModelMaterial(currentMode, currentColor));
+      }
+    }
+
+    // Drag and Drop Handlers
+    function setupDragAndDrop() {
+      const dropOverlay = document.getElementById('drop-zone-overlay');
+      let dragCounter = 0;
+
+      window.addEventListener('dragenter', (e) => {
+        e.preventDefault();
+        dragCounter++;
+        dropOverlay.classList.add('active');
+      });
+
+      window.addEventListener('dragleave', (e) => {
+        e.preventDefault();
+        dragCounter--;
+        if (dragCounter <= 0) {
+          dragCounter = 0;
+          dropOverlay.classList.remove('active');
+        }
+      });
+
+      window.addEventListener('dragover', (e) => {
+        e.preventDefault();
+      });
+
+      window.addEventListener('drop', (e) => {
+        e.preventDefault();
+        dragCounter = 0;
+        dropOverlay.classList.remove('active');
+
+        if (e.dataTransfer && e.dataTransfer.files && e.dataTransfer.files.length > 0) {
+          handleFile(e.dataTransfer.files[0]);
+        }
+      });
+    }
+
+    function setupFileInput() {
+      const input = document.getElementById('file-input');
+      input.addEventListener('change', (e) => {
+        if (e.target.files && e.target.files.length > 0) {
+          handleFile(e.target.files[0]);
+        }
+      });
+    }
+
+    function handleFile(file) {
+      const ext = file.name.split('.').pop().toLowerCase();
+      if (ext !== 'stl' && ext !== '3mf') {
+        showToast('Por favor selecciona un archivo con extensión .STL o .3MF', true);
+        return;
+      }
+
+      showLoading(true, `Leyendo "${file.name}"...`);
+      const reader = new FileReader();
+      reader.onload = function(event) {
+        if (ext === '3mf') {
+          load3MFBuffer(event.target.result, file.name, file.size);
+        } else {
+          loadSTLBuffer(event.target.result, file.name, file.size);
+        }
+      };
+      reader.onerror = function() {
+        showLoading(false);
+        showToast('Error al leer el archivo desde el disco.', true);
+      };
+      reader.readAsArrayBuffer(file);
+    }
+
+    function loadSampleModel(type = 'stl') {
+      const filename = type === '3mf' ? 'cubo_calibracion_20mm.3mf' : 'cubo_calibracion_20mm.stl';
+      showLoading(true, `Cargando ${filename}...`);
+      fetch(filename)
+        .then(response => {
+          if (!response.ok) throw new Error(`No se pudo encontrar ${filename}`);
+          return response.arrayBuffer();
+        })
+        .then(buffer => {
+          if (type === '3mf') {
+            load3MFBuffer(buffer, filename, buffer.byteLength);
+          } else {
+            loadSTLBuffer(buffer, filename, buffer.byteLength);
+          }
+        })
+        .catch(err => {
+          console.error(err);
+          createFallbackCube(type);
+        });
+    }
+
+    function createFallbackCube(type) {
+      const size = 20;
+      const geo = new THREE.BoxGeometry(size, size, size);
+      geo.translate(0, size / 2, 0);
+      geo.computeBoundingBox();
+
+      const mat = getModelMaterial(currentMode, currentColor);
+      const mesh = new THREE.Mesh(geo, mat);
+      const group = new THREE.Group();
+      group.add(mesh);
+
+      setupLoadedModel(group, `cubo_calibracion_20mm.${type}`, 2297, type);
+      showLoading(false);
+    }
+
+    function disposeHierarchy(obj) {
+      obj.traverse(child => {
+        if (child.isMesh) {
+          if (child.geometry) child.geometry.dispose();
+          if (child.material) {
+            if (Array.isArray(child.material)) {
+              child.material.forEach(m => m.dispose());
+            } else {
+              child.material.dispose();
+            }
+          }
+        }
+      });
+    }
+
+    function takeScreenshot() {
+      renderer.render(scene, camera);
+      const dataUrl = renderer.domElement.toDataURL('image/png');
+      const a = document.createElement('a');
+      const baseName = (document.getElementById('info-name').textContent || 'captura_3d').replace(/\.[^/.]+$/, "");
+      a.download = `${baseName}_render3d.png`;
+      a.href = dataUrl;
+      a.click();
+      showToast('Captura descargada exitosamente en PNG.');
+    }
+
+    function toggleFullscreen() {
+      if (!document.fullscreenElement) {
+        document.documentElement.requestFullscreen().catch(err => console.error(err));
+      } else {
+        if (document.exitFullscreen) {
+          document.exitFullscreen();
+        }
+      }
+    }
+
+    function showLoading(show, message = 'Cargando...') {
+      const overlay = document.getElementById('loading-overlay');
+      const text = document.getElementById('loading-text');
+      if (show) {
+        text.textContent = message;
+        overlay.style.display = 'flex';
+      } else {
+        overlay.style.display = 'none';
+      }
+    }
+
+    function showToast(message, isError = false) {
+      const toast = document.getElementById('toast');
+      toast.textContent = message;
+      toast.className = isError ? 'show error' : 'show';
+      setTimeout(() => {
+        toast.className = '';
+      }, 3500);
+    }
+
+    function onWindowResize() {
+      camera.aspect = window.innerWidth / window.innerHeight;
+      camera.updateProjectionMatrix();
+      renderer.setSize(window.innerWidth, window.innerHeight);
+    }
+
+    function animate() {
+      requestAnimationFrame(animate);
+      controls.update();
+      renderer.render(scene, camera);
+    }
+
+    window.addEventListener('DOMContentLoaded', init);
+  </script>
+</body>
+</html>

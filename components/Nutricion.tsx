@@ -9,7 +9,8 @@ import {
 } from 'lucide-react';
 import { useLinks } from '../contexts/LinkContext';
 import { NutritionProfile, NutritionLogEntry, FoodItem } from '../types';
-import { GoogleGenAI, Type } from '@google/genai';
+import { Type } from '@google/genai';
+import { generateContentWithFallback, getGeminiClient, GEMINI_MODELS } from '../services/geminiService';
 import { cleanJsonResponse } from '../utils/jsonUtils';
 import Markdown from 'react-markdown';
 import { toast } from 'sonner';
@@ -276,15 +277,6 @@ const Nutricion: React.FC = () => {
 
         // Estimate calories using AI
         try {
-            const apiKey = googleApiConfig?.apiKey || process.env.GEMINI_API_KEY;
-            if (!apiKey) {
-                toast.error("API Key de Gemini no configurada. Haz clic en el icono de base de datos en la cabecera.");
-                return;
-            }
-            const ai = new GoogleGenAI({ 
-                apiKey,
-                baseUrl: `${window.location.origin}/api/proxy/google`
-            });
             const prompt = `Estima las calorías quemadas para la siguiente actividad física:
             Actividad: ${activityName}
             Tipo: ${type}
@@ -294,10 +286,9 @@ const Nutricion: React.FC = () => {
             
             Responde SOLO con el número estimado de calorías (un entero).`;
 
-            const response = await ai.models.generateContent({
-                model: "gemini-3.1-flash-preview",
+            const response = await generateContentWithFallback({
                 contents: prompt,
-            });
+            }, { apiKey: googleApiConfig?.apiKey });
 
             const calories = parseInt(response.text?.trim() || '0');
             if (!isNaN(calories)) {
@@ -324,15 +315,6 @@ const Nutricion: React.FC = () => {
 
         // Recalculate calories
         try {
-            const apiKey = googleApiConfig?.apiKey || process.env.GEMINI_API_KEY;
-            if (!apiKey) {
-                toast.error("API Key de Gemini no configurada. Haz clic en el icono de base de datos en la cabecera.");
-                return;
-            }
-            const ai = new GoogleGenAI({ 
-                apiKey,
-                baseUrl: `${window.location.origin}/api/proxy/google`
-            });
             const prompt = `Estima las calorías quemadas para la siguiente actividad física:
             Actividad: ${act.name}
             Duración: ${act.duration} min
@@ -341,10 +323,9 @@ const Nutricion: React.FC = () => {
             
             Responde SOLO con el número estimado de calorías (un entero).`;
 
-            const response = await ai.models.generateContent({
-                model: "gemini-3.1-flash-preview",
+            const response = await generateContentWithFallback({
                 contents: prompt,
-            });
+            }, { apiKey: googleApiConfig?.apiKey });
 
             const calories = parseInt(response.text?.trim() || '0');
             if (!isNaN(calories)) {
@@ -477,15 +458,6 @@ const Nutricion: React.FC = () => {
     const generateWeeklyMealPlan = async () => {
         setIsGeneratingMealPlan(true);
         try {
-            const apiKey = googleApiConfig?.apiKey || process.env.GEMINI_API_KEY;
-            if (!apiKey) {
-                toast.error("API Key de Gemini no configurada. Haz clic en el icono de base de datos en la cabecera.");
-                return;
-            }
-            const ai = new GoogleGenAI({ 
-                apiKey,
-                baseUrl: `${window.location.origin}/api/proxy/google`
-            });
             const prompt = `
 Eres el Dr. Remy Sanisimo, médico deportivo especializado en salud preventiva, entrenamiento funcional y nutrición clínica. 
 
@@ -548,8 +520,8 @@ Responde estrictamente en formato JSON:
   ]
 }
 `;
-            const response = await ai.models.generateContent({
-                model: 'gemini-3.1-flash-preview',
+            const response = await generateContentWithFallback({
+                model: GEMINI_MODELS.PRIMARY,
                 contents: prompt,
                 config: { 
                     responseMimeType: 'application/json',
@@ -584,7 +556,7 @@ Responde estrictamente en formato JSON:
                         required: ["weeklyMealPlan"]
                     }
                 }
-            });
+            }, { apiKey: googleApiConfig?.apiKey });
             
             let result;
             try {
@@ -654,19 +626,6 @@ Responde estrictamente en formato JSON:
     const chatWithMealPlan = async () => {
         setIsMealPlanChatting(true);
         try {
-            const apiKey = googleApiConfig?.apiKey || process.env.GEMINI_API_KEY;
-            if (!apiKey) {
-                toast.error("API Key de Gemini no configurada.");
-                setIsAnalyzing?.(false);
-                return;
-            }
-            const ai = new GoogleGenAI({ 
-                apiKey,
-                httpOptions: {
-                    baseUrl: `${window.location.origin}/api/proxy/google`
-                }
-            });
-            
             const history = nutritionData.mealPlanChatHistory || [];
             const historyText = history.map(h => `${h.role === 'user' ? 'Usuario' : 'IA'}: ${h.text}`).join('\n');
             
@@ -717,10 +676,9 @@ Responde de manera amigable. Si el usuario pide cambios en el plan, o menciona a
 Si no hay cambios en el plan ni en las exclusiones, solo responde a su pregunta sin el bloque JSON.
 `;
 
-            const response = await ai.models.generateContent({
-                model: 'gemini-3.1-flash-preview',
+            const response = await generateContentWithFallback({
                 contents: prompt,
-            });
+            }, { apiKey: googleApiConfig?.apiKey });
 
             const text = response.text || "";
             
@@ -786,19 +744,6 @@ Si no hay cambios en el plan ni en las exclusiones, solo responde a su pregunta 
     const analyzeNutrition = async () => {
         setIsAnalyzing(true);
         try {
-            const apiKey = googleApiConfig?.apiKey || process.env.GEMINI_API_KEY;
-            if (!apiKey) {
-                toast.error("API Key de Gemini no configurada.");
-                setIsAnalyzing?.(false);
-                return;
-            }
-            const ai = new GoogleGenAI({ 
-                apiKey,
-                httpOptions: {
-                    baseUrl: `${window.location.origin}/api/proxy/google`
-                }
-            });
-            
             const history = nutritionData.aiChatHistory || [];
             const historyText = history.map(h => `${h.role === 'user' ? 'Usuario' : 'IA'}: ${h.text}`).join('\n');
             
@@ -858,10 +803,9 @@ ${userQuestion || 'Ninguna pregunta específica, solo análisis general.'}
 Por favor, proporciona un análisis detallado, amigable y estructurado en Markdown. Si hay una pregunta específica, respóndela prioritariamente. Da recomendaciones de sueño si las horas son bajas (< 7h).
 `;
 
-            const response = await ai.models.generateContent({
-                model: 'gemini-3.1-flash-preview',
+            const response = await generateContentWithFallback({
                 contents: prompt,
-            });
+            }, { apiKey: googleApiConfig?.apiKey });
 
             const newAnalysis = response.text || "No se pudo generar el análisis.";
             setAiAnalysis(newAnalysis);
@@ -930,22 +874,14 @@ Por favor, proporciona un análisis detallado, amigable y estructurado en Markdo
                 
                 toast.loading('Analizando imagen...', { id: 'image-analysis' });
                 
-                const apiKey = googleApiConfig?.apiKey || process.env.GEMINI_API_KEY || '';
-                const ai = new GoogleGenAI({ 
-                    apiKey: googleApiConfig?.apiKey || process.env.GEMINI_API_KEY || '',
-                    httpOptions: {
-                        baseUrl: `${window.location.origin}/api/proxy/google`
-                    }
-                });
-                const response = await ai.models.generateContent({
-                    model: "gemini-3.1-flash-preview",
+                const response = await generateContentWithFallback({
                     contents: {
                         parts: [
                             { inlineData: { data: base64Data, mimeType: file.type } },
                             { text: "Analiza esta imagen de comida. Identifica qué es y estima sus calorías y macronutrientes (proteína, carbohidratos, grasas, azúcar). Responde en formato JSON: { \"name\": \"...\", \"calories\": 0, \"protein\": 0, \"carbs\": 0, \"fats\": 0, \"sugar\": 0 }" }
                         ]
                     }
-                });
+                }, { apiKey: googleApiConfig?.apiKey });
 
                 const text = response.text;
                 try {
