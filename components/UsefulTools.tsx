@@ -12,26 +12,24 @@ const ToolCard: React.FC<{
     isEditing: boolean;
     onEdit: (item: LinkItem) => void;
     onDelete: (id: string) => void;
-    count: number;
-}> = ({ item, isEditing, onEdit, onDelete, count }) => {
-    const isSmall = count > 6;
-    const isVerySmall = count > 8;
+    count?: number;
+}> = ({ item, isEditing, onEdit, onDelete }) => {
     return (
-        <div className="relative group h-full">
+        <div className="relative group w-24 h-24 sm:w-28 sm:h-28 flex-shrink-0">
             <a 
                 href={item.href} 
                 target="_blank" 
                 rel="noopener noreferrer" 
-                className={`group relative flex flex-col items-center justify-center p-2 bg-gray-800 rounded-xl hover:bg-gray-700 transition-all duration-300 border border-gray-700 hover:border-gray-500 hover:shadow-2xl hover:-translate-y-1 w-full h-full ${isSmall ? 'min-h-[80px]' : 'min-h-[120px]'} ${item.colorClass} ${isEditing ? 'opacity-50 pointer-events-none' : ''}`}
+                className={`group relative flex flex-col items-center justify-center p-2.5 bg-gray-800/80 hover:bg-gray-700/90 rounded-xl transition-all duration-300 border border-gray-700 hover:border-gray-500 hover:shadow-xl hover:-translate-y-1 w-full h-full ${item.colorClass || ''} ${isEditing ? 'opacity-50 pointer-events-none' : ''}`}
             >
                 <div 
-                    className={`mb-2 transform transition-transform group-hover:scale-110 duration-300 ${isVerySmall ? 'w-8 h-8' : isSmall ? 'w-10 h-10' : 'w-14 h-14'} flex items-center justify-center [&>svg]:w-full [&>svg]:h-full`} 
+                    className="w-10 h-10 sm:w-11 sm:h-11 mb-1.5 transform transition-transform group-hover:scale-110 duration-300 flex items-center justify-center [&>svg]:w-full [&>svg]:h-full flex-shrink-0" 
                     style={{
                         filter: item.outlineColor && item.outlineWidth ? `drop-shadow(0 0 ${item.outlineWidth}px ${item.outlineColor})` : undefined
                     }}
                     dangerouslySetInnerHTML={{ __html: item.iconSvg }} 
                 />
-                <h3 className={`mt-1 ${isVerySmall ? 'text-[10px]' : isSmall ? 'text-xs' : 'text-sm'} font-bold text-white text-center leading-tight truncate w-full`}>{item.name}</h3>
+                <h3 className="text-[11px] sm:text-xs font-semibold text-white text-center leading-tight truncate w-full px-1">{item.name}</h3>
             </a>
             <div className="absolute top-1 right-1 flex gap-1 z-10 opacity-0 group-hover:opacity-100 transition-opacity">
                 <button 
@@ -115,11 +113,6 @@ const UsefulTools: React.FC = () => {
                     if (itemIdx !== -1) {
                         newConfig.usefulTools[idx].items[itemIdx] = item;
                     } else {
-                        // Check for limit of 9
-                        if (newConfig.usefulTools[idx].items.length >= 9) {
-                            alert(`La sección "${targetName}" ya tiene el máximo de 9 herramientas.`);
-                            return prev; // Cancel update
-                        }
                         newConfig.usefulTools[idx].items.push({ ...item, id: item.id || `ut-item-${Date.now()}` }); 
                         isNew = true; 
                     }
@@ -250,35 +243,37 @@ const UsefulTools: React.FC = () => {
                     </button>
                 </div>
             )}
-            {/* Grid: 3 columns on desktop (3x3 if there are 9 sections) */}
-            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6 pb-12">
+            {/* Paneles horizontales organizados verticalmente */}
+            <div className="flex flex-col gap-6 pb-12 w-full">
                 {config.usefulTools.map((section, idx) => (
                     <div 
                         key={section.id} 
-                        className="bg-gray-900/40 border border-gray-800 hover:border-gray-600 rounded-2xl p-5 flex flex-col shadow-xl transition-colors duration-300 min-h-[380px]"
+                        className="bg-gray-900/50 border border-gray-800 hover:border-gray-700/80 rounded-2xl p-4 sm:p-5 flex flex-col shadow-xl transition-all duration-300 w-full"
                     >
-                        {/* Header de la Sección */}
-                        <div className="flex items-center justify-between mb-4 pb-2 border-b border-gray-800">
+                        {/* Header de la Sección (Título arriba) */}
+                        <div className="flex items-center justify-between mb-4 pb-2.5 border-b border-gray-800">
                             <div className="flex items-center gap-3 overflow-hidden">
                                 <span className="text-white opacity-80 p-2 bg-gray-800 rounded-lg flex-shrink-0" dangerouslySetInnerHTML={{ __html: section.iconSvg || '' }} />
-                                <h2 className={`text-xl font-black text-transparent bg-clip-text bg-gradient-to-r ${section.gradient} truncate`}>
+                                <h2 className={`text-lg sm:text-xl font-black text-transparent bg-clip-text bg-gradient-to-r ${section.gradient} truncate`}>
                                     {section.title}
                                 </h2>
+                                <span className="text-xs text-gray-500 font-semibold px-2 py-0.5 rounded-full bg-gray-800/80 border border-gray-700/60">
+                                    {section.items.length}
+                                </span>
                             </div>
-                            <div className="flex items-center gap-1">
+                            <div className="flex items-center gap-1.5">
                                 {isEditing && (
                                     <>
-                                        <button onClick={() => handleEditSection(section.id)} className="text-blue-500 hover:text-blue-400 p-1 transition-colors" title="Editar Título">
+                                        <button onClick={() => handleEditSection(section.id)} className="text-blue-400 hover:text-blue-300 p-1.5 rounded-lg hover:bg-gray-800 transition-colors" title="Editar Título">
                                             <Edit size={16} />
                                         </button>
-                                        <button onClick={() => handleDeleteSection(section.id)} className="text-red-500 hover:text-red-400 p-1 transition-colors" title="Eliminar Sección">
+                                        <button onClick={() => handleDeleteSection(section.id)} className="text-red-400 hover:text-red-300 p-1.5 rounded-lg hover:bg-gray-800 transition-colors" title="Eliminar Sección">
                                             <Trash2 size={16} />
                                         </button>
                                         <button 
                                             onClick={() => openModal(section.id)} 
-                                            className={`p-1 transition-colors ${section.items.length >= 9 ? 'text-gray-600 cursor-not-allowed' : 'text-green-500 hover:text-green-400'}`} 
-                                            title={section.items.length >= 9 ? "Límite de 9 herramientas alcanzado" : "Agregar Herramienta"}
-                                            disabled={section.items.length >= 9}
+                                            className="text-green-400 hover:text-green-300 p-1.5 rounded-lg hover:bg-gray-800 transition-colors" 
+                                            title="Agregar Herramienta"
                                         >
                                             <Plus size={20} />
                                         </button>
@@ -287,37 +282,29 @@ const UsefulTools: React.FC = () => {
                             </div>
                         </div>
 
-                        {/* Grid de Herramientas dentro de la tarjeta */}
-                        <div className="flex-grow flex flex-col">
-                            {(() => {
-                                const count = section.items.length;
-                                const gridCols = count <= 1 ? 'grid-cols-1' : count === 2 ? 'grid-cols-2' : count === 4 ? 'grid-cols-2' : 'grid-cols-3';
-                                return (
-                                    <SortableLinkList 
-                                        id={`usefulTools.${idx}`}
-                                        items={section.items}
+                        {/* Fila horizontal de herramientas con tamaño uniforme */}
+                        <div className="w-full">
+                            <SortableLinkList 
+                                id={`usefulTools.${idx}`}
+                                items={section.items}
+                                isEditing={isEditing}
+                                onReorder={(newItems) => handleReorder(section.id, newItems)}
+                                strategy={rectSortingStrategy}
+                                className="flex flex-wrap gap-3 items-center"
+                                renderItem={(tool) => (
+                                    <ToolCard 
+                                        key={tool.id} 
+                                        item={tool} 
                                         isEditing={isEditing}
-                                        onReorder={(newItems) => handleReorder(section.id, newItems)}
-                                        strategy={rectSortingStrategy}
-                                        className={`grid ${gridCols} gap-3 content-start min-h-[100px]`}
-                                        renderItem={(tool) => (
-                                            <ToolCard 
-                                                key={tool.id} 
-                                                item={tool} 
-                                                isEditing={isEditing}
-                                                count={count}
-                                                onEdit={(i) => openModal(section.id, i)}
-                                                onDelete={(id) => handleDeleteLink(id, section.id)}
-                                            />
-                                        )}
-                                    >
-                                    </SortableLinkList>
-                                );
-                            })()}
+                                        onEdit={(i) => openModal(section.id, i)}
+                                        onDelete={(id) => handleDeleteLink(id, section.id)}
+                                    />
+                                )}
+                            />
                             
-                            {section.items.length === 0 && !isEditing && (
-                                <div className="absolute inset-0 flex items-center justify-center text-gray-600 text-xs italic pointer-events-none">
-                                    Sección vacía
+                            {section.items.length === 0 && (
+                                <div className="py-6 flex items-center justify-center text-gray-500 text-xs italic">
+                                    {isEditing ? "Haz clic en '+' para agregar herramientas a esta categoría" : "Sección vacía"}
                                 </div>
                             )}
                         </div>
