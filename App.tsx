@@ -62,6 +62,7 @@ const NotesTab = lazy(() => import('./components/NotesTab'));
 const Nutricion = lazy(() => import('./components/Nutricion'));
 const ThreeDPrinting = lazy(() => import('./components/ThreeDPrinting'));
 const CalendarAiAssistant = lazy(() => import('./components/CalendarAiAssistant'));
+const WorkspaceHub = lazy(() => import('./components/WorkspaceHub'));
 
 import LinksBar from './components/LinksBar';
 import AiSidebar from './components/AiSidebar';
@@ -555,6 +556,19 @@ const MainLayout: React.FC = () => {
     if (activeTabId === 'database' || isDbTab({ id: activeTabId })) {
       return <DatabaseViewer />;
     }
+    if (activeTabId === 'workspace') {
+      return <WorkspaceHub />;
+    }
+    if (activeTabId === 'commands') {
+      return <WorkspaceHub initialSubTab="comandos" />;
+    }
+    if (activeTabId === 'credenciales') {
+      return <WorkspaceHub initialSubTab="credenciales" />;
+    }
+    if (activeTabId === 'notas') {
+      return <WorkspaceHub initialSubTab="notas" />;
+    }
+
     const activeTab = config.tabs.find(t => t.id === activeTabId);
     if (!activeTab) return null;
 
@@ -570,6 +584,8 @@ const MainLayout: React.FC = () => {
             <EmailGenerator attachedImages={imagesForEmail} onAttachmentsChange={setImagesForEmail} />
           </div>
         );
+      case 'Workspace':
+        return <WorkspaceHub />;
       case 'Renders':
         return <Renders />;
       case 'Ingeniero':
@@ -579,17 +595,17 @@ const MainLayout: React.FC = () => {
       case 'Herramientas Útiles':
         return <UsefulTools />;
       case 'Comandos':
-        return <CommandsTab />;
+        return <WorkspaceHub initialSubTab="comandos" />;
       case 'Calendario':
         return <CalendarTab />;
       case 'Credenciales':
-        return <Credenciales />;
+        return <WorkspaceHub initialSubTab="credenciales" />;
       case 'Dashboard':
         return <Dashboard />;
       case 'Finanzas':
         return <Finanzas />;
       case 'Notas':
-        return <NotesTab />;
+        return <WorkspaceHub initialSubTab="notas" />;
       case 'Nutricion':
         return <Nutricion />;
       case 'Generador de Video':
@@ -606,6 +622,7 @@ const MainLayout: React.FC = () => {
   };
 
   const tabIcons: Record<string, React.ReactNode> = {
+    'Workspace': <FolderKanban />,
     'Generador de Email': <Mail />,
     'Generador de Imagen': <ImageIcon />,
     'Generador de Video': <Video />,
