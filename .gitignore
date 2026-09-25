@@ -31,6 +31,7 @@ dist-ssr
 !tsconfig.json
 !vercel.json
 !metadata.json
+!public/manifest.json
 set_envs.cjs
 *_new.tsx
 *_temp.tsx

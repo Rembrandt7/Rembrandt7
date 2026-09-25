@@ -77,6 +77,7 @@ import { Message } from './types';
 import { LinkProvider, useLinks } from './contexts/LinkContext';
 import { Toaster } from 'sonner';
 import { GlobalSearch } from './components/GlobalSearch';
+import { PwaInstallPrompt } from './components/PwaInstallPrompt';
 import {
   DndContext,
   closestCenter,
@@ -838,6 +839,7 @@ const App: React.FC = () => {
       <Toaster theme="dark" position="bottom-right" richColors />
       <GlobalSearch />
       <MainLayout />
+      <PwaInstallPrompt />
     </LinkProvider>
   );
 };
