@@ -6,10 +6,11 @@ import { LinkItem } from '../../types';
 interface SortableItemWrapperProps {
   id: string;
   isEditing: boolean;
+  itemClassName?: string;
   children: React.ReactNode;
 }
 
-const SortableItemWrapper: React.FC<SortableItemWrapperProps> = ({ id, isEditing, children }) => {
+const SortableItemWrapper: React.FC<SortableItemWrapperProps> = ({ id, isEditing, itemClassName, children }) => {
   const {
     attributes,
     listeners,
@@ -34,7 +35,7 @@ const SortableItemWrapper: React.FC<SortableItemWrapperProps> = ({ id, isEditing
     <div
       ref={setNodeRef}
       style={style}
-      className={`flex-shrink min-w-0 flex items-center justify-center ${isEditing ? 'cursor-grab active:cursor-grabbing' : ''}`}
+      className={`${itemClassName || 'flex-shrink min-w-0'} flex items-center justify-center ${isEditing ? 'cursor-grab active:cursor-grabbing' : ''}`}
       {...sortableProps}
     >
       {children}
@@ -49,6 +50,8 @@ interface SortableLinkListProps {
   onReorder?: (newItems: LinkItem[]) => void;
   strategy: any;
   className?: string;
+  itemClassName?: string;
+  containerRef?: React.Ref<HTMLDivElement>;
   renderItem: (item: LinkItem, index: number) => React.ReactNode;
 }
 
@@ -57,6 +60,8 @@ export const SortableLinkList: React.FC<SortableLinkListProps> = ({
   isEditing,
   strategy,
   className,
+  itemClassName,
+  containerRef,
   renderItem,
 }) => {
   return (
@@ -64,9 +69,9 @@ export const SortableLinkList: React.FC<SortableLinkListProps> = ({
       items={items.map((item) => item.id)}
       strategy={strategy}
     >
-      <div className={className}>
+      <div ref={containerRef} className={className}>
         {items.map((item, index) => (
-          <SortableItemWrapper key={item.id} id={item.id} isEditing={isEditing}>
+          <SortableItemWrapper key={item.id} id={item.id} isEditing={isEditing} itemClassName={itemClassName}>
             {renderItem(item, index)}
           </SortableItemWrapper>
         ))}

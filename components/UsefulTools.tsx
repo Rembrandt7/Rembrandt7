@@ -1,10 +1,10 @@
-import React, { useState } from 'react';
+import React, { useState, useRef, useEffect, useCallback } from 'react';
 import { useLinks } from '../contexts/LinkContext';
 import { LinkItem } from '../types';
 import { LinkEditorModal } from './common/LinkEditorModal';
-import { Edit, Trash2, Plus } from 'lucide-react';
+import { Edit, Trash2, Plus, ChevronLeft, ChevronRight } from 'lucide-react';
 import { SortableLinkList } from './common/SortableLinkList';
-import { rectSortingStrategy } from '@dnd-kit/sortable';
+import { horizontalListSortingStrategy } from '@dnd-kit/sortable';
 import { toast } from 'sonner';
 
 const ToolCard: React.FC<{ 
@@ -50,6 +50,231 @@ const ToolCard: React.FC<{
                 >
                     <Trash2 size={8} />
                 </button>
+            </div>
+        </div>
+    );
+};
+
+interface ToolSectionPanelProps {
+    section: {
+        id: string;
+        title: string;
+        gradient: string;
+        iconSvg?: string;
+        items: LinkItem[];
+    };
+    idx: number;
+    isEditing: boolean;
+    onEditSection: (id: string) => void;
+    onDeleteSection: (id: string) => void;
+    onOpenModal: (sectionId: string, item?: LinkItem) => void;
+    onDeleteLink: (itemId: string, sectionId: string) => void;
+    onReorder: (sectionId: string, newItems: LinkItem[]) => void;
+}
+
+const ToolSectionPanel: React.FC<ToolSectionPanelProps> = ({
+    section,
+    idx,
+    isEditing,
+    onEditSection,
+    onDeleteSection,
+    onOpenModal,
+    onDeleteLink,
+    onReorder,
+}) => {
+    const scrollRef = useRef<HTMLDivElement>(null);
+    const [canScrollLeft, setCanScrollLeft] = useState(false);
+    const [canScrollRight, setCanScrollRight] = useState(false);
+
+    const isDownRef = useRef(false);
+    const startXRef = useRef(0);
+    const scrollLeftRef = useRef(0);
+    const hasMovedRef = useRef(false);
+
+    const checkScroll = useCallback(() => {
+        const el = scrollRef.current;
+        if (!el) return;
+        const { scrollLeft, scrollWidth, clientWidth } = el;
+        setCanScrollLeft(scrollLeft > 4);
+        setCanScrollRight(scrollLeft < scrollWidth - clientWidth - 4);
+    }, []);
+
+    useEffect(() => {
+        checkScroll();
+        const el = scrollRef.current;
+        if (!el) return;
+        el.addEventListener('scroll', checkScroll, { passive: true });
+        window.addEventListener('resize', checkScroll);
+        return () => {
+            el.removeEventListener('scroll', checkScroll);
+            window.removeEventListener('resize', checkScroll);
+        };
+    }, [checkScroll, section.items]);
+
+    const scroll = (direction: 'left' | 'right') => {
+        if (!scrollRef.current) return;
+        const amount = 200;
+        scrollRef.current.scrollBy({
+            left: direction === 'left' ? -amount : amount,
+            behavior: 'smooth'
+        });
+    };
+
+    const handleMouseDown = (e: React.MouseEvent) => {
+        if (isEditing) return;
+        if (e.button !== 0) return;
+        isDownRef.current = true;
+        hasMovedRef.current = false;
+        startXRef.current = e.pageX - (scrollRef.current?.offsetLeft || 0);
+        scrollLeftRef.current = scrollRef.current?.scrollLeft || 0;
+    };
+
+    const handleMouseMove = (e: React.MouseEvent) => {
+        if (!isDownRef.current || isEditing || !scrollRef.current) return;
+        const x = e.pageX - (scrollRef.current.offsetLeft || 0);
+        const walk = x - startXRef.current;
+        if (Math.abs(walk) > 4) {
+            hasMovedRef.current = true;
+        }
+        scrollRef.current.scrollLeft = scrollLeftRef.current - walk;
+    };
+
+    const handleMouseUpOrLeave = () => {
+        isDownRef.current = false;
+    };
+
+    const handleClickCapture = (e: React.MouseEvent) => {
+        if (hasMovedRef.current) {
+            e.preventDefault();
+            e.stopPropagation();
+            hasMovedRef.current = false;
+        }
+    };
+
+    return (
+        <div className="bg-gray-900/50 border border-gray-800/80 hover:border-gray-700/80 rounded-xl p-2.5 flex flex-col shadow-md transition-all duration-200 w-full min-w-0">
+            {/* Header: Título, contador, botones de carrusel y botones de edición */}
+            <div className="flex items-center justify-between mb-1.5 pb-1.5 border-b border-gray-800/70">
+                <div className="flex items-center gap-2 overflow-hidden min-w-0">
+                    <span 
+                        className="text-white opacity-85 p-1 bg-gray-800/90 rounded-md flex-shrink-0 [&>svg]:w-4 [&>svg]:h-4" 
+                        dangerouslySetInnerHTML={{ __html: section.iconSvg || '' }} 
+                    />
+                    <h2 className={`text-xs sm:text-sm font-bold text-transparent bg-clip-text bg-gradient-to-r ${section.gradient} truncate`}>
+                        {section.title}
+                    </h2>
+                    <span className="text-[10px] text-gray-400 font-semibold px-1.5 py-0.5 rounded-full bg-gray-800/80 border border-gray-700/60 flex-shrink-0">
+                        {section.items.length}
+                    </span>
+                </div>
+
+                <div className="flex items-center gap-1 flex-shrink-0">
+                    {/* Botones carrusel en encabezado */}
+                    {(canScrollLeft || canScrollRight) && (
+                        <div className="flex items-center gap-0.5 bg-gray-800/80 rounded p-0.5 border border-gray-700/60">
+                            <button 
+                                type="button"
+                                onClick={() => scroll('left')}
+                                disabled={!canScrollLeft}
+                                className="p-0.5 rounded text-gray-400 hover:text-white hover:bg-gray-700 disabled:opacity-20 disabled:pointer-events-none transition-all"
+                                title="Anterior"
+                            >
+                                <ChevronLeft size={13} />
+                            </button>
+                            <button 
+                                type="button"
+                                onClick={() => scroll('right')}
+                                disabled={!canScrollRight}
+                                className="p-0.5 rounded text-gray-400 hover:text-white hover:bg-gray-700 disabled:opacity-20 disabled:pointer-events-none transition-all"
+                                title="Siguiente"
+                            >
+                                <ChevronRight size={13} />
+                            </button>
+                        </div>
+                    )}
+
+                    {isEditing && (
+                        <div className="flex items-center gap-1 ml-1">
+                            <button onClick={() => onEditSection(section.id)} className="text-blue-400 hover:text-blue-300 p-1 rounded hover:bg-gray-800 transition-colors" title="Editar Título">
+                                <Edit size={13} />
+                            </button>
+                            <button onClick={() => onDeleteSection(section.id)} className="text-red-400 hover:text-red-300 p-1 rounded hover:bg-gray-800 transition-colors" title="Eliminar Sección">
+                                <Trash2 size={13} />
+                            </button>
+                            <button 
+                                onClick={() => onOpenModal(section.id)} 
+                                className="text-green-400 hover:text-green-300 p-1 rounded hover:bg-gray-800 transition-colors" 
+                                title="Agregar Herramienta"
+                            >
+                                <Plus size={16} />
+                            </button>
+                        </div>
+                    )}
+                </div>
+            </div>
+
+            {/* Pista horizontal con soporte de carrusel y arrastre */}
+            <div className="relative group/track w-full min-w-0">
+                {/* Flecha flotante izquierda */}
+                {canScrollLeft && (
+                    <button
+                        type="button"
+                        onClick={() => scroll('left')}
+                        className="absolute left-0 top-0 bottom-0 z-20 px-1 flex items-center justify-center bg-gradient-to-r from-gray-900/90 via-gray-900/60 to-transparent text-white hover:text-blue-300 transition-all rounded-l-lg opacity-85 hover:opacity-100"
+                        title="Desplazar a la izquierda"
+                    >
+                        <ChevronLeft size={18} />
+                    </button>
+                )}
+
+                {/* Contenedor desplazable */}
+                <div 
+                    ref={scrollRef}
+                    onMouseDown={handleMouseDown}
+                    onMouseMove={handleMouseMove}
+                    onMouseUp={handleMouseUpOrLeave}
+                    onMouseLeave={handleMouseUpOrLeave}
+                    onClickCapture={handleClickCapture}
+                    className={`w-full overflow-x-auto scroll-smooth py-1 px-0.5 select-none ${!isEditing ? 'cursor-grab active:cursor-grabbing' : ''}`}
+                    style={{ scrollbarWidth: 'none', msOverflowStyle: 'none' }}
+                >
+                    <SortableLinkList 
+                        id={`usefulTools.${idx}`}
+                        items={section.items}
+                        isEditing={isEditing}
+                        onReorder={(newItems) => onReorder(section.id, newItems)}
+                        strategy={horizontalListSortingStrategy}
+                        className="flex flex-nowrap gap-2 items-center min-w-max"
+                        itemClassName="flex-shrink-0"
+                        renderItem={(tool) => (
+                            <ToolCard 
+                                key={tool.id} 
+                                item={tool} 
+                                isEditing={isEditing}
+                                onEdit={(i) => onOpenModal(section.id, i)}
+                                onDelete={(id) => onDeleteLink(id, section.id)}
+                            />
+                        )}
+                    />
+                    
+                    {section.items.length === 0 && (
+                        <div className="py-2.5 flex items-center justify-center text-gray-500 text-xs italic w-full">
+                            {isEditing ? "Haz clic en '+' para agregar herramientas" : "Sección vacía"}
+                        </div>
+                    )}
+                </div>
+
+                {/* Flecha flotante derecha */}
+                {canScrollRight && (
+                    <button
+                        type="button"
+                        onClick={() => scroll('right')}
+                        className="absolute right-0 top-0 bottom-0 z-20 px-1 flex items-center justify-center bg-gradient-to-l from-gray-900/90 via-gray-900/60 to-transparent text-white hover:text-blue-300 transition-all rounded-r-lg opacity-85 hover:opacity-100"
+                        title="Desplazar a la derecha"
+                    >
+                        <ChevronRight size={18} />
+                    </button>
+                )}
             </div>
         </div>
     );
@@ -245,72 +470,20 @@ const UsefulTools: React.FC = () => {
                     </button>
                 </div>
             )}
-            {/* Paneles horizontales compactos organizados verticalmente */}
-            <div className="flex flex-col gap-2.5 sm:gap-3 pb-8 w-full">
+            {/* Grilla de 2 paneles por renglón con carrusel y desplazamiento por arrastre */}
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-2.5 sm:gap-3 pb-8 w-full">
                 {config.usefulTools.map((section, idx) => (
-                    <div 
-                        key={section.id} 
-                        className="bg-gray-900/50 border border-gray-800/80 hover:border-gray-700/80 rounded-xl p-2.5 sm:p-3 flex flex-col shadow-md transition-all duration-200 w-full"
-                    >
-                        {/* Header de la Sección (Título arriba, compacto) */}
-                        <div className="flex items-center justify-between mb-2 pb-1.5 border-b border-gray-800/70">
-                            <div className="flex items-center gap-2 overflow-hidden">
-                                <span className="text-white opacity-85 p-1 sm:p-1.5 bg-gray-800/90 rounded-md flex-shrink-0 [&>svg]:w-4 [&>svg]:h-4" dangerouslySetInnerHTML={{ __html: section.iconSvg || '' }} />
-                                <h2 className={`text-sm sm:text-base font-bold text-transparent bg-clip-text bg-gradient-to-r ${section.gradient} truncate`}>
-                                    {section.title}
-                                </h2>
-                                <span className="text-[10px] text-gray-400 font-semibold px-1.5 py-0.5 rounded-full bg-gray-800/80 border border-gray-700/60">
-                                    {section.items.length}
-                                </span>
-                            </div>
-                            <div className="flex items-center gap-1">
-                                {isEditing && (
-                                    <>
-                                        <button onClick={() => handleEditSection(section.id)} className="text-blue-400 hover:text-blue-300 p-1 rounded hover:bg-gray-800 transition-colors" title="Editar Título">
-                                            <Edit size={14} />
-                                        </button>
-                                        <button onClick={() => handleDeleteSection(section.id)} className="text-red-400 hover:text-red-300 p-1 rounded hover:bg-gray-800 transition-colors" title="Eliminar Sección">
-                                            <Trash2 size={14} />
-                                        </button>
-                                        <button 
-                                            onClick={() => openModal(section.id)} 
-                                            className="text-green-400 hover:text-green-300 p-1 rounded hover:bg-gray-800 transition-colors" 
-                                            title="Agregar Herramienta"
-                                        >
-                                            <Plus size={18} />
-                                        </button>
-                                    </>
-                                )}
-                            </div>
-                        </div>
-
-                        {/* Fila horizontal de herramientas con tamaño uniforme y espacio reducido */}
-                        <div className="w-full">
-                            <SortableLinkList 
-                                id={`usefulTools.${idx}`}
-                                items={section.items}
-                                isEditing={isEditing}
-                                onReorder={(newItems) => handleReorder(section.id, newItems)}
-                                strategy={rectSortingStrategy}
-                                className="flex flex-wrap gap-2 items-center"
-                                renderItem={(tool) => (
-                                    <ToolCard 
-                                        key={tool.id} 
-                                        item={tool} 
-                                        isEditing={isEditing}
-                                        onEdit={(i) => openModal(section.id, i)}
-                                        onDelete={(id) => handleDeleteLink(id, section.id)}
-                                    />
-                                )}
-                            />
-                            
-                            {section.items.length === 0 && (
-                                <div className="py-2.5 flex items-center justify-center text-gray-500 text-xs italic">
-                                    {isEditing ? "Haz clic en '+' para agregar herramientas a esta categoría" : "Sección vacía"}
-                                </div>
-                            )}
-                        </div>
-                    </div>
+                    <ToolSectionPanel
+                        key={section.id}
+                        section={section}
+                        idx={idx}
+                        isEditing={isEditing}
+                        onEditSection={handleEditSection}
+                        onDeleteSection={handleDeleteSection}
+                        onOpenModal={openModal}
+                        onDeleteLink={handleDeleteLink}
+                        onReorder={handleReorder}
+                    />
                 ))}
             </div>
 
