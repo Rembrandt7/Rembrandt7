@@ -314,13 +314,16 @@ const INITIAL_CONFIG: AppConfig = {
   ]
 };
 
+export type SyncStatus = 'idle' | 'saving' | 'synced' | 'error';
+
 interface LinkContextType {
   config: AppConfig;
+  syncStatus: SyncStatus;
   updateConfig: (newConfig: AppConfig | ((prev: AppConfig) => AppConfig)) => void;
   saveConfigToFile: () => void;
   loadConfigFromFile: (file: File) => void;
   saveAsDefault: () => Promise<void>;
-  saveToSupabase: (configOverride?: AppConfig) => Promise<void>;
+  saveToSupabase: (configOverride?: AppConfig, options?: { showToast?: boolean; immediate?: boolean }) => Promise<void>;
   resetToDefaults: () => void;
   fetchConfigFromSupabaseManual: () => Promise<void>;
   isEditing: boolean;
@@ -460,6 +463,8 @@ export const LinkProvider: React.FC<{ children: React.ReactNode }> = ({ children
   }, [config]);
 
   const [isEditing, setIsEditing] = useState(false);
+  const [syncStatus, setSyncStatus] = useState<SyncStatus>('synced');
+  const lastUploadedJsonRef = useRef<string>('');
   const [activeTabId, setActiveTabId] = useState<string>('email-gen');
   const [isShoppingEditMode, setShoppingEditMode] = useState(false);
   const [isNotesEditMode, setNotesEditMode] = useState(false);
@@ -805,6 +810,8 @@ export const LinkProvider: React.FC<{ children: React.ReactNode }> = ({ children
         setConfig(finalConfig);
         setIsLoaded(true);
         localStorage.setItem('appLinksConfig', JSON.stringify(finalConfig));
+        lastUploadedJsonRef.current = JSON.stringify(finalConfig, null, 2);
+        setSyncStatus('synced');
 
         // Success toast
         toast.success('Configuración cargada de Supabase');
@@ -989,6 +996,8 @@ export const LinkProvider: React.FC<{ children: React.ReactNode }> = ({ children
 
           setConfig(parsed);
           setIsLoaded(true);
+          lastUploadedJsonRef.current = JSON.stringify(parsed, null, 2);
+          setSyncStatus('synced');
         }
       } catch (e) {
         console.error('Failed to parse saved config', e);
@@ -999,11 +1008,18 @@ export const LinkProvider: React.FC<{ children: React.ReactNode }> = ({ children
     }
   }, []);
 
-  // Save to localStorage and Supabase on change
+  // Save to localStorage immediately (offline-first) and debounce sync to Supabase
   useEffect(() => {
     if (!isLoaded) return;
-    localStorage.setItem('appLinksConfig', JSON.stringify(config));
-    saveToSupabase().catch(err => console.error("Auto-save to Supabase failed:", err));
+    try {
+      localStorage.setItem('appLinksConfig', JSON.stringify(config));
+    } catch (e) {
+      console.error('Failed to save to localStorage:', e);
+    }
+    // Auto-save debounced in background without intrusive popups
+    saveToSupabase(config, { showToast: false, immediate: false }).catch(err => 
+      console.error("Auto-save to Supabase failed:", err)
+    );
   }, [config, isLoaded]);
 
   const saveTimeoutRef = useRef<NodeJS.Timeout | null>(null);
@@ -1401,60 +1417,101 @@ export const LinkProvider: React.FC<{ children: React.ReactNode }> = ({ children
     }
   };
 
-  const saveToSupabase = async (configOverride?: AppConfig) => {
-    // Debounce manual saves too if they happen rapidly
+  const saveToSupabase = React.useCallback(async (
+    configOverride?: AppConfig, 
+    options?: { showToast?: boolean; immediate?: boolean }
+  ): Promise<void> => {
+    const showToast = options?.showToast ?? true;
+    const immediate = options?.immediate ?? true;
+
     if (configSaveTimeoutRef.current) {
       clearTimeout(configSaveTimeoutRef.current);
+      configSaveTimeoutRef.current = null;
     }
 
-    return new Promise<void>((resolve, reject) => {
-      configSaveTimeoutRef.current = setTimeout(async () => {
-        try {
-          const configToSave = configOverride || configRef.current;
-          // Backup logic: Create a backup once per day
-          const today = new Date().toISOString().split('T')[0];
-          const lastBackupDate = localStorage.getItem('lastBackupDate');
+    const executeSave = async () => {
+      try {
+        setSyncStatus('saving');
+        const configToSave = configOverride || configRef.current;
+        const jsonString = JSON.stringify(configToSave, null, 2);
 
-          if (lastBackupDate !== today) {
-            const backupFilename = configFilename.replace('.json', '_backup.json');
-            await retryOperation(async () => {
-              await supabase
-                .storage
-                .from('savejson')
-                .upload(backupFilename, JSON.stringify(configToSave, null, 2), {
-                  contentType: 'application/json',
-                  upsert: true
-                });
-            }).catch(err => console.warn("Daily backup failed:", err));
-            localStorage.setItem('lastBackupDate', today);
-            console.log(`Backup created: ${backupFilename}`);
+        // Skip re-uploading if payload is identical to what's already saved in Supabase
+        if (jsonString === lastUploadedJsonRef.current && !configOverride) {
+          setSyncStatus('synced');
+          if (showToast) {
+            toast.success('¡Todo está al día en la nube!');
           }
+          return;
+        }
 
-          // Save to Supabase
+        // 1. Maintain local emergency backup before cloud update
+        try {
+          const currentLocal = localStorage.getItem('appLinksConfig');
+          if (currentLocal) {
+            localStorage.setItem('appLinksConfig_backup', currentLocal);
+          }
+        } catch (backupErr) {
+          console.warn("Could not save local emergency backup:", backupErr);
+        }
+
+        // 2. Daily cloud backup rotation
+        const today = new Date().toISOString().split('T')[0];
+        const lastBackupDate = localStorage.getItem('lastBackupDate');
+        if (lastBackupDate !== today) {
+          const backupFilename = configFilename.replace('.json', '_backup.json');
           await retryOperation(async () => {
-            const { error } = await supabase
+            await supabase
               .storage
               .from('savejson')
-              .upload(configFilename, JSON.stringify(configToSave, null, 2), {
-                  contentType: 'application/json',
-                  upsert: true
+              .upload(backupFilename, jsonString, {
+                contentType: 'application/json',
+                upsert: true
               });
-            if (error) throw error;
-          });
-
-          // Ensure it's set to auto-load
-          localStorage.setItem('supabaseConfigFilename', configFilename);
-          localStorage.setItem('appLinksConfig', JSON.stringify(configToSave)); // Also save locally as fallback
-
-          toast.success(`¡Guardado en Supabase como ${configFilename}!`);
-          resolve();
-        } catch (e: any) {
-          toast.error(`Error al guardar en Supabase: ${e.message}`);
-          reject(e);
+          }).catch(err => console.warn("Daily cloud backup failed:", err));
+          localStorage.setItem('lastBackupDate', today);
         }
-      }, 500); // 500ms debounce for manual/triggered saves
-    });
-  };
+
+        // 3. Upload to Supabase with automatic retries
+        await retryOperation(async () => {
+          const { error } = await supabase
+            .storage
+            .from('savejson')
+            .upload(configFilename, jsonString, {
+              contentType: 'application/json',
+              upsert: true
+            });
+          if (error) throw error;
+        });
+
+        // 4. Update memory ref and local storage
+        lastUploadedJsonRef.current = jsonString;
+        localStorage.setItem('supabaseConfigFilename', configFilename);
+        localStorage.setItem('appLinksConfig', JSON.stringify(configToSave));
+        setSyncStatus('synced');
+
+        if (showToast) {
+          toast.success(`¡Guardado en Supabase como ${configFilename}!`);
+        }
+      } catch (e: any) {
+        setSyncStatus('error');
+        console.error('Error saving to Supabase:', e);
+        if (showToast) {
+          toast.error(`Error al guardar en Supabase: ${e.message || 'Error de conexión'}`);
+        }
+      }
+    };
+
+    if (immediate) {
+      return executeSave();
+    } else {
+      return new Promise<void>((resolve) => {
+        configSaveTimeoutRef.current = setTimeout(async () => {
+          await executeSave();
+          resolve();
+        }, 2500); // 2.5s debounce for auto-save
+      });
+    }
+  }, [configFilename]);
 
   const resetToDefaults = () => {
     if (window.confirm('¿Estás seguro de restablecer la configuración original? Se perderán tus cambios actuales.')) {
@@ -1760,8 +1817,9 @@ export const LinkProvider: React.FC<{ children: React.ReactNode }> = ({ children
     googleApiConfig,
     updateGoogleApiConfig,
     activeTabId,
-    setActiveTabId
-  }), [config, isEditing, updateConfig, toggleEditing, configFilename, nutritionData, updateNutritionData, saveNutritionDataToSupabase, fetchNutritionDataFromSupabase, saveNotesToSupabase, fetchNotesFromSupabase, saveShoppingToSupabase, fetchShoppingFromSupabase, saveEstudiosToSupabase, fetchEstudiosFromSupabase, updateNotifications, isShoppingEditMode, isNotesEditMode, isEstudiosEditMode, googleApiConfig, activeTabId]);
+    setActiveTabId,
+    syncStatus
+  }), [config, isEditing, updateConfig, toggleEditing, configFilename, nutritionData, updateNutritionData, saveNutritionDataToSupabase, fetchNutritionDataFromSupabase, saveNotesToSupabase, fetchNotesFromSupabase, saveShoppingToSupabase, fetchShoppingFromSupabase, saveEstudiosToSupabase, fetchEstudiosFromSupabase, updateNotifications, isShoppingEditMode, isNotesEditMode, isEstudiosEditMode, googleApiConfig, activeTabId, syncStatus, saveToSupabase]);
 
   return (
     <LinkContext.Provider value={value}>

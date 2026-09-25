@@ -35,3 +35,5 @@ set_envs.cjs
 *_new.tsx
 *_temp.tsx
 build_error.txt
+backups/
+scripts/

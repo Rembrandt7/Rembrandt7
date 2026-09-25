@@ -233,7 +233,7 @@ const TabLoadingFallback: React.FC<{ message?: string }> = ({ message = 'Cargand
 );
 
 const MainLayout: React.FC = () => {
-  const { config, updateConfig, isEditing, toggleEditing, saveToSupabase, fetchConfigFromSupabaseManual, updateNotifications, activeTabId, setActiveTabId } = useLinks();
+  const { config, updateConfig, isEditing, toggleEditing, saveToSupabase, fetchConfigFromSupabaseManual, updateNotifications, activeTabId, setActiveTabId, syncStatus } = useLinks();
   const [previousActiveTabId, setPreviousActiveTabId] = useState<string>('email-gen');
 
   const isDbTab = (t: { id?: string; label?: string; componentKey?: string }) => {
@@ -688,8 +688,38 @@ const MainLayout: React.FC = () => {
                     >
                       <Database size={18} />
                     </motion.button>
-                    <motion.button whileHover={{ scale: 1.1 }} whileTap={{ scale: 0.9 }} onClick={() => saveToSupabase()} className="p-1.5 hover:bg-white/10 rounded-lg transition-colors" title="Guardar Cambios">
-                      <Save size={18} />
+                    <motion.button 
+                      whileHover={{ scale: 1.1 }} 
+                      whileTap={{ scale: 0.9 }} 
+                      onClick={() => saveToSupabase(undefined, { showToast: true, immediate: true })} 
+                      className="relative p-1.5 hover:bg-white/10 rounded-lg transition-colors" 
+                      title={
+                        syncStatus === 'saving' 
+                          ? 'Sincronizando con Supabase...' 
+                          : syncStatus === 'error' 
+                          ? 'Error al sincronizar. Clic para forzar guardado' 
+                          : 'Todo guardado en la nube. Clic para forzar guardado'
+                      }
+                    >
+                      <Save size={18} className={
+                        syncStatus === 'saving' 
+                          ? 'animate-pulse text-amber-400' 
+                          : syncStatus === 'error' 
+                          ? 'text-rose-400' 
+                          : 'text-gray-300'
+                      } />
+                      {syncStatus === 'saving' && (
+                        <span className="absolute top-1 right-1 flex h-2 w-2">
+                          <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-amber-400 opacity-75"></span>
+                          <span className="relative inline-flex rounded-full h-2 w-2 bg-amber-500"></span>
+                        </span>
+                      )}
+                      {syncStatus === 'synced' && (
+                        <span className="absolute top-1 right-1 flex h-1.5 w-1.5 rounded-full bg-emerald-400 shadow-[0_0_6px_rgba(52,211,153,0.8)]"></span>
+                      )}
+                      {syncStatus === 'error' && (
+                        <span className="absolute top-1 right-1 flex h-2 w-2 rounded-full bg-rose-500 shadow-[0_0_6px_rgba(244,63,94,0.8)]"></span>
+                      )}
                     </motion.button>
                     <motion.button whileHover={{ scale: 1.1 }} whileTap={{ scale: 0.9 }} onClick={fetchConfigFromSupabaseManual} className="p-1.5 hover:bg-white/10 rounded-lg transition-colors" title="Actualizar">
                       <RefreshCw size={18} />
