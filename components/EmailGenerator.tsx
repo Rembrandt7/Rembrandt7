@@ -300,6 +300,7 @@ const EmailGenerator: React.FC<EmailGeneratorProps> = ({ attachedImages, onAttac
     const [activeMode, setActiveMode] = useState<'ai' | 'quick'>('ai');
     const [isAiSectionOpen, setIsAiSectionOpen] = useState(true);
     const [isQuickSectionOpen, setIsQuickSectionOpen] = useState(true);
+    const [showRecipientDetails, setShowRecipientDetails] = useState(false);
 
     const [idea, setIdea] = useState('');
     const [previousEmail, setPreviousEmail] = useState('');
@@ -846,15 +847,25 @@ const EmailGenerator: React.FC<EmailGeneratorProps> = ({ attachedImages, onAttac
 
     // Apertura en Outlook Web
     const handleOpenOutlookWeb = useCallback((customSubject?: string, customBody?: string) => {
-        const subjectText = customSubject || (generatedContent ? generatedContent.emailSubject : livePreview.emailSubject);
-        const bodyText = customBody || (generatedContent ? generatedContent.emailBody : livePreview.emailBody);
+        let subjectText = customSubject;
+        let bodyText = customBody;
+
+        if (subjectText === undefined || bodyText === undefined) {
+            if (activeMode === 'ai') {
+                subjectText = generatedContent?.emailSubject || (project ? `Proyecto ${project}` : '');
+                bodyText = generatedContent?.emailBody || (idea ? `${getPresetGreeting()},\n\n${idea}\n\nAtte.\n\nArq. Rembrandt Blanco Arrambide` : '');
+            } else {
+                subjectText = livePreview.emailSubject;
+                bodyText = livePreview.emailBody;
+            }
+        }
         
-        const subject = encodeURIComponent(subjectText);
-        const body = encodeURIComponent(stripHtml(bodyText));
-        const to = encodeURIComponent(fullRecipientEmail);
+        const subject = encodeURIComponent(subjectText || '');
+        const body = encodeURIComponent(stripHtml(bodyText || ''));
+        const to = encodeURIComponent(fullRecipientEmail || '');
         const url = `https://outlook.office.com/mail/deeplink/compose?to=${to}&subject=${subject}&body=${body}`;
         window.open(url, '_blank');
-    }, [generatedContent, livePreview, fullRecipientEmail]);
+    }, [activeMode, generatedContent, livePreview, project, idea, getPresetGreeting, fullRecipientEmail]);
 
     // Copiado enriquecido (HTML + texto plano)
     const handleCopyToClipboard = async (text: string, type: CopiedState) => {
@@ -1292,31 +1303,44 @@ const EmailGenerator: React.FC<EmailGeneratorProps> = ({ attachedImages, onAttac
                 </div>
             </div>
 
-            {/* BARRA SEGMENTADA DE MODOS: 1. REDACTOR LIBRE CON IA PRIMERO, 2. ENTREGAS Y FORMATOS */}
-            <div className="flex items-center gap-2 p-1.5 bg-gray-900/90 rounded-2xl border border-gray-800 mb-5 shadow-lg max-w-xl">
+            {/* BARRA SUPERIOR DE CONTROL: MODOS Y ACCESO DIRECTO A OUTLOOK WEB */}
+            <div className="flex flex-col sm:flex-row items-stretch sm:items-center justify-between gap-3 mb-5">
+                <div className="flex items-center gap-2 p-1.5 bg-gray-900/90 rounded-2xl border border-gray-800 shadow-lg flex-grow sm:flex-grow-0 sm:min-w-[440px]">
+                    <button
+                        type="button"
+                        onClick={() => setActiveMode('ai')}
+                        className={`flex-1 py-2.5 px-4 rounded-xl text-xs font-black uppercase tracking-wider flex items-center justify-center gap-2 transition-all cursor-pointer ${
+                            activeMode === 'ai'
+                                ? 'bg-gradient-to-r from-purple-600 via-indigo-600 to-blue-600 text-white shadow-md shadow-indigo-500/25'
+                                : 'text-gray-400 hover:text-white hover:bg-gray-800/60'
+                        }`}
+                    >
+                        <Sparkles size={15} className={activeMode === 'ai' ? 'text-purple-300' : ''} />
+                        <span>1. Redactor Libre con IA</span>
+                    </button>
+                    <button
+                        type="button"
+                        onClick={() => setActiveMode('quick')}
+                        className={`flex-1 py-2.5 px-4 rounded-xl text-xs font-black uppercase tracking-wider flex items-center justify-center gap-2 transition-all cursor-pointer ${
+                            activeMode === 'quick'
+                                ? 'bg-gradient-to-r from-purple-600 to-indigo-600 text-white shadow-md shadow-purple-500/25'
+                                : 'text-gray-400 hover:text-white hover:bg-gray-800/60'
+                        }`}
+                    >
+                        <Zap size={15} className={activeMode === 'quick' ? 'text-amber-300' : ''} />
+                        <span>2. Entregas y Formatos (0s)</span>
+                    </button>
+                </div>
+
+                {/* BOTÓN OUTLOOK WEB SIEMPRE ACCESIBLE EN AMBAS OPCIONES */}
                 <button
                     type="button"
-                    onClick={() => setActiveMode('ai')}
-                    className={`flex-1 py-2.5 px-4 rounded-xl text-xs font-black uppercase tracking-wider flex items-center justify-center gap-2 transition-all cursor-pointer ${
-                        activeMode === 'ai'
-                            ? 'bg-gradient-to-r from-purple-600 via-indigo-600 to-blue-600 text-white shadow-md shadow-indigo-500/25'
-                            : 'text-gray-400 hover:text-white hover:bg-gray-800/60'
-                    }`}
+                    onClick={() => handleOpenOutlookWeb()}
+                    className="px-4 py-2.5 bg-gradient-to-r from-blue-600 to-indigo-600 hover:from-blue-500 hover:to-indigo-500 text-white rounded-xl text-xs font-black uppercase tracking-wider shadow-lg shadow-blue-500/20 flex items-center justify-center gap-2 hover:scale-[1.02] active:scale-[0.98] transition-all cursor-pointer border border-blue-400/30"
+                    title="Abrir Outlook Web Javer 365 con el destinatario y contenido actual"
                 >
-                    <Sparkles size={15} className={activeMode === 'ai' ? 'text-purple-300' : ''} />
-                    <span>1. Redactor Libre con IA</span>
-                </button>
-                <button
-                    type="button"
-                    onClick={() => setActiveMode('quick')}
-                    className={`flex-1 py-2.5 px-4 rounded-xl text-xs font-black uppercase tracking-wider flex items-center justify-center gap-2 transition-all cursor-pointer ${
-                        activeMode === 'quick'
-                            ? 'bg-gradient-to-r from-purple-600 to-indigo-600 text-white shadow-md shadow-purple-500/25'
-                            : 'text-gray-400 hover:text-white hover:bg-gray-800/60'
-                    }`}
-                >
-                    <Zap size={15} className={activeMode === 'quick' ? 'text-amber-300' : ''} />
-                    <span>2. Entregas y Formatos (0s)</span>
+                    <ExternalLink size={14} />
+                    <span>Outlook Web (Javer 365)</span>
                 </button>
             </div>
 
@@ -1459,68 +1483,332 @@ const EmailGenerator: React.FC<EmailGeneratorProps> = ({ attachedImages, onAttac
                 </motion.div>
             )}</AnimatePresence>
 
-            {/* CONTENEDOR PRINCIPAL: 2 COLUMNAS EN DESKTOP */}
-            <div className="grid grid-cols-1 lg:grid-cols-12 gap-5 items-start">
-                
-                {/* COLUMNA IZQUIERDA: 1. REDACTOR LIBRE (ARRIBA) + 2. ENTREGAS Y FORMATOS (ABAJO) */}
-                <div className="lg:col-span-7 xl:col-span-8 space-y-6">
+            {/* ========================================================================= */}
+            {/* BARRA SUPERIOR DE DESTINATARIO Y CONTACTOS (ESTILO OUTLOOK / GMAIL) */}
+            {/* ========================================================================= */}
+            <div className="bg-gray-900/80 backdrop-blur-xl p-3.5 sm:p-4 rounded-2xl border border-purple-500/25 mb-5 shadow-xl space-y-3">
+                {/* Fila principal: Indicador Para + Chip Destinatario Activo + Búsqueda Rápida + Acciones */}
+                <div className="flex flex-col lg:flex-row lg:items-center justify-between gap-3">
                     
-                    {/* ========================================================================= */}
-                    {/* SECCIÓN 1: REDACTOR LIBRE CON IA (ARRIBA) */}
-                    {/* ========================================================================= */}
-                    {activeMode === 'ai' && (
-                    <div id="section-redactor-libre" className="bg-gray-900/60 rounded-2xl border border-purple-500/30 p-4 sm:p-5 shadow-xl space-y-4">
-                        <div className="flex items-center justify-between pb-3 border-b border-gray-800/80">
-                            <div className="flex items-center gap-2.5">
-                                <div className="p-2 bg-gradient-to-r from-purple-600 to-indigo-600 rounded-xl text-white shadow-md">
-                                    <Sparkles size={16} />
-                                </div>
-                                <div>
-                                    <h3 className="text-sm font-black text-white uppercase tracking-wider flex items-center gap-2">
-                                        <span>1. Redactor Libre con IA</span>
-                                        <span className="text-[10px] font-bold text-purple-400 bg-purple-500/10 px-2 py-0.5 rounded-full border border-purple-500/20">Ctrl Autocompletar</span>
-                                    </h3>
-                                    <p className="text-[11px] text-gray-400">Escribe o dicta tu idea; la IA redactará correo y WhatsApp ejecutivos</p>
-                                </div>
+                    {/* Destinatario Activo con Saludo y Correo */}
+                    <div className="flex items-center gap-2.5 flex-wrap sm:flex-nowrap">
+                        <div className="flex items-center gap-2 shrink-0">
+                            <div className="p-2 bg-gradient-to-r from-purple-600 to-indigo-600 text-white rounded-xl shadow-md">
+                                <Users size={16} />
                             </div>
-                            <div className="flex items-center gap-2">
-                                <button
-                                    type="button"
-                                    onClick={toggleListening}
-                                    title={isListening ? "Detener dictado" : "Dictar con micrófono"}
-                                    className={`px-3 py-1.5 rounded-lg text-xs font-black uppercase tracking-wider flex items-center gap-1.5 transition-all shadow-md cursor-pointer ${
-                                        isListening 
-                                            ? 'bg-red-600 text-white animate-pulse shadow-red-500/30' 
-                                            : 'bg-gray-800 hover:bg-purple-600/30 hover:border-purple-500/50 text-purple-400 border border-gray-700'
-                                    }`}
-                                >
-                                    {isListening ? (
-                                        <>
-                                            <MicOff size={14} className="animate-spin" />
-                                            <span>Escuchando...</span>
-                                        </>
-                                    ) : (
-                                        <>
-                                            <Mic size={14} />
-                                            <span>Dictar</span>
-                                        </>
-                                    )}
-                                </button>
-                                <button
-                                    type="button"
-                                    onClick={() => setIsAiSectionOpen(!isAiSectionOpen)}
-                                    className="p-1.5 bg-gray-800 hover:bg-gray-700 text-gray-400 hover:text-white rounded-lg border border-gray-700 transition-colors text-xs font-bold cursor-pointer"
-                                    title={isAiSectionOpen ? "Minimizar sección" : "Expandir sección"}
-                                >
-                                    {isAiSectionOpen ? <ChevronUp size={14} /> : <ChevronDown size={14} />}
-                                </button>
-                            </div>
+                            <span className="text-xs font-black uppercase tracking-wider text-purple-300">Para:</span>
                         </div>
 
-                        {isAiSectionOpen && (
-                            <div className="space-y-4 animate-in fade-in duration-200">
+                        {/* Ficha Activa */}
+                        <div className="flex items-center gap-2 bg-gray-800/90 border border-gray-700/80 rounded-xl px-3 py-1.5 shadow-inner flex-wrap sm:flex-nowrap">
+                            <span className="text-xs font-black text-white">
+                                {recipientTitle ? `${recipientTitle} ` : ''}{recipientName || 'Sin destinatario'}
+                            </span>
+                            {fullRecipientEmail && (
+                                <span className="text-[11px] font-mono text-purple-300/90 bg-purple-500/10 px-2 py-0.5 rounded border border-purple-500/20 truncate max-w-[200px] sm:max-w-xs">
+                                    {fullRecipientEmail}
+                                </span>
+                            )}
+                            {fullRecipientEmail && (
+                                <button
+                                    type="button"
+                                    onClick={() => {
+                                        navigator.clipboard.writeText(fullRecipientEmail);
+                                        toast.success("Correo copiado al portapapeles");
+                                    }}
+                                    className="text-gray-400 hover:text-purple-300 transition-colors p-0.5 cursor-pointer"
+                                    title="Copiar correo"
+                                >
+                                    <Copy size={13} />
+                                </button>
+                            )}
+                        </div>
+
+                        {/* Botón Apodo / Formal + Botón Editar Detalles */}
+                        <div className="flex items-center gap-1.5 shrink-0">
+                            <button
+                                type="button"
+                                onClick={() => setUseNickname(!useNickname)}
+                                className={`px-2.5 py-1.5 rounded-lg border text-[11px] font-black uppercase transition-all cursor-pointer ${
+                                    useNickname 
+                                        ? 'border-yellow-500/50 text-yellow-400 bg-yellow-500/10 shadow-sm' 
+                                        : 'border-gray-700 text-gray-400 hover:text-gray-300 hover:bg-gray-800'
+                                }`}
+                                title={useNickname ? "Usando apodo en el saludo (si existe)" : "Usando nombre formal"}
+                            >
+                                {useNickname ? 'Apodo' : 'Formal'}
+                            </button>
+
+                            <button
+                                type="button"
+                                onClick={() => setShowRecipientDetails(!showRecipientDetails)}
+                                className={`px-2.5 py-1.5 rounded-lg border text-[11px] font-black transition-all cursor-pointer flex items-center gap-1 ${
+                                    showRecipientDetails 
+                                        ? 'bg-purple-600 text-white border-purple-500 shadow-md' 
+                                        : 'bg-gray-800 text-gray-300 border-gray-700 hover:bg-gray-700 hover:text-white'
+                                }`}
+                                title={showRecipientDetails ? "Ocultar edición de contacto" : "Editar o guardar este contacto en base de datos"}
+                            >
+                                <Pencil size={11} />
+                                <span>{showRecipientDetails ? 'Ocultar' : 'Editar / BD'}</span>
+                            </button>
+                        </div>
+                    </div>
+
+                    {/* Buscador predictivo + Selector de toda la lista */}
+                    <div className="flex items-center gap-2 flex-grow lg:max-w-md">
+                        {/* Buscador predictivo con sugerencias flotantes */}
+                        <div className="relative flex-grow">
+                            <div className="flex items-center bg-gray-800 border border-gray-700 rounded-xl px-2.5 py-1.5 focus-within:border-purple-500 transition-colors">
+                                <Search size={14} className="text-gray-400 mr-2 shrink-0" />
+                                <input 
+                                    type="text"
+                                    value={contactSearchQuery}
+                                    onChange={(e) => setContactSearchQuery(e.target.value)}
+                                    onFocus={() => setIsSearchFocused(true)}
+                                    placeholder="Buscar contacto o correo..."
+                                    className="w-full bg-transparent text-xs text-white font-medium outline-none placeholder-gray-500"
+                                />
+                                {contactSearchQuery && (
+                                    <button 
+                                        type="button"
+                                        onClick={() => setContactSearchQuery('')}
+                                        className="text-gray-400 hover:text-white text-xs px-1 cursor-pointer"
+                                    >
+                                        ✕
+                                    </button>
+                                )}
+                            </div>
+
+                            {/* Dropdown predictivo flotante */}
+                            {isSearchFocused && filteredSearchContacts.length > 0 && (
+                                <div className="absolute top-full left-0 right-0 mt-1 bg-gray-900 border border-purple-500/40 rounded-xl shadow-2xl z-50 overflow-hidden divide-y divide-gray-800 max-h-56 overflow-y-auto">
+                                    {filteredSearchContacts.map((c) => {
+                                        const cName = String(getDBValue(c, ['cliente', 'nombre']) || '');
+                                        const cEmail = String(getDBValue(c, 'correo') || '');
+                                        const cTitle = String(getDBValue(c, ['lic', 'titulo']) || '');
+                                        const originalIndex = sortedContacts.findIndex(x => x === c);
+                                        const isFav = favorites.some(f => f.trim() === cName.trim());
+
+                                        return (
+                                            <div 
+                                                key={c.id || cName}
+                                                onClick={() => selectContactByIndex(originalIndex, sortedContacts)}
+                                                className="p-2.5 hover:bg-purple-600/20 cursor-pointer flex items-center justify-between transition-colors"
+                                            >
+                                                <div className="truncate">
+                                                    <div className="flex items-center gap-1.5">
+                                                        {cTitle && <span className="text-[10px] font-bold text-purple-400">{cTitle}</span>}
+                                                        <span className="text-xs font-bold text-white">{cName}</span>
+                                                    </div>
+                                                    <span className="text-[10px] text-gray-400 truncate block">{cEmail}</span>
+                                                </div>
+                                                {isFav && <Star size={12} className="text-yellow-400 shrink-0" fill="currentColor" />}
+                                            </div>
+                                        );
+                                    })}
+                                </div>
+                            )}
+                        </div>
+
+                        {/* Selector desplegable de lista completa */}
+                        <div className="relative min-w-[160px] hidden sm:block">
+                            <select 
+                                value={selectedContactIndex} 
+                                onChange={handleContactSelect} 
+                                className="w-full p-2 bg-gray-800 border border-gray-700 rounded-xl text-xs text-white font-bold appearance-none pr-7 outline-none focus:border-purple-500/50 cursor-pointer truncate"
+                            >
+                                <option value="">Lista ({sortedContacts.length})...</option>
+                                {sortedContacts.map((c, i) => (
+                                    <option key={i} value={i}>
+                                        {favorites.some(f => f.trim() === String(getDBValue(c, 'cliente') || '').trim()) ? '★ ' : ''}
+                                        {getDBValue(c, 'cliente')}
+                                    </option>
+                                ))}
+                            </select>
+                            <div className="absolute right-2.5 top-1/2 -translate-y-1/2 pointer-events-none text-gray-400 text-xs">
+                                ▼
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                {/* Accesos Rápidos de Contactos Frecuentes (1 Clic) + Saludo Activo */}
+                <div className="flex items-center justify-between gap-3 pt-2 border-t border-gray-800/80 flex-wrap">
+                    {quickContacts.length > 0 && (
+                        <div className="flex items-center gap-1.5 flex-wrap">
+                            <span className="text-[10px] font-bold uppercase tracking-wider text-gray-500 mr-1">
+                                1 Clic:
+                            </span>
+                            {quickContacts.map(qc => {
+                                const isSelected = selectedContactIndex !== '' && parseInt(selectedContactIndex, 10) === qc.index;
+                                return (
+                                    <button
+                                        key={qc.name}
+                                        type="button"
+                                        onClick={() => selectContactByIndex(qc.index, sortedContacts)}
+                                        className={`px-2.5 py-1 rounded-lg text-xs font-bold transition-all cursor-pointer flex items-center gap-1.5 ${
+                                            isSelected 
+                                                ? 'bg-purple-600 text-white shadow-sm ring-1 ring-purple-400' 
+                                                : 'bg-gray-800/90 text-gray-300 hover:bg-gray-700 hover:text-white border border-gray-700/70'
+                                        }`}
+                                    >
+                                        {qc.isErik ? <span>⭐</span> : (favorites.some(f => f.trim() === qc.name.trim()) && <Star size={11} className="text-yellow-400" fill="currentColor"/>)}
+                                        <span className="truncate max-w-[130px]">{qc.name}</span>
+                                    </button>
+                                );
+                            })}
+                        </div>
+                    )}
+                    <div className="text-[11px] text-gray-400 ml-auto">
+                        Saludo activo: <strong className="text-purple-300 font-bold not-italic">"{getPresetGreeting()}:"</strong>
+                    </div>
+                </div>
+
+                {/* Formulario editable colapsable para afinar contacto o guardar nuevo en BD */}
+                <AnimatePresence>
+                    {showRecipientDetails && (
+                        <motion.div
+                            initial={{ height: 0, opacity: 0 }}
+                            animate={{ height: 'auto', opacity: 1 }}
+                            exit={{ height: 0, opacity: 0 }}
+                            className="overflow-hidden pt-2 border-t border-gray-800"
+                        >
+                            <div className="p-3 bg-gray-950/80 rounded-xl border border-gray-800 grid grid-cols-1 sm:grid-cols-12 gap-3 items-end">
+                                <div className="sm:col-span-2">
+                                    <label className="text-[9px] text-gray-400 font-bold uppercase block mb-1">Título</label>
+                                    <select 
+                                        value={recipientTitle} 
+                                        onChange={e => setRecipientTitle(e.target.value)} 
+                                        className="w-full p-2 bg-gray-800 border border-gray-700 rounded-lg text-xs text-purple-400 font-black outline-none cursor-pointer"
+                                    >
+                                        {titlesList.map(t => <option key={t} value={t}>{t || 'Sin Título'}</option>)}
+                                    </select>
+                                </div>
+
+                                <div className="sm:col-span-2">
+                                    <label className="text-[9px] text-gray-400 font-bold uppercase block mb-1">Género</label>
+                                    <div className="flex bg-gray-800 rounded-lg border border-gray-700 p-0.5 h-[34px]">
+                                        <button 
+                                            type="button"
+                                            onClick={() => setRecipientGender('M')} 
+                                            className={`flex-1 rounded text-[11px] font-black transition-all cursor-pointer ${recipientGender === 'M' ? 'bg-blue-600 text-white shadow' : 'text-gray-400'}`}
+                                        >
+                                            M
+                                        </button>
+                                        <button 
+                                            type="button"
+                                            onClick={() => setRecipientGender('F')} 
+                                            className={`flex-1 rounded text-[11px] font-black transition-all cursor-pointer ${recipientGender === 'F' ? 'bg-pink-600 text-white shadow' : 'text-gray-400'}`}
+                                        >
+                                            F
+                                        </button>
+                                    </div>
+                                </div>
+
+                                <div className="sm:col-span-3">
+                                    <label className="text-[9px] text-gray-400 font-bold uppercase block mb-1">Nombre Completo</label>
+                                    <input 
+                                        value={recipientName} 
+                                        onChange={e => setRecipientName(e.target.value)} 
+                                        className="w-full p-2 bg-gray-800 border border-gray-700 rounded-lg text-xs text-white font-bold outline-none" 
+                                        placeholder="Nombre..."
+                                    />
+                                </div>
+
+                                <div className="sm:col-span-3">
+                                    <label className="text-[9px] text-gray-400 font-bold uppercase block mb-1">Correo Institucional</label>
+                                    <div className="flex gap-1 bg-gray-800 p-0.5 rounded-lg border border-gray-700 h-[34px] items-center">
+                                        <input 
+                                            value={recipientEmailUser} 
+                                            onChange={e => setRecipientEmailUser(e.target.value)} 
+                                            className="flex-grow bg-transparent px-1.5 text-xs font-bold text-white outline-none min-w-0" 
+                                            placeholder="usuario"
+                                        />
+                                        <select 
+                                            value={recipientEmailDomain} 
+                                            onChange={e => setRecipientEmailDomain(e.target.value)} 
+                                            className="bg-gray-900 px-1 py-1 rounded text-[11px] font-black text-purple-400 outline-none cursor-pointer"
+                                        >
+                                            {emailDomains.map(d => <option key={d} value={d}>{d}</option>)}
+                                        </select>
+                                        <select 
+                                            value={recipientEmailTld} 
+                                            onChange={e => setRecipientEmailTld(e.target.value)} 
+                                            className="bg-gray-900 px-1 py-1 rounded text-[11px] font-bold text-gray-400 outline-none cursor-pointer"
+                                        >
+                                            {emailTlds.map(t => <option key={t} value={t}>{t}</option>)}
+                                        </select>
+                                    </div>
+                                </div>
+
+                                <div className="sm:col-span-2">
+                                    <button 
+                                        type="button"
+                                        onClick={handleSaveNewContact} 
+                                        disabled={isSavingContact} 
+                                        className="w-full h-[34px] bg-purple-600 hover:bg-purple-500 text-white rounded-lg text-xs font-black uppercase flex items-center justify-center gap-1.5 transition-all cursor-pointer shadow-md disabled:opacity-50"
+                                    >
+                                        {isSavingContact ? <Spinner size="3" /> : <Save size={13} />}
+                                        <span>Guardar BD</span>
+                                    </button>
+                                </div>
+                            </div>
+                        </motion.div>
+                    )}
+                </AnimatePresence>
+            </div>
+
+            {/* ========================================================================= */}
+            {/* MODO 1: REDACTOR LIBRE CON IA (PANTALLA DIVIDIDA: ENTRADA / RESULTADOS) */}
+            {/* ========================================================================= */}
+            {activeMode === 'ai' && (
+                <div className="grid grid-cols-1 lg:grid-cols-12 gap-5 items-start">
+                    {/* PANEL IZQUIERDO: REDACCIÓN LIBRE Y PARÁMETROS */}
+                    <div className="lg:col-span-6 space-y-4">
+                        <div id="section-redactor-libre" className="bg-gray-900/60 rounded-2xl border border-purple-500/30 p-4 sm:p-5 shadow-xl space-y-4">
+                            <div className="flex items-center justify-between pb-3 border-b border-gray-800/80">
+                                <div className="flex items-center gap-2.5">
+                                    <div className="p-2 bg-gradient-to-r from-purple-600 to-indigo-600 rounded-xl text-white shadow-md">
+                                        <Sparkles size={16} />
+                                    </div>
+                                    <div>
+                                        <h3 className="text-sm font-black text-white uppercase tracking-wider flex items-center gap-2">
+                                            <span>1. Redactor Libre con IA</span>
+                                            <span className="text-[10px] font-bold text-purple-400 bg-purple-500/10 px-2 py-0.5 rounded-full border border-purple-500/20">Ctrl Autocompletar</span>
+                                        </h3>
+                                        <p className="text-[11px] text-gray-400">Escribe o dicta tu idea; la IA redactará correo y WhatsApp ejecutivos</p>
+                                    </div>
+                                </div>
+                                <div className="flex items-center gap-2">
+                                    <button
+                                        type="button"
+                                        onClick={toggleListening}
+                                        title={isListening ? "Detener dictado" : "Dictar con micrófono"}
+                                        className={`px-3 py-1.5 rounded-lg text-xs font-black uppercase tracking-wider flex items-center gap-1.5 transition-all shadow-md cursor-pointer ${
+                                            isListening 
+                                                ? 'bg-red-600 text-white animate-pulse shadow-red-500/30' 
+                                                : 'bg-gray-800 hover:bg-purple-600/30 hover:border-purple-500/50 text-purple-400 border border-gray-700'
+                                        }`}
+                                    >
+                                        {isListening ? (
+                                            <>
+                                                <MicOff size={14} className="animate-spin" />
+                                                <span>Escuchando...</span>
+                                            </>
+                                        ) : (
+                                            <>
+                                                <Mic size={14} />
+                                                <span>Dictar</span>
+                                            </>
+                                        )}
+                                    </button>
+                                </div>
+                            </div>
+
+                            <div className="space-y-4">
                                 {/* Contenedor de Textarea con Texto Fantasma */}
-                                <div className="relative group rounded-xl border border-gray-700 bg-gray-800/90 focus-within:border-purple-500 transition-all overflow-hidden min-h-[120px]">
+                                <div className="relative group rounded-xl border border-gray-700 bg-gray-800/90 focus-within:border-purple-500 transition-all overflow-hidden min-h-[140px]">
                                     {/* Capa de texto fantasma sincronizada detrás */}
                                     <div 
                                         aria-hidden="true"
@@ -1541,7 +1829,7 @@ const EmailGenerator: React.FC<EmailGeneratorProps> = ({ attachedImages, onAttac
                                         value={idea} 
                                         onChange={onIdeaChange}
                                         onKeyDown={handleKeyDown}
-                                        className="w-full p-4 pr-14 bg-transparent text-sm text-white font-medium font-sans min-h-[120px] resize-none outline-none leading-relaxed relative z-10 placeholder-gray-500" 
+                                        className="w-full p-4 pr-14 bg-transparent text-sm text-white font-medium font-sans min-h-[140px] resize-none outline-none leading-relaxed relative z-10 placeholder-gray-500" 
                                         placeholder="¿Qué deseas comunicar? Escribe o dicta. (Aparecerán sugerencias en fantasma que puedes autocompletar presionando la tecla [Ctrl] o [Tab])."
                                     />
 
@@ -1655,187 +1943,213 @@ const EmailGenerator: React.FC<EmailGeneratorProps> = ({ attachedImages, onAttac
                                 >
                                     {isLoading ? <RefreshCw className="animate-spin" size={16}/> : <><Sparkles size={16}/> <span>Generar Mensajes con IA</span></>}
                                 </button>
+                            </div>
+                        </div>
+                    </div>
 
-                                {/* RESULTADOS GENERADOS DE IA */}
-                                {isLoading && (
-                                    <div className="py-8 flex flex-col items-center justify-center bg-gray-950/60 rounded-xl border border-purple-500/30">
-                                        <RefreshCw size={36} className="animate-spin text-purple-400 mb-3" />
-                                        <h4 className="text-sm font-black text-white uppercase tracking-widest">El Estratega está redactando...</h4>
-                                        <p className="text-[11px] text-purple-300/80 mt-1">Estructurando doble salto de línea, saludo y firma ejecutiva</p>
+                    {/* PANEL DERECHO: RESULTADOS EN VIVO (CORREO, WHATSAPP, OUTLOOK WEB O PLACEHOLDER) */}
+                    <div className="lg:col-span-6 space-y-4 lg:sticky lg:top-4">
+                        {/* Estado: Cargando IA */}
+                        {isLoading && (
+                            <div className="py-16 flex flex-col items-center justify-center bg-gray-900/80 rounded-2xl border border-purple-500/30 shadow-2xl p-6">
+                                <RefreshCw size={40} className="animate-spin text-purple-400 mb-4" />
+                                <h4 className="text-sm font-black text-white uppercase tracking-widest">El Estratega está redactando...</h4>
+                                <p className="text-xs text-purple-300/80 mt-1.5 text-center">Estructurando asunto, saludo ejecutivo, doble salto y firma institucional</p>
+                            </div>
+                        )}
+
+                        {/* Estado: Resultados Generados */}
+                        {generatedContent && !isLoading && (
+                            <div className="space-y-4">
+                                {/* TARJETA DE CORREO */}
+                                <div className="bg-gray-900/90 rounded-2xl border border-gray-800 overflow-hidden shadow-2xl">
+                                    <div className="bg-gray-800/80 px-4 py-2.5 border-b border-gray-800 flex justify-between items-center">
+                                        <div className="flex items-center gap-2">
+                                            <div className="p-1.5 bg-purple-600/20 text-purple-400 rounded-lg border border-purple-500/30">
+                                                <Mail size={14} />
+                                            </div>
+                                            <span className="text-xs font-black uppercase text-purple-300">Correo Electrónico</span>
+                                        </div>
+                                        <div className="flex items-center gap-2">
+                                            <button 
+                                                onClick={() => handleCopyToClipboard(generatedContent.emailBody, 'email')} 
+                                                className={`px-3 py-1.5 rounded-lg text-xs font-bold border transition-all flex items-center gap-1.5 cursor-pointer ${
+                                                    copied === 'email' ? 'bg-green-600 text-white border-green-500' : 'bg-gray-800 text-gray-300 border-gray-700 hover:bg-gray-700'
+                                                }`}
+                                            >
+                                                <Copy size={13} />
+                                                <span>{copied === 'email' ? 'Copiado!' : 'Copiar'}</span>
+                                            </button>
+                                            <button 
+                                                onClick={() => handleOpenOutlookWeb(generatedContent.emailSubject, generatedContent.emailBody)} 
+                                                className="px-3.5 py-1.5 bg-gradient-to-r from-blue-600 to-indigo-600 hover:from-blue-500 hover:to-indigo-500 text-white rounded-lg text-xs font-black uppercase flex items-center gap-1.5 shadow-md hover:scale-105 active:scale-95 transition-all cursor-pointer border border-blue-400/30"
+                                                title="Abrir Outlook Web Javer 365 con este correo y destinatario"
+                                            >
+                                                <ExternalLink size={13} />
+                                                <span>Outlook Web</span>
+                                            </button>
+                                        </div>
                                     </div>
-                                )}
 
-                                {generatedContent && !isLoading && (
-                                    <div className="space-y-4 pt-2 border-t border-gray-800">
-                                        {/* TARJETA DE CORREO */}
-                                        <div className="bg-gray-900/90 rounded-2xl border border-gray-800 overflow-hidden shadow-xl">
-                                            <div className="bg-gray-800/80 px-4 py-2.5 border-b border-gray-800 flex justify-between items-center">
-                                                <div className="flex items-center gap-2">
-                                                    <div className="p-1.5 bg-purple-600/20 text-purple-400 rounded-lg border border-purple-500/30">
-                                                        <Mail size={14} />
+                                    <div className="p-4 space-y-3">
+                                        {/* ASUNTO */}
+                                        <div>
+                                            <div className="flex justify-between items-center mb-1">
+                                                <span className="text-[10px] font-black uppercase text-gray-400 tracking-wider">Asunto</span>
+                                                {generatedContent.alternativeSubjects && generatedContent.alternativeSubjects.length > 0 && (
+                                                    <div className="flex gap-1">
+                                                        {generatedContent.alternativeSubjects.map((s, i) => (
+                                                            <button 
+                                                                key={i} 
+                                                                onClick={() => handleApplyAlternativeSubject(s)} 
+                                                                className="text-[9px] bg-purple-600/10 text-purple-400 hover:bg-purple-600 hover:text-white px-2 py-0.5 rounded border border-purple-500/20 transition-colors cursor-pointer"
+                                                                title="Usar esta alternativa"
+                                                            >
+                                                                Opción {i + 1}
+                                                            </button>
+                                                        ))}
                                                     </div>
-                                                    <span className="text-xs font-black uppercase text-purple-300">Correo Electrónico</span>
-                                                </div>
-                                                <div className="flex items-center gap-2">
-                                                    <button 
-                                                        onClick={() => handleCopyToClipboard(generatedContent.emailBody, 'email')} 
-                                                        className={`px-3 py-1.5 rounded-lg text-xs font-bold border transition-all flex items-center gap-1.5 cursor-pointer ${
-                                                            copied === 'email' ? 'bg-green-600 text-white border-green-500' : 'bg-gray-800 text-gray-300 border-gray-700 hover:bg-gray-700'
-                                                        }`}
-                                                    >
-                                                        <Copy size={13} />
-                                                        <span>{copied === 'email' ? 'Copiado!' : 'Copiar'}</span>
-                                                    </button>
-                                                    <button 
-                                                        onClick={() => handleOpenOutlookWeb(generatedContent.emailSubject, generatedContent.emailBody)} 
-                                                        className="px-3 py-1.5 bg-gradient-to-r from-blue-600 to-indigo-600 hover:from-blue-500 hover:to-indigo-500 text-white rounded-lg text-xs font-black uppercase flex items-center gap-1.5 shadow-md hover:scale-105 active:scale-95 transition-all cursor-pointer"
-                                                        title="Abrir Outlook Web Javer 365 con este correo y destinatario"
-                                                    >
-                                                        <ExternalLink size={13} />
-                                                        <span>Outlook Web</span>
-                                                    </button>
-                                                </div>
+                                                )}
                                             </div>
-
-                                            <div className="p-4 space-y-3">
-                                                {/* ASUNTO */}
-                                                <div>
-                                                    <div className="flex justify-between items-center mb-1">
-                                                        <span className="text-[10px] font-black uppercase text-gray-400 tracking-wider">Asunto</span>
-                                                        {generatedContent.alternativeSubjects && generatedContent.alternativeSubjects.length > 0 && (
-                                                            <div className="flex gap-1">
-                                                                {generatedContent.alternativeSubjects.map((s, i) => (
-                                                                    <button 
-                                                                        key={i} 
-                                                                        onClick={() => handleApplyAlternativeSubject(s)} 
-                                                                        className="text-[9px] bg-purple-600/10 text-purple-400 hover:bg-purple-600 hover:text-white px-2 py-0.5 rounded border border-purple-500/20 transition-colors cursor-pointer"
-                                                                        title="Usar esta alternativa"
-                                                                    >
-                                                                        Opción {i + 1}
-                                                                    </button>
-                                                                ))}
-                                                            </div>
-                                                        )}
-                                                    </div>
-                                                    <input 
-                                                        value={generatedContent.emailSubject} 
-                                                        onChange={e => setGeneratedContent({ ...generatedContent, emailSubject: e.target.value })} 
-                                                        onContextMenu={e => handleContextMenu(e, 'email', 'emailSubject')} 
-                                                        className="w-full bg-gray-800/60 border border-gray-700/80 rounded-xl px-3 py-2 text-xs font-bold text-white outline-none focus:border-purple-500 shadow-inner" 
-                                                    />
-                                                </div>
-
-                                                {/* CUERPO DEL CORREO */}
-                                                <div>
-                                                    <span className="text-[10px] font-black uppercase text-gray-400 tracking-wider block mb-1">Cuerpo del Correo</span>
-                                                    <textarea 
-                                                        value={generatedContent.emailBody} 
-                                                        onChange={e => setGeneratedContent({ ...generatedContent, emailBody: e.target.value })} 
-                                                        onContextMenu={e => handleContextMenu(e, 'email', 'emailBody')} 
-                                                        className="w-full h-44 bg-gray-800/40 border border-gray-700/80 rounded-xl p-3.5 text-xs text-gray-200 font-sans resize-none outline-none focus:border-purple-500 leading-relaxed shadow-inner" 
-                                                    />
-                                                </div>
-                                            </div>
+                                            <input 
+                                                value={generatedContent.emailSubject} 
+                                                onChange={e => setGeneratedContent({ ...generatedContent, emailSubject: e.target.value })} 
+                                                onContextMenu={e => handleContextMenu(e, 'email', 'emailSubject')} 
+                                                className="w-full bg-gray-800/60 border border-gray-700/80 rounded-xl px-3 py-2 text-xs font-bold text-white outline-none focus:border-purple-500 shadow-inner" 
+                                            />
                                         </div>
 
-                                        {/* TARJETA DE WHATSAPP */}
-                                        <div className="bg-gray-900/90 rounded-2xl border border-gray-800 overflow-hidden shadow-xl">
-                                            <div className="bg-gray-800/80 px-4 py-2.5 border-b border-gray-800 flex justify-between items-center">
-                                                <div className="flex items-center gap-2">
-                                                    <div className="p-1.5 bg-green-600/20 text-green-400 rounded-lg border border-green-500/30">
-                                                        <MessageSquare size={14} />
-                                                    </div>
-                                                    <span className="text-xs font-black uppercase text-green-400">WhatsApp</span>
-                                                </div>
-                                                <button 
-                                                    onClick={() => handleCopyToClipboard(generatedContent.whatsappMessage, 'whatsapp')} 
-                                                    className={`px-3 py-1.5 rounded-lg text-xs font-bold border transition-all flex items-center gap-1.5 cursor-pointer ${
-                                                        copied === 'whatsapp' ? 'bg-green-600 text-white border-green-500' : 'bg-gray-800 text-gray-300 border-gray-700 hover:bg-gray-700'
-                                                    }`}
-                                                >
-                                                    <Copy size={13} />
-                                                    <span>{copied === 'whatsapp' ? 'Copiado!' : 'Copiar'}</span>
-                                                </button>
-                                            </div>
-                                            <div className="p-4 space-y-3">
-                                                <textarea 
-                                                    value={generatedContent.whatsappMessage} 
-                                                    onChange={e => setGeneratedContent({ ...generatedContent, whatsappMessage: e.target.value })} 
-                                                    onContextMenu={e => handleContextMenu(e, 'whatsapp', 'whatsappMessage')} 
-                                                    className="w-full h-24 bg-gray-800/40 border border-gray-700/80 rounded-xl p-3 text-xs text-gray-200 font-sans resize-none outline-none focus:border-green-500 leading-relaxed shadow-inner" 
-                                                />
-                                                <button 
-                                                    onClick={() => handleSendWhatsApp(generatedContent.whatsappMessage)} 
-                                                    className="w-full py-2 bg-gradient-to-r from-green-600 to-green-700 hover:from-green-500 hover:to-green-600 text-white rounded-xl font-black text-xs uppercase tracking-widest shadow-md flex items-center justify-center gap-2 hover:scale-[1.01] active:scale-[0.99] transition-all cursor-pointer"
-                                                >
-                                                    <MessageSquare size={14}/> 
-                                                    <span>Lanzar por WhatsApp</span>
-                                                </button>
-                                            </div>
+                                        {/* CUERPO DEL CORREO */}
+                                        <div>
+                                            <span className="text-[10px] font-black uppercase text-gray-400 tracking-wider block mb-1">Cuerpo del Correo</span>
+                                            <textarea 
+                                                value={generatedContent.emailBody} 
+                                                onChange={e => setGeneratedContent({ ...generatedContent, emailBody: e.target.value })} 
+                                                onContextMenu={e => handleContextMenu(e, 'email', 'emailBody')} 
+                                                className="w-full h-48 bg-gray-800/40 border border-gray-700/80 rounded-xl p-3.5 text-xs text-gray-200 font-sans resize-none outline-none focus:border-purple-500 leading-relaxed shadow-inner" 
+                                            />
                                         </div>
+                                    </div>
+                                </div>
 
-                                        {/* IDEA MEJORADA */}
-                                        {generatedContent.improvedIdea && (
-                                            <div className="bg-gradient-to-br from-purple-900/20 to-indigo-900/10 rounded-2xl border border-purple-500/20 p-3 shadow-md flex items-center justify-between gap-3">
-                                                <p className="text-xs text-purple-200 font-medium italic truncate">
-                                                    "{generatedContent.improvedIdea}"
-                                                </p>
-                                                <button 
-                                                    onClick={() => { setIdea(generatedContent.improvedIdea || ''); toast.success("Idea cargada"); }} 
-                                                    className="text-[10px] font-black uppercase px-2.5 py-1 bg-purple-600/20 text-purple-200 hover:text-white rounded-lg border border-purple-500/30 hover:bg-purple-600 transition-all shrink-0 cursor-pointer"
-                                                >
-                                                    Usar como Base
-                                                </button>
+                                {/* TARJETA DE WHATSAPP */}
+                                <div className="bg-gray-900/90 rounded-2xl border border-gray-800 overflow-hidden shadow-xl">
+                                    <div className="bg-gray-800/80 px-4 py-2.5 border-b border-gray-800 flex justify-between items-center">
+                                        <div className="flex items-center gap-2">
+                                            <div className="p-1.5 bg-green-600/20 text-green-400 rounded-lg border border-green-500/30">
+                                                <MessageSquare size={14} />
                                             </div>
-                                        )}
+                                            <span className="text-xs font-black uppercase text-green-400">WhatsApp</span>
+                                        </div>
+                                        <button 
+                                            onClick={() => handleCopyToClipboard(generatedContent.whatsappMessage, 'whatsapp')} 
+                                            className={`px-3 py-1.5 rounded-lg text-xs font-bold border transition-all flex items-center gap-1.5 cursor-pointer ${
+                                                copied === 'whatsapp' ? 'bg-green-600 text-white border-green-500' : 'bg-gray-800 text-gray-300 border-gray-700 hover:bg-gray-700'
+                                            }`}
+                                        >
+                                            <Copy size={13} />
+                                            <span>{copied === 'whatsapp' ? 'Copiado!' : 'Copiar'}</span>
+                                        </button>
+                                    </div>
+                                    <div className="p-4 space-y-3">
+                                        <textarea 
+                                            value={generatedContent.whatsappMessage} 
+                                            onChange={e => setGeneratedContent({ ...generatedContent, whatsappMessage: e.target.value })} 
+                                            onContextMenu={e => handleContextMenu(e, 'whatsapp', 'whatsappMessage')} 
+                                            className="w-full h-24 bg-gray-800/40 border border-gray-700/80 rounded-xl p-3 text-xs text-gray-200 font-sans resize-none outline-none focus:border-green-500 leading-relaxed shadow-inner" 
+                                        />
+                                        <button 
+                                            onClick={() => handleSendWhatsApp(generatedContent.whatsappMessage)} 
+                                            className="w-full py-2 bg-gradient-to-r from-green-600 to-green-700 hover:from-green-500 hover:to-green-600 text-white rounded-xl font-black text-xs uppercase tracking-widest shadow-md flex items-center justify-center gap-2 hover:scale-[1.01] active:scale-[0.99] transition-all cursor-pointer"
+                                        >
+                                            <MessageSquare size={14}/> 
+                                            <span>Lanzar por WhatsApp</span>
+                                        </button>
+                                    </div>
+                                </div>
+
+                                {/* IDEA MEJORADA */}
+                                {generatedContent.improvedIdea && (
+                                    <div className="bg-gradient-to-br from-purple-900/20 to-indigo-900/10 rounded-2xl border border-purple-500/20 p-3 shadow-md flex items-center justify-between gap-3">
+                                        <p className="text-xs text-purple-200 font-medium italic truncate">
+                                            "{generatedContent.improvedIdea}"
+                                        </p>
+                                        <button 
+                                            onClick={() => { setIdea(generatedContent.improvedIdea || ''); toast.success("Idea cargada"); }} 
+                                            className="text-[10px] font-black uppercase px-2.5 py-1 bg-purple-600/20 text-purple-200 hover:text-white rounded-lg border border-purple-500/30 hover:bg-purple-600 transition-all shrink-0 cursor-pointer"
+                                        >
+                                            Usar como Base
+                                        </button>
                                     </div>
                                 )}
                             </div>
                         )}
+
+                        {/* Estado: Esperando Idea (Placeholder Elegante sin espacios vacíos) */}
+                        {!generatedContent && !isLoading && (
+                            <div className="bg-gray-900/60 rounded-2xl border-2 border-dashed border-gray-800 p-8 flex flex-col items-center justify-center text-center space-y-4 min-h-[360px] shadow-inner">
+                                <div className="p-4 bg-gradient-to-br from-purple-600/20 to-indigo-600/20 text-purple-300 rounded-2xl border border-purple-500/30 shadow-lg">
+                                    <Mail size={32} />
+                                </div>
+                                <div className="max-w-xs space-y-1.5">
+                                    <h4 className="text-sm font-black text-white uppercase tracking-wider">
+                                        Vista Previa de Correo y WhatsApp
+                                    </h4>
+                                    <p className="text-xs text-gray-400 leading-relaxed">
+                                        Escribe o dicta tu idea a la izquierda y pulsa <strong className="text-purple-300">"Generar Mensajes con IA"</strong>. Aquí verás tu correo formateado con saludo formal y firma ejecutiva listo para enviar.
+                                    </p>
+                                </div>
+                                <div className="pt-2">
+                                    <button
+                                        type="button"
+                                        onClick={() => handleOpenOutlookWeb()}
+                                        className="px-4 py-2 bg-gray-800 hover:bg-gray-700 text-gray-300 hover:text-white rounded-xl text-xs font-bold border border-gray-700 flex items-center gap-2 transition-all cursor-pointer shadow-sm hover:scale-105"
+                                    >
+                                        <ExternalLink size={13} className="text-blue-400" />
+                                        <span>Abrir borrador en Outlook Web ahora</span>
+                                    </button>
+                                </div>
+                            </div>
+                        )}
                     </div>
-                    )}
+                </div>
+            )}
 
-                    {/* ========================================================================= */}
-                    {/* SECCIÓN 2: ENTREGAS Y FORMATOS (0s) */}
-                    {/* ========================================================================= */}
-                    {activeMode === 'quick' && (
-                    <div id="section-entregas-formatos" className="bg-gray-900/60 rounded-2xl border border-amber-500/30 p-4 sm:p-5 shadow-xl space-y-4">
-                        <div className="flex items-center justify-between pb-3 border-b border-gray-800/80">
-                            <div className="flex items-center gap-2.5">
-                                <div className="p-2 bg-gradient-to-r from-amber-600 to-indigo-600 rounded-xl text-white shadow-md">
-                                    <Zap size={16} />
+            {/* ========================================================================= */}
+            {/* MODO 2: ENTREGAS Y FORMATOS (0s) (PANTALLA DIVIDIDA: CONFIG / PREVIEW) */}
+            {/* ========================================================================= */}
+            {activeMode === 'quick' && (
+                <div className="grid grid-cols-1 lg:grid-cols-12 gap-5 items-start">
+                    {/* PANEL IZQUIERDO: CONFIGURACIÓN MODULAR (PLANTILLAS + CUADRÍCULA 2x2) */}
+                    <div className="lg:col-span-6 xl:col-span-7 space-y-4">
+                        <div id="section-entregas-formatos" className="bg-gray-900/60 rounded-2xl border border-amber-500/30 p-4 sm:p-5 shadow-xl space-y-4">
+                            <div className="flex items-center justify-between pb-3 border-b border-gray-800/80">
+                                <div className="flex items-center gap-2.5">
+                                    <div className="p-2 bg-gradient-to-r from-amber-600 to-indigo-600 rounded-xl text-white shadow-md">
+                                        <Zap size={16} />
+                                    </div>
+                                    <div>
+                                        <h3 className="text-sm font-black text-white uppercase tracking-wider flex items-center gap-2">
+                                            <span>2. Entregas y Formatos (0s de espera)</span>
+                                            <span className="text-[10px] font-bold text-amber-400 bg-amber-500/10 px-2 py-0.5 rounded-full border border-amber-500/20">Instantáneo</span>
+                                        </h3>
+                                        <p className="text-[11px] text-gray-400">Planos, renders y documentos con plantilla estándar automática y enlaces</p>
+                                    </div>
                                 </div>
-                                <div>
-                                    <h3 className="text-sm font-black text-white uppercase tracking-wider flex items-center gap-2">
-                                        <span>2. Entregas y Formatos (0s de espera)</span>
-                                        <span className="text-[10px] font-bold text-amber-400 bg-amber-500/10 px-2 py-0.5 rounded-full border border-amber-500/20">Instantáneo</span>
-                                    </h3>
-                                    <p className="text-[11px] text-gray-400">Planos, renders y documentos con plantilla estándar automática y enlaces</p>
+                                <div className="flex items-center gap-2">
+                                    <button
+                                        type="button"
+                                        onClick={handleSaveCustomPreset}
+                                        className="text-[11px] font-bold text-amber-300 hover:text-white bg-amber-500/10 hover:bg-amber-500/25 border border-amber-500/30 px-2.5 py-1 rounded-lg transition-all flex items-center gap-1.5 cursor-pointer shadow-sm"
+                                        title="Guardar los entregables y método actuales como tu plantilla personalizada"
+                                    >
+                                        <Star size={12} fill="currentColor" />
+                                        <span>⭐ Guardar favorita</span>
+                                    </button>
                                 </div>
                             </div>
-                            <div className="flex items-center gap-2">
-                                <button
-                                    type="button"
-                                    onClick={handleSaveCustomPreset}
-                                    className="text-[11px] font-bold text-amber-300 hover:text-white bg-amber-500/10 hover:bg-amber-500/25 border border-amber-500/30 px-2.5 py-1 rounded-lg transition-all flex items-center gap-1.5 cursor-pointer shadow-sm"
-                                    title="Guardar los entregables y método actuales como tu plantilla personalizada"
-                                >
-                                    <Star size={12} fill="currentColor" />
-                                    <span>⭐ Guardar favorita</span>
-                                </button>
-                                <button
-                                    type="button"
-                                    onClick={() => setIsQuickSectionOpen(!isQuickSectionOpen)}
-                                    className="p-1.5 bg-gray-800 hover:bg-gray-700 text-gray-400 hover:text-white rounded-lg border border-gray-700 transition-colors text-xs font-bold cursor-pointer"
-                                    title={isQuickSectionOpen ? "Minimizar sección" : "Expandir sección"}
-                                >
-                                    {isQuickSectionOpen ? <ChevronUp size={14} /> : <ChevronDown size={14} />}
-                                </button>
-                            </div>
-                        </div>
 
-                        {isQuickSectionOpen && (
-                            <div className="space-y-4 animate-in fade-in duration-200">
+                            <div className="space-y-4">
                                 {/* Plantillas Rápidas y Favoritas */}
                                 <div className="space-y-1.5">
                                     <span className="text-[10px] font-black uppercase tracking-wider text-purple-300 block">
@@ -1850,24 +2164,20 @@ const EmailGenerator: React.FC<EmailGeneratorProps> = ({ attachedImages, onAttac
                                                     <button
                                                         type="button"
                                                         onClick={() => handleSelectQuickPreset(cp)}
-                                                        className={`px-3 py-1.5 rounded-l-xl text-xs font-bold border-y border-l transition-all cursor-pointer flex items-center gap-1.5 ${
-                                                            isSelected
-                                                                ? 'bg-amber-500 text-slate-950 border-amber-400 shadow-md font-black'
-                                                                : 'bg-gray-800/90 text-amber-300 border-gray-700/80 hover:border-amber-500/40 hover:bg-gray-800'
+                                                        className={`px-3 py-1.5 rounded-l-xl text-xs font-black uppercase tracking-wider transition-all cursor-pointer flex items-center gap-1.5 ${
+                                                            isSelected 
+                                                                ? 'bg-amber-500 text-slate-950 shadow-md ring-2 ring-amber-400/50' 
+                                                                : 'bg-amber-500/10 text-amber-300 hover:bg-amber-500/20 border border-amber-500/30'
                                                         }`}
                                                     >
-                                                        <Star size={11} fill="currentColor" />
+                                                        <Star size={12} fill="currentColor" />
                                                         <span>{cp.name}</span>
                                                     </button>
                                                     <button
                                                         type="button"
                                                         onClick={(e) => handleDeleteCustomPreset(e, cp.id)}
-                                                        className={`px-2 py-1.5 rounded-r-xl text-xs font-bold border-y border-r border-l-0 transition-all cursor-pointer ${
-                                                            isSelected
-                                                                ? 'bg-amber-600 text-white border-amber-400 hover:bg-red-600'
-                                                                : 'bg-gray-800/90 text-gray-500 hover:text-red-400 border-gray-700/80 hover:bg-gray-700'
-                                                        }`}
                                                         title="Eliminar plantilla favorita"
+                                                        className="px-2 py-1.5 bg-amber-950/60 hover:bg-red-900/60 text-amber-300 hover:text-red-200 border-y border-r border-amber-500/30 rounded-r-xl text-xs transition-colors cursor-pointer"
                                                     >
                                                         ✕
                                                     </button>
@@ -1875,7 +2185,7 @@ const EmailGenerator: React.FC<EmailGeneratorProps> = ({ attachedImages, onAttac
                                             );
                                         })}
 
-                                        {/* Plantillas estándar del sistema */}
+                                        {/* Plantillas predefinidas */}
                                         {QUICK_PRESETS.map(qp => {
                                             const isSelected = activePresetId === qp.id;
                                             return (
@@ -1883,13 +2193,13 @@ const EmailGenerator: React.FC<EmailGeneratorProps> = ({ attachedImages, onAttac
                                                     key={qp.id}
                                                     type="button"
                                                     onClick={() => handleSelectQuickPreset(qp)}
-                                                    className={`px-3 py-1.5 rounded-xl text-xs font-bold border transition-all cursor-pointer flex items-center gap-1.5 ${
-                                                        isSelected
-                                                            ? 'bg-purple-600 text-white border-purple-400 shadow-md scale-[1.02]'
-                                                            : 'bg-gray-800/70 text-gray-300 border-gray-700/80 hover:border-purple-500/40 hover:bg-gray-800 hover:text-white'
+                                                    className={`px-3 py-1.5 rounded-xl text-xs font-black uppercase tracking-wider transition-all cursor-pointer flex items-center gap-1.5 ${
+                                                        isSelected 
+                                                            ? 'bg-gradient-to-r from-purple-600 to-indigo-600 text-white shadow-md ring-2 ring-purple-400/50' 
+                                                            : 'bg-gray-800 text-gray-300 hover:bg-gray-700 hover:text-white border border-gray-700'
                                                     }`}
                                                 >
-                                                    {isSelected && <CheckCircle2 size={12} />}
+                                                    <Bookmark size={12} className={isSelected ? 'text-purple-200' : 'text-gray-400'} />
                                                     <span>{qp.name}</span>
                                                 </button>
                                             );
@@ -1897,93 +2207,74 @@ const EmailGenerator: React.FC<EmailGeneratorProps> = ({ attachedImages, onAttac
                                     </div>
                                 </div>
 
-                                {/* CUADRÍCULA DE 4 COLUMNAS EN EL MISMO RENGLÓN */}
-                                <div className="grid grid-cols-1 md:grid-cols-12 gap-3 items-stretch">
-                                    {/* Columna 1: Entregables */}
-                                    <div className="md:col-span-3 bg-gray-950/60 p-3 rounded-xl border border-gray-800 flex flex-col space-y-2">
+                                {/* Cuadrícula 2x2: 1. Entregables, 2. Métodos, 3. Proyecto, 4. Opciones */}
+                                <div className="grid grid-cols-1 sm:grid-cols-2 gap-3.5">
+                                    {/* Bloque 1: Entregables */}
+                                    <div className="bg-gray-950/60 p-3 rounded-xl border border-gray-800 flex flex-col space-y-2">
                                         <div className="flex items-center justify-between pb-1.5 border-b border-gray-800/60">
-                                            <span className="text-[11px] font-black uppercase tracking-wider text-blue-400 flex items-center gap-1.5">
-                                                <span className="w-4 h-4 rounded-full bg-blue-600/20 border border-blue-500/30 flex items-center justify-center text-[9px] font-bold">1</span>
-                                                <span>Entregable(s)</span>
+                                            <span className="text-[11px] font-black uppercase tracking-wider text-purple-300 flex items-center gap-1.5">
+                                                <CheckCircle2 size={13} className="text-purple-400" />
+                                                <span>1. Entregables</span>
                                             </span>
-                                            <span className="text-[9px] text-blue-300/80 bg-blue-500/10 px-1.5 py-0.2 rounded font-bold">Varios</span>
+                                            <span className="text-[9px] text-gray-500 font-bold">Múltiple</span>
                                         </div>
-                                        <div className="flex flex-col gap-1.5 flex-grow">
-                                            {DELIVERABLE_OPTIONS.map(d => {
-                                                const isSelected = selectedDeliverables.includes(d);
+                                        <div className="grid grid-cols-1 gap-1 flex-grow">
+                                            {DELIVERABLE_OPTIONS.map(opt => {
+                                                const checked = selectedDeliverables.includes(opt);
                                                 return (
                                                     <button
-                                                        key={d}
+                                                        key={opt}
                                                         type="button"
-                                                        onClick={() => toggleDeliverable(d)}
-                                                        className={`w-full px-2.5 py-1.5 rounded-lg text-[11px] font-bold border transition-all cursor-pointer flex items-center justify-between gap-2 text-left ${
-                                                            isSelected
-                                                                ? 'bg-blue-600/20 text-blue-100 border-blue-500 shadow-sm ring-1 ring-blue-500/40'
-                                                                : 'bg-gray-900/60 text-gray-400 border-gray-800 hover:border-gray-700 hover:bg-gray-800/60 hover:text-gray-200'
+                                                        onClick={() => toggleDeliverable(opt)}
+                                                        className={`w-full text-left px-2.5 py-1.5 rounded-lg text-xs font-bold transition-all flex items-center justify-between cursor-pointer ${
+                                                            checked 
+                                                                ? 'bg-purple-600/30 text-purple-200 border border-purple-500/50 shadow-sm' 
+                                                                : 'bg-gray-900/60 text-gray-400 hover:text-gray-200 hover:bg-gray-900 border border-transparent'
                                                         }`}
                                                     >
-                                                        <div className="flex items-center gap-2 truncate">
-                                                            <div className={`w-3.5 h-3.5 rounded border flex items-center justify-center text-[9px] shrink-0 transition-colors ${
-                                                                isSelected ? 'bg-blue-500 border-blue-400 text-white shadow' : 'border-gray-600 bg-gray-800/80'
-                                                            }`}>
-                                                                {isSelected && '✓'}
-                                                            </div>
-                                                            <span className="truncate">{d}</span>
-                                                        </div>
+                                                        <span className="truncate">{opt}</span>
+                                                        <span className={`text-[11px] font-bold ${checked ? 'text-purple-400' : 'text-gray-600'}`}>
+                                                            {checked ? '✓' : '+'}
+                                                        </span>
                                                     </button>
                                                 );
                                             })}
                                         </div>
                                     </div>
 
-                                    {/* Columna 2: Método de entrega */}
-                                    <div className="md:col-span-3 bg-gray-950/60 p-3 rounded-xl border border-gray-800 flex flex-col space-y-2">
+                                    {/* Bloque 2: Métodos de Entrega */}
+                                    <div className="bg-gray-950/60 p-3 rounded-xl border border-gray-800 flex flex-col space-y-2">
                                         <div className="flex items-center justify-between pb-1.5 border-b border-gray-800/60">
-                                            <span className="text-[11px] font-black uppercase tracking-wider text-amber-400 flex items-center gap-1.5">
-                                                <span className="w-4 h-4 rounded-full bg-amber-600/20 border border-amber-500/30 flex items-center justify-center text-[9px] font-bold">2</span>
-                                                <span>Método</span>
+                                            <span className="text-[11px] font-black uppercase tracking-wider text-blue-300 flex items-center gap-1.5">
+                                                <Send size={13} className="text-blue-400" />
+                                                <span>2. Método</span>
                                             </span>
-                                            <span className="text-[9px] text-amber-300/80 bg-amber-500/10 px-1.5 py-0.2 rounded font-bold">Uno</span>
+                                            <span className="text-[9px] text-gray-500 font-bold">1 opción</span>
                                         </div>
-                                        <div className="flex flex-col gap-1.5 flex-grow">
+                                        <div className="grid grid-cols-1 gap-1.5 flex-grow">
                                             {METHOD_OPTIONS.map(m => {
-                                                const isSelected = selectedMethod === m;
-                                                const descriptions: Record<DeliveryMethod, string> = {
-                                                    'Revisión': 'Observaciones / visto bueno',
-                                                    'Entrega': 'Envío formal definitivo',
-                                                    'Proyecto': 'Archivos generales',
-                                                    'Anteproyecto': 'Propuesta conceptual'
-                                                };
+                                                const selected = selectedMethod === m;
                                                 return (
                                                     <button
                                                         key={m}
                                                         type="button"
                                                         onClick={() => handleSelectMethod(m)}
-                                                        className={`w-full px-2.5 py-2 rounded-lg text-left border transition-all cursor-pointer ${
-                                                            isSelected
-                                                                ? 'bg-amber-500/20 text-amber-100 border-amber-500 shadow-sm ring-1 ring-amber-500/40'
-                                                                : 'bg-gray-900/60 text-gray-400 border-gray-800 hover:border-gray-700 hover:bg-gray-800/60 hover:text-gray-200'
+                                                        className={`w-full text-left px-3 py-2 rounded-lg text-xs font-bold transition-all flex items-center justify-between cursor-pointer ${
+                                                            selected 
+                                                                ? 'bg-blue-600/30 text-blue-200 border border-blue-500/50 shadow-sm' 
+                                                                : 'bg-gray-900/60 text-gray-400 hover:text-gray-200 hover:bg-gray-900 border border-transparent'
                                                         }`}
                                                     >
-                                                        <div className="flex items-center gap-2">
-                                                            <div className={`w-3.5 h-3.5 rounded-full border flex items-center justify-center text-[8px] shrink-0 transition-colors ${
-                                                                isSelected ? 'border-amber-400 bg-amber-500 text-slate-950 font-black' : 'border-gray-600 bg-gray-800/80'
-                                                            }`}>
-                                                                {isSelected && '●'}
-                                                            </div>
-                                                            <div className="truncate">
-                                                                <div className="text-[11px] font-bold">{m}</div>
-                                                                <div className="text-[9px] text-gray-500 truncate">{descriptions[m]}</div>
-                                                            </div>
-                                                        </div>
+                                                        <span>{m}</span>
+                                                        <span className={`w-2.5 h-2.5 rounded-full border ${selected ? 'bg-blue-500 border-blue-400' : 'border-gray-600'}`} />
                                                     </button>
                                                 );
                                             })}
                                         </div>
                                     </div>
 
-                                    {/* Columna 3: Proyecto */}
-                                    <div className="md:col-span-3 bg-gray-950/60 p-3 rounded-xl border border-gray-800 flex flex-col space-y-2">
+                                    {/* Bloque 3: Proyecto */}
+                                    <div className="bg-gray-950/60 p-3 rounded-xl border border-gray-800 flex flex-col space-y-2">
                                         <div className="flex items-center justify-between pb-1.5 border-b border-gray-800/60">
                                             <span className="text-[11px] font-black uppercase tracking-wider text-emerald-400 flex items-center gap-1.5">
                                                 <Building2 size={13} />
@@ -2045,8 +2336,8 @@ const EmailGenerator: React.FC<EmailGeneratorProps> = ({ attachedImages, onAttac
                                         </div>
                                     </div>
 
-                                    {/* Columna 4: Opciones Adicionales de Entrega */}
-                                    <div className="md:col-span-3 bg-gray-950/60 p-3 rounded-xl border border-gray-800 flex flex-col space-y-2">
+                                    {/* Bloque 4: Opciones Adicionales de Entrega */}
+                                    <div className="bg-gray-950/60 p-3 rounded-xl border border-gray-800 flex flex-col space-y-2">
                                         <div className="flex items-center justify-between pb-1.5 border-b border-gray-800/60">
                                             <span className="text-[11px] font-black uppercase tracking-wider text-purple-400 flex items-center gap-1.5">
                                                 <span className="w-4 h-4 rounded-full bg-purple-600/20 border border-purple-500/30 flex items-center justify-center text-[9px] font-bold">4</span>
@@ -2125,350 +2416,83 @@ const EmailGenerator: React.FC<EmailGeneratorProps> = ({ attachedImages, onAttac
                                         </div>
                                     </div>
                                 </div>
-
-                                {/* VISTA PREVIA EN VIVO ESTILO OUTLOOK */}
-                                <div className="bg-gray-950 rounded-2xl border border-gray-800 overflow-hidden shadow-2xl">
-                                    <div className="bg-gray-900/90 px-4 py-2.5 border-b border-gray-800 flex items-center justify-between text-xs text-gray-400">
-                                        <div className="flex items-center gap-2">
-                                            <Mail size={14} className="text-purple-400" />
-                                            <span className="font-bold text-gray-200">Vista Previa Inmediata (0s de espera)</span>
-                                        </div>
-                                        <span className="text-[11px] font-medium text-gray-400">
-                                            Para: <strong className="text-white">{fullRecipientEmail || recipientName || 'Destinatario'}</strong>
-                                        </span>
-                                    </div>
-
-                                    <div className="p-4 space-y-3">
-                                        <div className="flex items-center gap-2 flex-wrap">
-                                            <span className="text-[10px] font-black uppercase tracking-wider text-purple-400 bg-purple-500/15 px-2 py-0.5 rounded border border-purple-500/30">
-                                                Asunto
-                                            </span>
-                                            <span className="font-bold text-sm text-white">
-                                                {livePreview.emailSubject}
-                                            </span>
-                                        </div>
-                                        <div className="p-4 bg-gray-900/50 rounded-xl border border-gray-800 text-xs text-gray-200 whitespace-pre-line leading-relaxed max-h-52 overflow-y-auto font-sans shadow-inner">
-                                            {livePreview.emailBody}
-                                        </div>
-                                    </div>
-
-                                    {/* Barra de acciones de entrega inmediata */}
-                                    <div className="bg-gray-900/70 px-4 py-3 border-t border-gray-800 flex flex-col sm:flex-row items-center justify-between gap-3">
-                                        <button
-                                            type="button"
-                                            onClick={handleTransferToAi}
-                                            className="w-full sm:w-auto px-4 py-2 bg-purple-600/20 hover:bg-purple-600/40 text-purple-300 hover:text-white rounded-xl text-xs font-bold border border-purple-500/40 transition-all flex items-center justify-center gap-1.5 cursor-pointer"
-                                            title="Pasar este texto al redactor libre de IA para expandirlo o pedirle cambios"
-                                        >
-                                            <Sparkles size={13} />
-                                            <span>🪄 Personalizar con IA</span>
-                                        </button>
-
-                                        <div className="flex items-center gap-2 w-full sm:w-auto flex-wrap sm:flex-nowrap">
-                                            <button
-                                                type="button"
-                                                onClick={() => handleCopyToClipboard(livePreview.emailBody, 'preset-email')}
-                                                className={`px-3.5 py-2 rounded-xl text-xs font-bold border transition-all flex items-center justify-center gap-1.5 cursor-pointer ${
-                                                    copied === 'preset-email' ? 'bg-green-600 text-white border-green-500' : 'bg-gray-800 text-gray-300 border-gray-700 hover:bg-gray-700'
-                                                }`}
-                                            >
-                                                <Copy size={13} />
-                                                <span>{copied === 'preset-email' ? 'Copiado!' : 'Copiar'}</span>
-                                            </button>
-                                            <button
-                                                type="button"
-                                                onClick={() => handleSendWhatsApp(livePreview.whatsappMessage)}
-                                                className="px-3.5 py-2 bg-green-600/20 hover:bg-green-600 text-green-300 hover:text-white rounded-xl text-xs font-bold border border-green-500/40 transition-all flex items-center justify-center gap-1.5 cursor-pointer"
-                                            >
-                                                <MessageSquare size={13} />
-                                                <span>WhatsApp</span>
-                                            </button>
-                                            <button
-                                                type="button"
-                                                onClick={() => handleOpenOutlookWeb(livePreview.emailSubject, livePreview.emailBody)}
-                                                className="flex-1 sm:flex-initial px-5 py-2.5 bg-gradient-to-r from-blue-600 to-indigo-600 hover:from-blue-500 hover:to-indigo-500 text-white rounded-xl font-black text-xs uppercase tracking-wider shadow-lg flex items-center justify-center gap-2 transition-all hover:scale-[1.02] active:scale-[0.98] cursor-pointer"
-                                            >
-                                                <ExternalLink size={14} />
-                                                <span>Outlook Web (Javer 365)</span>
-                                            </button>
-                                        </div>
-                                    </div>
-                                </div>
                             </div>
-                        )}
+                        </div>
                     </div>
-                    )}
-                </div>
 
-                {/* ========================================================================= */}
-                {/* COLUMNA DERECHA: TODO LO DEL BUSCADOR DE CONTACTOS (STICKY) */}
-                {/* ========================================================================= */}
-                <aside className="lg:col-span-5 xl:col-span-4 space-y-4 lg:sticky lg:top-4">
-                    <div className="bg-gray-900/80 backdrop-blur-xl p-4 sm:p-5 rounded-2xl border border-purple-500/30 shadow-2xl space-y-4">
-                        {/* Encabezado del panel de contactos */}
-                        <div className="flex items-center justify-between pb-3 border-b border-gray-800">
-                            <div className="flex items-center gap-2">
-                                <div className="p-2 bg-purple-600/20 text-purple-400 rounded-xl border border-purple-500/30">
-                                    <Users size={18} />
+                    {/* PANEL DERECHO: VISTA PREVIA INMEDIATA (0s DE ESPERA) */}
+                    <div className="lg:col-span-6 xl:col-span-5 space-y-4 lg:sticky lg:top-4">
+                        <div className="bg-gray-950 rounded-2xl border border-gray-800 overflow-hidden shadow-2xl">
+                            <div className="bg-gray-900/90 px-4 py-2.5 border-b border-gray-800 flex items-center justify-between text-xs text-gray-400">
+                                <div className="flex items-center gap-2">
+                                    <Mail size={14} className="text-purple-400" />
+                                    <span className="font-bold text-gray-200">Vista Previa Inmediata (0s)</span>
                                 </div>
-                                <div>
-                                    <h3 className="text-xs font-black text-white uppercase tracking-wider">Destinatario y Contactos</h3>
-                                    <p className="text-[10px] text-gray-400">Búsqueda predictiva y selección</p>
-                                </div>
-                            </div>
-                            <span className="text-[10px] font-bold text-purple-300 bg-purple-500/10 px-2 py-0.5 rounded-full border border-purple-500/20">
-                                {sortedContacts.length} contactos
-                            </span>
-                        </div>
-
-                        {/* Input de Búsqueda Rápida Predictiva */}
-                        <div className="relative">
-                            <label className="text-[10px] font-bold uppercase tracking-wider text-gray-400 block mb-1">
-                                Buscar contacto o correo:
-                            </label>
-                            <div className="flex items-center bg-gray-800 border border-gray-700 rounded-xl px-3 py-2 focus-within:border-purple-500 transition-colors">
-                                <Search size={15} className="text-gray-400 mr-2 shrink-0" />
-                                <input 
-                                    type="text"
-                                    value={contactSearchQuery}
-                                    onChange={(e) => setContactSearchQuery(e.target.value)}
-                                    onFocus={() => setIsSearchFocused(true)}
-                                    placeholder="Nombre, iniciales o correo..."
-                                    className="w-full bg-transparent text-xs text-white font-medium outline-none placeholder-gray-500"
-                                />
-                                {contactSearchQuery && (
-                                    <button 
-                                        type="button"
-                                        onClick={() => setContactSearchQuery('')}
-                                        className="text-gray-400 hover:text-white text-xs px-1 cursor-pointer"
-                                    >
-                                        ✕
-                                    </button>
-                                )}
+                                <span className="text-[11px] font-medium text-gray-400 truncate max-w-[180px]">
+                                    Para: <strong className="text-white">{fullRecipientEmail || recipientName || 'Destinatario'}</strong>
+                                </span>
                             </div>
 
-                            {/* Dropdown flotante con resultados predictivos */}
-                            {isSearchFocused && filteredSearchContacts.length > 0 && (
-                                <div className="absolute top-full left-0 right-0 mt-1 bg-gray-900 border border-purple-500/40 rounded-xl shadow-2xl z-50 overflow-hidden divide-y divide-gray-800 max-h-56 overflow-y-auto">
-                                    {filteredSearchContacts.map((c) => {
-                                        const cName = String(getDBValue(c, ['cliente', 'nombre']) || '');
-                                        const cEmail = String(getDBValue(c, 'correo') || '');
-                                        const cTitle = String(getDBValue(c, ['lic', 'titulo']) || '');
-                                        const originalIndex = sortedContacts.findIndex(x => x === c);
-                                        const isFav = favorites.some(f => f.trim() === cName.trim());
-
-                                        return (
-                                            <div 
-                                                key={c.id || cName}
-                                                onClick={() => selectContactByIndex(originalIndex, sortedContacts)}
-                                                className="p-2.5 hover:bg-purple-600/20 cursor-pointer flex items-center justify-between transition-colors"
-                                            >
-                                                <div className="truncate">
-                                                    <div className="flex items-center gap-1.5">
-                                                        {cTitle && <span className="text-[10px] font-bold text-purple-400">{cTitle}</span>}
-                                                        <span className="text-xs font-bold text-white">{cName}</span>
-                                                    </div>
-                                                    <span className="text-[10px] text-gray-400 truncate block">{cEmail}</span>
-                                                </div>
-                                                {isFav && <Star size={12} className="text-yellow-400 shrink-0" fill="currentColor" />}
-                                            </div>
-                                        );
-                                    })}
+                            <div className="p-4 space-y-3">
+                                <div className="flex items-center gap-2 flex-wrap">
+                                    <span className="text-[10px] font-black uppercase tracking-wider text-purple-400 bg-purple-500/15 px-2 py-0.5 rounded border border-purple-500/30">
+                                        Asunto
+                                    </span>
+                                    <span className="font-bold text-sm text-white">
+                                        {livePreview.emailSubject}
+                                    </span>
                                 </div>
-                            )}
-                        </div>
-
-                        {/* Selector desplegable tradicional + Botón Apodo */}
-                        <div className="space-y-1">
-                            <label className="text-[10px] font-bold uppercase tracking-wider text-gray-400 block">
-                                O seleccionar de lista:
-                            </label>
-                            <div className="flex gap-2">
-                                <div className="relative flex-grow">
-                                    <select 
-                                        value={selectedContactIndex} 
-                                        onChange={handleContactSelect} 
-                                        className="w-full p-2.5 bg-gray-800 border border-gray-700 rounded-xl text-xs text-white font-bold appearance-none pr-8 outline-none focus:border-purple-500/50 cursor-pointer"
-                                    >
-                                        <option value="">Seleccionar de lista...</option>
-                                        {sortedContacts.map((c, i) => (
-                                            <option key={i} value={i}>
-                                                {favorites.some(f => f.trim() === String(getDBValue(c, 'cliente') || '').trim()) ? '★ ' : ''}
-                                                {getDBValue(c, 'cliente')}
-                                            </option>
-                                        ))}
-                                    </select>
-                                    <div className="absolute right-2.5 top-1/2 -translate-y-1/2 pointer-events-none text-gray-400 text-xs">
-                                        ▼
-                                    </div>
+                                <div className="p-4 bg-gray-900/50 rounded-xl border border-gray-800 text-xs text-gray-200 whitespace-pre-line leading-relaxed max-h-56 overflow-y-auto font-sans shadow-inner">
+                                    {livePreview.emailBody}
                                 </div>
-                                <button 
+                            </div>
+
+                            {/* Barra de acciones de entrega inmediata */}
+                            <div className="bg-gray-900/70 px-4 py-3 border-t border-gray-800 flex flex-col sm:flex-row items-center justify-between gap-3">
+                                <button
                                     type="button"
-                                    onClick={() => setUseNickname(!useNickname)} 
-                                    className={`px-3 rounded-xl border transition-all font-black text-xs uppercase cursor-pointer shrink-0 ${
-                                        useNickname ? 'border-yellow-500 text-yellow-400 bg-yellow-500/10' : 'border-gray-700 text-gray-400 hover:text-gray-300'
-                                    }`}
-                                    title={useNickname ? "Usando apodo en el saludo (si existe)" : "Usando nombre formal"}
+                                    onClick={handleTransferToAi}
+                                    className="w-full sm:w-auto px-3.5 py-2 bg-purple-600/20 hover:bg-purple-600/40 text-purple-300 hover:text-white rounded-xl text-xs font-bold border border-purple-500/40 transition-all flex items-center justify-center gap-1.5 cursor-pointer"
+                                    title="Pasar este texto al redactor libre de IA para expandirlo o pedirle cambios"
                                 >
-                                    {useNickname ? 'Apodo' : 'Formal'}
+                                    <Sparkles size={13} />
+                                    <span>🪄 Afinar con IA</span>
                                 </button>
-                            </div>
-                        </div>
 
-                        {/* Píldoras de Contactos Frecuentes (1 Clic) */}
-                        {quickContacts.length > 0 && (
-                            <div className="space-y-1.5 pt-1">
-                                <span className="text-[10px] text-gray-500 font-bold uppercase tracking-wider block">Accesos Rápidos (1 clic):</span>
-                                <div className="flex flex-wrap gap-1.5">
-                                    {quickContacts.map(qc => {
-                                        const isSelected = selectedContactIndex !== '' && parseInt(selectedContactIndex, 10) === qc.index;
-                                        return (
-                                            <button
-                                                key={qc.name}
-                                                type="button"
-                                                onClick={() => selectContactByIndex(qc.index, sortedContacts)}
-                                                className={`px-2.5 py-1 rounded-lg text-xs font-bold transition-all cursor-pointer flex items-center gap-1.5 ${
-                                                    isSelected 
-                                                        ? 'bg-purple-600 text-white shadow-sm ring-2 ring-purple-400' 
-                                                        : 'bg-gray-800 text-gray-300 hover:bg-gray-700 hover:text-white border border-gray-700/80'
-                                                }`}
-                                            >
-                                                {qc.isErik ? <span>⭐</span> : (favorites.some(f => f.trim() === qc.name.trim()) && <Star size={11} className="text-yellow-400" fill="currentColor"/>)}
-                                                <span className="truncate max-w-[130px]">{qc.name}</span>
-                                            </button>
-                                        );
-                                    })}
-                                </div>
-                            </div>
-                        )}
-
-                        {/* Ficha editable del Destinatario Seleccionado */}
-                        <div className="p-3.5 bg-gray-950/60 rounded-xl border border-gray-800 space-y-2.5">
-                            <div className="flex items-center justify-between pb-1 border-b border-gray-800/80">
-                                <span className="text-[10px] font-black uppercase tracking-wider text-purple-400">Datos del Destinatario</span>
-                                <button 
-                                    type="button"
-                                    onClick={handleSaveNewContact} 
-                                    disabled={isSavingContact} 
-                                    title="Guardar contacto en base de datos"
-                                    className="px-2 py-1 bg-gray-800 hover:bg-purple-600/30 text-purple-400 hover:text-purple-300 border border-gray-700 hover:border-purple-500/40 rounded-lg text-[10px] font-bold transition-colors flex items-center gap-1 cursor-pointer"
-                                >
-                                    {isSavingContact ? <Spinner size="3" /> : <Save size={12} />}
-                                    <span>Guardar en BD</span>
-                                </button>
-                            </div>
-
-                            {/* Título y Género */}
-                            <div className="grid grid-cols-12 gap-2">
-                                <div className="col-span-7">
-                                    <label className="text-[9px] text-gray-500 font-bold uppercase block mb-0.5">Título</label>
-                                    <select 
-                                        value={recipientTitle} 
-                                        onChange={e => setRecipientTitle(e.target.value)} 
-                                        className="w-full p-2 bg-gray-800 border border-gray-700 rounded-lg text-xs text-purple-400 font-black outline-none focus:border-purple-500 cursor-pointer"
-                                    >
-                                        {titlesList.map(t => <option key={t} value={t}>{t || 'Sin Título'}</option>)}
-                                    </select>
-                                </div>
-                                <div className="col-span-5">
-                                    <label className="text-[9px] text-gray-500 font-bold uppercase block mb-0.5">Género</label>
-                                    <div className="flex bg-gray-800 rounded-lg border border-gray-700 p-0.5 h-[34px]">
-                                        <button 
-                                            type="button"
-                                            onClick={() => setRecipientGender('M')} 
-                                            className={`flex-1 rounded text-[11px] font-black transition-all cursor-pointer ${recipientGender === 'M' ? 'bg-blue-600 text-white shadow' : 'text-gray-400'}`}
-                                        >
-                                            M
-                                        </button>
-                                        <button 
-                                            type="button"
-                                            onClick={() => setRecipientGender('F')} 
-                                            className={`flex-1 rounded text-[11px] font-black transition-all cursor-pointer ${recipientGender === 'F' ? 'bg-pink-600 text-white shadow' : 'text-gray-400'}`}
-                                        >
-                                            F
-                                        </button>
-                                    </div>
-                                </div>
-                            </div>
-
-                            {/* Nombre completo */}
-                            <div>
-                                <label className="text-[9px] text-gray-500 font-bold uppercase block mb-0.5">Nombre Completo</label>
-                                <input 
-                                    value={recipientName} 
-                                    onChange={e => setRecipientName(e.target.value)} 
-                                    className="w-full p-2 bg-gray-800 border border-gray-700 rounded-lg text-xs text-white font-bold outline-none focus:border-purple-500" 
-                                    placeholder="Nombre del destinatario..."
-                                />
-                            </div>
-
-                            {/* Correo Institucional */}
-                            <div>
-                                <label className="text-[9px] text-gray-500 font-bold uppercase block mb-0.5">Correo Institucional</label>
-                                <div className="flex gap-1 bg-gray-800/80 p-1 rounded-lg border border-gray-700">
-                                    <input 
-                                        value={recipientEmailUser} 
-                                        onChange={e => setRecipientEmailUser(e.target.value)} 
-                                        className="flex-grow bg-transparent p-1 text-xs font-bold text-white outline-none min-w-0" 
-                                        placeholder="usuario"
-                                    />
-                                    <select 
-                                        value={recipientEmailDomain} 
-                                        onChange={e => setRecipientEmailDomain(e.target.value)} 
-                                        className="bg-gray-900 p-1 rounded text-[11px] font-black text-purple-400 outline-none cursor-pointer"
-                                    >
-                                        {emailDomains.map(d => <option key={d} value={d}>{d}</option>)}
-                                    </select>
-                                    <select 
-                                        value={recipientEmailTld} 
-                                        onChange={e => setRecipientEmailTld(e.target.value)} 
-                                        className="bg-gray-900 p-1 rounded text-[11px] font-bold text-gray-400 outline-none cursor-pointer"
-                                    >
-                                        {emailTlds.map(t => <option key={t} value={t}>{t}</option>)}
-                                    </select>
-                                </div>
-                            </div>
-                        </div>
-
-                        {/* Tarjeta de Saludo Activo en Tiempo Real */}
-                        <div className="p-3 bg-purple-950/20 border border-purple-500/20 rounded-xl space-y-1.5">
-                            <span className="text-[10px] font-bold uppercase text-purple-300 block">Saludo en tiempo real:</span>
-                            <p className="text-xs text-white font-black italic">
-                                "{getPresetGreeting()}:"
-                            </p>
-                            <div className="flex items-center justify-between pt-1 border-t border-purple-500/10 text-[11px] text-gray-400">
-                                <span className="truncate">{fullRecipientEmail || 'Sin correo asignado'}</span>
-                                {fullRecipientEmail && (
+                                <div className="flex items-center gap-2 w-full sm:w-auto flex-wrap sm:flex-nowrap">
                                     <button
                                         type="button"
-                                        onClick={() => {
-                                            navigator.clipboard.writeText(fullRecipientEmail);
-                                            toast.success("Correo copiado");
-                                        }}
-                                        className="text-purple-400 hover:text-purple-300 text-[10px] font-bold ml-2 shrink-0 cursor-pointer"
-                                        title="Copiar correo"
+                                        onClick={() => handleCopyToClipboard(livePreview.emailBody, 'preset-email')}
+                                        className={`px-3 py-2 rounded-xl text-xs font-bold border transition-all flex items-center justify-center gap-1.5 cursor-pointer ${
+                                            copied === 'preset-email' ? 'bg-green-600 text-white border-green-500' : 'bg-gray-800 text-gray-300 border-gray-700 hover:bg-gray-700'
+                                        }`}
                                     >
-                                        Copiar
+                                        <Copy size={13} />
+                                        <span>{copied === 'preset-email' ? 'Copiado!' : 'Copiar'}</span>
                                     </button>
-                                )}
+                                    <button
+                                        type="button"
+                                        onClick={() => handleSendWhatsApp(livePreview.whatsappMessage)}
+                                        className="px-3 py-2 bg-green-600/20 hover:bg-green-600 text-green-300 hover:text-white rounded-xl text-xs font-bold border border-green-500/40 transition-all flex items-center justify-center gap-1.5 cursor-pointer"
+                                    >
+                                        <MessageSquare size={13} />
+                                        <span>WhatsApp</span>
+                                    </button>
+                                    <button
+                                        type="button"
+                                        onClick={() => handleOpenOutlookWeb(livePreview.emailSubject, livePreview.emailBody)}
+                                        className="flex-1 sm:flex-initial px-4 py-2 bg-gradient-to-r from-blue-600 to-indigo-600 hover:from-blue-500 hover:to-indigo-500 text-white rounded-xl font-black text-xs uppercase tracking-wider shadow-lg flex items-center justify-center gap-1.5 transition-all hover:scale-[1.02] active:scale-[0.98] cursor-pointer border border-blue-400/30"
+                                    >
+                                        <ExternalLink size={13} />
+                                        <span>Outlook Web</span>
+                                    </button>
+                                </div>
                             </div>
                         </div>
-
-                        {/* Botón directo para abrir correo en blanco a este contacto */}
-                        <button
-                            type="button"
-                            onClick={() => handleOpenOutlookWeb('', '')}
-                            className="w-full py-2.5 bg-gray-800 hover:bg-gray-700 text-gray-200 hover:text-white rounded-xl text-xs font-bold border border-gray-700 flex items-center justify-center gap-2 transition-all cursor-pointer shadow-sm"
-                            title="Abrir Outlook Web Javer 365 con este destinatario"
-                        >
-                            <Mail size={14} className="text-blue-400" />
-                            <span>Abrir Outlook con este contacto</span>
-                            <ExternalLink size={12} className="opacity-70" />
-                        </button>
                     </div>
-                </aside>
-            </div>
-
+                </div>
+            )}
+            
             {/* MENÚ CONTEXTUAL (CLIC DERECHO PARA PULIR TEXTO) */}
             <AnimatePresence>{contextMenu.visible && (
                 <motion.div initial={{ opacity: 0, scale: 0.9 }} animate={{ opacity: 1, scale: 1 }} exit={{ opacity: 0, scale: 0.9 }} style={{ top: contextMenu.y, left: contextMenu.x }} className="fixed z-[1000] min-w-[280px] bg-gray-900/95 backdrop-blur-3xl border-2 border-white/10 rounded-[28px] shadow-2xl py-3 overflow-hidden" onClick={e => e.stopPropagation()}>
