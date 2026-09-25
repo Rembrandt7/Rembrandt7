@@ -115,14 +115,24 @@ const SortableNote = ({ note, toggleComplete, startEdit, removeNote, editingId, 
                 </div>
               </div>
             </div>
-          ) : note.category === 'notas' ? (
-            <div className="flex items-center justify-between gap-4">
+          ) : (note.category === 'notas' || !['compras', 'estudios', 'estudiar', 'investigacion', 'trabajo'].includes(note.category)) ? (
+            <div className="flex items-center justify-between gap-4 w-full">
               <div className={`flex-grow ${note.completed ? 'line-through opacity-50' : ''}`}>
+                {note.category !== 'notas' && (
+                  <div className="mb-1">
+                    <span className="inline-block text-[10px] font-bold uppercase tracking-wider text-green-400 bg-green-500/10 px-2 py-0.5 rounded-full border border-green-500/20">
+                      {note.category.replace('_', ' ')}
+                    </span>
+                  </div>
+                )}
+                {note.title && (
+                  <h4 className="text-sm font-bold text-green-300 mb-1">{note.title}</h4>
+                )}
                 <div className="text-gray-200 prose prose-invert prose-sm max-w-none">
-                  <Markdown remarkPlugins={[remarkGfm]}>{note.text}</Markdown>
+                  <Markdown remarkPlugins={[remarkGfm]}>{note.text || note.title || ''}</Markdown>
                 </div>
               </div>
-              <div className="flex flex-col gap-2 items-end">
+              <div className="flex flex-col gap-2 items-end shrink-0">
                 <button 
                   onClick={() => toggleComplete(note.id)} 
                   className={`px-3 py-1 rounded-lg text-[10px] font-bold uppercase transition-all ${
@@ -146,19 +156,21 @@ const SortableNote = ({ note, toggleComplete, startEdit, removeNote, editingId, 
             </div>
           ) : (
             <>
-              {(note.category === 'estudios' || note.category === 'trabajo') && (
+              {(['estudios', 'estudiar', 'investigacion'].includes(note.category) || note.category === 'trabajo' || note.title) && (
                 <div className="mb-2">
                   <div className="flex items-center justify-between mb-1">
-                    <h4 className={`text-sm font-bold ${note.category === 'estudios' ? 'text-purple-400' : 'text-orange-400'}`}>
-                      {note.title || 'Sin título'}
+                    <h4 className={`text-sm font-bold ${
+                      ['estudios', 'estudiar', 'investigacion'].includes(note.category) ? 'text-purple-400' : 'text-orange-400'
+                    }`}>
+                      {note.title || note.text?.substring(0, 40) || 'Sin título'}
                     </h4>
-                    {note.category === 'estudios' && note.link && (
+                    {['estudios', 'estudiar', 'investigacion'].includes(note.category) && note.link && (
                       <a href={note.link} target="_blank" rel="noopener noreferrer" className="text-gray-500 hover:text-blue-400">
                         <ExternalLink size={14} />
                       </a>
                     )}
                   </div>
-                  {note.category === 'estudios' && (
+                  {['estudios', 'estudiar', 'investigacion'].includes(note.category) && (
                     <div className="w-full bg-gray-700 h-1.5 rounded-full overflow-hidden mb-2 border border-gray-600">
                       <div 
                         className="bg-purple-500 h-full transition-all duration-500 shadow-[0_0_10px_rgba(168,85,247,0.5)]" 
@@ -177,7 +189,7 @@ const SortableNote = ({ note, toggleComplete, startEdit, removeNote, editingId, 
                 </div>
               )}
               <div className={`text-gray-200 prose prose-invert prose-sm max-w-none ${note.completed ? 'line-through opacity-70' : ''}`}>
-                <Markdown remarkPlugins={[remarkGfm]}>{note.text}</Markdown>
+                <Markdown remarkPlugins={[remarkGfm]}>{note.text || note.title || ''}</Markdown>
               </div>
             </>
           )}
@@ -268,10 +280,9 @@ const NotesTab: React.FC = () => {
   // Helper to check if a category is in edit mode
   const isCategoryEditMode = (category: string) => {
     if (category === 'compras') return isShoppingEditMode;
-    if (category === 'estudios') return isEstudiosEditMode;
-    if (category === 'notas' || category === 'recientes') return isNotesEditMode;
-    if (category === 'trabajo') return true; // Trabajo doesn't have a separate file yet, or always editable?
-    return false;
+    if (['estudios', 'estudiar', 'investigacion'].includes(category)) return isEstudiosEditMode;
+    if (category === 'trabajo') return true;
+    return isNotesEditMode;
   };
 
   const toggleCategoryEditMode = (category: string) => {
@@ -542,9 +553,24 @@ const NotesTab: React.FC = () => {
     );
   }
 
-  const estudiosNotes = (config.notes || []).filter(n => n.category === 'estudios');
-  const generalNotes = (config.notes || []).filter(n => n.category === 'notas');
-  const comprasNotes = (config.notes || []).filter(n => n.category === 'compras');
+  // Deduplicate notes by ID to prevent displaying 1062 identical copies of a note
+  const uniqueNotes = React.useMemo(() => {
+    const seen = new Set<string>();
+    return (config.notes || []).filter(n => {
+      if (!n || !n.id) return false;
+      if (seen.has(n.id)) return false;
+      seen.add(n.id);
+      return true;
+    });
+  }, [config.notes]);
+
+  const estudiosNotes = uniqueNotes.filter(n => ['estudios', 'estudiar', 'investigacion'].includes(n.category));
+  const generalNotes = uniqueNotes.filter(n => 
+    n.category === 'notas' || 
+    !['estudios', 'estudiar', 'investigacion', 'trabajo', 'compras'].includes(n.category)
+  );
+  const comprasNotes = uniqueNotes.filter(n => n.category === 'compras');
+  const trabajoNotes = uniqueNotes.filter(n => n.category === 'trabajo');
 
   return (
     <div className="p-6 space-y-6 overflow-x-auto">
@@ -739,8 +765,30 @@ const NotesTab: React.FC = () => {
                 </div>
               </div>
             )}
-            <SortableContext items={config.calendarEvents.filter(e => e.type === 'trabajo' && !e.isFinished).map(e => e.id)} strategy={verticalListSortingStrategy}>
-              {config.calendarEvents.filter(e => e.type === 'trabajo' && !e.isFinished).map((event) => (
+            <SortableContext 
+              items={[
+                ...trabajoNotes.map(n => n.id), 
+                ...(config.calendarEvents || []).filter(e => e.type === 'trabajo' && !e.isFinished && !trabajoNotes.some(n => n.id === e.id)).map(e => e.id)
+              ]} 
+              strategy={verticalListSortingStrategy}
+            >
+              {trabajoNotes.map((note) => (
+                <SortableNote 
+                  key={note.id} 
+                  note={note} 
+                  toggleComplete={toggleComplete} 
+                  startEdit={startEdit} 
+                  removeNote={removeNote} 
+                  editingId={editingId} 
+                  editText={editText} 
+                  setEditText={setEditText} 
+                  saveEdit={saveEdit}
+                  editFields={editFields}
+                  setEditFields={setEditFields}
+                  isEditMode={true}
+                />
+              ))}
+              {(config.calendarEvents || []).filter(e => e.type === 'trabajo' && !e.isFinished && !trabajoNotes.some(n => n.id === e.id)).map((event) => (
                 <SortableNote 
                   key={event.id} 
                   note={{

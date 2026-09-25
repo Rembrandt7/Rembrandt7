@@ -51,7 +51,15 @@ export const WorkspaceHub: React.FC<WorkspaceHubProps> = ({ initialSubTab }) => 
     localStorage.setItem('rembrandt_workspace_subtab', tab);
   };
 
-  const notesCount = config.notes?.length || 0;
+  const notesCount = React.useMemo(() => {
+    const seen = new Set<string>();
+    return (config.notes || []).filter(n => {
+      if (!n || !n.id) return false;
+      if (seen.has(n.id)) return false;
+      seen.add(n.id);
+      return true;
+    }).length;
+  }, [config.notes]);
   const credsCount = config.credenciales?.length || 0;
   const commandsCount = config.commands?.length || 0;
 

@@ -621,12 +621,19 @@ export const LinkProvider: React.FC<{ children: React.ReactNode }> = ({ children
           finalConfig.calendarTokens = [];
         }
 
-        // Ensure notes exist
+        // Ensure notes exist and deduplicate by ID
         if (!finalConfig.notes || !Array.isArray(finalConfig.notes)) {
           finalConfig.notes = [];
         } else {
-          // Migration: Add category to existing notes
-          finalConfig.notes = finalConfig.notes.map((n: any) => ({ ...n, category: n.category || 'notas' }));
+          const seenNoteIds = new Set<string>();
+          finalConfig.notes = finalConfig.notes
+            .filter((n: any) => {
+              if (!n || !n.id) return false;
+              if (seenNoteIds.has(n.id)) return false;
+              seenNoteIds.add(n.id);
+              return true;
+            })
+            .map((n: any) => ({ ...n, category: n.category || 'notas' }));
         }
         
         // Migration: Tabs
@@ -790,7 +797,7 @@ export const LinkProvider: React.FC<{ children: React.ReactNode }> = ({ children
           }
 
           const mergeNotes = (remoteData: { notes: Note[], updatedAt?: number } | null, categories: string[]) => {
-            if (!remoteData) return;
+            if (!remoteData || !Array.isArray(remoteData.notes) || remoteData.notes.length === 0) return;
             const { notes: remoteNotes } = remoteData;
             
             // Ensure all remote notes have an ID and a valid category
@@ -940,12 +947,19 @@ export const LinkProvider: React.FC<{ children: React.ReactNode }> = ({ children
             parsed.calendarTokens = [];
           }
 
-          // Ensure notes exist
+          // Ensure notes exist and deduplicate
           if (!parsed.notes || !Array.isArray(parsed.notes)) {
             parsed.notes = [];
           } else {
-            // Migration: Add category to existing notes
-            parsed.notes = parsed.notes.map((n: any) => ({ ...n, category: n.category || 'notas' }));
+            const seenNoteIds = new Set<string>();
+            parsed.notes = parsed.notes
+              .filter((n: any) => {
+                if (!n || !n.id) return false;
+                if (seenNoteIds.has(n.id)) return false;
+                seenNoteIds.add(n.id);
+                return true;
+              })
+              .map((n: any) => ({ ...n, category: n.category || 'notas' }));
           }
           
           // Add missing links to linksBar
