@@ -2,7 +2,8 @@ import React, { useState, useEffect, useRef, useMemo, useCallback } from 'react'
 import { 
   Play, Pause, RotateCcw, Plus, Trash2, Edit3, Save, Download, Upload, 
   Search, Maximize2, Minimize2, Music, Volume2, Type, FastForward, 
-  ChevronUp, ChevronDown, Check, X, RefreshCw, Eye, Sparkles, Copy
+  ChevronUp, ChevronDown, Check, X, RefreshCw, Eye, Sparkles, Copy,
+  Youtube, Headphones, ExternalLink
 } from 'lucide-react';
 import { motion, AnimatePresence } from 'motion/react';
 import { supabase } from '../services/supabaseClient';
@@ -13,6 +14,7 @@ export interface SongItem {
   title: string;
   artist?: string;
   key?: string;
+  mediaUrl?: string; // YouTube or Spotify link
   content: string; // Lyrics and chords
   scrollSpeed: number; // 1 to 10
   fontSize: number; // in pixels
@@ -20,12 +22,49 @@ export interface SongItem {
   updatedAt: number;
 }
 
+export interface MediaInfo {
+  type: 'youtube' | 'spotify' | 'other';
+  embedUrl?: string;
+  originalUrl: string;
+}
+
+export const parseMediaUrl = (url?: string): MediaInfo | null => {
+  if (!url || !url.trim()) return null;
+  const trimmed = url.trim();
+
+  // YouTube match: youtube.com/watch?v=ID, youtu.be/ID, youtube.com/embed/ID, music.youtube.com/watch?v=ID
+  const ytMatch = trimmed.match(/(?:youtube\.com\/(?:watch\?.*v=|embed\/|v\/|shorts\/)|youtu\.be\/)([\w-]{11})/i);
+  if (ytMatch && ytMatch[1]) {
+    return {
+      type: 'youtube',
+      embedUrl: `https://www.youtube.com/embed/${ytMatch[1]}?enablejsapi=1`,
+      originalUrl: trimmed
+    };
+  }
+
+  // Spotify match: open.spotify.com/track/ID, album/ID, playlist/ID
+  const spMatch = trimmed.match(/open\.spotify\.com\/(track|album|playlist|episode)\/([a-zA-Z0-9]+)/i);
+  if (spMatch && spMatch[1] && spMatch[2]) {
+    return {
+      type: 'spotify',
+      embedUrl: `https://open.spotify.com/embed/${spMatch[1]}/${spMatch[2]}?utm_source=generator&theme=0`,
+      originalUrl: trimmed
+    };
+  }
+
+  return {
+    type: 'other',
+    originalUrl: trimmed
+  };
+};
+
 const SAMPLE_SONGS: SongItem[] = [
   {
     id: 'sample-1',
     title: 'De Música Ligera',
     artist: 'Soda Stereo',
     key: 'Sim / Bm',
+    mediaUrl: 'https://www.youtube.com/watch?v=OX-us7PEfkc',
     scrollSpeed: 3,
     fontSize: 20,
     createdAt: Date.now() - 100000,
@@ -91,6 +130,7 @@ Nada más queda...`
     title: 'Flaca',
     artist: 'Andrés Calamaro',
     key: 'Sol / G',
+    mediaUrl: 'https://www.youtube.com/watch?v=sS3YjM1-B_0',
     scrollSpeed: 2,
     fontSize: 20,
     createdAt: Date.now() - 200000,
@@ -245,7 +285,11 @@ const TeleprompterTab: React.FC = () => {
   const [modalTitle, setModalTitle] = useState('');
   const [modalArtist, setModalArtist] = useState('');
   const [modalKey, setModalKey] = useState('');
+  const [modalMediaUrl, setModalMediaUrl] = useState('');
   const [modalContent, setModalContent] = useState('');
+
+  // Audio / Video Mini Player
+  const [isMiniPlayerOpen, setIsMiniPlayerOpen] = useState(false);
 
   // Refs for scrolling
   const scrollContainerRef = useRef<HTMLDivElement>(null);
@@ -258,6 +302,11 @@ const TeleprompterTab: React.FC = () => {
   const currentSong = useMemo(() => {
     return songs.find(s => s.id === activeSongId) || songs[0] || null;
   }, [songs, activeSongId]);
+
+  // Active song media info (YouTube, Spotify, or external)
+  const activeMediaInfo = useMemo(() => {
+    return parseMediaUrl(currentSong?.mediaUrl);
+  }, [currentSong?.mediaUrl]);
 
   // Synchronize song specific preferences when switching song
   useEffect(() => {
@@ -447,6 +496,7 @@ const TeleprompterTab: React.FC = () => {
     setModalTitle('');
     setModalArtist('');
     setModalKey('');
+    setModalMediaUrl('');
     setModalContent('');
     setIsEditModalOpen(true);
   };
@@ -456,6 +506,7 @@ const TeleprompterTab: React.FC = () => {
     setModalTitle(song.title);
     setModalArtist(song.artist || '');
     setModalKey(song.key || '');
+    setModalMediaUrl(song.mediaUrl || '');
     setModalContent(song.content);
     setIsEditModalOpen(true);
   };
@@ -478,6 +529,7 @@ const TeleprompterTab: React.FC = () => {
         title: modalTitle.trim(),
         artist: modalArtist.trim() || undefined,
         key: modalKey.trim() || undefined,
+        mediaUrl: modalMediaUrl.trim() || undefined,
         content: modalContent,
         updatedAt: Date.now(),
       } : s);
@@ -488,6 +540,7 @@ const TeleprompterTab: React.FC = () => {
         title: modalTitle.trim(),
         artist: modalArtist.trim() || undefined,
         key: modalKey.trim() || undefined,
+        mediaUrl: modalMediaUrl.trim() || undefined,
         content: modalContent,
         scrollSpeed: 3,
         fontSize: 22,
@@ -615,6 +668,47 @@ const TeleprompterTab: React.FC = () => {
               <Edit3 size={13} />
               <span>Editar / Pegar</span>
             </button>
+          )}
+
+          {activeMediaInfo && (
+            <div className="flex items-center gap-1 ml-1">
+              <button
+                onClick={() => setIsMiniPlayerOpen(prev => !prev)}
+                className={`px-2.5 py-1.5 rounded-xl text-xs font-bold transition-all flex items-center gap-1.5 border shadow-sm ${
+                  isMiniPlayerOpen
+                    ? activeMediaInfo.type === 'spotify'
+                      ? 'bg-emerald-500 text-black border-emerald-400 font-extrabold'
+                      : activeMediaInfo.type === 'youtube'
+                      ? 'bg-red-600 text-white border-red-500 font-extrabold'
+                      : 'bg-indigo-600 text-white border-indigo-500 font-extrabold'
+                    : activeMediaInfo.type === 'spotify'
+                    ? 'bg-emerald-500/15 hover:bg-emerald-500/25 text-emerald-400 border-emerald-500/30'
+                    : activeMediaInfo.type === 'youtube'
+                    ? 'bg-red-500/15 hover:bg-red-500/25 text-red-400 border-red-500/30'
+                    : 'bg-zinc-800 hover:bg-zinc-700 text-zinc-300 border-white/10'
+                }`}
+                title="Reproducir audio de fondo (YouTube / Spotify)"
+              >
+                {activeMediaInfo.type === 'spotify' ? (
+                  <Headphones size={13} className={isMiniPlayerOpen ? 'text-black' : 'text-emerald-400'} />
+                ) : activeMediaInfo.type === 'youtube' ? (
+                  <Youtube size={14} className={isMiniPlayerOpen ? 'text-white' : 'text-red-500'} />
+                ) : (
+                  <Headphones size={13} />
+                )}
+                <span>{isMiniPlayerOpen ? 'Ocultar Audio' : activeMediaInfo.type === 'spotify' ? 'Spotify' : activeMediaInfo.type === 'youtube' ? 'YouTube' : 'Audio'}</span>
+              </button>
+
+              <a
+                href={activeMediaInfo.originalUrl}
+                target="_blank"
+                rel="noopener noreferrer"
+                className="p-1.5 bg-zinc-800 hover:bg-zinc-700 text-zinc-400 hover:text-white rounded-xl border border-white/10 transition-colors hidden sm:flex items-center"
+                title="Abrir enlace externo en nueva pestaña"
+              >
+                <ExternalLink size={13} />
+              </a>
+            </div>
           )}
         </div>
 
@@ -891,6 +985,30 @@ const TeleprompterTab: React.FC = () => {
                     Tono Base: {currentSong.key} {transposition !== 0 && `(Transp: ${transposition > 0 ? `+${transposition}` : transposition})`}
                   </span>
                 )}
+
+                {activeMediaInfo && (
+                  <div className="pt-2 flex items-center justify-center gap-2">
+                    <button
+                      onClick={() => setIsMiniPlayerOpen(prev => !prev)}
+                      className={`inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-xs font-semibold border transition-all ${
+                        activeMediaInfo.type === 'spotify'
+                          ? 'bg-emerald-500/10 hover:bg-emerald-500/20 text-emerald-400 border-emerald-500/30'
+                          : activeMediaInfo.type === 'youtube'
+                          ? 'bg-red-500/10 hover:bg-red-500/20 text-red-400 border-red-500/30'
+                          : 'bg-zinc-800 hover:bg-zinc-700 text-zinc-300 border-white/10'
+                      }`}
+                    >
+                      {activeMediaInfo.type === 'spotify' ? (
+                        <Headphones size={13} className="text-emerald-400" />
+                      ) : activeMediaInfo.type === 'youtube' ? (
+                        <Youtube size={14} className="text-red-500" />
+                      ) : (
+                        <Headphones size={13} />
+                      )}
+                      <span>{isMiniPlayerOpen ? 'Ocultar reproductor' : `Escuchar en ${activeMediaInfo.type === 'spotify' ? 'Spotify' : activeMediaInfo.type === 'youtube' ? 'YouTube' : 'reproductor'}`}</span>
+                    </button>
+                  </div>
+                )}
               </div>
 
               {/* Rendered Lyrics & Chords (LaCuerda.net style) */}
@@ -953,6 +1071,90 @@ const TeleprompterTab: React.FC = () => {
         </div>
       </div>
 
+      {/* FLOATING MINI-PLAYER FOR SPOTIFY / YOUTUBE */}
+      <AnimatePresence>
+        {isMiniPlayerOpen && activeMediaInfo && (
+          <motion.div
+            initial={{ opacity: 0, y: 20, scale: 0.95 }}
+            animate={{ opacity: 1, y: 0, scale: 1 }}
+            exit={{ opacity: 0, y: 20, scale: 0.95 }}
+            className="fixed bottom-4 right-4 sm:bottom-6 sm:right-6 z-40 w-[320px] sm:w-[380px] bg-zinc-950/95 border border-white/20 rounded-2xl p-3 shadow-2xl backdrop-blur-xl flex flex-col gap-2"
+          >
+            <div className="flex items-center justify-between border-b border-white/10 pb-2">
+              <div className="flex items-center gap-2">
+                {activeMediaInfo.type === 'spotify' ? (
+                  <Headphones size={15} className="text-emerald-400" />
+                ) : activeMediaInfo.type === 'youtube' ? (
+                  <Youtube size={17} className="text-red-500" />
+                ) : (
+                  <Headphones size={15} className="text-amber-400" />
+                )}
+                <span className="text-xs font-bold text-white">
+                  {activeMediaInfo.type === 'spotify' ? 'Reproductor Spotify' : activeMediaInfo.type === 'youtube' ? 'Video YouTube' : 'Audio de Fondo'}
+                </span>
+              </div>
+              <div className="flex items-center gap-1">
+                <a
+                  href={activeMediaInfo.originalUrl}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="p-1 text-zinc-400 hover:text-white rounded"
+                  title="Abrir en enlace externo"
+                >
+                  <ExternalLink size={14} />
+                </a>
+                <button
+                  onClick={() => setIsMiniPlayerOpen(false)}
+                  className="p-1 text-zinc-400 hover:text-white rounded"
+                  title="Cerrar mini reproductor"
+                >
+                  <X size={15} />
+                </button>
+              </div>
+            </div>
+
+            {/* Embed Iframe */}
+            {activeMediaInfo.type === 'youtube' && activeMediaInfo.embedUrl && (
+              <div className="w-full aspect-video rounded-xl overflow-hidden bg-black border border-white/10 shadow-inner">
+                <iframe
+                  src={activeMediaInfo.embedUrl}
+                  title="YouTube Player"
+                  className="w-full h-full"
+                  allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; web-share"
+                  allowFullScreen
+                />
+              </div>
+            )}
+
+            {activeMediaInfo.type === 'spotify' && activeMediaInfo.embedUrl && (
+              <div className="w-full h-[152px] rounded-xl overflow-hidden bg-black border border-white/10 shadow-inner">
+                <iframe
+                  src={activeMediaInfo.embedUrl}
+                  title="Spotify Player"
+                  className="w-full h-full"
+                  allow="autoplay; clipboard-write; encrypted-media; fullscreen; picture-in-picture"
+                  loading="lazy"
+                />
+              </div>
+            )}
+
+            {activeMediaInfo.type === 'other' && (
+              <div className="p-3 text-center text-xs text-zinc-300">
+                <p className="mb-2">Enlace de audio externo configurado:</p>
+                <a
+                  href={activeMediaInfo.originalUrl}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="inline-flex items-center gap-1.5 px-3 py-1.5 bg-amber-500 hover:bg-amber-400 text-black font-bold rounded-xl"
+                >
+                  <ExternalLink size={13} /> Abrir reproductor
+                </a>
+              </div>
+            )}
+          </motion.div>
+        )}
+      </AnimatePresence>
+
       {/* MODAL: ADD / EDIT SONG */}
       <AnimatePresence>
         {isEditModalOpen && (
@@ -1014,6 +1216,27 @@ const TeleprompterTab: React.FC = () => {
                     placeholder="Ej. Soda Stereo, Andrés Calamaro..."
                     className="w-full bg-zinc-950 border border-white/10 rounded-xl px-3 py-2 text-sm text-white focus:outline-none focus:border-amber-500"
                   />
+                </div>
+
+                <div>
+                  <label className="block text-xs font-semibold text-zinc-300 uppercase mb-1 flex items-center justify-between">
+                    <span className="flex items-center gap-1.5">
+                      <Headphones size={13} className="text-emerald-400" />
+                      <Youtube size={14} className="text-red-400" />
+                      Enlace para Escuchar (Spotify o YouTube)
+                    </span>
+                    <span className="text-[10px] text-zinc-400 lowercase font-normal">(opcional)</span>
+                  </label>
+                  <input
+                    type="url"
+                    value={modalMediaUrl}
+                    onChange={(e) => setModalMediaUrl(e.target.value)}
+                    placeholder="Ej. https://open.spotify.com/track/... o https://www.youtube.com/watch?v=..."
+                    className="w-full bg-zinc-950 border border-white/10 rounded-xl px-3 py-2 text-xs sm:text-sm text-white placeholder-zinc-500 focus:outline-none focus:border-amber-500"
+                  />
+                  <p className="text-[10px] text-zinc-400 mt-1">
+                    Pega un enlace de YouTube o Spotify para tener un mini reproductor integrado mientras ensayas.
+                  </p>
                 </div>
 
                 <div>
