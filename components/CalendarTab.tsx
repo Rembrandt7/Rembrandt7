@@ -792,19 +792,26 @@ const CalendarTab: React.FC = () => {
             reminderTime: t.reminderTime || '20:00'
           };
         } else {
-          // Not yet! User explicitly wants the message to continue reminding them.
-          const nowMs = Date.now();
-          let snoozedUntilTimestamp = nowMs + (snoozeMinutes * 60 * 1000);
+          // User selected "Aún no":
+          // 1. App will not prompt again until the afternoon (5:00 PM / 17:00)
+          // 2. Google Calendar event is set for TODAY at 8:00 PM (20:00) with alarm to cell phone!
+          const now = new Date();
+          const currentHour = now.getHours();
+          let snoozedUntilTimestamp: number;
 
-          if (snoozeMinutes === -1) {
-            // "Recordar hoy a las 8:00 PM"
-            const eightPm = new Date();
-            eightPm.setHours(20, 0, 0, 0);
-            if (eightPm.getTime() > nowMs) {
-              snoozedUntilTimestamp = eightPm.getTime();
-            } else {
-              snoozedUntilTimestamp = nowMs + 60 * 60 * 1000;
-            }
+          if (currentHour < 17) {
+            // Before 5:00 PM -> Silence in app until 5:00 PM (17:00)
+            const tarde = new Date();
+            tarde.setHours(17, 0, 0, 0);
+            snoozedUntilTimestamp = tarde.getTime();
+          } else if (currentHour < 20) {
+            // Between 5:00 PM and 8:00 PM -> Silence until 8:00 PM (20:00)
+            const noche = new Date();
+            noche.setHours(20, 0, 0, 0);
+            snoozedUntilTimestamp = noche.getTime();
+          } else {
+            // After 8:00 PM -> Silence for 1 hour
+            snoozedUntilTimestamp = Date.now() + 60 * 60 * 1000;
           }
 
           nextTargetDateStr = currentTodayStr;
@@ -813,7 +820,8 @@ const CalendarTab: React.FC = () => {
             currentActiveDate: currentTodayStr,
             isCompleted: false,
             snoozedUntil: snoozedUntilTimestamp,
-            reminderTime: t.reminderTime || '20:00'
+            reminderTime: '20:00', // 8:00 PM for phone alarm!
+            reminderMinutes: 0 // Alert at exact time (8:00 PM) on phone
           };
         }
       }
@@ -856,11 +864,6 @@ const CalendarTab: React.FC = () => {
       // Push in-app alert notification so the user sees it in their notification panel
       const targetToken = updatedTokens.find(t => t.id === id);
       const isCar = targetToken?.name.toLowerCase().includes('carro');
-      const reminderLabel = snoozeMinutes === -1 
-        ? 'hoy a las 8:00 PM' 
-        : snoozeMinutes >= 60 
-          ? `en ${Math.round(snoozeMinutes / 60)} hora(s)` 
-          : `en ${snoozeMinutes} min`;
 
       if (updateNotifications) {
         const notifId = `token-due-${id}-${Date.now()}`;
@@ -868,8 +871,8 @@ const CalendarTab: React.FC = () => {
           id: notifId,
           title: isCar ? '⚡ Recordatorio: Cargar el carro' : `⚡ Pendiente: ${targetToken?.name}`,
           content: isCar 
-            ? `Cargar el carro sigue pendiente. Te volveremos a avisar ${reminderLabel}.`
-            : `El pendiente "${targetToken?.name}" sigue sin realizarse. Te volveremos a avisar ${reminderLabel}.`,
+            ? 'Cargar el carro sigue pendiente para hoy. Te volveremos a preguntar en la tarde y se programó la alerta para las 8:00 PM a tu celular.'
+            : `El pendiente "${targetToken?.name}" sigue sin realizarse. Te preguntaremos en la tarde y alerta a las 8:00 PM al celular.`,
           timestamp: Date.now(),
           isRead: false,
           type: 'calendar_alert'
@@ -877,7 +880,7 @@ const CalendarTab: React.FC = () => {
         const existingNotifs = (currentConfig.notifications || []).filter(n => !n.id.startsWith(`token-due-${id}`));
         updateNotifications([newNotif, ...existingNotifs]);
       }
-      toast.info(`Recordatorio pospuesto (${reminderLabel}). Te volveremos a avisar.`);
+      toast.info('Entendido. Te preguntaremos en la tarde (5:00 PM) y se programó la alerta a las 8:00 PM a tu celular.');
     }
 
     // Google Calendar Sync
@@ -2611,24 +2614,14 @@ const CalendarTab: React.FC = () => {
                 <span>{currentOverdueToken.name.toLowerCase().includes('carro') ? 'Sí, ya lo cargué' : 'Sí, ya lo realicé'}</span>
               </button>
 
-              {/* Opciones de "Aún no": continuar mandando mensaje */}
-              <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
-                <button
-                  onClick={() => handleResolveOverdueToken(currentOverdueToken.id, false, 60)}
-                  className="flex items-center justify-center gap-2 py-3 px-3 bg-amber-600/20 hover:bg-amber-600/35 border border-amber-500/40 text-amber-200 hover:text-white rounded-xl font-bold transition-all text-xs"
-                >
-                  <Clock size={15} />
-                  <span>Aún no (Avisar en 1h)</span>
-                </button>
-
-                <button
-                  onClick={() => handleResolveOverdueToken(currentOverdueToken.id, false, -1)}
-                  className="flex items-center justify-center gap-2 py-3 px-3 bg-amber-600/20 hover:bg-amber-600/35 border border-amber-500/40 text-amber-200 hover:text-white rounded-xl font-bold transition-all text-xs"
-                >
-                  <Clock size={15} />
-                  <span>Aún no (Avisar hoy 8 PM)</span>
-                </button>
-              </div>
+              {/* Botón Aún no: Preguntarme en la tarde y alerta 8 PM al cel */}
+              <button
+                onClick={() => handleResolveOverdueToken(currentOverdueToken.id, false, 0)}
+                className="w-full flex items-center justify-center gap-2 py-3 px-4 bg-amber-600/25 hover:bg-amber-600/40 border border-amber-500/40 text-amber-200 hover:text-white rounded-xl font-bold transition-all text-xs sm:text-sm shadow-md"
+              >
+                <Clock size={16} />
+                <span>Aún no (Preguntarme en la tarde y alerta 8:00 PM al cel)</span>
+              </button>
             </motion.div>
           </div>
         )}

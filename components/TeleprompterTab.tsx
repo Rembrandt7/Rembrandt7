@@ -249,6 +249,7 @@ const TeleprompterTab: React.FC = () => {
 
   // Refs for scrolling
   const scrollContainerRef = useRef<HTMLDivElement>(null);
+  const scrollPosRef = useRef<number>(0);
   const animFrameRef = useRef<number | null>(null);
   const fullScreenContainerRef = useRef<HTMLDivElement>(null);
   const fileInputRef = useRef<HTMLInputElement>(null);
@@ -333,7 +334,7 @@ const TeleprompterTab: React.FC = () => {
     }
   };
 
-  // Continuous smooth auto-scroll loop
+  // Continuous smooth auto-scroll loop with sub-pixel accumulator
   useEffect(() => {
     if (!isPlaying) {
       if (animFrameRef.current) {
@@ -341,6 +342,15 @@ const TeleprompterTab: React.FC = () => {
         animFrameRef.current = null;
       }
       return;
+    }
+
+    const container = scrollContainerRef.current;
+    if (container) {
+      // If user starts play while already at bottom, auto-rewind to top
+      if (container.scrollTop + container.clientHeight >= container.scrollHeight - 25) {
+        container.scrollTop = 0;
+      }
+      scrollPosRef.current = container.scrollTop;
     }
 
     let lastTime = performance.now();
@@ -351,14 +361,17 @@ const TeleprompterTab: React.FC = () => {
 
       const container = scrollContainerRef.current;
       if (container) {
-        // Speed formula: speed 1 = ~12 px/sec, speed 5 = ~60 px/sec, speed 10 = ~140 px/sec
-        const pixelsPerSecond = scrollSpeed * 14;
-        const moveAmount = (pixelsPerSecond * delta) / 1000;
+        // Speed formula: scrollSpeed 1 to 10
+        // Speed 1 = 15 px/s, Speed 3 = 45 px/s, Speed 5 = 80 px/s, Speed 10 = 180 px/s
+        const pixelsPerSecond = Math.max(12, scrollSpeed * 15);
+        const moveAmount = (pixelsPerSecond * Math.min(delta, 100)) / 1000;
 
-        container.scrollTop += moveAmount;
+        scrollPosRef.current += moveAmount;
+        container.scrollTop = scrollPosRef.current;
 
-        // Check if reached the end
-        if (container.scrollTop + container.clientHeight >= container.scrollHeight - 5) {
+        // Check if reached the end (only if scrollable)
+        const maxScroll = container.scrollHeight - container.clientHeight;
+        if (maxScroll > 30 && container.scrollTop >= maxScroll - 5) {
           setIsPlaying(false);
           toast.info('Fin de la canción alcanzado');
           return;
@@ -373,6 +386,7 @@ const TeleprompterTab: React.FC = () => {
     return () => {
       if (animFrameRef.current) {
         cancelAnimationFrame(animFrameRef.current);
+        animFrameRef.current = null;
       }
     };
   }, [isPlaying, scrollSpeed]);
@@ -423,6 +437,7 @@ const TeleprompterTab: React.FC = () => {
   const handleRestartScroll = () => {
     if (scrollContainerRef.current) {
       scrollContainerRef.current.scrollTo({ top: 0, behavior: 'smooth' });
+      scrollPosRef.current = 0;
     }
   };
 
@@ -590,6 +605,17 @@ const TeleprompterTab: React.FC = () => {
               <p className="text-[11px] text-zinc-400 truncate">{currentSong.artist} {currentSong.key ? `• Tono: ${currentSong.key}` : ''}</p>
             )}
           </div>
+
+          {currentSong && (
+            <button
+              onClick={() => handleOpenEditModal(currentSong)}
+              className="px-2.5 py-1.5 bg-amber-500/15 hover:bg-amber-500/25 text-amber-300 hover:text-white rounded-xl text-xs font-bold transition-all flex items-center gap-1.5 border border-amber-500/30 shadow-sm ml-1"
+              title="Editar o pegar letra y acordes"
+            >
+              <Edit3 size={13} />
+              <span>Editar / Pegar</span>
+            </button>
+          )}
         </div>
 
         {/* TELEPROMPTER FLOATING ACTIONS */}
@@ -789,7 +815,7 @@ const TeleprompterTab: React.FC = () => {
                         <p className="text-[10px] text-zinc-400 truncate">{song.artist || 'Sin artista'} {song.key ? `• ${song.key}` : ''}</p>
                       </div>
 
-                      <div className="flex items-center gap-1 opacity-0 group-hover:opacity-100 transition-opacity">
+                      <div className="flex items-center gap-1 opacity-100 sm:opacity-0 sm:group-hover:opacity-100 transition-opacity">
                         <button
                           onClick={(e) => {
                             e.stopPropagation();
@@ -828,6 +854,21 @@ const TeleprompterTab: React.FC = () => {
         {/* PROMPTER CANVAS (SCROLLING TEXT WITH CHORDS) */}
         <div 
           ref={scrollContainerRef}
+          onScroll={() => {
+            if (scrollContainerRef.current && !isPlaying) {
+              scrollPosRef.current = scrollContainerRef.current.scrollTop;
+            }
+          }}
+          onWheel={() => {
+            if (scrollContainerRef.current) {
+              scrollPosRef.current = scrollContainerRef.current.scrollTop;
+            }
+          }}
+          onTouchMove={() => {
+            if (scrollContainerRef.current) {
+              scrollPosRef.current = scrollContainerRef.current.scrollTop;
+            }
+          }}
           className="flex-grow overflow-y-auto h-full bg-black/90 p-6 sm:p-12 md:p-16 custom-scrollbar text-white flex flex-col items-center"
           style={{
             scrollBehavior: isPlaying ? 'auto' : 'smooth',
