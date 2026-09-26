@@ -8,6 +8,7 @@ import {
 import { motion, AnimatePresence } from 'motion/react';
 import { supabase } from '../services/supabaseClient';
 import { toast } from 'sonner';
+import { generateContentWithFallback, GEMINI_MODELS } from '../services/geminiService';
 
 export interface SongItem {
   id: string;
@@ -59,6 +60,107 @@ export const parseMediaUrl = (url?: string): MediaInfo | null => {
 };
 
 const SAMPLE_SONGS: SongItem[] = [
+  {
+    id: 'sample-0-chano-claramente',
+    title: 'Claramente',
+    artist: 'Chano',
+    key: 'Do / C (Capo 3)',
+    mediaUrl: 'https://www.youtube.com/watch?v=ufRW1mzugvw',
+    scrollSpeed: 3,
+    fontSize: 22,
+    createdAt: Date.now(),
+    updatedAt: Date.now(),
+    content: `Nota: La primer estrofa se toca arpegiada
+Capotraste en 3er traste
+
+[Verso 1]
+C          G
+Claramente amanece
+      Am            G
+y las lunas son las de ayer,
+C             G
+que el dolor no regrese,
+Am             G
+enemigo que conocés.
+F           G
+Pero desaparece
+C           Am
+y se aparece,
+F        G      C
+cada luna sombría.
+
+[Verso 2]
+C           G
+No viajaban sus penas
+  Am           G
+ni apretaba su cinturón,
+C           G
+no peleaba sus guerras
+  Am           G
+ni al revés, su vocación.
+F          G
+Pero en cada momento
+C
+no hacía falta yo,
+F       G       C
+Clara no me quería.
+
+[Coro]
+F         C         G        C
+Claramente, Clara no me quería,
+F         C         E        Am
+no me elige y no me elegiría.
+F         C         G        Am
+Cuando muera mayo, haré mi vida,
+F         G       C
+Clara no me quería.
+
+[Verso 3]
+C              G
+Se escucharon las notas
+Am             G
+que lloraste anteanoche y hoy,
+C           G
+que desafinarían
+Am             G
+la alegría y la decepción.
+F             G
+Yo pensé que la vida
+C             Am
+era estar con vos,
+F       G        C
+pero no me querías.
+
+[Coro]
+F         C         G        C
+Claramente, Clara no me quería,
+F         C         E        Am
+no me elige y no me elegiría.
+F         C         G        Am
+Cuando caiga el sol, haré mi vida,
+F         G       C
+Clara no me quería.
+
+[Puente]
+F         C         G        C
+Cada tanto viajo a la deriva,
+F         C         E        Am
+cuando miro la melancolía,
+F         C         G        Am
+y me acuerdo cuando te reías,
+F        G         C
+pero no me querías.
+
+[Coro]
+F         C         G        C
+Claramente, Clara no me quería,
+F         C         E        Am
+no me elige y no me elegiría.
+F         C         G        Am
+Cuando caiga febo, haré mi vida,
+F         G       C
+Clara no me quería.`
+  },
   {
     id: 'sample-1',
     title: 'De Música Ligera',
@@ -287,6 +389,8 @@ const TeleprompterTab: React.FC = () => {
   const [modalKey, setModalKey] = useState('');
   const [modalMediaUrl, setModalMediaUrl] = useState('');
   const [modalContent, setModalContent] = useState('');
+  const [importInput, setImportInput] = useState('');
+  const [isImporting, setIsImporting] = useState(false);
 
   // Audio / Video Mini Player
   const [isMiniPlayerOpen, setIsMiniPlayerOpen] = useState(false);
@@ -498,6 +602,7 @@ const TeleprompterTab: React.FC = () => {
     setModalKey('');
     setModalMediaUrl('');
     setModalContent('');
+    setImportInput('');
     setIsEditModalOpen(true);
   };
 
@@ -508,6 +613,7 @@ const TeleprompterTab: React.FC = () => {
     setModalKey(song.key || '');
     setModalMediaUrl(song.mediaUrl || '');
     setModalContent(song.content);
+    setImportInput('');
     setIsEditModalOpen(true);
   };
 
@@ -555,6 +661,76 @@ const TeleprompterTab: React.FC = () => {
     setSongs(updatedList);
     saveMusicaToSupabase(updatedList, true);
     setIsEditModalOpen(false);
+  };
+
+  const handleAutoImport = async () => {
+    if (!importInput.trim()) return;
+    setIsImporting(true);
+    try {
+      const prompt = `Actúa como un transcriptor musical experto de LaCuerda.net y cancioneros de guitarra.
+El usuario quiere agregar esta canción, enlace o texto:
+"${importInput.trim()}"
+
+Extrae o genera la información completa en formato clásico de LaCuerda.net (donde los acordes están en su propia línea justo encima de la sílaba o palabra donde suenan, identificando secciones con [Intro], [Verso 1], [Coro], [Puente], etc.).
+Si conoces el video oficial en YouTube, incluye el enlace en "mediaUrl".
+
+Responde ÚNICAMENTE con un JSON válido (sin backticks markdown):
+{
+  "title": "Nombre de la canción",
+  "artist": "Nombre del artista o grupo",
+  "key": "Tono base (ej. Sol / G, Do / C, o Do / C (Capo 3))",
+  "mediaUrl": "https://www.youtube.com/watch?v=...",
+  "content": "Letra completa con acordes en sus líneas correspondientes"
+}`;
+
+      const res = await generateContentWithFallback({
+        model: GEMINI_MODELS.PRIMARY,
+        contents: [{ role: 'user', parts: [{ text: prompt }] }],
+      });
+
+      const raw = res.candidates?.[0]?.content?.parts?.[0]?.text || '';
+      const cleaned = raw.replace(/```(?:json)?/gi, '').replace(/```/g, '').trim();
+      const parsed = JSON.parse(cleaned);
+
+      if (parsed.title) setModalTitle(parsed.title);
+      if (parsed.artist) setModalArtist(parsed.artist);
+      if (parsed.key) setModalKey(parsed.key);
+      if (parsed.mediaUrl) setModalMediaUrl(parsed.mediaUrl);
+      if (parsed.content) setModalContent(parsed.content);
+
+      toast.success(`Canción "${parsed.title || 'importada'}" procesada con éxito`);
+      setImportInput('');
+    } catch (err: any) {
+      console.error('Error auto-importing song:', err);
+      const url = importInput.trim();
+      if (url.includes('lacuerda.net')) {
+        const parts = url.split('/').filter(Boolean);
+        const last = parts[parts.length - 1]?.replace(/\.shtml.*/, '');
+        const artistPart = parts[parts.length - 2];
+        if (last) setModalTitle(last.charAt(0).toUpperCase() + last.slice(1));
+        if (artistPart) setModalArtist(artistPart.charAt(0).toUpperCase() + artistPart.slice(1));
+        toast.info('Detectamos el título y artista desde el enlace de LaCuerda. Ahora puedes copiar y pegar la letra con acordes.');
+      } else {
+        toast.error('No se pudo procesar automáticamente. Puedes pegar la letra y acordes manualmente.');
+      }
+    } finally {
+      setIsImporting(false);
+    }
+  };
+
+  const handleCleanFormatting = () => {
+    if (!modalContent.trim()) return;
+    let cleaned = modalContent
+      .replace(/<A>([^<]+)<\/A>/gi, '$1')
+      .replace(/<div><\/div>/gi, '')
+      .replace(/<br\s*[\/]?>/gi, '\n')
+      .replace(/<[^>]+>/g, '')
+      .replace(/&aacute;/g, 'á').replace(/&eacute;/g, 'é').replace(/&iacute;/g, 'í')
+      .replace(/&oacute;/g, 'ó').replace(/&uacute;/g, 'ú').replace(/&ntilde;/g, 'ñ');
+    
+    cleaned = cleaned.replace(/\n{3,}/g, '\n\n');
+    setModalContent(cleaned);
+    toast.success('Formato de acordes acomodado');
   };
 
   const handleDeleteSong = (id: string, title: string) => {
@@ -670,7 +846,7 @@ const TeleprompterTab: React.FC = () => {
             </button>
           )}
 
-          {activeMediaInfo && (
+          {activeMediaInfo ? (
             <div className="flex items-center gap-1 ml-1">
               <button
                 onClick={() => setIsMiniPlayerOpen(prev => !prev)}
@@ -709,7 +885,17 @@ const TeleprompterTab: React.FC = () => {
                 <ExternalLink size={13} />
               </a>
             </div>
-          )}
+          ) : currentSong ? (
+            <button
+              onClick={() => handleOpenEditModal(currentSong)}
+              className="px-2.5 py-1.5 bg-zinc-800/80 hover:bg-zinc-700 text-zinc-300 hover:text-white rounded-xl text-xs font-semibold transition-all flex items-center gap-1.5 border border-white/15 shadow-sm ml-1"
+              title="Agregar enlace de Spotify o YouTube a esta canción"
+            >
+              <Youtube size={13} className="text-red-400" />
+              <Headphones size={13} className="text-emerald-400" />
+              <span className="hidden sm:inline">+ Enlace Música</span>
+            </button>
+          ) : null}
         </div>
 
         {/* TELEPROMPTER FLOATING ACTIONS */}
@@ -1009,6 +1195,19 @@ const TeleprompterTab: React.FC = () => {
                     </button>
                   </div>
                 )}
+
+                {!activeMediaInfo && (
+                  <div className="pt-2 flex items-center justify-center gap-2">
+                    <button
+                      onClick={() => handleOpenEditModal(currentSong)}
+                      className="inline-flex items-center gap-1.5 px-3.5 py-1.5 rounded-full text-xs font-semibold bg-zinc-800/90 hover:bg-zinc-700 text-zinc-300 hover:text-white border border-white/15 transition-all shadow-sm"
+                    >
+                      <Youtube size={14} className="text-red-400" />
+                      <Headphones size={13} className="text-emerald-400" />
+                      <span>+ Agregar enlace de Spotify o YouTube</span>
+                    </button>
+                  </div>
+                )}
               </div>
 
               {/* Rendered Lyrics & Chords (LaCuerda.net style) */}
@@ -1176,6 +1375,35 @@ const TeleprompterTab: React.FC = () => {
               </div>
 
               <div className="space-y-3 overflow-y-auto custom-scrollbar pr-1 flex-grow">
+                {/* AI / Link Importer Box */}
+                <div className="bg-gradient-to-r from-amber-500/10 via-zinc-900 to-zinc-950 border border-amber-500/30 rounded-xl p-3 space-y-2">
+                  <div className="flex items-center justify-between">
+                    <span className="text-xs font-bold text-amber-300 flex items-center gap-1.5">
+                      <Sparkles size={14} className="text-amber-400" />
+                      Importar o Autocompletar con IA
+                    </span>
+                    <span className="text-[10px] text-zinc-400">Pega un enlace de LaCuerda o nombre de canción</span>
+                  </div>
+                  <div className="flex gap-2">
+                    <input
+                      type="text"
+                      value={importInput}
+                      onChange={(e) => setImportInput(e.target.value)}
+                      placeholder="Ej. https://acordes.lacuerda.net/... o 'Chano - Claramente'"
+                      className="flex-grow bg-zinc-950 border border-white/10 rounded-xl px-3 py-1.5 text-xs text-white placeholder-zinc-500 focus:outline-none focus:border-amber-500"
+                    />
+                    <button
+                      type="button"
+                      onClick={handleAutoImport}
+                      disabled={isImporting || !importInput.trim()}
+                      className="px-3.5 py-1.5 bg-gradient-to-r from-amber-500 to-amber-600 hover:from-amber-400 hover:to-amber-500 text-black font-bold text-xs rounded-xl shadow-md flex items-center gap-1.5 shrink-0 disabled:opacity-50 transition-all cursor-pointer"
+                    >
+                      <Sparkles size={13} className={isImporting ? 'animate-spin' : ''} />
+                      <span>{isImporting ? 'Procesando...' : 'Autocompletar'}</span>
+                    </button>
+                  </div>
+                </div>
+
                 <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
                   <div className="sm:col-span-2">
                     <label className="block text-xs font-semibold text-zinc-300 uppercase mb-1">
@@ -1218,12 +1446,12 @@ const TeleprompterTab: React.FC = () => {
                   />
                 </div>
 
-                <div>
-                  <label className="block text-xs font-semibold text-zinc-300 uppercase mb-1 flex items-center justify-between">
+                <div className="bg-zinc-950/60 p-3 rounded-xl border border-white/10 space-y-1">
+                  <label className="block text-xs font-semibold text-zinc-200 uppercase mb-1 flex items-center justify-between">
                     <span className="flex items-center gap-1.5">
-                      <Headphones size={13} className="text-emerald-400" />
-                      <Youtube size={14} className="text-red-400" />
-                      Enlace para Escuchar (Spotify o YouTube)
+                      <Headphones size={14} className="text-emerald-400" />
+                      <Youtube size={15} className="text-red-400" />
+                      <span>Enlace de Audio/Video (Spotify o YouTube)</span>
                     </span>
                     <span className="text-[10px] text-zinc-400 lowercase font-normal">(opcional)</span>
                   </label>
@@ -1232,10 +1460,10 @@ const TeleprompterTab: React.FC = () => {
                     value={modalMediaUrl}
                     onChange={(e) => setModalMediaUrl(e.target.value)}
                     placeholder="Ej. https://open.spotify.com/track/... o https://www.youtube.com/watch?v=..."
-                    className="w-full bg-zinc-950 border border-white/10 rounded-xl px-3 py-2 text-xs sm:text-sm text-white placeholder-zinc-500 focus:outline-none focus:border-amber-500"
+                    className="w-full bg-zinc-900 border border-white/10 rounded-xl px-3 py-2 text-xs sm:text-sm text-white placeholder-zinc-500 focus:outline-none focus:border-amber-500 font-mono"
                   />
-                  <p className="text-[10px] text-zinc-400 mt-1">
-                    Pega un enlace de YouTube o Spotify para tener un mini reproductor integrado mientras ensayas.
+                  <p className="text-[11px] text-zinc-400 pt-0.5">
+                    💡 Pega un enlace de YouTube o Spotify para tener un mini reproductor integrado en el teleprompter mientras ensayas.
                   </p>
                 </div>
 
@@ -1244,9 +1472,19 @@ const TeleprompterTab: React.FC = () => {
                     <label className="text-xs font-semibold text-zinc-300 uppercase">
                       Letra con Acordes (Formato LaCuerda.net) *
                     </label>
-                    <span className="text-[11px] text-amber-400/80">
-                      💡 Pon los acordes en su propia línea justo sobre la palabra
-                    </span>
+                    <div className="flex items-center gap-2">
+                      <button
+                        type="button"
+                        onClick={handleCleanFormatting}
+                        className="px-2 py-0.5 bg-white/10 hover:bg-white/15 text-zinc-200 hover:text-white rounded-lg text-[10px] font-medium transition-colors"
+                        title="Limpiar etiquetas HTML o espacios repetidos"
+                      >
+                        ✨ Acomodar Formato
+                      </button>
+                      <span className="text-[11px] text-amber-400/80 hidden sm:inline">
+                        💡 Acordes en su línea sobre cada palabra
+                      </span>
+                    </div>
                   </div>
                   <textarea
                     value={modalContent}
