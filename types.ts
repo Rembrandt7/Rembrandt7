@@ -308,6 +308,11 @@ export interface AppConfig {
     daysAfterReset: number;
   };
   credenciales: Credencial[];
+  credencialesSecurity?: {
+    passwordHash: string;
+    salt: string;
+    hint?: string;
+  };
   estudios: Estudio[];
   news: NewsItem[];
   aiTutorials: TutorialItem[];
