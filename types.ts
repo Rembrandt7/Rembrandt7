@@ -157,6 +157,8 @@ export interface CalendarToken {
   reminderMinutes?: number;
   reminderTime?: string;
   googleEventId?: string;
+  lastCompletedDate?: string;
+  snoozedUntil?: number;
 }
 
 export interface FinanzasCard {

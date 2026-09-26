@@ -77,11 +77,14 @@ const ReminderDisplay: React.FC = () => {
 
     // Add tokens
     tokens.forEach(token => {
+      if (token.lastCompletedDate === todayStr && token.currentActiveDate > todayStr) {
+        return;
+      }
       const activeDate = new Date(token.currentActiveDate + 'T00:00:00');
       if (activeDate <= today) {
         const isExpired = activeDate < today;
         reminders.push({
-          text: `TOKEN: ${token.name}`,
+          text: `TOKEN: ${token.name}${token.isCompleted === false ? ' (Pendiente)' : ''}`,
           type: 'token',
           isUrgent: true,
           color: isExpired ? '#ef4444' : '#eab308', // Red if expired, Yellow if active today

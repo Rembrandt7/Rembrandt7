@@ -1,7 +1,7 @@
 
 import React, { useState, useMemo, useEffect } from 'react';
 import { useLinks } from '../contexts/LinkContext';
-import { CalendarEvent } from '../types';
+import { CalendarEvent, CalendarToken, AppNotification } from '../types';
 import { motion, AnimatePresence } from 'motion/react';
 import { 
   ChevronLeft, 
@@ -34,7 +34,18 @@ import WeatherForecast from './WeatherForecast';
 import { toast } from 'sonner';
 
 const CalendarTab: React.FC = () => {
-  const { config, updateConfig, saveToSupabase, isEditing, googleApiConfig } = useLinks();
+  const { config, updateConfig, saveToSupabase, isEditing, googleApiConfig, updateNotifications } = useLinks();
+
+  const configRef = React.useRef(config);
+  useEffect(() => {
+    configRef.current = config;
+  }, [config]);
+
+  const [nowTick, setNowTick] = useState(Date.now());
+  useEffect(() => {
+    const timer = setInterval(() => setNowTick(Date.now()), 30000);
+    return () => clearInterval(timer);
+  }, []);
 
   const formatDate = (date: Date) => {
     const year = date.getFullYear();
@@ -504,14 +515,15 @@ const CalendarTab: React.FC = () => {
         return e;
       });
 
+      const currentLatest = configRef.current;
       const finalConfig = { 
-        ...config, 
+        ...currentLatest, 
         calendarEvents: normalizedSyncedEvents,
-        calendarTokens: syncedTokens || config.calendarTokens,
+        calendarTokens: syncedTokens || currentLatest.calendarTokens,
         ...(updatedGoogleTokens ? { googleCalendarTokens: updatedGoogleTokens } : {})
       };
       updateConfig(finalConfig);
-      await saveToSupabase(finalConfig);
+      await saveToSupabase(finalConfig, { immediate: true, showToast: false });
 
       const nowTime = new Date().toLocaleTimeString('es-MX', { hour: '2-digit', minute: '2-digit' });
       setLastSyncTime(nowTime);
@@ -711,38 +723,96 @@ const CalendarTab: React.FC = () => {
     }
   };
 
-  // Find overdue tokens where active date is in the past (< todayStr)
+  // Find overdue tokens or tokens due today that require confirmation
   const currentOverdueToken = useMemo(() => {
-    const allTokens = config.calendarTokens || [];
-    return allTokens.find((t: any) => t.currentActiveDate < todayStr && !dismissedOverdueTokenIds.includes(t.id));
-  }, [config.calendarTokens, todayStr, dismissedOverdueTokenIds]);
+    const allTokens = (config.calendarTokens || []) as CalendarToken[];
+    const now = nowTick;
 
-  const handleResolveOverdueToken = (id: string, alreadyCompleted: boolean) => {
-    const tokens = config.calendarTokens || [];
+    return allTokens.find((t: CalendarToken) => {
+      // 1. If it was already completed today, NEVER ask again today!
+      if (t.lastCompletedDate === todayStr) {
+        return false;
+      }
+      try {
+        const localCompleted = localStorage.getItem(`token_completed_${t.id}`);
+        if (localCompleted === todayStr) {
+          return false;
+        }
+      } catch (e) {}
+
+      // 2. If active date is strictly in the future (> todayStr), it is not due yet!
+      if (t.currentActiveDate > todayStr) {
+        return false;
+      }
+
+      // 3. If the user put "Aún no", check if snooze is active
+      let snoozedUntil = t.snoozedUntil;
+      if (!snoozedUntil) {
+        try {
+          const storedSnooze = localStorage.getItem(`token_snoozed_${t.id}`);
+          if (storedSnooze) snoozedUntil = Number(storedSnooze);
+        } catch (e) {}
+      }
+      if (snoozedUntil && now < snoozedUntil) {
+        return false; // Still within snooze window
+      }
+
+      // 4. If dismissed in local memory state and snooze hasn't expired
+      if (dismissedOverdueTokenIds.includes(t.id) && snoozedUntil && now < snoozedUntil) {
+        return false;
+      }
+
+      // It is due (past or today), not completed today, and snooze has expired: PROMPT!
+      return true;
+    });
+  }, [config.calendarTokens, todayStr, dismissedOverdueTokenIds, nowTick]);
+
+  const handleResolveOverdueToken = async (id: string, alreadyCompleted: boolean, snoozeMinutes = 60) => {
+    const currentConfig = configRef.current;
+    const tokens = (currentConfig.calendarTokens || []) as CalendarToken[];
     const today = new Date();
     today.setHours(0, 0, 0, 0);
     const currentTodayStr = formatDate(today);
 
     let nextTargetDateStr = currentTodayStr;
 
-    const updatedTokens = tokens.map((t: any) => {
+    const updatedTokens = tokens.map((t: CalendarToken) => {
       if (t.id === id) {
         if (alreadyCompleted) {
-          // Mover a hoy + intervalDays (ej. 3 días después) a las 8:00 PM
+          // Completed! Advance to next interval (e.g. today + 3 days)
           const nextDate = new Date(currentTodayStr + 'T00:00:00');
           nextDate.setDate(nextDate.getDate() + (t.intervalDays || 3));
           nextTargetDateStr = formatDate(nextDate);
           return {
             ...t,
             currentActiveDate: nextTargetDateStr,
+            lastCompletedDate: currentTodayStr,
+            isCompleted: true,
+            snoozedUntil: undefined,
             reminderTime: t.reminderTime || '20:00'
           };
         } else {
-          // Aún no -> mover a HOY a las 8:00 PM
+          // Not yet! User explicitly wants the message to continue reminding them.
+          const nowMs = Date.now();
+          let snoozedUntilTimestamp = nowMs + (snoozeMinutes * 60 * 1000);
+
+          if (snoozeMinutes === -1) {
+            // "Recordar hoy a las 8:00 PM"
+            const eightPm = new Date();
+            eightPm.setHours(20, 0, 0, 0);
+            if (eightPm.getTime() > nowMs) {
+              snoozedUntilTimestamp = eightPm.getTime();
+            } else {
+              snoozedUntilTimestamp = nowMs + 60 * 60 * 1000;
+            }
+          }
+
           nextTargetDateStr = currentTodayStr;
           return {
             ...t,
             currentActiveDate: currentTodayStr,
+            isCompleted: false,
+            snoozedUntil: snoozedUntilTimestamp,
             reminderTime: t.reminderTime || '20:00'
           };
         }
@@ -750,34 +820,82 @@ const CalendarTab: React.FC = () => {
       return t;
     });
 
-    setDismissedOverdueTokenIds(prev => [...prev, id]);
+    if (alreadyCompleted) {
+      setDismissedOverdueTokenIds(prev => [...prev, id]);
+      try {
+        localStorage.setItem(`token_completed_${id}`, currentTodayStr);
+        localStorage.removeItem(`token_snoozed_${id}`);
+      } catch (e) {}
+    } else {
+      // If snoozed, remove from dismissed IDs so that once snooze expires it prompts again!
+      setDismissedOverdueTokenIds(prev => prev.filter(tid => tid !== id));
+      const targetToken = updatedTokens.find(t => t.id === id);
+      if (targetToken?.snoozedUntil) {
+        try {
+          localStorage.setItem(`token_snoozed_${id}`, String(targetToken.snoozedUntil));
+          localStorage.removeItem(`token_completed_${id}`);
+        } catch (e) {}
+      }
+    }
 
-    updateConfig({
-      ...config,
+    const updatedConfig = {
+      ...currentConfig,
       calendarTokens: updatedTokens
-    });
-    setTimeout(() => saveToSupabase(), 100);
+    };
 
-    if (config.googleCalendarTokens) {
+    updateConfig(updatedConfig);
+    await saveToSupabase(updatedConfig, { immediate: true, showToast: false });
+
+    if (alreadyCompleted) {
+      // Clear any pending token notifications
+      if (updateNotifications && currentConfig.notifications) {
+        updateNotifications(currentConfig.notifications.filter(n => !n.id.startsWith(`token-due-${id}`)));
+      }
+      toast.success(`¡Excelente! Programado para la siguiente fecha: ${nextTargetDateStr} a las 8:00 PM.`);
+    } else {
+      // Push in-app alert notification so the user sees it in their notification panel
+      const targetToken = updatedTokens.find(t => t.id === id);
+      const isCar = targetToken?.name.toLowerCase().includes('carro');
+      const reminderLabel = snoozeMinutes === -1 
+        ? 'hoy a las 8:00 PM' 
+        : snoozeMinutes >= 60 
+          ? `en ${Math.round(snoozeMinutes / 60)} hora(s)` 
+          : `en ${snoozeMinutes} min`;
+
+      if (updateNotifications) {
+        const notifId = `token-due-${id}-${Date.now()}`;
+        const newNotif: AppNotification = {
+          id: notifId,
+          title: isCar ? '⚡ Recordatorio: Cargar el carro' : `⚡ Pendiente: ${targetToken?.name}`,
+          content: isCar 
+            ? `Cargar el carro sigue pendiente. Te volveremos a avisar ${reminderLabel}.`
+            : `El pendiente "${targetToken?.name}" sigue sin realizarse. Te volveremos a avisar ${reminderLabel}.`,
+          timestamp: Date.now(),
+          isRead: false,
+          type: 'calendar_alert'
+        };
+        const existingNotifs = (currentConfig.notifications || []).filter(n => !n.id.startsWith(`token-due-${id}`));
+        updateNotifications([newNotif, ...existingNotifs]);
+      }
+      toast.info(`Recordatorio pospuesto (${reminderLabel}). Te volveremos a avisar.`);
+    }
+
+    // Google Calendar Sync
+    if (currentConfig.googleCalendarTokens) {
       setTimeout(() => {
         handleSyncGoogleCalendar({ silent: true, customTokens: updatedTokens });
       }, 300);
     }
-
-    if (alreadyCompleted) {
-      toast.success(`¡Excelente! Programado para el ${nextTargetDateStr} a las 8:00 PM con alerta a tu celular.`);
-    } else {
-      toast.info(`Recordatorio reprogramado para HOY a las 8:00 PM en tu celular.`);
-    }
   };
 
   const handleToggleToken = (id: string, completed: boolean) => {
-    const tokens = config.calendarTokens || [];
+    const currentConfig = configRef.current;
+    const tokens = (currentConfig.calendarTokens || []) as CalendarToken[];
     const today = new Date();
     today.setHours(0, 0, 0, 0);
     const currentTodayStr = formatDate(today);
 
-    const updatedTokens = tokens.map((t: any) => {
+    const updatedTokens = tokens.map((t: CalendarToken) => {
       if (t.id === id) {
         // Base is today if active date was in the past
         const baseDateStr = t.currentActiveDate < currentTodayStr ? currentTodayStr : t.currentActiveDate;
@@ -794,20 +912,31 @@ const CalendarTab: React.FC = () => {
         return { 
           ...t, 
           currentActiveDate: formatDate(activeDate),
-          reminderTime: t.reminderTime || '20:00'
+          reminderTime: t.reminderTime || '20:00',
+          lastCompletedDate: completed ? currentTodayStr : t.lastCompletedDate,
+          isCompleted: completed,
+          snoozedUntil: undefined
         };
       }
       return t;
     });
 
-    updateConfig({
-      ...config,
+    if (completed) {
+      try {
+        localStorage.setItem(`token_completed_${id}`, currentTodayStr);
+        localStorage.removeItem(`token_snoozed_${id}`);
+      } catch (e) {}
+    }
+
+    const updatedConfig = {
+      ...currentConfig,
       calendarTokens: updatedTokens
-    });
-    setTimeout(() => saveToSupabase(), 100);
+    };
+    updateConfig(updatedConfig);
+    saveToSupabase(updatedConfig, { immediate: true, showToast: false });
 
     // Auto-sync with Google Calendar in background if connected
-    if (config.googleCalendarTokens) {
+    if (currentConfig.googleCalendarTokens) {
       setTimeout(() => {
         handleSyncGoogleCalendar({ silent: true, customTokens: updatedTokens });
       }, 300);
@@ -2468,27 +2597,36 @@ const CalendarTab: React.FC = () => {
               </div>
 
               <p className="text-sm text-gray-300 mb-6 leading-relaxed bg-gray-800/60 p-4 rounded-xl border border-gray-700/60">
-                Este recordatorio estaba programado anteriormente (<span className="text-amber-400 font-bold">{currentOverdueToken.currentActiveDate}</span>). 
                 {currentOverdueToken.name.toLowerCase().includes('carro')
-                  ? ' Si ya lo cargaste, se programará automáticamente para dentro de 3 días a las 8:00 PM. Si aún no, te recordaremos hoy a las 8:00 PM.'
-                  : ` Si ya lo hiciste, se moverá a ${currentOverdueToken.intervalDays || 3} días después. Si aún no, te recordará hoy a las 8:00 PM.`}
+                  ? 'Si ya lo cargaste, se programará automáticamente para dentro de 3 días y no te volveremos a preguntar hasta esa fecha. Si aún no, te seguiremos enviando el mensaje para que no lo olvides.'
+                  : `Si ya lo hiciste, se moverá a ${currentOverdueToken.intervalDays || 3} días después. Si aún no, te seguiremos recordando.`}
               </p>
 
-              <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+              {/* Botón Principal: Sí, ya lo cargué */}
+              <button
+                onClick={() => handleResolveOverdueToken(currentOverdueToken.id, true)}
+                className="w-full mb-3 flex items-center justify-center gap-2 py-3.5 px-4 bg-emerald-600 hover:bg-emerald-500 active:scale-[0.98] text-white rounded-xl font-bold transition-all shadow-lg shadow-emerald-900/40 text-sm"
+              >
+                <CheckCircle2 size={18} />
+                <span>{currentOverdueToken.name.toLowerCase().includes('carro') ? 'Sí, ya lo cargué' : 'Sí, ya lo realicé'}</span>
+              </button>
+
+              {/* Opciones de "Aún no": continuar mandando mensaje */}
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
                 <button
-                  onClick={() => handleResolveOverdueToken(currentOverdueToken.id, true)}
-                  className="flex items-center justify-center gap-2 py-3.5 px-4 bg-emerald-600 hover:bg-emerald-500 active:scale-[0.98] text-white rounded-xl font-bold transition-all shadow-lg shadow-emerald-900/40 text-sm"
+                  onClick={() => handleResolveOverdueToken(currentOverdueToken.id, false, 60)}
+                  className="flex items-center justify-center gap-2 py-3 px-3 bg-amber-600/20 hover:bg-amber-600/35 border border-amber-500/40 text-amber-200 hover:text-white rounded-xl font-bold transition-all text-xs"
                 >
-                  <CheckCircle2 size={18} />
-                  <span>Sí, ya lo cargué</span>
+                  <Clock size={15} />
+                  <span>Aún no (Avisar en 1h)</span>
                 </button>
 
                 <button
-                  onClick={() => handleResolveOverdueToken(currentOverdueToken.id, false)}
-                  className="flex items-center justify-center gap-2 py-3.5 px-4 bg-amber-600/25 hover:bg-amber-600/40 border border-amber-500/40 text-amber-200 hover:text-white rounded-xl font-bold transition-all text-sm"
+                  onClick={() => handleResolveOverdueToken(currentOverdueToken.id, false, -1)}
+                  className="flex items-center justify-center gap-2 py-3 px-3 bg-amber-600/20 hover:bg-amber-600/35 border border-amber-500/40 text-amber-200 hover:text-white rounded-xl font-bold transition-all text-xs"
                 >
-                  <Clock size={18} />
-                  <span>Aún no (Recordar hoy 8 PM)</span>
+                  <Clock size={15} />
+                  <span>Aún no (Avisar hoy 8 PM)</span>
                 </button>
               </div>
             </motion.div>
