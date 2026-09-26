@@ -63,6 +63,7 @@ const Nutricion = lazy(() => import('./components/Nutricion'));
 const ThreeDPrinting = lazy(() => import('./components/ThreeDPrinting'));
 const CalendarAiAssistant = lazy(() => import('./components/CalendarAiAssistant'));
 const WorkspaceHub = lazy(() => import('./components/WorkspaceHub'));
+const TeleprompterTab = lazy(() => import('./components/TeleprompterTab'));
 
 import LinksBar from './components/LinksBar';
 import AiSidebar from './components/AiSidebar';
@@ -568,6 +569,9 @@ const MainLayout: React.FC = () => {
     if (activeTabId === 'notas') {
       return <WorkspaceHub initialSubTab="notas" />;
     }
+    if (activeTabId === 'teleprompter') {
+      return <TeleprompterTab />;
+    }
 
     const activeTab = config.tabs.find(t => t.id === activeTabId);
     if (!activeTab) return null;
@@ -612,6 +616,8 @@ const MainLayout: React.FC = () => {
         return <VideoGenerator />;
       case 'Impresión 3D':
         return <ThreeDPrinting />;
+      case 'Teleprompter':
+        return <TeleprompterTab />;
       default:
         return (
           <div className="glass-panel p-6 rounded-3xl shadow-2xl w-full mt-8">
@@ -639,6 +645,7 @@ const MainLayout: React.FC = () => {
     'Notas': <Edit />,
     'Nutricion': <Heart />,
     'Impresión 3D': <Box />,
+    'Teleprompter': <Music />,
   };
 
   const handleCloseNotification = (id: string) => {

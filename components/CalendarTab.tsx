@@ -25,7 +25,9 @@ import {
   Sparkles,
   Zap,
   RefreshCw,
-  AlertTriangle
+  AlertTriangle,
+  Palmtree,
+  Sun
 } from 'lucide-react';
 import CalendarAiAssistant from './CalendarAiAssistant';
 import WeatherForecast from './WeatherForecast';
@@ -52,6 +54,7 @@ const CalendarTab: React.FC = () => {
   const [editingToken, setEditingToken] = useState<any | null>(null);
   const [dismissedOverdueTokenIds, setDismissedOverdueTokenIds] = useState<string[]>([]);
   const [editingHeaderBtn, setEditingHeaderBtn] = useState<'save' | 'notes' | 'ai' | null>(null);
+  const [isVacationListOpen, setIsVacationListOpen] = useState(false);
   const [visibleTypes, setVisibleTypes] = useState<string[]>(['event', 'holiday', 'vacation', 'mountain', 'party', 'off', 'medical', 'birthday', 'payment', 'ingreso']);
   
   const [newEvent, setNewEvent] = useState<Omit<CalendarEvent, 'id'>>({
@@ -215,11 +218,23 @@ const CalendarTab: React.FC = () => {
 
   const REFERENCE_OFF_SATURDAY = new Date('2026-03-07T00:00:00');
 
+  const isVacationEvent = (e: CalendarEvent): boolean => {
+    if (!e) return false;
+    if (e.type === 'vacation') return true;
+    const title = (e.title || '').toLowerCase();
+    const desc = (e.description || '').toLowerCase();
+    return title.includes('vacacion') || desc.includes('vacacion');
+  };
+
   const getDayStatus = (date: Date, events: CalendarEvent[]) => {
     const dateStr = formatDate(date);
     
-    // Check for custom off days (vacation/holiday)
-    const customOff = events.find(e => e.date === dateStr && (e.type === 'holiday' || e.type === 'vacation' || e.type === 'off'));
+    // 1. Check for Vacation events (custom vacation days assigned in calendar)
+    const isVacation = events.some(e => e.date === dateStr && isVacationEvent(e));
+    if (isVacation) return 'vacation';
+
+    // 2. Check for other custom off days (holiday/off)
+    const customOff = events.find(e => e.date === dateStr && (e.type === 'holiday' || e.type === 'off'));
     if (customOff) return 'off-custom';
 
     const day = date.getDay(); // 0: Sun, 1: Mon, ..., 6: Sat
@@ -243,8 +258,18 @@ const CalendarTab: React.FC = () => {
   const vacationStats = useMemo(() => {
     const now = new Date();
     const currentYear = now.getFullYear();
-    const resetMonth = 6; // July (0-indexed)
-    const resetDay = 21;
+    const vacConfig = config.vacationConfig;
+    
+    // Parse reset date from config (format "MM-DD" e.g. "07-21")
+    let resetMonth = 6; // July default (0-indexed)
+    let resetDay = 21;
+    if (vacConfig?.resetDate) {
+      const parts = vacConfig.resetDate.split('-');
+      if (parts.length === 2) {
+        resetMonth = parseInt(parts[0], 10) - 1;
+        resetDay = parseInt(parts[1], 10);
+      }
+    }
     
     let periodStart: Date;
     let periodEnd: Date;
@@ -255,15 +280,16 @@ const CalendarTab: React.FC = () => {
     if (now < resetDateThisYear) {
       periodStart = new Date(currentYear - 1, resetMonth, resetDay);
       periodEnd = new Date(currentYear, resetMonth, resetDay - 1, 23, 59, 59);
-      allowance = currentYear === 2026 ? 11 : 26;
+      allowance = vacConfig?.initialDays ?? (currentYear === 2026 ? 11 : 26);
     } else {
       periodStart = new Date(currentYear, resetMonth, resetDay);
       periodEnd = new Date(currentYear + 1, resetMonth, resetDay - 1, 23, 59, 59);
-      allowance = 26;
+      allowance = vacConfig?.daysAfterReset ?? 26;
     }
 
-    const usedDays = events.filter(e => {
-      if (e.type !== 'vacation') return false;
+    const assignedVacationEvents = events.filter(e => isVacationEvent(e));
+
+    const usedDays = assignedVacationEvents.filter(e => {
       const eventDate = new Date(e.date + 'T00:00:00');
       return eventDate >= periodStart && eventDate <= periodEnd;
     }).length;
@@ -282,13 +308,14 @@ const CalendarTab: React.FC = () => {
     }
 
     return {
-      available: allowance - usedDays,
+      available: Math.max(0, allowance - usedDays),
       total: allowance,
       used: usedDays,
       resetDate: periodEnd,
-      workingDaysRemaining
+      workingDaysRemaining,
+      assignedEvents: assignedVacationEvents.sort((a, b) => a.date.localeCompare(b.date))
     };
-  }, [events]);
+  }, [events, config.vacationConfig]);
 
   useEffect(() => {
     const handleKeyDown = (e: KeyboardEvent) => {
@@ -469,9 +496,17 @@ const CalendarTab: React.FC = () => {
       const responseData = await syncResponse.json();
       const { events: syncedEvents, tokens: syncedTokens, googleCalendarTokens: updatedGoogleTokens } = responseData;
 
+      // Automatically normalize any event with "vacacion" in title or description to type: 'vacation'
+      const normalizedSyncedEvents = (syncedEvents || []).map((e: CalendarEvent) => {
+        if (isVacationEvent(e)) {
+          return { ...e, type: 'vacation' as const };
+        }
+        return e;
+      });
+
       const finalConfig = { 
         ...config, 
-        calendarEvents: syncedEvents,
+        calendarEvents: normalizedSyncedEvents,
         calendarTokens: syncedTokens || config.calendarTokens,
         ...(updatedGoogleTokens ? { googleCalendarTokens: updatedGoogleTokens } : {})
       };
@@ -1021,10 +1056,16 @@ const CalendarTab: React.FC = () => {
           </div>
         </div>
         <div className="flex gap-3 items-center">
-          <div className="bg-gray-900/80 border border-gray-700 rounded-lg px-6 py-2 flex items-center gap-6 h-[88px]">
+          <div 
+            onClick={() => setIsVacationListOpen(true)}
+            className="bg-gray-900/80 border border-gray-700 hover:border-emerald-500/50 rounded-lg px-6 py-2 flex items-center gap-6 h-[88px] cursor-pointer transition-all group/vac relative"
+            title="Clic para ver todos los días de vacaciones asignados"
+          >
             <div className="flex flex-col">
               <div className="flex items-center gap-2">
-                <span className="text-[10px] font-bold text-gray-500 uppercase">Vacaciones</span>
+                <span className="text-[10px] font-bold text-gray-500 uppercase flex items-center gap-1 group-hover/vac:text-emerald-400 transition-colors">
+                  <Palmtree size={12} className="text-emerald-400" /> Vacaciones
+                </span>
                 <span className={`text-lg font-black ${vacationStats.available > 0 ? 'text-green-400' : 'text-red-400'}`}>
                   {vacationStats.available} / {vacationStats.total}
                 </span>
@@ -1313,7 +1354,9 @@ const CalendarTab: React.FC = () => {
                     });
                     
                     let statusClasses = '';
-                    if (status === 'work') {
+                    if (status === 'vacation') {
+                      statusClasses = 'bg-emerald-950/40 border-emerald-500/50 text-emerald-200/90 shadow-sm shadow-emerald-900/20';
+                    } else if (status === 'work') {
                       statusClasses = 'bg-orange-500/10 border-orange-500/20 text-orange-200/60';
                     } else if (status === 'off' || status === 'off-custom') {
                       statusClasses = 'bg-green-500/10 border-green-500/20 text-green-200/60';
@@ -1321,7 +1364,7 @@ const CalendarTab: React.FC = () => {
                       statusClasses = 'bg-gray-900/50 border-gray-700 text-gray-300';
                     }
 
-                    if (isPast && !isSelected && !isToday) {
+                    if (isPast && !isSelected && !isToday && status !== 'vacation') {
                       statusClasses = 'bg-gray-900/30 border-gray-800 text-gray-600 opacity-60';
                     }
 
@@ -1356,6 +1399,11 @@ const CalendarTab: React.FC = () => {
                         }`}
                         style={borderStyle}
                       >
+                        {status === 'vacation' && (
+                          <div className="absolute inset-0 flex items-center justify-center opacity-25 pointer-events-none text-emerald-400">
+                            <Palmtree size={isPastWeek ? 24 : 56} />
+                          </div>
+                        )}
                         {hasBirthday && (
                           <div className="absolute inset-0 flex items-center justify-center opacity-20 pointer-events-none animate-pulse">
                             <Cake size={isPastWeek ? 24 : 64} />
@@ -1853,6 +1901,159 @@ const CalendarTab: React.FC = () => {
           <CalendarAiAssistant onClose={() => setIsAiOpen(false)} />
         </div>
       </div>
+
+      {/* Vacation Days Assigned List Modal */}
+      {isVacationListOpen && (
+        <div className="fixed inset-0 bg-black/70 backdrop-blur-sm z-[200] flex items-center justify-center p-4 overflow-y-auto">
+          <div className="bg-gray-900 border border-emerald-500/30 rounded-2xl p-6 w-full max-w-lg shadow-2xl my-8 relative overflow-hidden">
+            <div className="absolute top-0 left-0 w-full h-1 bg-gradient-to-r from-emerald-500 to-teal-400" />
+
+            <div className="flex justify-between items-start mb-4">
+              <div className="flex items-center gap-3">
+                <div className="w-10 h-10 rounded-xl bg-emerald-500/10 border border-emerald-500/30 flex items-center justify-center text-emerald-400 shadow-inner">
+                  <Palmtree size={22} />
+                </div>
+                <div>
+                  <h2 className="text-xl font-black text-white flex items-center gap-2">
+                    Días de Vacaciones Asignados
+                  </h2>
+                  <p className="text-xs text-emerald-300/80 mt-0.5">
+                    {vacationStats.available} disponibles de {vacationStats.total} totales • {vacationStats.used} tomados
+                  </p>
+                </div>
+              </div>
+              <button 
+                onClick={() => setIsVacationListOpen(false)} 
+                className="text-gray-400 hover:text-white transition-colors p-1 hover:bg-white/10 rounded-lg"
+              >
+                <X size={20} />
+              </button>
+            </div>
+
+            <div className="space-y-2 max-h-[55vh] overflow-y-auto pr-1 custom-scrollbar my-4">
+              {vacationStats.assignedEvents.map((vEvent) => {
+                const eventDate = new Date(vEvent.date + 'T00:00:00');
+                const isPastDate = vEvent.date < todayStr;
+                return (
+                  <div 
+                    key={vEvent.id}
+                    className={`p-3 rounded-xl border flex items-center justify-between gap-3 transition-all ${
+                      isPastDate 
+                        ? 'bg-gray-800/40 border-gray-700/60 opacity-70' 
+                        : 'bg-emerald-950/30 border-emerald-500/30 hover:border-emerald-500/50'
+                    }`}
+                  >
+                    <div className="truncate">
+                      <div className="flex items-center gap-2">
+                        <span className="font-bold text-xs text-white truncate">
+                          {vEvent.title || 'Día de Vacaciones'}
+                        </span>
+                        {isPastDate ? (
+                          <span className="text-[9px] uppercase px-1.5 py-0.5 rounded bg-gray-700 text-gray-400">
+                            Tomado
+                          </span>
+                        ) : (
+                          <span className="text-[9px] uppercase px-1.5 py-0.5 rounded bg-emerald-500/20 text-emerald-300 font-bold border border-emerald-500/30">
+                            Próximo
+                          </span>
+                        )}
+                      </div>
+                      <p className="text-[11px] text-emerald-400/90 font-medium capitalize mt-0.5">
+                        {eventDate.toLocaleDateString('es-MX', { weekday: 'long', day: 'numeric', month: 'long', year: 'numeric' })}
+                      </p>
+                      {vEvent.description && (
+                        <p className="text-[10px] text-gray-400 truncate mt-0.5">{vEvent.description}</p>
+                      )}
+                    </div>
+
+                    <div className="flex items-center gap-1.5 shrink-0">
+                      <button
+                        onClick={() => {
+                          setSelectedDate(vEvent.date);
+                          setCurrentDate(new Date(vEvent.date + 'T00:00:00'));
+                          setIsVacationListOpen(false);
+                          toast.info(`Navegando a ${vEvent.date}`);
+                        }}
+                        className="p-1.5 bg-gray-800 hover:bg-gray-700 text-gray-300 hover:text-white rounded-lg text-xs transition-colors"
+                        title="Ver en el calendario"
+                      >
+                        <Calendar size={13} />
+                      </button>
+                      <button
+                        onClick={() => {
+                          setIsVacationListOpen(false);
+                          openEditModal(vEvent);
+                        }}
+                        className="p-1.5 bg-gray-800 hover:bg-gray-700 text-gray-300 hover:text-white rounded-lg text-xs transition-colors"
+                        title="Editar"
+                      >
+                        <Pencil size={13} />
+                      </button>
+                      <button
+                        onClick={() => handleDeleteEvent(vEvent.id)}
+                        className="p-1.5 bg-red-500/10 hover:bg-red-500/20 text-red-400 rounded-lg text-xs transition-colors"
+                        title="Eliminar"
+                      >
+                        <Trash2 size={13} />
+                      </button>
+                    </div>
+                  </div>
+                );
+              })}
+
+              {vacationStats.assignedEvents.length === 0 && (
+                <div className="text-center py-8 text-gray-400 text-xs border border-dashed border-gray-700 rounded-xl p-6">
+                  <Palmtree className="w-8 h-8 mx-auto text-emerald-400 opacity-40 mb-2" />
+                  <p className="font-semibold text-white">No tienes días de vacaciones asignados en el calendario.</p>
+                  <p className="text-[11px] text-gray-500 mt-1">
+                    Crea un evento con tipo "Vacaciones" o agrega uno nuevo ahora.
+                  </p>
+                </div>
+              )}
+            </div>
+
+            <div className="flex justify-between items-center pt-3 border-t border-gray-800 mt-4">
+              <button
+                onClick={() => {
+                  setIsVacationListOpen(false);
+                  setNewEvent({
+                    title: 'Vacaciones',
+                    date: selectedDate,
+                    time: '',
+                    description: '',
+                    color: '#10b981',
+                    type: 'vacation',
+                    recurrence: 'none',
+                    isPaid: false,
+                    amount: '',
+                    isVariable: false,
+                    jobCategory: 'trabajos mios',
+                    isFinished: false,
+                    totalPayment: '',
+                    advancePayment: '',
+                    deliveryDate: selectedDate,
+                    isIndefinite: true,
+                    reminderMinutes: 30
+                  });
+                  setEditingEvent(null);
+                  setIsModalOpen(true);
+                }}
+                className="px-4 py-2 bg-emerald-600 hover:bg-emerald-500 text-white font-bold text-xs rounded-xl shadow-lg shadow-emerald-600/20 transition-all flex items-center gap-1.5"
+              >
+                <Plus size={14} />
+                Agregar Día de Vacación
+              </button>
+
+              <button
+                onClick={() => setIsVacationListOpen(false)}
+                className="px-4 py-2 bg-gray-800 hover:bg-gray-700 text-gray-300 text-xs font-semibold rounded-xl"
+              >
+                Cerrar
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
 
       {isModalOpen && (
         <div className="fixed inset-0 bg-black/60 backdrop-blur-sm z-[200] flex items-center justify-center p-4 overflow-y-auto">

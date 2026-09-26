@@ -14,6 +14,7 @@ const INITIAL_TABS: TabConfig[] = [
     { id: 'nutricion', label: 'Nutrición', type: 'system', componentKey: 'Nutricion', isVisible: true, icon: 'Heart' },
     { id: 'video-gen', label: 'Video', type: 'system', componentKey: 'Generador de Video', isVisible: true, icon: 'Video' },
     { id: '3d-print', label: 'Impresión 3D', type: 'system', componentKey: 'Impresión 3D', isVisible: true, icon: 'Box' },
+    { id: 'teleprompter', label: 'Teleprompter', type: 'system', componentKey: 'Teleprompter', isVisible: true, icon: 'Music' },
 ];
 
 const INITIAL_CONFIG: AppConfig = {
@@ -646,6 +647,13 @@ export const LinkProvider: React.FC<{ children: React.ReactNode }> = ({ children
             }
           }
 
+          if (!finalConfig.tabs.find((t: any) => t.id === 'teleprompter' || t.componentKey === 'Teleprompter')) {
+            const teleprompterTab = INITIAL_TABS.find(t => t.id === 'teleprompter');
+            if (teleprompterTab) {
+              finalConfig.tabs.push(teleprompterTab);
+            }
+          }
+
           // Combine 'commands', 'credenciales', 'notas' into single 'workspace' tab
           const hasOldTabs = finalConfig.tabs.some((t: any) => t.id === 'commands' || t.id === 'credenciales' || t.id === 'notas');
           const hasWorkspaceTab = finalConfig.tabs.some((t: any) => t.id === 'workspace' || t.componentKey === 'Workspace');
@@ -864,6 +872,13 @@ export const LinkProvider: React.FC<{ children: React.ReactNode }> = ({ children
               const videoTab = INITIAL_TABS.find(t => t.componentKey === 'Generador de Video');
               if (videoTab) {
                 parsed.tabs.push(videoTab);
+              }
+            }
+
+            if (!parsed.tabs.find((t: any) => t.id === 'teleprompter' || t.componentKey === 'Teleprompter')) {
+              const teleprompterTab = INITIAL_TABS.find(t => t.id === 'teleprompter');
+              if (teleprompterTab) {
+                parsed.tabs.push(teleprompterTab);
               }
             }
 
