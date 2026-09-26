@@ -391,6 +391,7 @@ const TeleprompterTab: React.FC = () => {
   const [modalContent, setModalContent] = useState('');
   const [importInput, setImportInput] = useState('');
   const [isImporting, setIsImporting] = useState(false);
+  const [isSearchingYt, setIsSearchingYt] = useState(false);
 
   // Audio / Video Mini Player
   const [isMiniPlayerOpen, setIsMiniPlayerOpen] = useState(false);
@@ -663,16 +664,92 @@ const TeleprompterTab: React.FC = () => {
     setIsEditModalOpen(false);
   };
 
+  const handleSearchYoutube = async () => {
+    const query = `${modalArtist} ${modalTitle} video oficial`.trim();
+    if (!query) {
+      toast.error('Escribe el título y artista para buscar el video');
+      return;
+    }
+    setIsSearchingYt(true);
+    try {
+      const res = await fetch('/api/song-import', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ query })
+      });
+      if (res.ok) {
+        const data = await res.json();
+        if (data.mediaUrl) {
+          setModalMediaUrl(data.mediaUrl);
+          toast.success('Video de YouTube encontrado y asignado');
+          return;
+        }
+      }
+      window.open(`https://www.youtube.com/results?search_query=${encodeURIComponent(query)}`, '_blank');
+      toast.info('Abriendo búsqueda de YouTube');
+    } catch (e) {
+      window.open(`https://www.youtube.com/results?search_query=${encodeURIComponent(query)}`, '_blank');
+    } finally {
+      setIsSearchingYt(false);
+    }
+  };
+
   const handleAutoImport = async () => {
     if (!importInput.trim()) return;
     setIsImporting(true);
-    try {
-      const prompt = `Actúa como un transcriptor musical experto de LaCuerda.net y cancioneros de guitarra.
-El usuario quiere agregar esta canción, enlace o texto:
-"${importInput.trim()}"
 
-Extrae o genera la información completa en formato clásico de LaCuerda.net (donde los acordes están en su propia línea justo encima de la sílaba o palabra donde suenan, identificando secciones con [Intro], [Verso 1], [Coro], [Puente], etc.).
-Si conoces el video oficial en YouTube, incluye el enlace en "mediaUrl".
+    const input = importInput.trim();
+
+    // 1. Try our high-speed scraper endpoint first (extracts LaCuerda directly & finds YouTube official video)
+    try {
+      const apiRes = await fetch('/api/song-import', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ query: input })
+      });
+
+      if (apiRes.ok) {
+        const data = await apiRes.json();
+        if (data.success && data.content) {
+          if (data.title) setModalTitle(data.title);
+          if (data.artist) setModalArtist(data.artist);
+          if (data.key) setModalKey(data.key);
+          if (data.mediaUrl) setModalMediaUrl(data.mediaUrl);
+          if (data.content) setModalContent(data.content);
+
+          toast.success(`Canción "${data.title}" importada con letra, acordes y video`);
+          setImportInput('');
+          return;
+        } else if (data.success && data.title) {
+          if (data.title) setModalTitle(data.title);
+          if (data.artist) setModalArtist(data.artist);
+          if (data.key) setModalKey(data.key);
+          if (data.mediaUrl) setModalMediaUrl(data.mediaUrl);
+        }
+      }
+    } catch (apiErr) {
+      console.warn('Backend song-import failed or offline, falling back to AI:', apiErr);
+    }
+
+    // 2. If content is still missing, extract artist/title and prompt Gemini
+    try {
+      let songHint = input;
+      if (input.includes('lacuerda.net')) {
+        const parts = input.split('/').filter(Boolean);
+        const last = parts[parts.length - 1]?.replace(/\.shtml.*/, '').replace(/_/g, ' ');
+        const artistPart = parts[parts.length - 2]?.replace(/_/g, ' ');
+        songHint = `${artistPart} - ${last}`;
+        if (!modalTitle && last) setModalTitle(last.charAt(0).toUpperCase() + last.slice(1));
+        if (!modalArtist && artistPart) setModalArtist(artistPart.charAt(0).toUpperCase() + artistPart.slice(1));
+      }
+
+      const prompt = `Actúa como un transcriptor musical experto de LaCuerda.net y cancioneros de guitarra.
+Escribe la letra con los acordes completos de la canción: "${songHint}".
+Requisitos estrictos de formato LaCuerda.net:
+- Los acordes deben estar en su propia línea justo arriba de la sílaba o palabra donde suenan.
+- Usa etiquetas de sección como [Intro], [Verso 1], [Coro], [Puente], etc.
+- No omitas estrofas ni coros.
+- Identifica el tono base o capotraste si lo lleva.
 
 Responde ÚNICAMENTE con un JSON válido (sin backticks markdown):
 {
@@ -695,24 +772,14 @@ Responde ÚNICAMENTE con un JSON válido (sin backticks markdown):
       if (parsed.title) setModalTitle(parsed.title);
       if (parsed.artist) setModalArtist(parsed.artist);
       if (parsed.key) setModalKey(parsed.key);
-      if (parsed.mediaUrl) setModalMediaUrl(parsed.mediaUrl);
+      if (parsed.mediaUrl && !modalMediaUrl) setModalMediaUrl(parsed.mediaUrl);
       if (parsed.content) setModalContent(parsed.content);
 
-      toast.success(`Canción "${parsed.title || 'importada'}" procesada con éxito`);
+      toast.success(`Canción "${parsed.title || 'importada'}" procesada con letra y acordes`);
       setImportInput('');
     } catch (err: any) {
       console.error('Error auto-importing song:', err);
-      const url = importInput.trim();
-      if (url.includes('lacuerda.net')) {
-        const parts = url.split('/').filter(Boolean);
-        const last = parts[parts.length - 1]?.replace(/\.shtml.*/, '');
-        const artistPart = parts[parts.length - 2];
-        if (last) setModalTitle(last.charAt(0).toUpperCase() + last.slice(1));
-        if (artistPart) setModalArtist(artistPart.charAt(0).toUpperCase() + artistPart.slice(1));
-        toast.info('Detectamos el título y artista desde el enlace de LaCuerda. Ahora puedes copiar y pegar la letra con acordes.');
-      } else {
-        toast.error('No se pudo procesar automáticamente. Puedes pegar la letra y acordes manualmente.');
-      }
+      toast.error('No se pudo autocompletar la letra. Puedes pegar la letra y acordes copiada.');
     } finally {
       setIsImporting(false);
     }
@@ -1446,7 +1513,7 @@ Responde ÚNICAMENTE con un JSON válido (sin backticks markdown):
                   />
                 </div>
 
-                <div className="bg-zinc-950/60 p-3 rounded-xl border border-white/10 space-y-1">
+                <div className="bg-zinc-950/60 p-3 rounded-xl border border-white/10 space-y-2">
                   <label className="block text-xs font-semibold text-zinc-200 uppercase mb-1 flex items-center justify-between">
                     <span className="flex items-center gap-1.5">
                       <Headphones size={14} className="text-emerald-400" />
@@ -1455,15 +1522,27 @@ Responde ÚNICAMENTE con un JSON válido (sin backticks markdown):
                     </span>
                     <span className="text-[10px] text-zinc-400 lowercase font-normal">(opcional)</span>
                   </label>
-                  <input
-                    type="url"
-                    value={modalMediaUrl}
-                    onChange={(e) => setModalMediaUrl(e.target.value)}
-                    placeholder="Ej. https://open.spotify.com/track/... o https://www.youtube.com/watch?v=..."
-                    className="w-full bg-zinc-900 border border-white/10 rounded-xl px-3 py-2 text-xs sm:text-sm text-white placeholder-zinc-500 focus:outline-none focus:border-amber-500 font-mono"
-                  />
-                  <p className="text-[11px] text-zinc-400 pt-0.5">
-                    💡 Pega un enlace de YouTube o Spotify para tener un mini reproductor integrado en el teleprompter mientras ensayas.
+                  <div className="flex gap-2">
+                    <input
+                      type="url"
+                      value={modalMediaUrl}
+                      onChange={(e) => setModalMediaUrl(e.target.value)}
+                      placeholder="Ej. https://open.spotify.com/track/... o https://www.youtube.com/watch?v=..."
+                      className="flex-grow bg-zinc-900 border border-white/10 rounded-xl px-3 py-2 text-xs sm:text-sm text-white placeholder-zinc-500 focus:outline-none focus:border-amber-500 font-mono"
+                    />
+                    <button
+                      type="button"
+                      onClick={handleSearchYoutube}
+                      disabled={isSearchingYt}
+                      className="px-3 py-2 bg-red-600/20 hover:bg-red-600/30 text-red-300 hover:text-white rounded-xl text-xs font-bold transition-all border border-red-500/30 flex items-center gap-1.5 shrink-0"
+                      title="Buscar automáticamente el video oficial en YouTube"
+                    >
+                      <Youtube size={14} className="text-red-400" />
+                      <span>{isSearchingYt ? 'Buscando...' : 'Buscar'}</span>
+                    </button>
+                  </div>
+                  <p className="text-[11px] text-zinc-400">
+                    💡 Pega un enlace de YouTube/Spotify, o haz clic en "Buscar" para encontrar el video oficial automáticamente.
                   </p>
                 </div>
 

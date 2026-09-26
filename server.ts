@@ -543,6 +543,23 @@ async function startServer() {
     }
   });
 
+  // 7. Song import from LaCuerda & YouTube search endpoint
+  app.all(["/api/song-import", "/api/song-import/"], async (req, res) => {
+    const query = (req.body?.query || req.body?.url || req.query?.query || req.query?.url || '') as string;
+    if (!query || typeof query !== 'string' || !query.trim()) {
+      return res.status(400).json({ error: 'Missing query or url parameter' });
+    }
+
+    try {
+      const { scrapeSongAndMedia } = await import("./api/song-import");
+      const data = await scrapeSongAndMedia(query);
+      res.json({ success: true, ...data });
+    } catch (error: any) {
+      console.error('Song import error:', error);
+      res.status(500).json({ success: false, error: error.message });
+    }
+  });
+
   app.post(/(.*)/, (req, res) => {
     console.log(`POST ${req.url} not matched`);
     res.status(404).json({ error: `Route ${req.url} not found` });
