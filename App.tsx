@@ -35,7 +35,8 @@ import {
   TrendingUp,
   Heart,
   Search,
-  Maximize2
+  Maximize2,
+  ShieldCheck
 } from 'lucide-react';
 import { Tab, TabConfig, LinkItem } from './types';
 import { AnimatePresence, motion } from 'motion/react';
@@ -64,6 +65,7 @@ const ThreeDPrinting = lazy(() => import('./components/ThreeDPrinting'));
 const CalendarAiAssistant = lazy(() => import('./components/CalendarAiAssistant'));
 const WorkspaceHub = lazy(() => import('./components/WorkspaceHub'));
 const TeleprompterTab = lazy(() => import('./components/TeleprompterTab'));
+const PersonalTab = lazy(() => import('./components/PersonalTab'));
 
 import LinksBar from './components/LinksBar';
 import AiSidebar from './components/AiSidebar';
@@ -557,6 +559,18 @@ const MainLayout: React.FC = () => {
     if (activeTabId === 'database' || isDbTab({ id: activeTabId })) {
       return <DatabaseViewer />;
     }
+    if (activeTabId === 'personal') {
+      return <PersonalTab />;
+    }
+    if (activeTabId === 'finanzas') {
+      return <PersonalTab initialSubTab="finanzas" />;
+    }
+    if (activeTabId === 'nutricion') {
+      return <PersonalTab initialSubTab="nutricion" />;
+    }
+    if (activeTabId === 'boveda') {
+      return <PersonalTab initialSubTab="boveda" />;
+    }
     if (activeTabId === 'workspace') {
       return <WorkspaceHub />;
     }
@@ -564,10 +578,10 @@ const MainLayout: React.FC = () => {
       return <WorkspaceHub initialSubTab="comandos" />;
     }
     if (activeTabId === 'credenciales') {
-      return <WorkspaceHub initialSubTab="credenciales" />;
+      return <PersonalTab initialSubTab="boveda" initialBovedaTab="credenciales" />;
     }
     if (activeTabId === 'notas') {
-      return <WorkspaceHub initialSubTab="notas" />;
+      return <PersonalTab initialSubTab="boveda" initialBovedaTab="notas" />;
     }
     if (activeTabId === 'teleprompter') {
       return <TeleprompterTab />;
@@ -588,6 +602,15 @@ const MainLayout: React.FC = () => {
             <EmailGenerator attachedImages={imagesForEmail} onAttachmentsChange={setImagesForEmail} />
           </div>
         );
+      case 'Personal':
+        return <PersonalTab />;
+      case 'Finanzas':
+        return <PersonalTab initialSubTab="finanzas" />;
+      case 'Nutricion':
+        return <PersonalTab initialSubTab="nutricion" />;
+      case 'Bóveda':
+      case 'Boveda':
+        return <PersonalTab initialSubTab="boveda" />;
       case 'Workspace':
         return <WorkspaceHub />;
       case 'Renders':
@@ -603,15 +626,11 @@ const MainLayout: React.FC = () => {
       case 'Calendario':
         return <CalendarTab />;
       case 'Credenciales':
-        return <WorkspaceHub initialSubTab="credenciales" />;
+        return <PersonalTab initialSubTab="boveda" initialBovedaTab="credenciales" />;
       case 'Dashboard':
         return <Dashboard />;
-      case 'Finanzas':
-        return <Finanzas />;
       case 'Notas':
-        return <WorkspaceHub initialSubTab="notas" />;
-      case 'Nutricion':
-        return <Nutricion />;
+        return <PersonalTab initialSubTab="boveda" initialBovedaTab="notas" />;
       case 'Generador de Video':
         return <VideoGenerator />;
       case 'Impresión 3D':
@@ -628,6 +647,9 @@ const MainLayout: React.FC = () => {
   };
 
   const tabIcons: Record<string, React.ReactNode> = {
+    'Personal': <ShieldCheck />,
+    'Bóveda': <Lock />,
+    'Boveda': <Lock />,
     'Workspace': <FolderKanban />,
     'Generador de Email': <Mail />,
     'Generador de Imagen': <ImageIcon />,

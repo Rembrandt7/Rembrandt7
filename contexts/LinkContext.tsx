@@ -6,12 +6,10 @@ import { normalizeAndDeduplicateNotes } from '../utils/noteUtils';
 
 const INITIAL_TABS: TabConfig[] = [
     { id: 'email-gen', label: 'Email', type: 'system', componentKey: 'Generador de Email', isVisible: true, icon: 'Mail' },
-    { id: 'workspace', label: 'Notas & Bóveda', type: 'system', componentKey: 'Workspace', isVisible: true, icon: 'FolderKanban' },
+    { id: 'personal', label: 'Personal', type: 'system', componentKey: 'Personal', isVisible: true, icon: 'ShieldCheck' },
     { id: 'database', label: 'Base de Datos', type: 'system', componentKey: 'Base de Datos', isVisible: false, icon: 'Database' },
     { id: 'useful-tools', label: 'Herramientas Útiles', type: 'system', componentKey: 'Herramientas Útiles', isVisible: true, icon: 'Briefcase' },
     { id: 'calendar', label: 'Calendario', type: 'system', componentKey: 'Calendario', isVisible: true, icon: 'Calendar' },
-    { id: 'finanzas', label: 'Finanzas', type: 'system', componentKey: 'Finanzas', isVisible: true, icon: 'TrendingUp' },
-    { id: 'nutricion', label: 'Nutrición', type: 'system', componentKey: 'Nutricion', isVisible: true, icon: 'Heart' },
     { id: 'video-gen', label: 'Video', type: 'system', componentKey: 'Generador de Video', isVisible: true, icon: 'Video' },
     { id: '3d-print', label: 'Impresión 3D', type: 'system', componentKey: 'Impresión 3D', isVisible: true, icon: 'Box' },
     { id: 'teleprompter', label: 'Teleprompter', type: 'system', componentKey: 'Teleprompter', isVisible: true, icon: 'Music' },
@@ -654,26 +652,44 @@ export const LinkProvider: React.FC<{ children: React.ReactNode }> = ({ children
             }
           }
 
-          // Combine 'commands', 'credenciales', 'notas' into single 'workspace' tab
-          const hasOldTabs = finalConfig.tabs.some((t: any) => t.id === 'commands' || t.id === 'credenciales' || t.id === 'notas');
-          const hasWorkspaceTab = finalConfig.tabs.some((t: any) => t.id === 'workspace' || t.componentKey === 'Workspace');
+          // Unify Finanzas, Nutrición, Notas & Bóveda (Credenciales) into single 'Personal' tab
+          const hasPersonalTab = finalConfig.tabs.some((t: any) => t.id === 'personal' || t.componentKey === 'Personal');
+          const personalTab: TabConfig = {
+            id: 'personal',
+            label: 'Personal',
+            type: 'system',
+            componentKey: 'Personal',
+            isVisible: true,
+            icon: 'ShieldCheck'
+          };
 
-          if (hasOldTabs && !hasWorkspaceTab) {
-            const firstOldIndex = finalConfig.tabs.findIndex((t: any) => t.id === 'commands' || t.id === 'credenciales' || t.id === 'notas');
-            finalConfig.tabs = finalConfig.tabs.filter((t: any) => t.id !== 'commands' && t.id !== 'credenciales' && t.id !== 'notas');
-            const workspaceTab: TabConfig = {
-              id: 'workspace',
-              label: 'Notas & Bóveda',
-              type: 'system',
-              componentKey: 'Workspace',
-              isVisible: true,
-              icon: 'FolderKanban'
-            };
+          if (!hasPersonalTab) {
+            const firstOldIndex = finalConfig.tabs.findIndex((t: any) => 
+              t.id === 'workspace' || t.id === 'finanzas' || t.id === 'nutricion' || 
+              t.id === 'commands' || t.id === 'credenciales' || t.id === 'notas'
+            );
+
+            finalConfig.tabs = finalConfig.tabs.filter((t: any) => 
+              t.id !== 'workspace' && t.id !== 'finanzas' && t.id !== 'nutricion' &&
+              t.id !== 'commands' && t.id !== 'credenciales' && t.id !== 'notas'
+            );
+
             if (firstOldIndex !== -1) {
-              finalConfig.tabs.splice(firstOldIndex, 0, workspaceTab);
+              finalConfig.tabs.splice(firstOldIndex, 0, personalTab);
             } else {
-              finalConfig.tabs.push(workspaceTab);
+              const emailIdx = finalConfig.tabs.findIndex((t: any) => t.id === 'email-gen');
+              if (emailIdx !== -1) {
+                finalConfig.tabs.splice(emailIdx + 1, 0, personalTab);
+              } else {
+                finalConfig.tabs.unshift(personalTab);
+              }
             }
+          } else {
+            // Clean up any remaining obsolete standalone tabs
+            finalConfig.tabs = finalConfig.tabs.filter((t: any) => 
+              t.id !== 'workspace' && t.id !== 'finanzas' && t.id !== 'nutricion' &&
+              t.id !== 'commands' && t.id !== 'credenciales' && t.id !== 'notas'
+            );
           }
         }
 
@@ -882,26 +898,43 @@ export const LinkProvider: React.FC<{ children: React.ReactNode }> = ({ children
               }
             }
 
-            // Combine 'commands', 'credenciales', 'notas' into single 'workspace' tab
-            const hasOldTabs = parsed.tabs.some((t: any) => t.id === 'commands' || t.id === 'credenciales' || t.id === 'notas');
-            const hasWorkspaceTab = parsed.tabs.some((t: any) => t.id === 'workspace' || t.componentKey === 'Workspace');
+            // Unify Finanzas, Nutrición, Notas & Bóveda (Credenciales) into single 'Personal' tab
+            const hasPersonalTab = parsed.tabs.some((t: any) => t.id === 'personal' || t.componentKey === 'Personal');
+            const personalTab: TabConfig = {
+              id: 'personal',
+              label: 'Personal',
+              type: 'system',
+              componentKey: 'Personal',
+              isVisible: true,
+              icon: 'ShieldCheck'
+            };
 
-            if (hasOldTabs && !hasWorkspaceTab) {
-              const firstOldIndex = parsed.tabs.findIndex((t: any) => t.id === 'commands' || t.id === 'credenciales' || t.id === 'notas');
-              parsed.tabs = parsed.tabs.filter((t: any) => t.id !== 'commands' && t.id !== 'credenciales' && t.id !== 'notas');
-              const workspaceTab: TabConfig = {
-                id: 'workspace',
-                label: 'Notas & Bóveda',
-                type: 'system',
-                componentKey: 'Workspace',
-                isVisible: true,
-                icon: 'FolderKanban'
-              };
+            if (!hasPersonalTab) {
+              const firstOldIndex = parsed.tabs.findIndex((t: any) => 
+                t.id === 'workspace' || t.id === 'finanzas' || t.id === 'nutricion' || 
+                t.id === 'commands' || t.id === 'credenciales' || t.id === 'notas'
+              );
+
+              parsed.tabs = parsed.tabs.filter((t: any) => 
+                t.id !== 'workspace' && t.id !== 'finanzas' && t.id !== 'nutricion' &&
+                t.id !== 'commands' && t.id !== 'credenciales' && t.id !== 'notas'
+              );
+
               if (firstOldIndex !== -1) {
-                parsed.tabs.splice(firstOldIndex, 0, workspaceTab);
+                parsed.tabs.splice(firstOldIndex, 0, personalTab);
               } else {
-                parsed.tabs.push(workspaceTab);
+                const emailIdx = parsed.tabs.findIndex((t: any) => t.id === 'email-gen');
+                if (emailIdx !== -1) {
+                  parsed.tabs.splice(emailIdx + 1, 0, personalTab);
+                } else {
+                  parsed.tabs.unshift(personalTab);
+                }
               }
+            } else {
+              parsed.tabs = parsed.tabs.filter((t: any) => 
+                t.id !== 'workspace' && t.id !== 'finanzas' && t.id !== 'nutricion' &&
+                t.id !== 'commands' && t.id !== 'credenciales' && t.id !== 'notas'
+              );
             }
           }
           // Ensure usefulTools exist and have the new sections

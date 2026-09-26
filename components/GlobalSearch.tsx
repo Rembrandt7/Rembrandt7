@@ -23,7 +23,8 @@ import {
   ArrowRight,
   Clock,
   Layers,
-  FolderKanban
+  FolderKanban,
+  ShieldCheck
 } from 'lucide-react';
 import { motion, AnimatePresence } from 'motion/react';
 import { LinkItem, Command, TabConfig } from '../types';
@@ -119,6 +120,7 @@ export const GlobalSearch: React.FC = () => {
         case 'Nutricion': return <Heart size={16} className="text-red-400" />;
         case 'Generador de Video': return <Video size={16} className="text-indigo-400" />;
         case 'Impresión 3D': return <Box size={16} className="text-cyan-400" />;
+        case 'Personal': return <ShieldCheck size={16} className="text-amber-400" />;
         case 'Workspace': return <FolderKanban size={16} className="text-violet-400" />;
         case 'Base de Datos': return <Database size={16} className="text-blue-400" />;
         default: return <Layers size={16} className="text-indigo-400" />;
@@ -237,9 +239,15 @@ export const GlobalSearch: React.FC = () => {
           categoryColor: 'bg-yellow-500/20 text-yellow-300 border-yellow-500/30',
           icon: <FileText size={16} className="text-yellow-400" />,
           action: () => {
-            const targetTab = config.tabs.find(t => t.id === 'workspace' || t.componentKey === 'Workspace')?.id || 'workspace';
-            setActiveTabId(targetTab);
-            window.dispatchEvent(new CustomEvent('switch-workspace-subtab', { detail: 'notas' }));
+            const hasPersonal = config.tabs?.some(t => t.id === 'personal' || t.componentKey === 'Personal');
+            if (hasPersonal) {
+              setActiveTabId('personal');
+              window.dispatchEvent(new CustomEvent('switch-personal-subtab', { detail: { subtab: 'boveda', bovedaTab: 'notas' } }));
+            } else {
+              const targetTab = config.tabs.find(t => t.id === 'workspace' || t.componentKey === 'Workspace')?.id || 'workspace';
+              setActiveTabId(targetTab);
+              window.dispatchEvent(new CustomEvent('switch-workspace-subtab', { detail: 'notas' }));
+            }
             navigator.clipboard.writeText(note.text);
             toast.success("Nota copiada al portapapeles y navegando a Notas");
             setIsOpen(false);
