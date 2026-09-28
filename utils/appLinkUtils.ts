@@ -4,6 +4,7 @@ export interface SmartLinkTarget {
   href: string;
   target: string;
   isAppScheme: boolean;
+  fallbackUrl: string;
 }
 
 /**
@@ -24,7 +25,8 @@ export function getSmartLinkTarget(
     return {
       href: originalHref,
       target: '_blank',
-      isAppScheme: false
+      isAppScheme: false,
+      fallbackUrl: originalHref
     };
   }
 
@@ -39,49 +41,38 @@ export function getSmartLinkTarget(
     nameLower.includes('whatsapp')
   ) {
     return {
-      href: 'whatsapp://',
+      href: 'whatsapp://send',
       target: '_self',
-      isAppScheme: true
+      isAppScheme: true,
+      fallbackUrl: 'https://web.whatsapp.com/'
     };
   }
 
-  // 2. Facebook -> opens native Facebook app
-  if (
-    urlLower.includes('facebook.com') ||
-    urlLower.includes('fb.com') ||
-    nameLower.includes('facebook')
-  ) {
-    if (android) {
-      return {
-        href: 'intent://facebook.com/#Intent;package=com.facebook.katana;scheme=https;S.browser_fallback_url=https%3A%2F%2Fwww.facebook.com;end',
-        target: '_self',
-        isAppScheme: true
-      };
-    }
-    return {
-      href: 'fb://feed',
-      target: '_self',
-      isAppScheme: true
-    };
-  }
-
-  // 3. Mercado Libre -> opens native Mercado Libre app
+  // 2. Mercado Libre -> opens native Mercado Libre app
   if (
     urlLower.includes('mercadolibre') ||
     nameLower.includes('mercado libre') ||
     nameLower.includes('mercadolibre')
   ) {
-    if (android) {
-      return {
-        href: 'intent://#Intent;package=com.mercadolibre;scheme=meli;S.browser_fallback_url=https%3A%2F%2Fwww.mercadolibre.com.mx;end',
-        target: '_self',
-        isAppScheme: true
-      };
-    }
     return {
       href: 'meli://home',
       target: '_self',
-      isAppScheme: true
+      isAppScheme: true,
+      fallbackUrl: 'https://www.mercadolibre.com.mx/'
+    };
+  }
+
+  // 3. Facebook -> opens native Facebook app
+  if (
+    urlLower.includes('facebook.com') ||
+    urlLower.includes('fb.com') ||
+    nameLower.includes('facebook')
+  ) {
+    return {
+      href: 'fb://feed',
+      target: '_self',
+      isAppScheme: true,
+      fallbackUrl: 'https://www.facebook.com/'
     };
   }
 
@@ -91,17 +82,11 @@ export function getSmartLinkTarget(
     urlLower.includes('youtu.be') ||
     nameLower.includes('youtube')
   ) {
-    if (android) {
-      return {
-        href: 'intent://www.youtube.com/#Intent;package=com.google.android.youtube;scheme=https;S.browser_fallback_url=https%3A%2F%2Fwww.youtube.com;end',
-        target: '_self',
-        isAppScheme: true
-      };
-    }
     return {
       href: 'vnd.youtube://',
       target: '_self',
-      isAppScheme: true
+      isAppScheme: true,
+      fallbackUrl: 'https://www.youtube.com/'
     };
   }
 
@@ -110,31 +95,11 @@ export function getSmartLinkTarget(
     urlLower.includes('pinterest') ||
     nameLower.includes('pinterest')
   ) {
-    if (urlLower.includes('rembrandtro/pines-creados')) {
-      if (android) {
-        return {
-          href: 'intent://www.pinterest.com/Rembrandtro/pines-creados/#Intent;package=com.pinterest;scheme=https;S.browser_fallback_url=https%3A%2F%2Fwww.pinterest.com.mx%2FRembrandtro%2Fpines-creados%2F;end',
-          target: '_self',
-          isAppScheme: true
-        };
-      }
-      return {
-        href: 'pinterest://user/Rembrandtro',
-        target: '_self',
-        isAppScheme: true
-      };
-    }
-    if (android) {
-      return {
-        href: 'intent://#Intent;package=com.pinterest;scheme=pinterest;S.browser_fallback_url=https%3A%2F%2Fwww.pinterest.com;end',
-        target: '_self',
-        isAppScheme: true
-      };
-    }
     return {
-      href: 'pinterest://',
+      href: 'pinterest://user/Rembrandtro',
       target: '_self',
-      isAppScheme: true
+      isAppScheme: true,
+      fallbackUrl: 'https://www.pinterest.com.mx/Rembrandtro/pines-creados/'
     };
   }
 
@@ -145,17 +110,11 @@ export function getSmartLinkTarget(
     nameLower === 'x' ||
     nameLower.includes('twitter')
   ) {
-    if (android) {
-      return {
-        href: 'intent://#Intent;package=com.twitter.android;scheme=twitter;S.browser_fallback_url=https%3A%2F%2Fx.com;end',
-        target: '_self',
-        isAppScheme: true
-      };
-    }
     return {
       href: 'twitter://timeline',
       target: '_self',
-      isAppScheme: true
+      isAppScheme: true,
+      fallbackUrl: 'https://x.com/'
     };
   }
 
@@ -164,17 +123,11 @@ export function getSmartLinkTarget(
     urlLower.includes('instagram.com') ||
     nameLower.includes('instagram')
   ) {
-    if (android) {
-      return {
-        href: 'intent://instagram.com/#Intent;package=com.instagram.android;scheme=https;S.browser_fallback_url=https%3A%2F%2Fwww.instagram.com;end',
-        target: '_self',
-        isAppScheme: true
-      };
-    }
     return {
       href: 'instagram://app',
       target: '_self',
-      isAppScheme: true
+      isAppScheme: true,
+      fallbackUrl: 'https://www.instagram.com/'
     };
   }
 
@@ -188,13 +141,15 @@ export function getSmartLinkTarget(
       return {
         href: 'intent://clubjaver.com/#Intent;scheme=https;S.browser_fallback_url=https%3A%2F%2Fclubjaver.com;end',
         target: '_self',
-        isAppScheme: true
+        isAppScheme: true,
+        fallbackUrl: 'https://clubjaver.com/'
       };
     }
     return {
       href: 'https://clubjaver.com/',
       target: '_blank',
-      isAppScheme: false
+      isAppScheme: false,
+      fallbackUrl: 'https://clubjaver.com/'
     };
   }
 
@@ -202,6 +157,23 @@ export function getSmartLinkTarget(
   return {
     href: originalHref,
     target: '_blank',
-    isAppScheme: false
+    isAppScheme: false,
+    fallbackUrl: originalHref
   };
+}
+
+/**
+ * Triggers native app opening on mobile with automatic web fallback
+ * if the native app is not installed.
+ */
+export function openSmartMobileApp(appUri: string, fallbackUrl: string): void {
+  const start = Date.now();
+  window.location.href = appUri;
+
+  // Fallback check: if app is not installed, the page will stay active
+  setTimeout(() => {
+    if (document.hasFocus() && Date.now() - start < 2000) {
+      window.open(fallbackUrl, '_blank');
+    }
+  }, 1200);
 }

@@ -1,6 +1,6 @@
 /**
  * Device detection utility to distinguish between desktop computers (compu)
- * and mobile cell phones (cel - Android, iPhone, Galaxy Z Fold, etc.)
+ * and mobile cell phones (cel - Android, iPhone, Galaxy Z Fold 7, etc.)
  */
 
 export function isMobileDevice(): boolean {
@@ -8,23 +8,26 @@ export function isMobileDevice(): boolean {
     return false;
   }
 
-  // 1. User Agent regex for mobile devices
-  const ua = navigator.userAgent || navigator.vendor || (window as any).opera || '';
-  const isMobileUA = /Android|webOS|iPhone|iPad|iPod|BlackBerry|IEMobile|Opera Mini|Mobile/i.test(ua);
+  const ua = (navigator.userAgent || navigator.vendor || (window as any).opera || '').toLowerCase();
+  
+  // 1. User Agent regex for mobile devices (including Samsung Galaxy Fold models SM-F)
+  const isMobileUA = /android|iphone|ipad|ipod|blackberry|iemobile|opera mini|mobile|samsung|sm-f/i.test(ua);
 
-  // 2. Touch support & mobile screen size check (e.g. Galaxy Z Fold folded or unfolded)
+  // 2. Touch capability
   const hasTouch = ('ontouchstart' in window) || (navigator.maxTouchPoints > 0);
-  const isNarrowScreen = window.innerWidth < 1024;
+  
+  // 3. Screen width (mobile / foldable screen)
+  const isMobileScreen = window.innerWidth <= 1024;
 
-  return isMobileUA || (hasTouch && isNarrowScreen);
+  return isMobileUA || (hasTouch && isMobileScreen);
 }
 
 export function isAndroid(): boolean {
   if (typeof navigator === 'undefined') return false;
-  return /Android/i.test(navigator.userAgent || '');
+  return /android/i.test(navigator.userAgent || '');
 }
 
 export function isIOS(): boolean {
   if (typeof navigator === 'undefined') return false;
-  return /iPhone|iPad|iPod/i.test(navigator.userAgent || '');
+  return /iphone|ipad|ipod/i.test(navigator.userAgent || '');
 }

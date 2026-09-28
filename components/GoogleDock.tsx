@@ -5,7 +5,7 @@ import { LinkEditorModal } from './common/LinkEditorModal';
 import { Edit, Trash2, Plus } from 'lucide-react';
 import { SortableLinkList } from './common/SortableLinkList';
 import { verticalListSortingStrategy } from '@dnd-kit/sortable';
-import { getSmartLinkTarget } from '../utils/appLinkUtils';
+import { getSmartLinkTarget, openSmartMobileApp } from '../utils/appLinkUtils';
 
 const ToolItem: React.FC<{ 
     item: LinkItem; 
@@ -14,7 +14,18 @@ const ToolItem: React.FC<{
     onDelete: (id: string) => void;
 }> = ({ item, isEditing, onEdit, onDelete }) => {
     const isGemini = item.id === 'gd-1';
-    const { href: smartHref, target: smartTarget } = getSmartLinkTarget(item.href, item.name);
+    const { href: smartHref, target: smartTarget, isAppScheme, fallbackUrl } = getSmartLinkTarget(item.href, item.name);
+
+    const handleClick = (e: React.MouseEvent) => {
+        if (isEditing) {
+            e.preventDefault();
+            return;
+        }
+        if (isAppScheme) {
+            e.preventDefault();
+            openSmartMobileApp(smartHref, fallbackUrl || item.href);
+        }
+    };
 
     return (
         <div className={`relative group flex items-center w-full py-2 ${isEditing ? 'px-2 justify-start' : 'justify-center'}`}>
@@ -22,7 +33,7 @@ const ToolItem: React.FC<{
                 href={smartHref} 
                 target={smartTarget} 
                 rel="noopener noreferrer" 
-                onClick={(e) => isEditing && e.preventDefault()}
+                onClick={handleClick}
                 className={`relative flex items-center justify-center w-12 h-12 rounded-[1.25rem] transition-all duration-300 hover:scale-[1.15] hover:-translate-y-1 group ${item.colorClass} ${isEditing ? 'opacity-100 cursor-default' : ''} ${isGemini ? 'bg-gradient-to-br from-[#6366f1] via-[#a855f7] to-[#ec4899] shadow-[0_4px_20px_rgba(168,85,247,0.5)] border border-white/30' : 'bg-white/5 hover:bg-white/10 hover:shadow-[0_4px_15px_rgba(255,255,255,0.05)] border border-white/5'}`}
                 title={item.name}
             >
