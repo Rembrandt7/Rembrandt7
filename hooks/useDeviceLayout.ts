@@ -1,10 +1,11 @@
 import { useState, useEffect } from 'react';
+import { isMobileDevice } from '../utils/deviceUtils';
 
 export type FoldMode = 'desktop' | 'fold-cover' | 'fold-unfolded';
 
 export interface DeviceLayoutInfo {
-  isMobile: boolean;           // true if width < 1024 or touch device on mobile size
-  isDesktop: boolean;          // true if width >= 1024
+  isMobile: boolean;           // true if mobile / cell phone (Android, iOS, Fold)
+  isDesktop: boolean;          // true if desktop computer
   isFoldCover: boolean;        // true if narrow screen (< 580px) like Fold 7 cover screen
   isFoldUnfolded: boolean;     // true if square-ish foldable inner screen (580px - 1024px)
   foldMode: FoldMode;
@@ -35,8 +36,8 @@ export function useDeviceLayout(): DeviceLayoutInfo {
     const aspectRatio = width / (height || 1);
     const orientation = width >= height ? 'landscape' : 'portrait';
 
-    const isDesktop = width >= 1024;
-    const isMobile = !isDesktop;
+    const isMobile = isMobileDevice();
+    const isDesktop = !isMobile;
 
     // Detection for Galaxy Fold:
     // When folded: Cover screen width is narrow (< 580px, typically 380px - 440px)

@@ -5,6 +5,7 @@ import { LinkEditorModal } from './common/LinkEditorModal';
 import { Edit, Trash2, Plus } from 'lucide-react';
 import { SortableLinkList } from './common/SortableLinkList';
 import { verticalListSortingStrategy } from '@dnd-kit/sortable';
+import { getSmartLinkTarget } from '../utils/appLinkUtils';
 
 const ToolItem: React.FC<{ 
     item: LinkItem; 
@@ -13,12 +14,13 @@ const ToolItem: React.FC<{
     onDelete: (id: string) => void;
 }> = ({ item, isEditing, onEdit, onDelete }) => {
     const isGemini = item.id === 'gd-1';
+    const { href: smartHref, target: smartTarget } = getSmartLinkTarget(item.href, item.name);
 
     return (
         <div className={`relative group flex items-center w-full py-2 ${isEditing ? 'px-2 justify-start' : 'justify-center'}`}>
             <a 
-                href={item.href} 
-                target="_blank" 
+                href={smartHref} 
+                target={smartTarget} 
                 rel="noopener noreferrer" 
                 onClick={(e) => isEditing && e.preventDefault()}
                 className={`relative flex items-center justify-center w-12 h-12 rounded-[1.25rem] transition-all duration-300 hover:scale-[1.15] hover:-translate-y-1 group ${item.colorClass} ${isEditing ? 'opacity-100 cursor-default' : ''} ${isGemini ? 'bg-gradient-to-br from-[#6366f1] via-[#a855f7] to-[#ec4899] shadow-[0_4px_20px_rgba(168,85,247,0.5)] border border-white/30' : 'bg-white/5 hover:bg-white/10 hover:shadow-[0_4px_15px_rgba(255,255,255,0.05)] border border-white/5'}`}

@@ -15,6 +15,7 @@ import { motion, AnimatePresence } from 'motion/react';
 import { toast } from 'sonner';
 import { getFriendlyAiErrorMessage, isQuotaError, isUnavailableError } from '../utils/aiError';
 import { generateContentWithFallback, getGeminiClient, GEMINI_MODELS } from '../services/geminiService';
+import { useDeviceLayout } from '../hooks/useDeviceLayout';
 
 type Tone = 'Profesional' | 'Casual';
 type MessageLength = 'Reducido' | 'Medio' | 'Detallado';
@@ -278,6 +279,7 @@ const predefinedProjects = ['Valle de Los Encinos', 'Cumbre del Norte', 'Xandora
 
 const EmailGenerator: React.FC<EmailGeneratorProps> = ({ attachedImages, onAttachmentsChange }) => {
     const { config, updateConfig, googleApiConfig } = useLinks();
+    const { isMobile, isDesktop } = useDeviceLayout();
     
     // Modo de trabajo: 'ai' = Redactor Libre con IA (primero por defecto), 'quick' = Entregas y Formatos (0s)
     const [activeMode, setActiveMode] = useState<'ai' | 'quick'>('ai');
@@ -1077,7 +1079,11 @@ const EmailGenerator: React.FC<EmailGeneratorProps> = ({ attachedImages, onAttac
 
     const handleSendWhatsApp = (customMsg?: string) => {
         const msg = customMsg || (generatedContent ? generatedContent.whatsappMessage : livePreview.whatsappMessage);
-        window.open(`https://wa.me/?text=${encodeURIComponent(msg)}`, '_blank');
+        if (isMobile) {
+            window.location.href = `whatsapp://send?text=${encodeURIComponent(msg)}`;
+        } else {
+            window.open(`https://web.whatsapp.com/send?text=${encodeURIComponent(msg)}`, '_blank');
+        }
     };
 
     const handleDrop = (e: React.DragEvent) => {
@@ -1790,6 +1796,88 @@ const EmailGenerator: React.FC<EmailGeneratorProps> = ({ attachedImages, onAttac
                             </div>
 
                             <div className="space-y-4">
+                                {/* PRIORIDAD MICRÓFONO EN CELULAR (SOLO MÓVIL / APP) */}
+                                {isMobile && (
+                                    <div className="space-y-2.5">
+                                        {!isListening ? (
+                                            <button
+                                                type="button"
+                                                onClick={toggleListening}
+                                                className="w-full py-3.5 px-4 bg-gradient-to-r from-purple-600 via-indigo-600 to-purple-700 hover:from-purple-500 hover:to-indigo-500 text-white font-bold rounded-2xl shadow-xl shadow-purple-600/30 flex items-center justify-between transition-all active:scale-[0.98] border border-purple-400/40 cursor-pointer"
+                                            >
+                                                <div className="flex items-center gap-3">
+                                                    <div className="w-11 h-11 rounded-xl bg-white/20 flex items-center justify-center shadow-inner shrink-0">
+                                                        <Mic size={22} className="text-white animate-pulse" />
+                                                    </div>
+                                                    <div className="text-left">
+                                                        <div className="text-xs font-black tracking-wide flex items-center gap-1.5">
+                                                            <span>DICTAR POR VOZ</span>
+                                                            <span className="text-[9px] font-bold bg-amber-400 text-black px-1.5 py-0.5 rounded-full uppercase">Prioridad Celular</span>
+                                                        </div>
+                                                        <div className="text-[11px] text-purple-200/90 font-normal">
+                                                            {idea ? 'Toca para continuar dictando...' : 'Toca y habla; la IA redactará tu correo'}
+                                                        </div>
+                                                    </div>
+                                                </div>
+                                                <div className="px-3 py-1.5 bg-white/10 rounded-xl text-xs font-mono font-bold text-white border border-white/20 shrink-0">
+                                                    Hablar 🎙️
+                                                </div>
+                                            </button>
+                                        ) : (
+                                            <div className="w-full p-4 bg-gradient-to-r from-red-950/90 via-rose-900/80 to-purple-950/90 border-2 border-red-500 rounded-2xl shadow-xl shadow-red-500/30 space-y-3">
+                                                <div className="flex items-center justify-between">
+                                                    <div className="flex items-center gap-2">
+                                                        <div className="w-3 h-3 rounded-full bg-red-500 animate-ping" />
+                                                        <span className="text-xs font-black text-white uppercase tracking-wider">Escuchando tu voz...</span>
+                                                    </div>
+                                                    <button
+                                                        type="button"
+                                                        onClick={toggleListening}
+                                                        className="px-3 py-1.5 bg-red-600 hover:bg-red-500 text-white text-xs font-black uppercase rounded-xl flex items-center gap-1.5 shadow-md active:scale-95 cursor-pointer"
+                                                    >
+                                                        <MicOff size={14} />
+                                                        <span>Detener</span>
+                                                    </button>
+                                                </div>
+                                                {/* Animated sound wave bars */}
+                                                <div className="flex items-center justify-center gap-1.5 h-8 py-1">
+                                                    {[40, 75, 100, 60, 95, 45, 85, 55, 90, 70, 80, 50].map((h, i) => (
+                                                        <div
+                                                            key={i}
+                                                            className="w-1.5 bg-gradient-to-t from-red-500 via-rose-400 to-purple-300 rounded-full animate-pulse"
+                                                            style={{ height: `${h}%`, animationDelay: `${i * 60}ms` }}
+                                                        />
+                                                    ))}
+                                                </div>
+                                                <p className="text-[11px] text-center text-red-200/90 italic truncate">
+                                                    {idea ? `"${idea.slice(-80)}"` : 'Habla claro hacia el micrófono del celular...'}
+                                                </p>
+                                            </div>
+                                        )}
+
+                                        {idea && (
+                                            <div className="flex items-center gap-2 pt-1">
+                                                <button
+                                                    type="button"
+                                                    onClick={toggleListening}
+                                                    className="flex-1 py-1.5 px-3 bg-purple-900/40 hover:bg-purple-900/60 border border-purple-500/30 rounded-xl text-[11px] font-bold text-purple-300 flex items-center justify-center gap-1.5 transition-colors cursor-pointer"
+                                                >
+                                                    <Mic size={13} />
+                                                    <span>{isListening ? 'Pausar dictado' : 'Añadir más dictado'}</span>
+                                                </button>
+                                                <button
+                                                    type="button"
+                                                    onClick={() => { setIdea(''); toast.info('Texto borrado para nuevo dictado'); }}
+                                                    className="py-1.5 px-3 bg-zinc-800/80 hover:bg-zinc-700/80 border border-white/10 rounded-xl text-[11px] font-bold text-zinc-400 hover:text-white flex items-center justify-center gap-1.5 transition-colors cursor-pointer"
+                                                >
+                                                    <RotateCcw size={12} />
+                                                    <span>Limpiar</span>
+                                                </button>
+                                            </div>
+                                        )}
+                                    </div>
+                                )}
+
                                 {/* Contenedor de Textarea con Texto Fantasma */}
                                 <div className="relative group rounded-xl border border-gray-700 bg-gray-800/90 focus-within:border-purple-500 transition-all overflow-hidden min-h-[140px]">
                                     {/* Capa de texto fantasma sincronizada detrás */}
@@ -2095,6 +2183,24 @@ const EmailGenerator: React.FC<EmailGeneratorProps> = ({ attachedImages, onAttac
                             </div>
                         )}
                     </div>
+
+                    {/* BOTÓN FLOTANTE DE MICRÓFONO PARA CELULAR (PRIORIDAD MÓVIL) */}
+                    {isMobile && (
+                        <div className="fixed bottom-20 right-4 z-40 sm:hidden">
+                            <button
+                                type="button"
+                                onClick={toggleListening}
+                                className={`w-14 h-14 rounded-full flex items-center justify-center shadow-2xl transition-all cursor-pointer ${
+                                    isListening
+                                        ? 'bg-red-600 text-white animate-pulse shadow-red-500/50 scale-110 ring-4 ring-red-400/40'
+                                        : 'bg-gradient-to-tr from-purple-600 to-indigo-600 text-white shadow-purple-600/40 hover:scale-105 active:scale-95 border-2 border-white/20'
+                                }`}
+                                title={isListening ? "Detener dictado" : "Dictar con micrófono"}
+                            >
+                                {isListening ? <MicOff size={24} className="animate-spin" /> : <Mic size={24} />}
+                            </button>
+                        </div>
+                    )}
                 </div>
             )}
 

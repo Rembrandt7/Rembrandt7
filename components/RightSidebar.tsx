@@ -5,6 +5,7 @@ import { LinkEditorModal } from './common/LinkEditorModal';
 import { Edit, Trash2, Plus } from 'lucide-react';
 import { SortableLinkList } from './common/SortableLinkList';
 import { verticalListSortingStrategy } from '@dnd-kit/sortable';
+import { getSmartLinkTarget } from '../utils/appLinkUtils';
 
 const ToolItem: React.FC<{ 
     item: LinkItem; 
@@ -12,11 +13,13 @@ const ToolItem: React.FC<{
     onEdit: (item: LinkItem) => void;
     onDelete: (id: string) => void;
 }> = ({ item, isEditing, onEdit, onDelete }) => {
+    const { href: smartHref, target: smartTarget } = getSmartLinkTarget(item.href, item.name);
+
     return (
         <div className="relative group">
             <a 
-                href={item.href} 
-                target="_blank" 
+                href={smartHref} 
+                target={smartTarget} 
                 rel="noopener noreferrer" 
                 onClick={(e) => isEditing && e.preventDefault()}
                 className={`flex items-center gap-3 p-2 rounded-lg hover:bg-gray-800 transition-colors group ${item.colorClass} ${isEditing ? 'opacity-50 cursor-default' : ''}`}

@@ -5,6 +5,7 @@ import { useLinks } from '../contexts/LinkContext';
 import { LinkEditorModal } from './common/LinkEditorModal';
 import { SortableLinkList } from './common/SortableLinkList';
 import { rectSortingStrategy } from '@dnd-kit/sortable';
+import { getSmartLinkTarget } from '../utils/appLinkUtils';
 
 const LinkIcon: React.FC<{ 
     item: LinkItem; 
@@ -16,6 +17,8 @@ const LinkIcon: React.FC<{
     isLast: boolean;
 }> = ({ item, isEditing, onEdit, onDelete, onMove, isFirst, isLast }) => {
     const hasBg = item.hasBackground !== false;
+    const { href: smartHref, target: smartTarget } = getSmartLinkTarget(item.href, item.name);
+
     return (
         <div className="relative group flex items-center justify-center flex-1 max-w-[92px] min-w-[28px]">
             {isEditing && !isFirst && (
@@ -24,8 +27,8 @@ const LinkIcon: React.FC<{
                 </button>
             )}
             <a 
-                href={item.href} 
-                target="_blank" 
+                href={smartHref} 
+                target={smartTarget} 
                 rel="noopener noreferrer" 
                 onClick={(e) => isEditing && e.preventDefault()}
                 className={`flex items-center justify-center w-full aspect-square max-w-[86px] max-h-[86px] min-w-[28px] min-h-[28px] rounded-2xl sm:rounded-3xl transition-all duration-300 group ${item.colorClass} hover:scale-[1.10] hover:-translate-y-1 ${isEditing ? 'opacity-100 cursor-default' : ''} ${hasBg ? 'bg-white/5 hover:bg-white/10 hover:shadow-[0_8px_25px_rgba(255,255,255,0.1)] border border-white/10' : ''} [&_svg]:w-[65%] [&_svg]:h-[65%] [&_svg]:max-w-[54px] [&_svg]:max-h-[54px] [&_img]:w-[70%] [&_img]:h-[70%] [&_img]:max-w-[56px] [&_img]:max-h-[56px] [&_img]:object-contain`}

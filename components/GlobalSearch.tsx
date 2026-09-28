@@ -29,6 +29,7 @@ import {
 import { motion, AnimatePresence } from 'motion/react';
 import { LinkItem, Command, TabConfig } from '../types';
 import { toast } from 'sonner';
+import { getSmartLinkTarget } from '../utils/appLinkUtils';
 
 type SearchCategory = 'all' | 'tab' | 'note' | 'calendar' | 'finance' | 'command' | 'link' | 'system';
 
@@ -407,7 +408,12 @@ export const GlobalSearch: React.FC = () => {
           categoryColor: 'bg-blue-500/20 text-blue-300 border-blue-500/30',
           icon: <ExternalLink size={16} className="text-blue-400" />,
           action: () => {
-            window.open(link.href, '_blank');
+            const { href, target } = getSmartLinkTarget(link.href, link.name);
+            if (target === '_self') {
+              window.location.href = href;
+            } else {
+              window.open(href, '_blank');
+            }
             setIsOpen(false);
           }
         });
