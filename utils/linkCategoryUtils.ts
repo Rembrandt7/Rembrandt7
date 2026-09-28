@@ -108,3 +108,47 @@ export const CATEGORY_DEFINITIONS: CategoryDefinition[] = [
     hoverClass: 'hover:bg-pink-500/10 hover:text-pink-300'
   }
 ];
+
+/**
+ * Normalizes and removes duplicate links in linksBar.
+ * Ensures Javer, Flow, and other links are never duplicated.
+ */
+export function normalizeAndDeduplicateLinksBar(links: LinkItem[]): LinkItem[] {
+  if (!Array.isArray(links)) return [];
+  const seenNames = new Set<string>();
+  const seenHrefs = new Set<string>();
+  const result: LinkItem[] = [];
+
+  for (const item of links) {
+    if (!item || !item.name) continue;
+    const nameLower = item.name.trim().toLowerCase();
+    const hrefNormalized = (item.href || '').trim().toLowerCase().replace(/\/$/, '');
+
+    // Check duplicate by name
+    if (nameLower && seenNames.has(nameLower)) {
+      continue;
+    }
+
+    // Check duplicate by normalized URL
+    if (hrefNormalized && seenHrefs.has(hrefNormalized)) {
+      continue;
+    }
+
+    // Handle clubjaver vs portal.javer confusion
+    if ((nameLower === 'javer' || nameLower === 'club javer') && (seenHrefs.has('https://portal.javer.net/paginas/index.aspx') || seenHrefs.has('https://clubjaver.com'))) {
+      continue;
+    }
+
+    // Handle flow duplicate (Google Flow vs Club Javer named Flow)
+    if (nameLower === 'flow' && hrefNormalized.includes('clubjaver.com') && (seenNames.has('flow') || links.some(l => (l.href || '').includes('labs.google/fx/es/tools/flow')))) {
+      continue;
+    }
+
+    if (nameLower) seenNames.add(nameLower);
+    if (hrefNormalized) seenHrefs.add(hrefNormalized);
+    result.push(item);
+  }
+
+  return result;
+}
+

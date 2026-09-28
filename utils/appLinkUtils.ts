@@ -131,10 +131,9 @@ export function getSmartLinkTarget(
     };
   }
 
-  // 8. Flow (Club Javer) -> opens native Flow app / registered app handler
+  // 8. Club Javer -> opens native app / clubjaver intent
   if (
     urlLower.includes('clubjaver.com') ||
-    nameLower === 'flow' ||
     nameLower.includes('clubjaver')
   ) {
     if (android) {

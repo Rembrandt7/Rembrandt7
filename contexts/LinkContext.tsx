@@ -3,6 +3,7 @@ import { AppConfig, LinkItem, LinkSection, TabConfig, NutritionData, Note, AppNo
 import { supabase } from '../services/supabaseClient';
 import { toast } from 'sonner';
 import { normalizeAndDeduplicateNotes } from '../utils/noteUtils';
+import { normalizeAndDeduplicateLinksBar } from '../utils/linkCategoryUtils';
 
 const INITIAL_TABS: TabConfig[] = [
     { id: 'email-gen', label: 'Email', type: 'system', componentKey: 'Generador de Email', isVisible: true, icon: 'Mail' },
@@ -76,12 +77,24 @@ const INITIAL_CONFIG: AppConfig = {
         iconSvg: `<svg xmlns="http://www.w3.org/2000/svg" class="h-6 w-6" viewBox="0 0 24 24" fill="currentColor"><path d="M4.021 1.761A.97.97 0 0 0 3 2.754V21.36c0 .546.438.986.97.972.032.004.064.004.096 0h16.29a.952.952 0 0 0 .963-.951V2.623a.952.952 0 0 0-.963-.951H4.117a.65.65 0 0 0-.096.09zM5.38 4.28h2.24l6.983 11.233V4.28h2.096v15.226h-2.12L7.65 8.358v11.148H5.38V4.28z"/></svg>`
     },
     {
-        id: '4',
-        href: "https://clubjaver.com/",
-        name: "Flow",
+        id: 'javer',
+        href: "https://portal.javer.net/Paginas/Index.aspx",
+        name: "Javer",
         category: "trabajo",
         colorClass: "text-blue-500 hover:text-blue-400",
-        iconSvg: `<img src="/flow_premium.png" class="w-10 h-10 object-contain" />`
+        iconSvg: `<img src="/flow_premium.png" class="w-10 h-10 object-contain" />`,
+        outlineColor: '#f20202',
+        outlineWidth: 10
+    },
+    {
+        id: 'flow',
+        href: "https://labs.google/fx/es/tools/flow",
+        name: "Flow",
+        category: "trabajo",
+        colorClass: "text-red-500 hover:text-red-400",
+        iconSvg: `<svg viewBox="0 0 512 512" xmlns="http://www.w3.org/2000/svg" fill="none"><defs><linearGradient id="gradRed" x1="0%" y1="0%" x2="100%" y2="100%"><stop offset="0%" style="stop-color:#EA4335;stop-opacity:1" /><stop offset="100%" style="stop-color:#D32F2F;stop-opacity:1" /></linearGradient><linearGradient id="gradBlue" x1="0%" y1="0%" x2="0%" y2="100%"><stop offset="0%" style="stop-color:#4285F4;stop-opacity:1" /><stop offset="100%" style="stop-color:#3367D6;stop-opacity:1" /></linearGradient><linearGradient id="gradGreen" x1="0%" y1="100%" x2="100%" y2="0%"><stop offset="0%" style="stop-color:#34A853;stop-opacity:1" /><stop offset="100%" style="stop-color:#0F9D58;stop-opacity:1" /></linearGradient><linearGradient id="gradYellow" x1="0%" y1="0%" x2="0%" y2="100%"><stop offset="0%" style="stop-color:#FBBC05;stop-opacity:1" /><stop offset="100%" style="stop-color:#F9AB00;stop-opacity:1" /></linearGradient></defs><g transform="translate(256, 256) scale(0.85) translate(-256, -256)"><path d="M 160,340 C 230,340 282,172 352,172" stroke="url(#gradGreen)" stroke-width="80" stroke-linecap="round" /><path d="M 160,172 A 84,84 0 0,0 160,340" stroke="url(#gradBlue)" stroke-width="80" stroke-linecap="round" /><path d="M 352,340 A 84,84 0 0,0 352,172" stroke="url(#gradYellow)" stroke-width="80" stroke-linecap="round" /><path d="M 160,172 C 230,172 282,340 352,340" stroke="url(#gradRed)" stroke-width="80" stroke-linecap="round" /></g></svg>`,
+        outlineColor: '#ff0000',
+        outlineWidth: 15
     },
 
     {
@@ -704,15 +717,16 @@ export const LinkProvider: React.FC<{ children: React.ReactNode }> = ({ children
           }
         }
 
-        // Restored linksBar items migration
+        // Restored linksBar items migration & deduplication
         if (finalConfig.linksBar && Array.isArray(finalConfig.linksBar)) {
           const missingLinks = INITIAL_CONFIG.linksBar.filter(initialLink => 
-            !finalConfig.linksBar.find((l: any) => l.name === initialLink.name)
+            !finalConfig.linksBar.find((l: any) => (l.name || '').toLowerCase().trim() === initialLink.name.toLowerCase().trim())
           );
           
           if (missingLinks.length > 0) {
             finalConfig.linksBar = [...finalConfig.linksBar, ...missingLinks];
           }
+          finalConfig.linksBar = normalizeAndDeduplicateLinksBar(finalConfig.linksBar);
         }
 
         // Ensure credenciales and estudios exist
@@ -998,15 +1012,16 @@ export const LinkProvider: React.FC<{ children: React.ReactNode }> = ({ children
           // Ensure notes exist and deduplicate
           parsed.notes = normalizeAndDeduplicateNotes(parsed.notes || []);
           
-          // Add missing links to linksBar
+          // Add missing links to linksBar & deduplicate
           if (parsed.linksBar && Array.isArray(parsed.linksBar)) {
             const missingLinks = INITIAL_CONFIG.linksBar.filter(initialLink => 
-              !parsed.linksBar.find((l: any) => l.name === initialLink.name)
+              !parsed.linksBar.find((l: any) => (l.name || '').toLowerCase().trim() === initialLink.name.toLowerCase().trim())
             );
 
             if (missingLinks.length > 0) {
               parsed.linksBar = [...parsed.linksBar, ...missingLinks];
             }
+            parsed.linksBar = normalizeAndDeduplicateLinksBar(parsed.linksBar);
           }
 
           // Add missing links to googleDock (including Google Pics)
@@ -1527,7 +1542,8 @@ export const LinkProvider: React.FC<{ children: React.ReactNode }> = ({ children
         const rawConfig = configOverride || configRef.current;
         const configToSave: AppConfig = {
           ...rawConfig,
-          notes: normalizeAndDeduplicateNotes(rawConfig.notes || [])
+          notes: normalizeAndDeduplicateNotes(rawConfig.notes || []),
+          linksBar: normalizeAndDeduplicateLinksBar(rawConfig.linksBar || [])
         };
         const jsonString = JSON.stringify(configToSave, null, 2);
 
@@ -1838,12 +1854,13 @@ export const LinkProvider: React.FC<{ children: React.ReactNode }> = ({ children
 
       if (json.linksBar && Array.isArray(json.linksBar)) {
         const missingLinks = INITIAL_CONFIG.linksBar.filter(initialLink => 
-          !json.linksBar.find((l: any) => l.name === initialLink.name)
+          !json.linksBar.find((l: any) => (l.name || '').toLowerCase().trim() === initialLink.name.toLowerCase().trim())
         );
 
         if (missingLinks.length > 0) {
           json.linksBar = [...json.linksBar, ...missingLinks];
         }
+        json.linksBar = normalizeAndDeduplicateLinksBar(json.linksBar);
       }
 
       setConfig(json);

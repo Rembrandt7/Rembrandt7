@@ -6,7 +6,7 @@ import { LinkEditorModal } from './common/LinkEditorModal';
 import { SortableLinkList } from './common/SortableLinkList';
 import { rectSortingStrategy } from '@dnd-kit/sortable';
 import { getSmartLinkTarget, openSmartMobileApp } from '../utils/appLinkUtils';
-import { inferLinkCategory, LinkCategoryFilter, CATEGORY_DEFINITIONS } from '../utils/linkCategoryUtils';
+import { inferLinkCategory, LinkCategoryFilter, CATEGORY_DEFINITIONS, normalizeAndDeduplicateLinksBar } from '../utils/linkCategoryUtils';
 
 const LinkIcon: React.FC<{ 
     item: LinkItem; 
@@ -165,15 +165,31 @@ const LinksBar: React.FC = () => {
         setCurrentLink(null);
     };
 
+    const isLinkWhatsApp = (link: LinkItem) => {
+        const name = (link.name || '').toLowerCase();
+        const href = (link.href || '').toLowerCase();
+        return name.includes('whatsapp') || href.includes('whatsapp') || link.id === '2';
+    };
+
+    const isLinkIncludedInFilter = (link: LinkItem) => {
+        if (activeCategory === 'todos') return true;
+        if (isLinkWhatsApp(link)) return true; // WhatsApp es constante: SIEMPRE sale en todas las categorías
+        return inferLinkCategory(link) === activeCategory;
+    };
+
+    // Deduplicate on the fly so Javer, Flow and others never appear duplicated
+    const cleanLinksBar = normalizeAndDeduplicateLinksBar(config.linksBar);
+    const filteredLinks = cleanLinksBar.filter(isLinkIncludedInFilter);
+
     const handleReorder = (newSubset: LinkItem[]) => {
         if (activeCategory === 'todos') {
-            updateConfig({ ...config, linksBar: newSubset });
+            updateConfig({ ...config, linksBar: normalizeAndDeduplicateLinksBar(newSubset) });
             return;
         }
-        const newLinks = [...config.linksBar];
+        const newLinks = [...cleanLinksBar];
         const categoryIndices: number[] = [];
         newLinks.forEach((item, idx) => {
-            if (inferLinkCategory(item) === activeCategory) {
+            if (isLinkIncludedInFilter(item)) {
                 categoryIndices.push(idx);
             }
         });
@@ -182,13 +198,11 @@ const LinksBar: React.FC = () => {
                 newLinks[categoryIndices[i]] = item;
             }
         });
-        updateConfig({ ...config, linksBar: newLinks });
+        updateConfig({ ...config, linksBar: normalizeAndDeduplicateLinksBar(newLinks) });
     };
 
     const handleMoveLink = (id: string, direction: 'left' | 'right') => {
-        const list = activeCategory === 'todos'
-            ? config.linksBar
-            : config.linksBar.filter(l => inferLinkCategory(l) === activeCategory);
+        const list = cleanLinksBar.filter(isLinkIncludedInFilter);
         
         const index = list.findIndex(l => l.id === id);
         if (index === -1) return;
@@ -206,7 +220,7 @@ const LinksBar: React.FC = () => {
 
     const handleDeleteLink = (id: string) => {
         const newLinks = config.linksBar.filter(l => l.id !== id);
-        updateConfig({ ...config, linksBar: newLinks });
+        updateConfig({ ...config, linksBar: normalizeAndDeduplicateLinksBar(newLinks) });
     };
 
     const handleImportJson = (event: React.ChangeEvent<HTMLInputElement>) => {
@@ -216,10 +230,6 @@ const LinksBar: React.FC = () => {
             event.target.value = '';
         }
     };
-
-    const filteredLinks = activeCategory === 'todos'
-        ? config.linksBar
-        : config.linksBar.filter(link => inferLinkCategory(link) === activeCategory);
 
     return (
         <div className="w-full bg-black/30 backdrop-blur-xl border border-white/5 p-3.5 sm:p-4.5 mb-6 relative group/bar shadow-2xl rounded-2xl">
@@ -305,8 +315,8 @@ const LinksBar: React.FC = () => {
                 <div className="flex items-center justify-center gap-1.5 sm:gap-2 w-full overflow-x-auto no-scrollbar py-0.5">
                     {CATEGORY_DEFINITIONS.map(cat => {
                         const count = cat.id === 'todos' 
-                            ? config.linksBar.length 
-                            : config.linksBar.filter(l => inferLinkCategory(l) === cat.id).length;
+                            ? cleanLinksBar.length 
+                            : cleanLinksBar.filter(l => inferLinkCategory(l) === cat.id).length;
                         const isActive = activeCategory === cat.id;
 
                         return (
