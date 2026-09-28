@@ -1,5 +1,5 @@
 import React, { useState, useEffect, useRef } from 'react';
-import { Calculator, X, Delete, Box, Copy, MessageSquare, RefreshCw, Zap, Sparkles } from 'lucide-react';
+import { Calculator, X, Delete, Box, Copy, MessageSquare, RefreshCw, Zap, ShoppingBag } from 'lucide-react';
 import { toast } from 'sonner';
 import { supabase } from '../services/supabaseClient';
 
@@ -8,17 +8,10 @@ interface HistoryItem {
   result: string;
 }
 
-interface FilamentStockItem {
-  id: string;
-  material: string;
-  color: string;
-  customName?: string;
-}
-
 const MATERIAL_POWER: Record<string, number> = {
   PLA: 125,
-  TPU: 125,
   PETG: 155,
+  Especial: 200,
 };
 
 const CalculatorWidget: React.FC = () => {
@@ -38,18 +31,16 @@ const CalculatorWidget: React.FC = () => {
   
   const historyEndRef = useRef<HTMLDivElement>(null);
 
-  // 3D Calculator State
-  const [pieceName, setPieceName] = useState('');
-  const [material, setMaterial] = useState<'PLA' | 'PETG' | 'TPU'>('PLA');
-  const [selectedFilamentId, setSelectedFilamentId] = useState<string>('');
-  const [myFilaments, setMyFilaments] = useState<FilamentStockItem[]>([]);
-  const [filamentPrice, setFilamentPrice] = useState(400);
-  const [weightUsed, setWeightUsed] = useState(100);
+  // 3D Calculator State (Minimal and Fast)
+  const [material, setMaterial] = useState<'PLA' | 'PETG' | 'Especial'>('PLA');
+  const [filamentPrice, setFilamentPrice] = useState(400); // Precio estándar por defecto
+  const [weightUsed, setWeightUsed] = useState(100); // Gramos
   const [printHours, setPrintHours] = useState(5);
   const [printMinutes, setPrintMinutes] = useState(0);
   const [laborCostManual, setLaborCostManual] = useState(0);
   const [markup, setMarkup] = useState(30);
-  const [copiedType, setCopiedType] = useState<string | null>(null);
+  const [pieceName, setPieceName] = useState('');
+  const [isSavingOrder, setIsSavingOrder] = useState(false);
 
   useEffect(() => {
     const handleResize = () => {
@@ -69,25 +60,6 @@ const CalculatorWidget: React.FC = () => {
       historyEndRef.current.scrollIntoView({ behavior: 'smooth' });
     }
   }, [history]);
-
-  // Load filament stock from Supabase if available
-  useEffect(() => {
-    const loadStock = async () => {
-      try {
-        const { data } = await supabase.storage.from('savejson').download('impresion3d.json');
-        if (data) {
-          const text = await data.text();
-          const json = JSON.parse(text);
-          if (Array.isArray(json.myFilaments)) {
-            setMyFilaments(json.myFilaments);
-          }
-        }
-      } catch (e) {
-        // Fallback silently to standard materials
-      }
-    };
-    loadStock();
-  }, []);
 
   const handleSwitchMode = (newMode: 'standard' | '3d') => {
     setMode(newMode);
@@ -269,17 +241,14 @@ const CalculatorWidget: React.FC = () => {
   // Keyboard support for standard calculator
   useEffect(() => {
     const handleGlobalKeyDown = (e: KeyboardEvent) => {
-      // Don't intercept if user is typing in an input or textarea, or if in 3D mode
       if (mode !== 'standard') return;
       if (document.activeElement?.tagName === 'INPUT' || document.activeElement?.tagName === 'TEXTAREA' || document.activeElement?.tagName === 'SELECT') {
         return;
       }
 
-      // Only process if calculator is open
       if (!isOpen && !isDesktop) return;
 
       const key = e.key;
-      
       if (/[0-9]/.test(key)) {
         handleNumber(key);
       } else if (key === '.') {
@@ -298,9 +267,7 @@ const CalculatorWidget: React.FC = () => {
         calculate();
       } else if (key === 'Backspace') {
         handleDelete();
-      } else if (key === 'Delete') {
-        handleClear();
-      } else if (key === 'Escape') {
+      } else if (key === 'Delete' || key === 'Escape') {
         handleClear();
       } else if (key.toLowerCase() === 'r') {
         handleOperator('Repetir');
@@ -327,35 +294,114 @@ const CalculatorWidget: React.FC = () => {
 
   const handleCopy = (value: number, type: string) => {
     navigator.clipboard.writeText(value.toFixed(2));
-    setCopiedType(type);
     toast.success(`Precio (${type}) copiado: ${formatCurrency(value)}`);
-    setTimeout(() => setCopiedType(null), 2000);
   };
 
   const copyQuoteForWhatsApp = (type: 'comercial' | 'amigo' = 'comercial') => {
-    const price = type === 'comercial' ? commercialPrice : friendPrice;
+    const isFriend = type === 'amigo';
+    const price = isFriend ? friendPrice : commercialPrice;
     const timeFormatted = `${printHours > 0 ? `${printHours}h ` : ''}${printMinutes > 0 ? `${printMinutes}m` : (printHours === 0 ? '0m' : '')}`;
-    const quoteText = `🖨️ *Cotización de Impresión 3D*\n\n` +
+    const header = isFriend ? '👋 *Cotización Especial Amigo (Impresión 3D)*' : '🖨️ *Cotización de Impresión 3D*';
+    const quoteText = `${header}\n\n` +
       `🧩 *Pieza:* ${pieceName.trim() || 'Modelo 3D'}\n` +
-      `🧵 *Material:* ${material} ${selectedFilamentId ? `(En Stock)` : ''}\n` +
+      `🧵 *Material:* ${material}\n` +
       `⚖️ *Peso:* ${weightUsed}g\n` +
       `⏱️ *Tiempo:* ${timeFormatted || 'N/A'}\n` +
-      `💵 *Total:* ${formatCurrency(price)}\n\n` +
+      `💵 *${isFriend ? 'Precio Amigo' : 'Total'}:* ${formatCurrency(price)}\n\n` +
       `_¿Deseas proceder con la impresión?_ 👍`;
     navigator.clipboard.writeText(quoteText);
-    toast.success('¡Cotización para WhatsApp copiada!');
+    toast.success(`¡Cotización ${isFriend ? 'Amigo' : 'Comercial'} para WhatsApp copiada!`);
+  };
+
+  const handleAddOrder = async () => {
+    const finalName = pieceName.trim();
+    if (!finalName) {
+      toast.error('Por favor escribe el nombre de la pieza antes de agregar el pedido');
+      return;
+    }
+
+    setIsSavingOrder(true);
+    try {
+      // 1. Guardar en impresiones3d.json (Registro de Ventas / Pedidos)
+      let salesList: any[] = [];
+      try {
+        const { data: salesData } = await supabase.storage.from('savejson').download('impresiones3d.json');
+        if (salesData) {
+          const text = await salesData.text();
+          const json = JSON.parse(text);
+          if (Array.isArray(json)) salesList = json;
+        }
+      } catch (e) {
+        salesList = [];
+      }
+
+      const newSaleEntry = {
+        id: Date.now().toString(),
+        name: finalName,
+        cost: Number(baseCost.toFixed(2)),
+        price: Number(commercialPrice.toFixed(2)),
+        advance: 0,
+        paid: false, // Pedido pendiente de pago / autorizado
+        date: new Date().toISOString().split('T')[0]
+      };
+
+      const updatedSales = [newSaleEntry, ...salesList];
+      await supabase.storage.from('savejson').upload('impresiones3d.json', JSON.stringify(updatedSales), {
+        upsert: true,
+        contentType: 'application/json'
+      });
+
+      // 2. Guardar también en impresion3d.json (Cola "Quiero Imprimir")
+      try {
+        const { data: queueData } = await supabase.storage.from('savejson').download('impresion3d.json');
+        let currentQueue: any[] = [];
+        let currentFilaments: any[] = [];
+        if (queueData) {
+          const qText = await queueData.text();
+          const qJson = JSON.parse(qText);
+          if (Array.isArray(qJson.printQueue)) currentQueue = qJson.printQueue;
+          if (Array.isArray(qJson.myFilaments)) currentFilaments = qJson.myFilaments;
+        }
+
+        const newQueueItem = {
+          id: Date.now().toString(),
+          name: finalName,
+          material: material,
+          time: `${printHours}h ${printMinutes.toString().padStart(2, '0')}m`,
+          cost: Number(baseCost.toFixed(2))
+        };
+
+        const updatedQueue = [...currentQueue, newQueueItem];
+        await supabase.storage.from('savejson').upload('impresion3d.json', JSON.stringify({
+          printQueue: updatedQueue,
+          myFilaments: currentFilaments
+        }), {
+          upsert: true,
+          contentType: 'application/json'
+        });
+      } catch (err) {
+        console.warn('Queue sync error', err);
+      }
+
+      toast.success(`¡Pedido "${finalName}" registrado en la lista de pedidos e impresión!`);
+      setPieceName('');
+    } catch (err) {
+      console.error(err);
+      toast.error('Error al guardar el pedido en la nube');
+    } finally {
+      setIsSavingOrder(false);
+    }
   };
 
   const reset3DCalculator = () => {
-    setPieceName('');
     setMaterial('PLA');
-    setSelectedFilamentId('');
     setFilamentPrice(400);
     setWeightUsed(100);
     setPrintHours(5);
     setPrintMinutes(0);
     setLaborCostManual(0);
     setMarkup(30);
+    setPieceName('');
     toast.info('Calculadora 3D restablecida');
   };
 
@@ -370,7 +416,7 @@ const CalculatorWidget: React.FC = () => {
             <Box size={18} className="text-blue-400" />
           )}
           <span className="font-bold text-sm tracking-wide">
-            {mode === 'standard' ? 'Calculadora' : 'Cotizador 3D'}
+            {mode === 'standard' ? 'Calculadora' : 'Cotizador 3D Rápido'}
           </span>
         </div>
 
@@ -387,7 +433,7 @@ const CalculatorWidget: React.FC = () => {
             <button
               onClick={reset3DCalculator}
               className="p-1.5 text-gray-400 hover:text-white rounded-lg hover:bg-white/5 transition-colors"
-              title="Reiniciar valores"
+              title="Restablecer valores"
             >
               <RefreshCw size={14} />
             </button>
@@ -500,57 +546,10 @@ const CalculatorWidget: React.FC = () => {
           </div>
         </div>
       ) : (
-        /* --- 3D Calculator View --- */
+        /* --- 3D Calculator View: Sencilla y Rápida --- */
         <div className="flex-1 overflow-y-auto p-3.5 space-y-3 custom-scrollbar bg-gray-900 text-gray-200">
-          {/* Piece Name Input */}
-          <div className="space-y-1">
-            <label className="text-[10px] font-black uppercase tracking-wider text-gray-400">Pieza (Opcional)</label>
-            <input 
-              type="text" 
-              value={pieceName} 
-              onChange={e => setPieceName(e.target.value)} 
-              placeholder="Ej: Casco, Soporte, Llavero..."
-              className="w-full bg-slate-950/70 border border-gray-800 rounded-xl px-3 py-1.5 text-xs text-white focus:outline-none focus:border-blue-500/60 font-medium"
-            />
-          </div>
-
-          {/* Material & Stock Selection */}
-          <div className="space-y-1">
-            <label className="text-[10px] font-black uppercase tracking-wider text-gray-400">Material</label>
-            <select
-              value={selectedFilamentId ? `stock:${selectedFilamentId}` : material}
-              onChange={e => {
-                const val = e.target.value;
-                if (val.startsWith('stock:')) {
-                  const id = val.split(':')[1];
-                  const fil = myFilaments.find(f => f.id === id);
-                  setSelectedFilamentId(id);
-                  if (fil) setMaterial(fil.material as any);
-                } else {
-                  setSelectedFilamentId('');
-                  setMaterial(val as any);
-                }
-              }}
-              className="w-full bg-slate-950/70 border border-gray-800 rounded-xl px-2.5 py-1.5 text-xs text-white font-medium focus:outline-none focus:border-blue-500/60"
-            >
-              <optgroup label="Genéricos">
-                <option value="PLA">PLA (125W)</option>
-                <option value="PETG">PETG (155W)</option>
-                <option value="TPU">TPU (125W)</option>
-              </optgroup>
-              {myFilaments.length > 0 && (
-                <optgroup label="En mi Stock">
-                  {myFilaments.map(f => (
-                    <option key={f.id} value={`stock:${f.id}`}>
-                      📦 {f.material} {f.customName ? `- ${f.customName}` : `(${f.color})`}
-                    </option>
-                  ))}
-                </optgroup>
-              )}
-            </select>
-          </div>
-
-          {/* Presets Rápidos */}
+          
+          {/* 1. Presets Rápidos */}
           <div className="space-y-1">
             <span className="text-[9px] font-black text-gray-500 uppercase tracking-wider">Presets rápidos:</span>
             <div className="grid grid-cols-2 gap-1.5">
@@ -569,58 +568,83 @@ const CalculatorWidget: React.FC = () => {
                     setPrintMinutes(p.m);
                     toast.info(`${p.label}: ${p.weight}g, ${p.h}h ${p.m}m`);
                   }}
-                  className="px-2 py-1 bg-white/5 hover:bg-blue-600/20 text-gray-300 hover:text-blue-300 border border-white/5 hover:border-blue-500/30 rounded-lg text-[10px] font-bold text-left transition-all active:scale-95"
+                  className="px-2.5 py-1.5 bg-white/5 hover:bg-blue-600/20 text-gray-300 hover:text-blue-300 border border-white/5 hover:border-blue-500/30 rounded-lg text-[10px] font-bold text-left transition-all active:scale-95"
                 >
-                  {p.label} <span className="text-gray-500 text-[9px]">({p.weight}g)</span>
+                  {p.label} <span className="text-gray-500 text-[9px]">({p.weight}g, {p.h}h{p.m > 0 ? `${p.m}m` : ''})</span>
                 </button>
               ))}
             </div>
           </div>
 
-          {/* Precio/kg y Peso en gramos */}
+          {/* 2. Material (PLA / PETG estándar, o Especial) */}
+          <div className="space-y-1">
+            <div className="flex justify-between items-center">
+              <label className="text-[10px] font-black uppercase tracking-wider text-gray-400">Material</label>
+              <span className="text-[9px] text-gray-500">Color indiferente</span>
+            </div>
+            <div className="grid grid-cols-3 gap-1 p-0.5 bg-slate-950/70 border border-gray-800 rounded-xl h-[34px] items-center text-xs font-bold">
+              {(['PLA', 'PETG', 'Especial'] as const).map(mat => (
+                <button
+                  key={mat}
+                  type="button"
+                  onClick={() => setMaterial(mat)}
+                  className={`h-[26px] rounded-lg transition-all text-[11px] font-black ${
+                    material === mat
+                      ? 'bg-blue-600 text-white shadow-sm'
+                      : 'text-gray-400 hover:text-white'
+                  }`}
+                >
+                  {mat === 'Especial' ? 'Especial (200W)' : `${mat} (${MATERIAL_POWER[mat]}W)`}
+                </button>
+              ))}
+            </div>
+          </div>
+
+          {/* 3. Precio/kg y Peso en gramos */}
           <div className="grid grid-cols-2 gap-2">
-            {/* Precio / kg */}
+            {/* Precio / kg ($400 default) */}
             <div className="space-y-1">
               <div className="flex justify-between items-center">
-                <label className="text-[10px] font-black uppercase tracking-wider text-gray-400">Precio/kg</label>
-                <div className="flex gap-0.5">
-                  {[350, 400, 480].map(p => (
-                    <button 
-                      key={p} 
-                      type="button"
-                      onClick={() => setFilamentPrice(p)} 
-                      className="text-[9px] px-1 py-0.2 bg-white/5 hover:bg-blue-600/30 text-gray-400 hover:text-blue-300 rounded font-semibold"
-                    >
-                      ${p}
-                    </button>
-                  ))}
-                </div>
+                <label className="text-[10px] font-black uppercase tracking-wider text-gray-400">Precio / kg</label>
+                {filamentPrice !== 400 && (
+                  <button 
+                    type="button" 
+                    onClick={() => setFilamentPrice(400)} 
+                    className="text-[8px] text-blue-400 hover:underline"
+                    title="Restablecer a $400 estándar"
+                  >
+                    $400
+                  </button>
+                )}
               </div>
               <div className="flex items-center bg-slate-950/70 border border-gray-800 rounded-xl overflow-hidden h-[34px]">
                 <button type="button" onClick={() => setFilamentPrice(p => Math.max(0, p - 50))} className="px-2 text-gray-400 hover:text-white font-black hover:bg-white/5 text-xs">-</button>
-                <input 
-                  type="number" 
-                  value={filamentPrice || ''} 
-                  onChange={e => setFilamentPrice(Number(e.target.value))} 
-                  className="w-full bg-transparent text-white text-center font-bold text-xs focus:outline-none" 
-                />
+                <div className="flex items-center justify-center flex-1">
+                  <span className="text-gray-500 text-xs font-bold mr-0.5">$</span>
+                  <input 
+                    type="number" 
+                    value={filamentPrice || ''} 
+                    onChange={e => setFilamentPrice(Number(e.target.value))} 
+                    className="w-14 bg-transparent text-white text-center font-bold text-xs focus:outline-none" 
+                  />
+                </div>
                 <button type="button" onClick={() => setFilamentPrice(p => p + 50)} className="px-2 text-gray-400 hover:text-white font-black hover:bg-white/5 text-xs">+</button>
               </div>
             </div>
 
-            {/* Gramos */}
+            {/* Gramos utilizados */}
             <div className="space-y-1">
               <div className="flex justify-between items-center">
-                <label className="text-[10px] font-black uppercase tracking-wider text-gray-400">Gramos</label>
+                <label className="text-[10px] font-black uppercase tracking-wider text-gray-400">Gramos (g)</label>
                 <div className="flex gap-0.5">
-                  {[25, 50, 100, 200].map(g => (
+                  {[50, 100, 200].map(g => (
                     <button 
                       key={g} 
                       type="button"
                       onClick={() => setWeightUsed(g)} 
                       className="text-[9px] px-1 py-0.2 bg-white/5 hover:bg-blue-600/30 text-gray-400 hover:text-blue-300 rounded font-semibold"
                     >
-                      {g}g
+                      {g}
                     </button>
                   ))}
                 </div>
@@ -638,9 +662,9 @@ const CalculatorWidget: React.FC = () => {
             </div>
           </div>
 
-          {/* Tiempo: Horas y Minutos */}
+          {/* 4. Tiempo: Horas y Minutos */}
           <div className="space-y-1">
-            <label className="text-[10px] font-black uppercase tracking-wider text-gray-400">Tiempo de Impresión (h:m)</label>
+            <label className="text-[10px] font-black uppercase tracking-wider text-gray-400">Tiempo de Impresión</label>
             <div className="flex items-center bg-slate-950/70 border border-gray-800 rounded-xl px-3 h-[34px]">
               <input 
                 type="number" 
@@ -649,7 +673,8 @@ const CalculatorWidget: React.FC = () => {
                 placeholder="0"
                 className="w-full bg-transparent text-white font-bold text-right focus:outline-none pr-1 text-xs" 
               />
-              <span className="text-gray-500 font-black px-1">:</span>
+              <span className="text-gray-400 text-xs font-bold mr-2">h</span>
+              <span className="text-gray-600 font-black px-1">:</span>
               <input 
                 type="number" 
                 value={printMinutes.toString().padStart(2, '0')} 
@@ -657,10 +682,11 @@ const CalculatorWidget: React.FC = () => {
                 placeholder="00"
                 className="w-full bg-transparent text-white font-bold text-left focus:outline-none pl-1 text-xs" 
               />
+              <span className="text-gray-400 text-xs font-bold ml-1">m</span>
             </div>
           </div>
 
-          {/* Labor extra y Margen */}
+          {/* 5. Labor extra y Margen */}
           <div className="grid grid-cols-2 gap-2">
             <div className="space-y-1">
               <label className="text-[10px] font-black uppercase tracking-wider text-gray-400">Labor / Extra ($)</label>
@@ -693,18 +719,18 @@ const CalculatorWidget: React.FC = () => {
             </div>
           </div>
 
-          {/* Desglose de Costos Base */}
+          {/* 6. Desglose Rápido de Costos Base */}
           <div className="p-2.5 bg-slate-950/80 border border-gray-800 rounded-xl space-y-1.5">
             <div className="flex justify-between items-center text-[11px] pb-1 border-b border-gray-800/80">
-              <span className="text-gray-400 font-semibold flex items-center gap-1"><Zap size={11} className="text-yellow-400" /> Energía:</span>
+              <span className="text-gray-400 font-semibold flex items-center gap-1"><Zap size={11} className="text-yellow-400" /> Energía ({power}W):</span>
               <span className="text-gray-200 font-bold">{formatCurrency(energyCost)}</span>
             </div>
             <div className="flex justify-between items-center text-[11px] pb-1 border-b border-gray-800/80">
-              <span className="text-gray-400 font-semibold">🧵 Filamento:</span>
+              <span className="text-gray-400 font-semibold">🧵 Filamento ({weightUsed}g):</span>
               <span className="text-gray-200 font-bold">{formatCurrency(filamentCost)}</span>
             </div>
             <div className="flex justify-between items-center text-[11px] pb-1 border-b border-gray-800/80">
-              <span className="text-gray-400 font-semibold">🛠️ Mantenim.:</span>
+              <span className="text-gray-400 font-semibold">🛠️ Desgaste / Mtto ($5/h):</span>
               <span className="text-gray-200 font-bold">{formatCurrency(maintenanceCost)}</span>
             </div>
             {laborCostManual > 0 && (
@@ -714,30 +740,41 @@ const CalculatorWidget: React.FC = () => {
               </div>
             )}
             <div className="flex justify-between items-center text-xs pt-0.5">
-              <span className="text-blue-400 font-black uppercase tracking-wider text-[10px]">Costo Total Base:</span>
+              <span className="text-blue-400 font-black uppercase tracking-wider text-[10px]">Costo Producción:</span>
               <span className="text-blue-300 font-black text-sm">{formatCurrency(baseCost)}</span>
             </div>
           </div>
 
-          {/* Precios Sugeridos */}
+          {/* 7. Precios Sugeridos con Botones para Compartir WhatsApp */}
           <div className="space-y-2 pt-1">
-            {/* Precio Amigo */}
+            {/* Precio Amigo con botón WhatsApp */}
             <div className="p-2.5 bg-emerald-500/10 border border-emerald-500/20 rounded-xl flex items-center justify-between">
               <div>
                 <p className="text-[9px] font-black text-emerald-400 uppercase tracking-wider">Precio Amigo (+15%)</p>
                 <p className="text-base font-black text-white">{formatCurrency(friendPrice)}</p>
               </div>
-              <button 
-                type="button"
-                onClick={() => handleCopy(friendPrice, 'amigo')} 
-                className="p-1.5 bg-emerald-500/20 hover:bg-emerald-500/30 text-emerald-300 rounded-lg transition-all"
-                title="Copiar precio amigo"
-              >
-                <Copy size={14} />
-              </button>
+              <div className="flex items-center gap-1">
+                <button 
+                  type="button"
+                  onClick={() => copyQuoteForWhatsApp('amigo')} 
+                  className="px-2 py-1.5 bg-emerald-600 hover:bg-emerald-500 text-white rounded-lg text-[10px] font-black flex items-center gap-1 shadow-sm transition-all"
+                  title="Compartir cotización de precio amigo por WhatsApp"
+                >
+                  <MessageSquare size={13} />
+                  <span>WhatsApp</span>
+                </button>
+                <button 
+                  type="button"
+                  onClick={() => handleCopy(friendPrice, 'amigo')} 
+                  className="p-1.5 bg-emerald-500/20 hover:bg-emerald-500/30 text-emerald-300 rounded-lg transition-all"
+                  title="Copiar precio amigo"
+                >
+                  <Copy size={13} />
+                </button>
+              </div>
             </div>
 
-            {/* Precio Comercial */}
+            {/* Precio Comercial con botón WhatsApp */}
             <div className="p-2.5 bg-gradient-to-r from-blue-600/20 to-indigo-600/20 border border-blue-500/30 rounded-xl flex items-center justify-between">
               <div>
                 <p className="text-[9px] font-black text-blue-300 uppercase tracking-wider">Precio Comercial (+{markup}%)</p>
@@ -751,7 +788,7 @@ const CalculatorWidget: React.FC = () => {
                   type="button"
                   onClick={() => copyQuoteForWhatsApp('comercial')} 
                   className="px-2 py-1.5 bg-green-600 hover:bg-green-500 text-white rounded-lg text-[10px] font-black flex items-center gap-1 shadow-sm transition-all"
-                  title="Copiar cotización para WhatsApp"
+                  title="Compartir cotización comercial por WhatsApp"
                 >
                   <MessageSquare size={13} />
                   <span>WhatsApp</span>
@@ -762,11 +799,45 @@ const CalculatorWidget: React.FC = () => {
                   className="p-1.5 bg-blue-600 hover:bg-blue-500 text-white rounded-lg transition-all"
                   title="Copiar precio comercial"
                 >
-                  <Copy size={14} />
+                  <Copy size={13} />
                 </button>
               </div>
             </div>
           </div>
+
+          {/* 8. Nombre de la Pieza y Botón Agregar Pedido (HASTA ABAJO) */}
+          <div className="pt-2 border-t border-gray-800 space-y-2">
+            <div className="space-y-1">
+              <label className="text-[10px] font-black uppercase tracking-wider text-gray-400">Nombre de la Pieza / Modelo</label>
+              <input 
+                type="text" 
+                value={pieceName} 
+                onChange={e => setPieceName(e.target.value)} 
+                placeholder="Ej: Casco Mandalorian, Llavero Javer..."
+                className="w-full bg-slate-950/70 border border-gray-800 rounded-xl px-3 py-2 text-xs text-white focus:outline-none focus:border-blue-500 font-medium"
+              />
+            </div>
+
+            <button
+              type="button"
+              onClick={handleAddOrder}
+              disabled={isSavingOrder}
+              className="w-full py-2.5 px-3 bg-gradient-to-r from-blue-600 via-indigo-600 to-purple-600 hover:from-blue-500 hover:to-purple-500 text-white rounded-xl text-xs font-black uppercase tracking-wider flex items-center justify-center gap-2 shadow-lg shadow-indigo-900/30 transition-all active:scale-[0.98] disabled:opacity-50"
+            >
+              {isSavingOrder ? (
+                <>
+                  <RefreshCw size={14} className="animate-spin" />
+                  <span>Guardando en la lista...</span>
+                </>
+              ) : (
+                <>
+                  <ShoppingBag size={14} />
+                  <span>Agregar Pedido a la Lista</span>
+                </>
+              )}
+            </button>
+          </div>
+
         </div>
       )}
     </>
@@ -799,7 +870,7 @@ const CalculatorWidget: React.FC = () => {
   return (
     <div 
       className="fixed right-3 sm:right-4 bottom-24 z-[60] w-[calc(100vw-24px)] max-w-sm sm:w-80 bg-gray-900 border border-gray-700 rounded-3xl shadow-2xl overflow-hidden flex flex-col animate-fade-in" 
-      style={{ height: '560px', maxHeight: '82vh' }}
+      style={{ height: '580px', maxHeight: '85vh' }}
     >
       {calculatorContent}
     </div>
