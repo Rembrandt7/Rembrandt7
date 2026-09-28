@@ -1,9 +1,10 @@
 import React, { useState, useEffect, useCallback } from 'react';
 import { createPortal } from 'react-dom';
 import { LinkItem } from '../../types';
-import { X, Save, ArrowLeft, Layout, Type, Link as LinkIcon, Palette, Image as ImageIcon, Box } from 'lucide-react';
+import { X, Save, ArrowLeft, Layout, Type, Link as LinkIcon, Palette, Image as ImageIcon, Box, Briefcase, ShoppingCart, MessageCircle, Tag } from 'lucide-react';
 import { useLinks } from '../../contexts/LinkContext';
 import { motion, AnimatePresence } from 'motion/react';
+import { inferLinkCategory, LinkCategory } from '../../utils/linkCategoryUtils';
 
 interface LinkEditorModalProps {
     isOpen: boolean;
@@ -179,6 +180,41 @@ export const LinkEditorModal: React.FC<LinkEditorModalProps> = ({ isOpen, onClos
                                     placeholder="Opcional..."
                                     className="w-full bg-white/5 border border-white/10 rounded-xl px-4 py-3 text-white focus:outline-none focus:ring-2 focus:ring-blue-500/30 transition-all min-h-[80px] resize-y"
                                 />
+                            </div>
+
+                            {/* Categoría (Barra Principal) */}
+                            <div className="space-y-2">
+                                <label className="flex items-center gap-2 text-xs font-bold text-gray-400 uppercase tracking-widest px-1">
+                                    <Tag size={12} className="text-emerald-400" />
+                                    Categoría de Acceso
+                                </label>
+                                <div className="grid grid-cols-3 gap-2">
+                                    {(['trabajo', 'compras', 'social'] as LinkCategory[]).map(cat => {
+                                        const currentEffectiveCat = formData.category || inferLinkCategory(formData);
+                                        const isSelected = currentEffectiveCat === cat;
+                                        return (
+                                            <button
+                                                key={cat}
+                                                type="button"
+                                                onClick={() => setFormData({ ...formData, category: cat })}
+                                                className={`flex items-center justify-center gap-2 py-2.5 px-3 rounded-xl border text-xs font-semibold capitalize transition-all ${
+                                                    isSelected
+                                                        ? cat === 'trabajo'
+                                                            ? 'bg-blue-600/30 border-blue-400/60 text-blue-300 ring-1 ring-blue-400/50 shadow-[0_0_15px_rgba(59,130,246,0.3)]'
+                                                            : cat === 'compras'
+                                                            ? 'bg-amber-600/30 border-amber-400/60 text-amber-300 ring-1 ring-amber-400/50 shadow-[0_0_15px_rgba(245,158,11,0.3)]'
+                                                            : 'bg-pink-600/30 border-pink-400/60 text-pink-300 ring-1 ring-pink-400/50 shadow-[0_0_15px_rgba(236,72,153,0.3)]'
+                                                        : 'bg-white/5 border-white/10 text-gray-400 hover:bg-white/10 hover:text-white'
+                                                }`}
+                                            >
+                                                {cat === 'trabajo' && <Briefcase size={14} className={isSelected ? 'text-blue-400' : 'text-gray-400'} />}
+                                                {cat === 'compras' && <ShoppingCart size={14} className={isSelected ? 'text-amber-400' : 'text-gray-400'} />}
+                                                {cat === 'social' && <MessageCircle size={14} className={isSelected ? 'text-pink-400' : 'text-gray-400'} />}
+                                                {cat}
+                                            </button>
+                                        );
+                                    })}
+                                </div>
                             </div>
 
                             {/* Estilos */}

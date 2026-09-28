@@ -26,6 +26,7 @@ export interface LinkItem {
   outlineColor?: string;
   outlineWidth?: number;
   hasBackground?: boolean; // Whether to show the circular/square background
+  category?: 'trabajo' | 'compras' | 'social'; // Category for linksBar filtering
 }
 
 export interface LinkSection {

@@ -1,11 +1,12 @@
 import React, { useState, useRef } from 'react';
 import { LinkItem } from '../types';
-import { Edit, Trash2, Plus, Save, Upload, Check, Settings, Star, RefreshCw, ChevronLeft, ChevronRight, CloudDownload, CloudUpload } from 'lucide-react';
+import { Edit, Trash2, Plus, Save, Upload, Check, Settings, Star, RefreshCw, ChevronLeft, ChevronRight, CloudDownload, CloudUpload, LayoutGrid, Briefcase, ShoppingCart, MessageCircle } from 'lucide-react';
 import { useLinks } from '../contexts/LinkContext';
 import { LinkEditorModal } from './common/LinkEditorModal';
 import { SortableLinkList } from './common/SortableLinkList';
 import { rectSortingStrategy } from '@dnd-kit/sortable';
 import { getSmartLinkTarget, openSmartMobileApp } from '../utils/appLinkUtils';
+import { inferLinkCategory, LinkCategoryFilter, CATEGORY_DEFINITIONS } from '../utils/linkCategoryUtils';
 
 const LinkIcon: React.FC<{ 
     item: LinkItem; 
@@ -18,6 +19,7 @@ const LinkIcon: React.FC<{
 }> = ({ item, isEditing, onEdit, onDelete, onMove, isFirst, isLast }) => {
     const hasBg = item.hasBackground !== false;
     const { href: smartHref, target: smartTarget, isAppScheme, fallbackUrl } = getSmartLinkTarget(item.href, item.name);
+    const itemCategory = item.category || inferLinkCategory(item);
 
     const handleClick = (e: React.MouseEvent) => {
         if (isEditing) {
@@ -81,20 +83,43 @@ const LinkIcon: React.FC<{
                     </button>
                 </div>
             )}
+            {isEditing && (
+                <div className="absolute -bottom-2.5 left-1/2 -translate-x-1/2 px-1.5 py-0.5 bg-gray-900/90 border border-white/20 rounded-md text-[9px] font-mono text-gray-300 pointer-events-none capitalize shadow-sm whitespace-nowrap z-20">
+                    {itemCategory}
+                </div>
+            )}
         </div>
     );
 };
 
 const LinksBar: React.FC = () => {
     const { config, updateConfig, saveConfigToFile, loadConfigFromFile, saveAsDefault, saveToSupabase, resetToDefaults, fetchConfigFromSupabaseManual, isEditing, toggleEditing, configFilename, setConfigFilename } = useLinks();
+    const [activeCategory, setActiveCategory] = useState<LinkCategoryFilter>('todos');
     const [modalOpen, setModalOpen] = useState(false);
     const [currentLink, setCurrentLink] = useState<LinkItem | null>(null);
     const fileInputRef = useRef<HTMLInputElement>(null);
+
+    const handleCreateNew = () => {
+        setCurrentLink({
+            id: Date.now().toString(),
+            name: '',
+            href: '',
+            category: activeCategory !== 'todos' ? activeCategory : 'trabajo',
+            colorClass: 'text-gray-400 hover:text-white',
+            iconSvg: '<svg xmlns="http://www.w3.org/2000/svg" class="h-6 w-6" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><circle cx="12" cy="12" r="10"/><line x1="12" y1="8" x2="12" y2="16"/><line x1="8" y1="12" x2="16" y2="12"/></svg>'
+        });
+        setModalOpen(true);
+    };
 
     const handleSaveLink = (item: LinkItem, targetSection?: string) => {
         let newConfig = JSON.parse(JSON.stringify(config)); // Deep clone
         const currentSec = 'linksBar';
         
+        // Ensure item has category inferred if missing
+        if (!item.category) {
+            item.category = inferLinkCategory(item);
+        }
+
         // If moving to a different section
         if (targetSection && targetSection !== currentSec) {
             // Remove from current
@@ -127,7 +152,7 @@ const LinksBar: React.FC = () => {
         } else {
             // Standard update or add within same section
             let newLinks = [...newConfig.linksBar];
-            if (currentLink) {
+            if (currentLink && currentLink.id) {
                 newLinks = newLinks.map(l => l.id === item.id ? item : l);
             } else {
                 newLinks.push({ ...item, id: item.id || Date.now().toString() });
@@ -140,17 +165,43 @@ const LinksBar: React.FC = () => {
         setCurrentLink(null);
     };
 
-    const handleMoveLink = (id: string, direction: 'left' | 'right') => {
+    const handleReorder = (newSubset: LinkItem[]) => {
+        if (activeCategory === 'todos') {
+            updateConfig({ ...config, linksBar: newSubset });
+            return;
+        }
         const newLinks = [...config.linksBar];
-        const index = newLinks.findIndex(l => l.id === id);
+        const categoryIndices: number[] = [];
+        newLinks.forEach((item, idx) => {
+            if (inferLinkCategory(item) === activeCategory) {
+                categoryIndices.push(idx);
+            }
+        });
+        newSubset.forEach((item, i) => {
+            if (i < categoryIndices.length) {
+                newLinks[categoryIndices[i]] = item;
+            }
+        });
+        updateConfig({ ...config, linksBar: newLinks });
+    };
+
+    const handleMoveLink = (id: string, direction: 'left' | 'right') => {
+        const list = activeCategory === 'todos'
+            ? config.linksBar
+            : config.linksBar.filter(l => inferLinkCategory(l) === activeCategory);
+        
+        const index = list.findIndex(l => l.id === id);
         if (index === -1) return;
         
         if (direction === 'left' && index > 0) {
-            [newLinks[index - 1], newLinks[index]] = [newLinks[index], newLinks[index - 1]];
-        } else if (direction === 'right' && index < newLinks.length - 1) {
-            [newLinks[index], newLinks[index + 1]] = [newLinks[index + 1], newLinks[index]];
+            const nextList = [...list];
+            [nextList[index - 1], nextList[index]] = [nextList[index], nextList[index - 1]];
+            handleReorder(nextList);
+        } else if (direction === 'right' && index < list.length - 1) {
+            const nextList = [...list];
+            [nextList[index], nextList[index + 1]] = [nextList[index + 1], nextList[index]];
+            handleReorder(nextList);
         }
-        updateConfig({ ...config, linksBar: newLinks });
     };
 
     const handleDeleteLink = (id: string) => {
@@ -166,6 +217,10 @@ const LinksBar: React.FC = () => {
         }
     };
 
+    const filteredLinks = activeCategory === 'todos'
+        ? config.linksBar
+        : config.linksBar.filter(link => inferLinkCategory(link) === activeCategory);
+
     return (
         <div className="w-full bg-black/30 backdrop-blur-xl border border-white/5 p-3.5 sm:p-4.5 mb-6 relative group/bar shadow-2xl rounded-2xl">
             {/* Edit Controls - Always visible for better discovery */}
@@ -176,7 +231,7 @@ const LinksBar: React.FC = () => {
                 <div className="absolute top-2 left-2 flex flex-col gap-2 z-20">
                     <div className="flex gap-2 animate-fade-in">
                         <button 
-                            onClick={() => { setCurrentLink(null); setModalOpen(true); }}
+                            onClick={handleCreateNew}
                             className="flex items-center gap-1 px-3 py-1 bg-blue-600 hover:bg-blue-500 text-white text-xs rounded-full shadow-lg"
                         >
                             <Plus size={14} /> Nuevo
@@ -245,14 +300,54 @@ const LinksBar: React.FC = () => {
                 </div>
             )}
 
-            <div className={`flex flex-col items-center gap-4 max-w-full mx-auto w-full px-1 ${isEditing ? 'mt-12' : 'mt-0.5'}`}>
+            <div className={`flex flex-col items-center gap-3.5 max-w-full mx-auto w-full px-1 ${isEditing ? 'mt-14' : 'mt-0.5'}`}>
+                {/* Selector de Categorías: Píldoras compactas, elegantes y no bromosas */}
+                <div className="flex items-center justify-center gap-1.5 sm:gap-2 w-full overflow-x-auto no-scrollbar py-0.5">
+                    {CATEGORY_DEFINITIONS.map(cat => {
+                        const count = cat.id === 'todos' 
+                            ? config.linksBar.length 
+                            : config.linksBar.filter(l => inferLinkCategory(l) === cat.id).length;
+                        const isActive = activeCategory === cat.id;
+
+                        return (
+                            <button
+                                key={cat.id}
+                                type="button"
+                                onClick={() => setActiveCategory(cat.id)}
+                                className={`group/pill relative flex items-center gap-1.5 px-3 py-1 sm:py-1 rounded-full text-xs font-semibold transition-all duration-200 border whitespace-nowrap cursor-pointer ${
+                                    isActive 
+                                        ? cat.activeClass 
+                                        : `bg-white/5 border-white/10 text-gray-400 ${cat.hoverClass}`
+                                }`}
+                                title={`Filtrar por ${cat.label}`}
+                            >
+                                {cat.iconType === 'all' && <LayoutGrid size={12} className={isActive ? 'text-white' : 'text-gray-400 group-hover/pill:text-gray-200'} />}
+                                {cat.iconType === 'trabajo' && <Briefcase size={12} className={isActive ? 'text-blue-400' : 'text-gray-400 group-hover/pill:text-blue-300'} />}
+                                {cat.iconType === 'compras' && <ShoppingCart size={12} className={isActive ? 'text-amber-400' : 'text-gray-400 group-hover/pill:text-amber-300'} />}
+                                {cat.iconType === 'social' && <MessageCircle size={12} className={isActive ? 'text-pink-400' : 'text-gray-400 group-hover/pill:text-pink-300'} />}
+                                
+                                <span className="capitalize text-[11px] sm:text-xs">{cat.label}</span>
+                                
+                                <span className={`text-[10px] font-mono px-1.5 py-0.2 rounded-full ${
+                                    isActive 
+                                        ? 'bg-black/40 text-white font-bold' 
+                                        : 'bg-white/5 text-gray-500'
+                                }`}>
+                                    {count}
+                                </span>
+                            </button>
+                        );
+                    })}
+                </div>
+
+                {/* Lista de Enlaces interactivos */}
                 <SortableLinkList 
                     id="linksBar"
-                    items={config.linksBar}
+                    items={filteredLinks}
                     isEditing={isEditing}
-                    onReorder={(newItems) => updateConfig({ ...config, linksBar: newItems })}
+                    onReorder={handleReorder}
                     strategy={rectSortingStrategy}
-                    className="flex flex-nowrap items-center justify-between sm:justify-center gap-1 sm:gap-2 md:gap-2.5 lg:gap-3 xl:gap-3.5 w-full py-1 overflow-x-hidden"
+                    className="flex flex-nowrap items-center justify-between sm:justify-center gap-1 sm:gap-2 md:gap-2.5 lg:gap-3 xl:gap-3.5 w-full py-1 overflow-x-hidden min-h-[52px]"
                     renderItem={(link, index) => (
                         <LinkIcon 
                             key={link.id} 
@@ -262,13 +357,15 @@ const LinksBar: React.FC = () => {
                             onDelete={handleDeleteLink}
                             onMove={handleMoveLink}
                             isFirst={index === 0}
-                            isLast={index === config.linksBar.length - 1}
+                            isLast={index === filteredLinks.length - 1}
                         />
                     )}
                 />
                 
-                {config.linksBar.length === 0 && (
-                    <div className="text-gray-500 text-sm italic">No hay enlaces configurados.</div>
+                {filteredLinks.length === 0 && (
+                    <div className="text-gray-500 text-xs italic py-3 text-center">
+                        No hay accesos en la categoría "{activeCategory}".
+                    </div>
                 )}
             </div>
 
