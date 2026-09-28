@@ -82,7 +82,7 @@ const INITIAL_CONFIG: AppConfig = {
         name: "Javer",
         category: "trabajo",
         colorClass: "text-blue-500 hover:text-blue-400",
-        iconSvg: `<img src="/flow_premium.png" class="w-10 h-10 object-contain" />`,
+        iconSvg: `<img src="/javer_premium.png" class="w-10 h-10 object-contain" />`,
         outlineColor: '#f20202',
         outlineWidth: 10
     },

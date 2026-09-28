@@ -316,7 +316,7 @@ const LinksBar: React.FC = () => {
                     {CATEGORY_DEFINITIONS.map(cat => {
                         const count = cat.id === 'todos' 
                             ? cleanLinksBar.length 
-                            : cleanLinksBar.filter(l => inferLinkCategory(l) === cat.id).length;
+                            : cleanLinksBar.filter(l => isLinkWhatsApp(l) || inferLinkCategory(l) === cat.id).length;
                         const isActive = activeCategory === cat.id;
 
                         return (
@@ -352,6 +352,7 @@ const LinksBar: React.FC = () => {
 
                 {/* Lista de Enlaces interactivos */}
                 <SortableLinkList 
+                    key={`links-bar-${activeCategory}`}
                     id="linksBar"
                     items={filteredLinks}
                     isEditing={isEditing}
@@ -360,7 +361,7 @@ const LinksBar: React.FC = () => {
                     className="flex flex-nowrap items-center justify-between sm:justify-center gap-1 sm:gap-2 md:gap-2.5 lg:gap-3 xl:gap-3.5 w-full py-1 overflow-x-hidden min-h-[52px]"
                     renderItem={(link, index) => (
                         <LinkIcon 
-                            key={link.id} 
+                            key={`${activeCategory}-${link.id}`} 
                             item={link} 
                             isEditing={isEditing}
                             onEdit={(item) => { setCurrentLink(item); setModalOpen(true); }}

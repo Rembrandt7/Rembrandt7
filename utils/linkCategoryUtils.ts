@@ -111,20 +111,31 @@ export const CATEGORY_DEFINITIONS: CategoryDefinition[] = [
 
 /**
  * Normalizes and removes duplicate links in linksBar.
- * Ensures Javer, Flow, and other links are never duplicated.
+ * Ensures Javer, Flow, and other links are never duplicated and each has a strictly unique ID.
  */
 export function normalizeAndDeduplicateLinksBar(links: LinkItem[]): LinkItem[] {
   if (!Array.isArray(links)) return [];
+  const seenIds = new Set<string>();
   const seenNames = new Set<string>();
   const seenHrefs = new Set<string>();
   const result: LinkItem[] = [];
 
-  for (const item of links) {
-    if (!item || !item.name) continue;
+  for (const rawItem of links) {
+    if (!rawItem || !rawItem.name) continue;
+    const item = { ...rawItem };
     const nameLower = item.name.trim().toLowerCase();
     const hrefNormalized = (item.href || '').trim().toLowerCase().replace(/\/$/, '');
 
-    // Check duplicate by name
+    // Resolve legacy ID collisions where Javer shared id '1' with Mercado Libre
+    // or Flow shared id '10' with Maket AI
+    if (nameLower === 'javer' && (item.id === '1' || !item.id)) {
+      item.id = 'javer';
+    }
+    if (nameLower === 'flow' && (item.id === '10' || !item.id)) {
+      item.id = 'flow';
+    }
+
+    // Check duplicate by normalized name
     if (nameLower && seenNames.has(nameLower)) {
       continue;
     }
@@ -134,21 +145,39 @@ export function normalizeAndDeduplicateLinksBar(links: LinkItem[]): LinkItem[] {
       continue;
     }
 
-    // Handle clubjaver vs portal.javer confusion
-    if ((nameLower === 'javer' || nameLower === 'club javer') && (seenHrefs.has('https://portal.javer.net/paginas/index.aspx') || seenHrefs.has('https://clubjaver.com'))) {
+    // Handle clubjaver vs portal.javer confusion (keep portal or first)
+    if (
+      (nameLower === 'javer' || nameLower === 'club javer' || nameLower === 'portal javer') &&
+      (seenNames.has('javer') || seenHrefs.has('https://portal.javer.net/paginas/index.aspx') || seenHrefs.has('https://clubjaver.com'))
+    ) {
       continue;
     }
 
     // Handle flow duplicate (Google Flow vs Club Javer named Flow)
-    if (nameLower === 'flow' && hrefNormalized.includes('clubjaver.com') && (seenNames.has('flow') || links.some(l => (l.href || '').includes('labs.google/fx/es/tools/flow')))) {
+    if (
+      (nameLower === 'flow' || nameLower === 'google flow') &&
+      (seenNames.has('flow') || seenHrefs.has('https://labs.google/fx/es/tools/flow'))
+    ) {
       continue;
     }
 
-    if (nameLower) seenNames.add(nameLower);
+    // Ensure category is inferred if missing
+    if (!item.category) {
+      item.category = inferLinkCategory(item);
+    }
+
+    // Ensure every single item has a globally unique ID within linksBar
+    if (!item.id || seenIds.has(item.id)) {
+      item.id = `${item.id || 'link'}_${nameLower.replace(/[^a-z0-9]/g, '') || Date.now()}`;
+    }
+
+    seenNames.add(nameLower);
+    seenIds.add(item.id);
     if (hrefNormalized) seenHrefs.add(hrefNormalized);
     result.push(item);
   }
 
   return result;
 }
+
 
