@@ -96,6 +96,14 @@ const INITIAL_CONFIG: AppConfig = {
         outlineColor: '#ff0000',
         outlineWidth: 15
     },
+    {
+        id: 'makerworld',
+        href: "https://makerworld.com/es",
+        name: "MakerWorld",
+        category: "trabajo",
+        colorClass: "text-teal-400 hover:text-teal-300",
+        iconSvg: `<svg class="w-full h-full text-teal-400" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 16V8a2 2 0 0 0-1-1.73l-7-4a2 2 0 0 0-2 0l-7 4A2 2 0 0 0 3 8v8a2 2 0 0 0 1 1.73l7 4a2 2 0 0 0 2 0l7-4A2 2 0 0 0 21 16z"></path><polyline points="3.27 6.96 12 12.01 20.73 6.96"></polyline><line x1="12" y1="22.08" x2="12" y2="12"></line></svg>`
+    },
 
     {
         id: '5',

@@ -6,7 +6,26 @@ import { LinkEditorModal } from './common/LinkEditorModal';
 import { SortableLinkList } from './common/SortableLinkList';
 import { rectSortingStrategy } from '@dnd-kit/sortable';
 import { getSmartLinkTarget, openSmartMobileApp } from '../utils/appLinkUtils';
-import { inferLinkCategory, LinkCategoryFilter, CATEGORY_DEFINITIONS, normalizeAndDeduplicateLinksBar } from '../utils/linkCategoryUtils';
+import { inferLinkCategory, LinkCategory, CATEGORY_DEFINITIONS, normalizeAndDeduplicateLinksBar } from '../utils/linkCategoryUtils';
+import { isMobileDevice } from '../utils/deviceUtils';
+
+const DEFAULT_CATEGORIES_STORAGE_KEY = 'rembrandt_active_link_categories';
+
+const getDefaultCategories = (): LinkCategory[] => {
+    try {
+        const saved = localStorage.getItem(DEFAULT_CATEGORIES_STORAGE_KEY);
+        if (saved) {
+            const parsed = JSON.parse(saved);
+            if (Array.isArray(parsed) && parsed.length > 0) {
+                const valid = parsed.filter((c: any) => c === 'trabajo' || c === 'compras' || c === 'social') as LinkCategory[];
+                if (valid.length > 0) return valid;
+            }
+        }
+    } catch (e) {}
+    // Compu por defecto: trabajo
+    // Cel por defecto: compras y social
+    return isMobileDevice() ? ['compras', 'social'] : ['trabajo'];
+};
 
 const LinkIcon: React.FC<{ 
     item: LinkItem; 
@@ -94,17 +113,32 @@ const LinkIcon: React.FC<{
 
 const LinksBar: React.FC = () => {
     const { config, updateConfig, saveConfigToFile, loadConfigFromFile, saveAsDefault, saveToSupabase, resetToDefaults, fetchConfigFromSupabaseManual, isEditing, toggleEditing, configFilename, setConfigFilename } = useLinks();
-    const [activeCategory, setActiveCategory] = useState<LinkCategoryFilter>('todos');
+    const [activeCategories, setActiveCategories] = useState<LinkCategory[]>(getDefaultCategories);
     const [modalOpen, setModalOpen] = useState(false);
     const [currentLink, setCurrentLink] = useState<LinkItem | null>(null);
     const fileInputRef = useRef<HTMLInputElement>(null);
+
+    const toggleCategory = (catId: LinkCategory) => {
+        setActiveCategories(prev => {
+            let next: LinkCategory[];
+            if (prev.includes(catId)) {
+                next = prev.filter(c => c !== catId);
+            } else {
+                next = [...prev, catId];
+            }
+            try {
+                localStorage.setItem(DEFAULT_CATEGORIES_STORAGE_KEY, JSON.stringify(next));
+            } catch (e) {}
+            return next;
+        });
+    };
 
     const handleCreateNew = () => {
         setCurrentLink({
             id: Date.now().toString(),
             name: '',
             href: '',
-            category: activeCategory !== 'todos' ? activeCategory : 'trabajo',
+            category: activeCategories[0] || 'trabajo',
             colorClass: 'text-gray-400 hover:text-white',
             iconSvg: '<svg xmlns="http://www.w3.org/2000/svg" class="h-6 w-6" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><circle cx="12" cy="12" r="10"/><line x1="12" y1="8" x2="12" y2="16"/><line x1="8" y1="12" x2="16" y2="12"/></svg>'
         });
@@ -172,20 +206,16 @@ const LinksBar: React.FC = () => {
     };
 
     const isLinkIncludedInFilter = (link: LinkItem) => {
-        if (activeCategory === 'todos') return true;
-        if (isLinkWhatsApp(link)) return true; // WhatsApp es constante: SIEMPRE sale en todas las categorías
-        return inferLinkCategory(link) === activeCategory;
+        if (isLinkWhatsApp(link)) return true; // WhatsApp es constante: SIEMPRE sale en todas las combinaciones
+        const cat = link.category || inferLinkCategory(link);
+        return activeCategories.includes(cat);
     };
 
-    // Deduplicate on the fly so Javer, Flow and others never appear duplicated
+    // Deduplicate on the fly so Javer, Flow, MakerWorld and others never appear duplicated
     const cleanLinksBar = normalizeAndDeduplicateLinksBar(config.linksBar);
     const filteredLinks = cleanLinksBar.filter(isLinkIncludedInFilter);
 
     const handleReorder = (newSubset: LinkItem[]) => {
-        if (activeCategory === 'todos') {
-            updateConfig({ ...config, linksBar: normalizeAndDeduplicateLinksBar(newSubset) });
-            return;
-        }
         const newLinks = [...cleanLinksBar];
         const categoryIndices: number[] = [];
         newLinks.forEach((item, idx) => {
@@ -311,30 +341,27 @@ const LinksBar: React.FC = () => {
             )}
 
             <div className={`flex flex-col items-center gap-3.5 max-w-full mx-auto w-full px-1 ${isEditing ? 'mt-14' : 'mt-0.5'}`}>
-                {/* Selector de Categorías: Píldoras compactas, elegantes y no bromosas */}
-                <div className="flex items-center justify-center gap-1.5 sm:gap-2 w-full overflow-x-auto no-scrollbar py-0.5">
+                {/* Selector de Categorías: Selección múltiple de tarjetas (1 o más activas simultáneamente) */}
+                <div className="flex items-center justify-center gap-2 sm:gap-2.5 w-full overflow-x-auto no-scrollbar py-0.5">
                     {CATEGORY_DEFINITIONS.map(cat => {
-                        const count = cat.id === 'todos' 
-                            ? cleanLinksBar.length 
-                            : cleanLinksBar.filter(l => isLinkWhatsApp(l) || inferLinkCategory(l) === cat.id).length;
-                        const isActive = activeCategory === cat.id;
+                        const count = cleanLinksBar.filter(l => (l.category || inferLinkCategory(l)) === cat.id).length;
+                        const isActive = activeCategories.includes(cat.id);
 
                         return (
                             <button
                                 key={cat.id}
                                 type="button"
-                                onClick={() => setActiveCategory(cat.id)}
-                                className={`group/pill relative flex items-center gap-1.5 px-3 py-1 sm:py-1 rounded-full text-xs font-semibold transition-all duration-200 border whitespace-nowrap cursor-pointer ${
+                                onClick={() => toggleCategory(cat.id)}
+                                className={`group/pill relative flex items-center gap-1.5 px-3.5 py-1.5 rounded-full text-xs font-semibold transition-all duration-200 border whitespace-nowrap cursor-pointer select-none ${
                                     isActive 
-                                        ? cat.activeClass 
-                                        : `bg-white/5 border-white/10 text-gray-400 ${cat.hoverClass}`
+                                        ? `${cat.activeClass} shadow-md scale-[1.02]` 
+                                        : `bg-white/5 border-white/10 text-gray-400 opacity-60 hover:opacity-100 hover:scale-[1.01] ${cat.hoverClass}`
                                 }`}
-                                title={`Filtrar por ${cat.label}`}
+                                title={`Clic para ${isActive ? 'desactivar' : 'activar'} categoría ${cat.label}`}
                             >
-                                {cat.iconType === 'all' && <LayoutGrid size={12} className={isActive ? 'text-white' : 'text-gray-400 group-hover/pill:text-gray-200'} />}
-                                {cat.iconType === 'trabajo' && <Briefcase size={12} className={isActive ? 'text-blue-400' : 'text-gray-400 group-hover/pill:text-blue-300'} />}
-                                {cat.iconType === 'compras' && <ShoppingCart size={12} className={isActive ? 'text-amber-400' : 'text-gray-400 group-hover/pill:text-amber-300'} />}
-                                {cat.iconType === 'social' && <MessageCircle size={12} className={isActive ? 'text-pink-400' : 'text-gray-400 group-hover/pill:text-pink-300'} />}
+                                {cat.iconType === 'trabajo' && <Briefcase size={13} className={isActive ? 'text-blue-400' : 'text-gray-400 group-hover/pill:text-blue-300'} />}
+                                {cat.iconType === 'compras' && <ShoppingCart size={13} className={isActive ? 'text-amber-400' : 'text-gray-400 group-hover/pill:text-amber-300'} />}
+                                {cat.iconType === 'social' && <MessageCircle size={13} className={isActive ? 'text-pink-400' : 'text-gray-400 group-hover/pill:text-pink-300'} />}
                                 
                                 <span className="capitalize text-[11px] sm:text-xs">{cat.label}</span>
                                 
@@ -345,6 +372,12 @@ const LinksBar: React.FC = () => {
                                 }`}>
                                     {count}
                                 </span>
+
+                                <div className={`w-1.5 h-1.5 rounded-full transition-all duration-200 ${
+                                    isActive 
+                                        ? 'bg-emerald-400 shadow-[0_0_8px_rgba(52,211,153,0.8)]' 
+                                        : 'bg-gray-600/40'
+                                }`} />
                             </button>
                         );
                     })}
@@ -352,7 +385,7 @@ const LinksBar: React.FC = () => {
 
                 {/* Lista de Enlaces interactivos */}
                 <SortableLinkList 
-                    key={`links-bar-${activeCategory}`}
+                    key={`links-bar-${activeCategories.slice().sort().join('-')}`}
                     id="linksBar"
                     items={filteredLinks}
                     isEditing={isEditing}
@@ -361,7 +394,7 @@ const LinksBar: React.FC = () => {
                     className="flex flex-nowrap items-center justify-between sm:justify-center gap-1 sm:gap-2 md:gap-2.5 lg:gap-3 xl:gap-3.5 w-full py-1 overflow-x-hidden min-h-[52px]"
                     renderItem={(link, index) => (
                         <LinkIcon 
-                            key={`${activeCategory}-${link.id}`} 
+                            key={link.id} 
                             item={link} 
                             isEditing={isEditing}
                             onEdit={(item) => { setCurrentLink(item); setModalOpen(true); }}
@@ -375,7 +408,7 @@ const LinksBar: React.FC = () => {
                 
                 {filteredLinks.length === 0 && (
                     <div className="text-gray-500 text-xs italic py-3 text-center">
-                        No hay accesos en la categoría "{activeCategory}".
+                        Ninguna categoría activa. Selecciona una o más tarjetas arriba para ver tus enlaces.
                     </div>
                 )}
             </div>

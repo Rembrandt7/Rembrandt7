@@ -1,7 +1,7 @@
 import { LinkItem } from '../types';
 
 export type LinkCategory = 'trabajo' | 'compras' | 'social';
-export type LinkCategoryFilter = 'todos' | LinkCategory;
+export type LinkCategoryFilter = LinkCategory;
 
 /**
  * Automatically infers the category of a link if not explicitly set.
@@ -61,28 +61,20 @@ export function inferLinkCategory(item: Partial<LinkItem>): LinkCategory {
     return 'social';
   }
 
-  // 3. Trabajo (default for productivity/work: Notion, Flow, Maket AI, CapCut, etc.)
+  // 3. Trabajo (default for productivity/work: Notion, Flow, Javer, MakerWorld, Maket AI, CapCut, etc.)
   return 'trabajo';
 }
 
 export interface CategoryDefinition {
-  id: LinkCategoryFilter;
+  id: LinkCategory;
   label: string;
-  iconType: 'all' | 'trabajo' | 'compras' | 'social';
+  iconType: 'trabajo' | 'compras' | 'social';
   accentClass: string;
   activeClass: string;
   hoverClass: string;
 }
 
 export const CATEGORY_DEFINITIONS: CategoryDefinition[] = [
-  {
-    id: 'todos',
-    label: 'Todos',
-    iconType: 'all',
-    accentClass: 'text-gray-400',
-    activeClass: 'bg-white/20 text-white border-white/40 shadow-[0_0_15px_rgba(255,255,255,0.15)] ring-1 ring-white/30',
-    hoverClass: 'hover:bg-white/10 hover:text-gray-200'
-  },
   {
     id: 'trabajo',
     label: 'Trabajo',
@@ -133,6 +125,9 @@ export function normalizeAndDeduplicateLinksBar(links: LinkItem[]): LinkItem[] {
     }
     if (nameLower === 'flow' && (item.id === '10' || !item.id)) {
       item.id = 'flow';
+    }
+    if ((nameLower === 'makerworld' || nameLower === 'maker world') && (!item.id || item.id === '1' || item.id === '10')) {
+      item.id = 'makerworld';
     }
 
     // Check duplicate by normalized name
