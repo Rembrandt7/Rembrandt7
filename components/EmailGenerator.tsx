@@ -342,8 +342,9 @@ const EmailGenerator: React.FC<EmailGeneratorProps> = ({ attachedImages, onAttac
     const [recipientGender, setRecipientGender] = useState<Gender>('M');
     const [recipientEmailUser, setRecipientEmailUser] = useState('egabino');
     const [recipientEmailDomain, setRecipientEmailDomain] = useState('@javer');
-    const [customDomain, setCustomDomain] = useState('');
     const [recipientEmailTld, setRecipientEmailTld] = useState('.com.mx');
+    const [isNewContactMode, setIsNewContactMode] = useState(false);
+    const [showMobileRecipientEditor, setShowMobileRecipientEditor] = useState(false);
     const [isLoading, setIsLoading] = useState(false);
     const [error, setError] = useState<string | null>(null);
     const [generatedContent, setGeneratedContent] = useState<GeneratedContent | null>(null);
@@ -619,18 +620,11 @@ const EmailGenerator: React.FC<EmailGeneratorProps> = ({ attachedImages, onAttac
         const dbTitle = getDBValue(contact, ['lic', 'titulo']) || '';
         setRecipientTitle(dbTitle);
         const gen = String(getDBValue(contact, 'genero') || '').toLowerCase();
-        setRecipientGender(gen.startsWith('m') || gen.includes('fem') || gen.includes('femenino') ? 'F' : 'M');
+        const isFemale = gen.startsWith('f') || gen.includes('muj') || gen.includes('fem');
+        setRecipientGender(isFemale ? 'F' : 'M');
         const email = getDBValue(contact, 'correo') || '';
-        if (email && email.includes('@')) {
-            const [u, dFull] = email.split('@');
-            setRecipientEmailUser(u);
-            if (dFull.includes('javer')) setRecipientEmailDomain('@javer');
-            else if (dFull.includes('gmail')) setRecipientEmailDomain('@gmail');
-            else if (dFull.includes('outlook')) setRecipientEmailDomain('@outlook');
-            else if (dFull.includes('hotmail')) setRecipientEmailDomain('@hotmail');
-            else { setRecipientEmailDomain('Personalizado'); setCustomDomain(dFull.split('.')[0]); }
-            if (dFull.endsWith('.com.mx')) setRecipientEmailTld('.com.mx');
-            else if (dFull.endsWith('.com')) setRecipientEmailTld('.com');
+        if (email) {
+            setRecipientEmailUser(email);
         }
         setContactSearchQuery('');
         setIsSearchFocused(false);
@@ -703,9 +697,30 @@ const EmailGenerator: React.FC<EmailGeneratorProps> = ({ attachedImages, onAttac
 
     const fullRecipientEmail = useMemo(() => {
         if (!recipientEmailUser) return '';
-        const domainPart = recipientEmailDomain === 'Personalizado' ? `@${customDomain}` : recipientEmailDomain;
-        return `${recipientEmailUser}${domainPart}${recipientEmailTld}`;
-    }, [recipientEmailUser, recipientEmailDomain, customDomain, recipientEmailTld]);
+        const userTrimmed = recipientEmailUser.trim();
+        if (userTrimmed.includes('@')) {
+            return userTrimmed;
+        }
+        return `${userTrimmed}${recipientEmailDomain}${recipientEmailTld}`;
+    }, [recipientEmailUser, recipientEmailDomain, recipientEmailTld]);
+
+    const isRecipientInDatabase = useMemo(() => {
+        if (!recipientName.trim()) return true;
+        const normName = recipientName.trim().toLowerCase();
+        const normEmail = fullRecipientEmail.trim().toLowerCase();
+        return sortedContacts.some(c => {
+            const cName = String(getDBValue(c, ['cliente', 'nombre']) || '').trim().toLowerCase();
+            const cEmail = String(getDBValue(c, 'correo') || '').trim().toLowerCase();
+            return (cName && cName === normName) || (normEmail && normEmail.length > 3 && cEmail === normEmail);
+        });
+    }, [recipientName, fullRecipientEmail, sortedContacts]);
+
+    const autoSaveContactIfNew = useCallback(async () => {
+        if (!recipientName.trim()) return;
+        if (!isRecipientInDatabase) {
+            await handleSaveNewContact(true);
+        }
+    }, [recipientName, isRecipientInDatabase]);
 
     const quickContacts = useMemo(() => {
         const list: { name: string; index: number; isErik: boolean }[] = [];
@@ -845,12 +860,13 @@ const EmailGenerator: React.FC<EmailGeneratorProps> = ({ attachedImages, onAttac
             }
         }
         
+        autoSaveContactIfNew();
         const subject = encodeURIComponent(subjectText || '');
         const body = encodeURIComponent(stripHtml(bodyText || ''));
         const to = encodeURIComponent(fullRecipientEmail || '');
         const url = `https://outlook.office.com/mail/deeplink/compose?to=${to}&subject=${subject}&body=${body}`;
         window.open(url, '_blank');
-    }, [activeMode, generatedContent, livePreview, project, idea, getPresetGreeting, fullRecipientEmail]);
+    }, [activeMode, generatedContent, livePreview, project, idea, getPresetGreeting, fullRecipientEmail, autoSaveContactIfNew]);
 
     // Copiado enriquecido (HTML + texto plano)
     const handleCopyToClipboard = async (text: string, type: CopiedState) => {
@@ -890,6 +906,8 @@ const EmailGenerator: React.FC<EmailGeneratorProps> = ({ attachedImages, onAttac
             toast.error('Introduce una idea o adjunta una imagen de referencia.'); 
             return; 
         }
+        // Guardar contacto automáticamente en la base de datos si es nuevo
+        autoSaveContactIfNew();
         setIsLoading(true); setError(null);
         try {
             const apiKey = googleApiConfig?.apiKey || process.env.GEMINI_API_KEY;
@@ -913,13 +931,15 @@ const EmailGenerator: React.FC<EmailGeneratorProps> = ({ attachedImages, onAttac
             2. FORMATO: Usa DOBLE SALTO DE LÍNEA (\\n\\n) después del saludo y entre CADA párrafo.
             3. ESTRUCTURA: Usa listas numeradas o viñetas claras para puntos importantes. No amontones el texto.
             4. FIRMA: Termina SIEMPRE con: "Atte.\\n\\nArq. Rembrandt Blanco Arrambide".
-            5. CONTEXTO: Proyecto: "${project}". Destinatario (nombre/apodo a usar): "${finalRecipient}".
+            5. DESTINATARIO: "${finalRecipient}".
+               GÉNERO DEL DESTINATARIO: ${recipientGender === 'F' ? 'Mujer / Femenino (debes redactar en femenino: Estimada, Licenciada, Arquitecta, Ingeniera, bienvenida, atenta, agradecida, etc.)' : 'Hombre / Masculino (debes redactar en masculino: Estimado, Licenciado, Arquitecto, Ingeniero, bienvenido, atento, agradecido, etc.)'}. Asegúrate de que toda la redacción, los tratamientos y los saludos hacia el destinatario concuerden exactamente con este género.
                IMPORTANTE: Si está activo el uso de apodo o nombre corto, refiérete al destinatario siempre por su apodo ("${finalRecipient}") en lugar de su nombre formal completo.
-            6. IDEA A DESARROLLAR: "${targetIdea}". 
-            7. CONTEXTO ANTERIOR: "${previousEmail}".
-            ${adjustInstruction ? `8. AJUSTE DE ESTILO SOLICITADO: "${adjustInstruction}".` : ''}
-            ${attachedImages.length > 0 ? `9. IMÁGENES ADJUNTAS: Se proporcionan ${attachedImages.length} imágenes (planos, renders o capturas). Analízalas e incorpora detalles relevantes en el mensaje.` : ''}
-            10. TONO: ${tone}. LONGITUD: ${messageLength}.
+            6. CONTEXTO: Proyecto: "${project}".
+            7. IDEA A DESARROLLAR: "${targetIdea}". 
+            8. CONTEXTO ANTERIOR: "${previousEmail}".
+            ${adjustInstruction ? `9. AJUSTE DE ESTILO SOLICITADO: "${adjustInstruction}".` : ''}
+            ${attachedImages.length > 0 ? `10. IMÁGENES ADJUNTAS: Se proporcionan ${attachedImages.length} imágenes (planos, renders o capturas). Analízalas e incorpora detalles relevantes en el mensaje.` : ''}
+            11. TONO: ${tone}. LONGITUD: ${messageLength}.
 
             Genera un objeto JSON con:
             - emailSubject: Asunto principal del correo claro y profesional
@@ -987,7 +1007,7 @@ const EmailGenerator: React.FC<EmailGeneratorProps> = ({ attachedImages, onAttac
             setError(friendlyMsg); 
             toast.error("Error al generar: " + friendlyMsg);
         } finally { setIsLoading(false); }
-    }, [idea, previousEmail, tone, messageLength, recipientName, project, useNickname, selectedContactIndex, sortedContacts, googleApiConfig, updateConfig, attachedImages]);
+    }, [idea, previousEmail, tone, messageLength, recipientName, project, useNickname, selectedContactIndex, sortedContacts, googleApiConfig, updateConfig, attachedImages, recipientGender, autoSaveContactIfNew]);
 
     // Micro-ajustes rápidos con IA
     const handleQuickAdjust = (type: 'shorter' | 'formal' | 'urgent' | 'reminder') => {
@@ -1072,17 +1092,20 @@ const EmailGenerator: React.FC<EmailGeneratorProps> = ({ attachedImages, onAttac
     };
 
     const handleSendEmail = () => {
+        autoSaveContactIfNew();
         const bodyContent = generatedContent ? generatedContent.emailBody : livePreview.emailBody;
         const subjectContent = generatedContent ? generatedContent.emailSubject : livePreview.emailSubject;
         window.location.href = `mailto:${fullRecipientEmail}?subject=${encodeURIComponent(subjectContent)}&body=${encodeURIComponent(stripHtml(bodyContent))}`;
     };
 
     const handleSendWhatsApp = (customMsg?: string) => {
+        autoSaveContactIfNew();
         const msg = customMsg || (generatedContent ? generatedContent.whatsappMessage : livePreview.whatsappMessage);
+        const encoded = encodeURIComponent(msg);
         if (isMobile) {
-            window.location.href = `whatsapp://send?text=${encodeURIComponent(msg)}`;
+            window.location.href = `https://api.whatsapp.com/send?text=${encoded}`;
         } else {
-            window.open(`https://web.whatsapp.com/send?text=${encodeURIComponent(msg)}`, '_blank');
+            window.open(`https://web.whatsapp.com/send?text=${encoded}`, '_blank');
         }
     };
 
@@ -1104,18 +1127,55 @@ const EmailGenerator: React.FC<EmailGeneratorProps> = ({ attachedImages, onAttac
         }
     };
 
-    const handleSaveNewContact = async () => {
-        if (!recipientName) { toast.error("Ingresa un nombre"); return; }
+    const handleSaveNewContact = async (silent = false) => {
+        if (!recipientName.trim()) { 
+            if (!silent) toast.error("Ingresa un nombre para el contacto"); 
+            return; 
+        }
         setIsSavingContact(true);
         try {
-            await fetch(`${SUPABASE_CONFIG.URL}/rest/v1/Contactos`, {
+            const emailToSave = fullRecipientEmail.trim();
+            const payload = { 
+                cliente: recipientName.trim(), 
+                lic: recipientTitle.trim() || '', 
+                genero: recipientGender === 'M' ? 'Hombre' : 'Mujer', 
+                correo: emailToSave 
+            };
+            const res = await fetch(`${SUPABASE_CONFIG.URL}/rest/v1/Contactos`, {
                 method: 'POST',
-                headers: { 'apikey': SUPABASE_CONFIG.KEY, 'Authorization': `Bearer ${SUPABASE_CONFIG.KEY}`, 'Content-Type': 'application/json' },
-                body: JSON.stringify({ cliente: recipientName, lic: recipientTitle, genero: recipientGender === 'M' ? 'Hombre' : 'Mujer', correo: fullRecipientEmail })
+                headers: { 
+                    'apikey': SUPABASE_CONFIG.KEY, 
+                    'Authorization': `Bearer ${SUPABASE_CONFIG.KEY}`, 
+                    'Content-Type': 'application/json',
+                    'Prefer': 'return=representation'
+                },
+                body: JSON.stringify(payload)
             });
-            fetchContacts();
-            toast.success("Contacto guardado");
-        } catch (e) { console.error(e); toast.error("Error al guardar contacto"); } finally { setIsSavingContact(false); }
+            if (res.ok) {
+                await fetchContacts();
+                toast.success(`Contacto "${recipientName}" guardado en la Base de Datos`);
+            } else {
+                const newContact = { 
+                    id: Date.now().toString(), 
+                    cliente: recipientName, 
+                    correo: emailToSave, 
+                    lic: recipientTitle, 
+                    genero: recipientGender === 'M' ? 'Hombre' : 'Mujer' 
+                };
+                setContacts(prev => [newContact, ...prev]);
+                try {
+                    const cached = localStorage.getItem('cached-contacts');
+                    const parsed = cached ? JSON.parse(cached) : [];
+                    localStorage.setItem('cached-contacts', JSON.stringify([newContact, ...parsed]));
+                } catch {}
+                toast.success(`Contacto "${recipientName}" guardado`);
+            }
+        } catch (e) { 
+            console.error(e); 
+            if (!silent) toast.error("Error al guardar contacto"); 
+        } finally { 
+            setIsSavingContact(false); 
+        }
     };
 
     const deleteHistoryItem = (id: string) => updateConfig(prev => ({ ...prev, aiHistory: prev.aiHistory?.filter(h => h.id !== id) }));
@@ -1240,57 +1300,457 @@ const EmailGenerator: React.FC<EmailGeneratorProps> = ({ attachedImages, onAttac
     return (
         <div onDrop={handleDrop} onDragOver={(e) => { e.preventDefault(); setIsDraggingOver(true); }} className={`p-4 transition-all ${isDraggingOver ? 'bg-purple-500/10' : ''}`}>
             
-            {/* ENCABEZADO SUPERIOR */}
-            <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-3 mb-4">
-                <div className="flex items-center gap-3 flex-wrap">
-                    <div className="p-2.5 bg-gradient-to-br from-purple-600 to-indigo-600 rounded-xl shadow-md text-white">
-                        <Mail size={22} />
+            {/* ENCABEZADO SUPERIOR (EN ESCRITORIO) */}
+            {!isMobile && (
+                <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-3 mb-4">
+                    <div className="flex items-center gap-3 flex-wrap">
+                        <div className="p-2.5 bg-gradient-to-br from-purple-600 to-indigo-600 rounded-xl shadow-md text-white">
+                            <Mail size={22} />
+                        </div>
+                        <div>
+                            <h2 className="text-xl font-black text-white uppercase tracking-tighter">Generador de Mensajes</h2>
+                            <p className="text-[11px] text-gray-400">Entregas de planos, renders y redacción ejecutiva para Javer</p>
+                        </div>
+                        <a 
+                            href="https://academiartificial.com/noticias-ia/" 
+                            target="_blank" 
+                            rel="noopener noreferrer"
+                            className="ml-1 sm:ml-2 flex items-center gap-1.5 px-3 py-1.5 bg-gradient-to-r from-blue-600/30 to-indigo-600/30 hover:from-blue-600/50 hover:to-indigo-600/50 text-blue-300 hover:text-white rounded-lg border border-blue-500/30 text-[11px] font-bold uppercase tracking-wider transition-all shadow-sm group hover:scale-105"
+                            title="Ver noticias de IA en Academia Artificial"
+                        >
+                            <Newspaper size={13} className="text-blue-400 group-hover:text-blue-200" />
+                            <span>alejavi noticias</span>
+                            <ExternalLink size={11} className="opacity-70 group-hover:opacity-100 group-hover:translate-x-0.5 transition-all" />
+                        </a>
                     </div>
-                    <div>
-                        <h2 className="text-xl font-black text-white uppercase tracking-tighter">Generador de Mensajes</h2>
-                        <p className="text-[11px] text-gray-400">Entregas de planos, renders y redacción ejecutiva para Javer</p>
-                    </div>
-                    <a 
-                        href="https://academiartificial.com/noticias-ia/" 
-                        target="_blank" 
-                        rel="noopener noreferrer"
-                        className="ml-1 sm:ml-2 flex items-center gap-1.5 px-3 py-1.5 bg-gradient-to-r from-blue-600/30 to-indigo-600/30 hover:from-blue-600/50 hover:to-indigo-600/50 text-blue-300 hover:text-white rounded-lg border border-blue-500/30 text-[11px] font-bold uppercase tracking-wider transition-all shadow-sm group hover:scale-105"
-                        title="Ver noticias de IA en Academia Artificial"
-                    >
-                        <Newspaper size={13} className="text-blue-400 group-hover:text-blue-200" />
-                        <span>alejavi noticias</span>
-                        <ExternalLink size={11} className="opacity-70 group-hover:opacity-100 group-hover:translate-x-0.5 transition-all" />
-                    </a>
-                </div>
 
-                <div className="flex items-center gap-2 flex-wrap">
-                    <button 
-                        onClick={() => setShowAiConsultant(!showAiConsultant)} 
-                        className={`px-3 py-2 rounded-lg text-xs font-black uppercase border transition-all flex items-center gap-1.5 cursor-pointer ${
-                            showAiConsultant 
-                                ? 'bg-amber-500/20 text-amber-300 border-amber-500/50 shadow-amber-500/20' 
-                                : 'bg-gray-800 hover:bg-purple-600/30 text-purple-300 border-gray-700 hover:border-purple-500/50'
-                        }`}
+                    <div className="flex items-center gap-2 flex-wrap">
+                        <button 
+                            onClick={() => setShowAiConsultant(!showAiConsultant)} 
+                            className={`px-3 py-2 rounded-lg text-xs font-black uppercase border transition-all flex items-center gap-1.5 cursor-pointer ${
+                                showAiConsultant 
+                                    ? 'bg-amber-500/20 text-amber-300 border-amber-500/50 shadow-amber-500/20' 
+                                    : 'bg-gray-800 hover:bg-purple-600/30 text-purple-300 border-gray-700 hover:border-purple-500/50'
+                            }`}
+                        >
+                            <Bot size={14} />
+                            <span>IA Consejera</span>
+                        </button>
+                        <button 
+                            onClick={() => setShowHistory(!showHistory)} 
+                            className="px-3.5 py-2 bg-gray-800 rounded-lg text-xs font-black uppercase text-gray-400 border border-gray-700 hover:bg-gray-700 transition-colors cursor-pointer"
+                        >
+                            Historial
+                        </button>
+                        <button 
+                            onClick={handleResetAll} 
+                            title="Reiniciar todos los campos (Erik por defecto)" 
+                            className="px-3 py-2 bg-gray-800 hover:bg-red-600/20 text-gray-400 hover:text-red-400 rounded-lg text-xs font-black uppercase border border-gray-700 hover:border-red-500/40 transition-all flex items-center gap-1.5 cursor-pointer"
+                        >
+                            <RotateCcw size={14} />
+                            <span>Reset</span>
+                        </button>
+                    </div>
+                </div>
+            )}
+
+            {/* ENCABEZADO COMPACTO EN MÓVIL */}
+            {isMobile && (
+                <div className="flex items-center justify-between gap-2 mb-3">
+                    <div className="flex items-center gap-2">
+                        <div className="p-2 bg-gradient-to-br from-purple-600 to-indigo-600 rounded-xl shadow-md text-white">
+                            <Mail size={18} />
+                        </div>
+                        <div>
+                            <h2 className="text-sm font-black text-white uppercase tracking-tight">Generador de Mensajes</h2>
+                            <p className="text-[10px] text-gray-400">Dictado por voz, IA y WhatsApp para Javer</p>
+                        </div>
+                    </div>
+                    <button
+                        type="button"
+                        onClick={() => handleOpenOutlookWeb()}
+                        className="px-2.5 py-1.5 bg-blue-600 hover:bg-blue-500 text-white rounded-lg text-[10px] font-black uppercase flex items-center gap-1 shadow-md border border-blue-400/30 cursor-pointer"
+                        title="Abrir Outlook Web Javer 365"
                     >
-                        <Bot size={14} />
-                        <span>IA Consejera</span>
-                    </button>
-                    <button 
-                        onClick={() => setShowHistory(!showHistory)} 
-                        className="px-3.5 py-2 bg-gray-800 rounded-lg text-xs font-black uppercase text-gray-400 border border-gray-700 hover:bg-gray-700 transition-colors cursor-pointer"
-                    >
-                        Historial
-                    </button>
-                    <button 
-                        onClick={handleResetAll} 
-                        title="Reiniciar todos los campos (Erik por defecto)" 
-                        className="px-3 py-2 bg-gray-800 hover:bg-red-600/20 text-gray-400 hover:text-red-400 rounded-lg text-xs font-black uppercase border border-gray-700 hover:border-red-500/40 transition-all flex items-center gap-1.5 cursor-pointer"
-                    >
-                        <RotateCcw size={14} />
-                        <span>Reset</span>
+                        <ExternalLink size={11} />
+                        <span>Outlook</span>
                     </button>
                 </div>
-            </div>
+            )}
+
+            {/* ========================================================================= */}
+            {/* HERO MÓVIL: BOTÓN GRANDE DE MICRÓFONO PARA DICTAR Y REDACTAR CORREO PRIMERO */}
+            {/* ========================================================================= */}
+            {isMobile && (
+                <div className="mb-4 bg-gradient-to-br from-purple-950/90 via-slate-900/95 to-indigo-950/90 border-2 border-purple-500/50 rounded-3xl p-4 sm:p-5 shadow-2xl shadow-purple-950/60 space-y-4">
+                    {/* Header del Hero Móvil */}
+                    <div className="flex items-center justify-between border-b border-purple-500/20 pb-3">
+                        <div className="flex items-center gap-2">
+                            <div className="p-2 bg-gradient-to-tr from-purple-600 to-indigo-600 rounded-xl text-white shadow-md">
+                                <Sparkles size={16} />
+                            </div>
+                            <div>
+                                <h3 className="text-xs font-black uppercase text-white tracking-wider flex items-center gap-1.5">
+                                    <span>Dictar Correo por Voz</span>
+                                    <span className="text-[9px] bg-amber-400 text-black font-extrabold px-1.5 py-0.5 rounded-full uppercase">1er Paso</span>
+                                </h3>
+                                <p className="text-[10px] text-purple-200/80">Toca el micrófono grande, habla tu idea y redacta con IA</p>
+                            </div>
+                        </div>
+
+                        {/* Destinatario rápido badge */}
+                        <div className="text-right">
+                            <span className="text-[9px] font-bold text-gray-400 uppercase block">Para:</span>
+                            <span className="text-[11px] font-black text-purple-300 truncate max-w-[120px] block">
+                                {recipientName || 'Sin destinatario'}
+                            </span>
+                        </div>
+                    </div>
+
+                    {/* Botón Central Grande para el Micrófono */}
+                    <div className="flex flex-col items-center justify-center py-2 space-y-3">
+                        <button
+                            type="button"
+                            onClick={toggleListening}
+                            className={`group relative flex items-center justify-center rounded-full transition-all duration-300 cursor-pointer ${
+                                isListening
+                                    ? 'w-24 h-24 sm:w-28 sm:h-28 bg-red-600 text-white shadow-[0_0_50px_rgba(239,68,68,0.7)] ring-8 ring-red-500/30 scale-105 animate-pulse'
+                                    : 'w-24 h-24 sm:w-28 sm:h-28 bg-gradient-to-tr from-purple-600 via-indigo-600 to-pink-500 text-white shadow-[0_0_40px_rgba(168,85,247,0.5)] hover:scale-105 active:scale-95 border-2 border-white/30'
+                            }`}
+                            title={isListening ? "Toca para detener dictado" : "Toca para empezar a dictar por voz"}
+                        >
+                            {isListening ? (
+                                <MicOff size={42} className="text-white drop-shadow-md" />
+                            ) : (
+                                <Mic size={42} className="text-white drop-shadow-md group-hover:scale-110 transition-transform" />
+                            )}
+                        </button>
+
+                        <div className="text-center">
+                            <p className="text-xs font-black uppercase tracking-wider text-white">
+                                {isListening ? '🔴 Escuchando tu voz...' : 'Toca el micrófono para dictar'}
+                            </p>
+                            <p className="text-[10px] text-gray-400 mt-0.5">
+                                {isListening 
+                                    ? 'Habla claro; toca de nuevo cuando termines para redactar' 
+                                    : 'Presiona y di tu mensaje; la IA lo convertirá en correo formal'}
+                            </p>
+                        </div>
+
+                        {/* Ondas sonoras animadas al escuchar */}
+                        {isListening && (
+                            <div className="flex items-center justify-center gap-1 h-6 py-0.5">
+                                {[40, 75, 100, 60, 95, 45, 85, 55, 90, 70, 80, 50].map((h, i) => (
+                                    <div
+                                        key={i}
+                                        className="w-1 bg-gradient-to-t from-red-500 via-rose-400 to-purple-300 rounded-full animate-pulse"
+                                        style={{ height: `${h}%`, animationDelay: `${i * 60}ms` }}
+                                    />
+                                ))}
+                            </div>
+                        )}
+                    </div>
+
+                    {/* Caja de Idea dictada / editable */}
+                    <div className="space-y-2">
+                        <div className="flex items-center justify-between">
+                            <span className="text-[10px] font-black uppercase tracking-wider text-purple-300">
+                                {idea ? 'Idea o Mensaje dictado:' : 'Mensaje a dictar o escribir:'}
+                            </span>
+                            {idea && (
+                                <button
+                                    type="button"
+                                    onClick={() => { setIdea(''); toast.info('Texto limpiado'); }}
+                                    className="text-[10px] font-bold text-gray-400 hover:text-white flex items-center gap-1 cursor-pointer"
+                                >
+                                    <RotateCcw size={10} />
+                                    <span>Borrar</span>
+                                </button>
+                            )}
+                        </div>
+
+                        <textarea
+                            value={idea}
+                            onChange={onIdeaChange}
+                            placeholder="Aquí aparecerá lo que dictes por voz, o puedes escribir directamente aquí..."
+                            rows={3}
+                            className="w-full p-3 bg-slate-950/80 border border-purple-500/30 rounded-xl text-xs text-white placeholder-gray-500 outline-none focus:border-purple-400 leading-relaxed font-sans shadow-inner resize-none"
+                        />
+                    </div>
+
+                    {/* SECCIÓN SIMPLIFICADA DE DESTINATARIO (GUARDADO O ALGUIEN NO GUARDADO) + GÉNERO HOMBRE / MUJER */}
+                    <div className="bg-slate-950/70 p-3 rounded-2xl border border-purple-500/20 space-y-2.5">
+                        <div className="flex items-center justify-between">
+                            <span className="text-[10px] font-black uppercase tracking-wider text-purple-300 flex items-center gap-1.5">
+                                <Users size={12} />
+                                <span>Destinatario:</span>
+                            </span>
+                            
+                            {/* Toggle modo: Contacto Guardado vs Alguien no guardado */}
+                            <div className="flex bg-gray-900 rounded-lg p-0.5 border border-gray-800">
+                                <button
+                                    type="button"
+                                    onClick={() => setIsNewContactMode(false)}
+                                    className={`px-2 py-1 rounded text-[10px] font-bold transition-all cursor-pointer ${
+                                        !isNewContactMode ? 'bg-purple-600 text-white' : 'text-gray-400 hover:text-white'
+                                    }`}
+                                >
+                                    Guardados
+                                </button>
+                                <button
+                                    type="button"
+                                    onClick={() => {
+                                        setIsNewContactMode(true);
+                                        setSelectedContactIndex('');
+                                    }}
+                                    className={`px-2 py-1 rounded text-[10px] font-bold transition-all cursor-pointer ${
+                                        isNewContactMode ? 'bg-indigo-600 text-white' : 'text-gray-400 hover:text-white'
+                                    }`}
+                                >
+                                    ➕ No guardado
+                                </button>
+                            </div>
+                        </div>
+
+                        {/* Vista Alguien no guardado */}
+                        {isNewContactMode ? (
+                            <div className="space-y-2 pt-1">
+                                <div className="grid grid-cols-1 gap-2">
+                                    <div>
+                                        <label className="text-[9px] font-bold uppercase text-gray-400 block mb-0.5">Nombre de la persona</label>
+                                        <input
+                                            type="text"
+                                            value={recipientName}
+                                            onChange={(e) => setRecipientName(e.target.value)}
+                                            placeholder="Ej. Ing. Carlos Salinas o Arq. Laura"
+                                            className="w-full p-2.5 bg-gray-900 border border-indigo-500/40 rounded-xl text-xs text-white font-bold outline-none focus:border-indigo-400"
+                                        />
+                                    </div>
+                                    <div>
+                                        <label className="text-[9px] font-bold uppercase text-gray-400 block mb-0.5">Correo electrónico</label>
+                                        <input
+                                            type="email"
+                                            value={recipientEmailUser}
+                                            onChange={(e) => setRecipientEmailUser(e.target.value)}
+                                            placeholder="ejemplo@correo.com"
+                                            className="w-full p-2.5 bg-gray-900 border border-indigo-500/40 rounded-xl text-xs text-white font-mono outline-none focus:border-indigo-400"
+                                        />
+                                    </div>
+                                </div>
+                                <p className="text-[9px] text-emerald-400/95 font-medium flex items-center gap-1">
+                                    <span>💾</span>
+                                    <span>Se guardará automáticamente en tu base de datos al enviar o redactar.</span>
+                                </p>
+                            </div>
+                        ) : (
+                            /* Vista Contactos Guardados */
+                            <div className="space-y-2 pt-1">
+                                <div className="flex items-center gap-1.5 overflow-x-auto pb-1 custom-scrollbar">
+                                    {quickContacts.map(qc => {
+                                        const isSelected = selectedContactIndex !== '' && parseInt(selectedContactIndex, 10) === qc.index;
+                                        return (
+                                            <button
+                                                key={qc.name}
+                                                type="button"
+                                                onClick={() => selectContactByIndex(qc.index, sortedContacts)}
+                                                className={`px-2.5 py-1 rounded-lg text-xs font-bold transition-all shrink-0 cursor-pointer flex items-center gap-1 ${
+                                                    isSelected 
+                                                        ? 'bg-purple-600 text-white shadow-sm ring-1 ring-purple-400' 
+                                                        : 'bg-gray-900 text-gray-300 border border-gray-800'
+                                                }`}
+                                            >
+                                                {qc.isErik && <span>⭐</span>}
+                                                <span>{qc.name.split(' ')[0]}</span>
+                                            </button>
+                                        );
+                                    })}
+                                </div>
+                                <select 
+                                    value={selectedContactIndex} 
+                                    onChange={handleContactSelect} 
+                                    className="w-full p-2 bg-gray-900 border border-gray-800 rounded-xl text-xs text-white font-bold outline-none cursor-pointer"
+                                >
+                                    <option value="">Seleccionar otro contacto ({sortedContacts.length})...</option>
+                                    {sortedContacts.map((c, i) => (
+                                        <option key={i} value={i}>
+                                            {getDBValue(c, 'cliente')} ({getDBValue(c, 'correo')})
+                                        </option>
+                                    ))}
+                                </select>
+                            </div>
+                        )}
+
+                        {/* PREGUNTA DE GÉNERO OBLIGATORIA: HOMBRE / MUJER */}
+                        <div className="pt-2 border-t border-purple-500/15">
+                            <div className="flex items-center justify-between mb-1.5">
+                                <span className="text-[10px] font-black uppercase text-purple-200">
+                                    ¿Es Hombre o Mujer?
+                                </span>
+                                <span className="text-[9px] text-gray-400">Para redactar con concordancia exacta</span>
+                            </div>
+                            <div className="grid grid-cols-2 gap-2">
+                                <button
+                                    type="button"
+                                    onClick={() => setRecipientGender('M')}
+                                    className={`py-2 px-3 rounded-xl text-xs font-black uppercase transition-all flex items-center justify-center gap-1.5 cursor-pointer ${
+                                        recipientGender === 'M'
+                                            ? 'bg-blue-600 text-white shadow-lg shadow-blue-600/30 ring-2 ring-blue-400'
+                                            : 'bg-gray-900/90 text-gray-400 hover:text-white border border-gray-800'
+                                    }`}
+                                >
+                                    <span>👨 Hombre</span>
+                                    <span className="text-[9px] opacity-80">(Estimado/Arq.)</span>
+                                </button>
+                                <button
+                                    type="button"
+                                    onClick={() => setRecipientGender('F')}
+                                    className={`py-2 px-3 rounded-xl text-xs font-black uppercase transition-all flex items-center justify-center gap-1.5 cursor-pointer ${
+                                        recipientGender === 'F'
+                                            ? 'bg-pink-600 text-white shadow-lg shadow-pink-600/30 ring-2 ring-pink-400'
+                                            : 'bg-gray-900/90 text-gray-400 hover:text-white border border-gray-800'
+                                    }`}
+                                >
+                                    <span>👩 Mujer</span>
+                                    <span className="text-[9px] opacity-80">(Estimada/Arq.)</span>
+                                </button>
+                            </div>
+                        </div>
+                    </div>
+
+                    {/* Botón principal de Redacción con IA */}
+                    <button
+                        type="button"
+                        onClick={() => handleGenerate()}
+                        disabled={isLoading || (!idea.trim() && !previousEmail.trim() && attachedImages.length === 0)}
+                        className="w-full py-3.5 bg-gradient-to-r from-purple-600 via-indigo-600 to-blue-600 hover:from-purple-500 hover:to-blue-500 text-white rounded-xl font-black text-xs uppercase tracking-wider shadow-xl shadow-purple-600/30 flex items-center justify-center gap-2 active:scale-95 transition-all disabled:opacity-50 cursor-pointer border border-purple-400/30"
+                    >
+                        {isLoading ? (
+                            <>
+                                <RefreshCw className="animate-spin" size={16} />
+                                <span>Redactando Correo con IA...</span>
+                            </>
+                        ) : (
+                            <>
+                                <Sparkles size={16} className="text-yellow-300" />
+                                <span>Redactar Correo con IA</span>
+                            </>
+                        )}
+                    </button>
+
+                    {/* Previsualización rápida y ACCIONES INSTANTÁNEAS: WHATSAPP DIRECTO */}
+                    {generatedContent && !isLoading && (
+                        <div className="pt-2 border-t border-purple-500/20 space-y-3 bg-purple-950/40 -mx-4 -mb-4 p-4 rounded-b-3xl">
+                            <div className="flex items-center justify-between">
+                                <span className="text-[10px] font-black uppercase tracking-wider text-emerald-400 flex items-center gap-1">
+                                    <Check size={12} />
+                                    <span>Mensajes Listos</span>
+                                </span>
+                                <span className="text-[10px] text-gray-400 truncate max-w-[160px] italic">
+                                    {generatedContent.emailSubject}
+                                </span>
+                            </div>
+
+                            {/* BOTÓN GRANDE DESTACADO: ENVIAR POR WHATSAPP RÁPIDO */}
+                            <button
+                                type="button"
+                                onClick={() => handleSendWhatsApp(generatedContent.whatsappMessage)}
+                                className="w-full py-3 bg-gradient-to-r from-emerald-500 to-green-600 hover:from-emerald-400 hover:to-green-500 text-white rounded-xl text-xs font-black uppercase tracking-wider flex items-center justify-center gap-2 shadow-lg shadow-emerald-950/60 active:scale-95 transition-all cursor-pointer border border-emerald-400/30"
+                                title="Enviar mensaje generado directamente por WhatsApp"
+                            >
+                                <MessageSquare size={16} />
+                                <span>Enviar por WhatsApp (1 Toque)</span>
+                            </button>
+
+                            {/* Tarjeta con el texto de WhatsApp listo para revisar o copiar */}
+                            <div className="p-2.5 bg-slate-950/80 rounded-xl border border-emerald-500/30 space-y-1.5">
+                                <div className="flex items-center justify-between">
+                                    <span className="text-[10px] font-bold text-emerald-300 uppercase">Mensaje WhatsApp Generado:</span>
+                                    <button
+                                        type="button"
+                                        onClick={() => handleCopyToClipboard(generatedContent.whatsappMessage, 'whatsapp')}
+                                        className="text-[10px] text-gray-400 hover:text-white flex items-center gap-1 cursor-pointer"
+                                    >
+                                        <Copy size={11} />
+                                        <span>{copied === 'whatsapp' ? '¡Copiado!' : 'Copiar'}</span>
+                                    </button>
+                                </div>
+                                <p className="text-[11px] text-emerald-100/90 whitespace-pre-wrap leading-relaxed">
+                                    {generatedContent.whatsappMessage}
+                                </p>
+                            </div>
+
+                            {/* Botones secundarios: Outlook Web y Copiar Correo */}
+                            <div className="grid grid-cols-2 gap-2 pt-1">
+                                <button
+                                    type="button"
+                                    onClick={() => handleOpenOutlookWeb(generatedContent.emailSubject, generatedContent.emailBody)}
+                                    className="py-2.5 px-2 bg-gradient-to-r from-blue-600 to-indigo-600 text-white rounded-xl text-xs font-black uppercase flex items-center justify-center gap-1.5 shadow-md cursor-pointer border border-blue-400/30"
+                                    title="Abrir en Outlook Web Javer 365"
+                                >
+                                    <ExternalLink size={13} />
+                                    <span>Outlook Web</span>
+                                </button>
+                                <button
+                                    type="button"
+                                    onClick={() => handleCopyToClipboard(generatedContent.emailBody, 'email')}
+                                    className={`py-2.5 px-2 rounded-xl text-xs font-black uppercase flex items-center justify-center gap-1.5 transition-all cursor-pointer ${
+                                        copied === 'email' ? 'bg-green-600 text-white' : 'bg-gray-800 text-gray-200 hover:bg-gray-700 border border-gray-700'
+                                    }`}
+                                >
+                                    <Copy size={13} />
+                                    <span>{copied === 'email' ? '¡Copiado!' : 'Copiar Correo'}</span>
+                                </button>
+                            </div>
+                        </div>
+                    )}
+                </div>
+            )}
+
+            {/* ========================================================================= */}
+            {/* EN MÓVIL: BOTONES DE ALEJAVI NOTICIAS, IA CONSEJERA, HISTORIAL Y RESET DESPUÉS DEL DICTADO */}
+            {/* ========================================================================= */}
+            {isMobile && (
+                <div className="mb-4 space-y-2.5">
+                    <div className="flex items-center gap-2 flex-wrap">
+                        <a 
+                            href="https://academiartificial.com/noticias-ia/" 
+                            target="_blank" 
+                            rel="noopener noreferrer"
+                            className="flex-1 min-w-[130px] flex items-center justify-center gap-1.5 px-3 py-2 bg-gradient-to-r from-blue-600/30 to-indigo-600/30 hover:from-blue-600/50 text-blue-300 rounded-xl border border-blue-500/30 text-xs font-black uppercase tracking-wider transition-all shadow-sm"
+                            title="Ver noticias de IA en Academia Artificial"
+                        >
+                            <Newspaper size={13} className="text-blue-400" />
+                            <span>alejavi noticias</span>
+                            <ExternalLink size={11} className="opacity-70" />
+                        </a>
+                        <button 
+                            onClick={() => setShowAiConsultant(!showAiConsultant)} 
+                            className={`flex-1 min-w-[120px] px-3 py-2 rounded-xl text-xs font-black uppercase border transition-all flex items-center justify-center gap-1.5 cursor-pointer ${
+                                showAiConsultant 
+                                    ? 'bg-amber-500/20 text-amber-300 border-amber-500/50 shadow-amber-500/20' 
+                                    : 'bg-gray-800 text-purple-300 border-gray-700'
+                            }`}
+                        >
+                            <Bot size={14} />
+                            <span>IA Consejera</span>
+                        </button>
+                        <button 
+                            onClick={() => setShowHistory(!showHistory)} 
+                            className="px-3 py-2 bg-gray-800 rounded-xl text-xs font-black uppercase text-gray-300 border border-gray-700 cursor-pointer"
+                        >
+                            Historial
+                        </button>
+                        <button 
+                            onClick={handleResetAll} 
+                            title="Reiniciar todos los campos" 
+                            className="px-3 py-2 bg-gray-800 hover:bg-red-600/20 text-gray-400 hover:text-red-400 rounded-xl text-xs font-black uppercase border border-gray-700 transition-all flex items-center justify-center gap-1 cursor-pointer"
+                        >
+                            <RotateCcw size={14} />
+                            <span>Reset</span>
+                        </button>
+                    </div>
+                </div>
+            )}
 
             {/* BARRA SUPERIOR DE CONTROL: MODOS Y ACCESO DIRECTO A OUTLOOK WEB */}
             <div className="flex flex-col sm:flex-row items-stretch sm:items-center justify-between gap-3 mb-5">
@@ -1473,175 +1933,6 @@ const EmailGenerator: React.FC<EmailGeneratorProps> = ({ attachedImages, onAttac
             )}</AnimatePresence>
 
             {/* ========================================================================= */}
-            {/* HERO MÓVIL: BOTÓN GRANDE DE MICRÓFONO PARA DICTAR Y REDACTAR CORREO PRIMERO */}
-            {/* ========================================================================= */}
-            {isMobile && (
-                <div className="mb-5 bg-gradient-to-br from-purple-950/80 via-slate-900/95 to-indigo-950/80 border-2 border-purple-500/50 rounded-3xl p-4 sm:p-5 shadow-2xl shadow-purple-950/50 space-y-4">
-                    {/* Header del Hero Móvil */}
-                    <div className="flex items-center justify-between border-b border-purple-500/20 pb-3">
-                        <div className="flex items-center gap-2">
-                            <div className="p-2 bg-gradient-to-tr from-purple-600 to-indigo-600 rounded-xl text-white shadow-md">
-                                <Sparkles size={16} />
-                            </div>
-                            <div>
-                                <h3 className="text-xs font-black uppercase text-white tracking-wider flex items-center gap-1.5">
-                                    <span>Dictar Correo por Voz</span>
-                                    <span className="text-[9px] bg-amber-400 text-black font-extrabold px-1.5 py-0.5 rounded-full uppercase">Móvil</span>
-                                </h3>
-                                <p className="text-[10px] text-purple-200/80">Toca el micrófono, habla tu idea y redacta con IA</p>
-                            </div>
-                        </div>
-
-                        {/* Destinatario rápido */}
-                        <div className="text-right">
-                            <span className="text-[9px] font-bold text-gray-400 uppercase block">Para:</span>
-                            <span className="text-[11px] font-black text-purple-300 truncate max-w-[120px] block">
-                                {recipientName || 'Sin destinatario'}
-                            </span>
-                        </div>
-                    </div>
-
-                    {/* Botón Central Grande para el Micrófono */}
-                    <div className="flex flex-col items-center justify-center py-2 space-y-3">
-                        <button
-                            type="button"
-                            onClick={toggleListening}
-                            className={`group relative flex items-center justify-center rounded-full transition-all duration-300 cursor-pointer ${
-                                isListening
-                                    ? 'w-24 h-24 sm:w-28 sm:h-28 bg-red-600 text-white shadow-[0_0_50px_rgba(239,68,68,0.7)] ring-8 ring-red-500/30 scale-105 animate-pulse'
-                                    : 'w-24 h-24 sm:w-28 sm:h-28 bg-gradient-to-tr from-purple-600 via-indigo-600 to-pink-500 text-white shadow-[0_0_40px_rgba(168,85,247,0.5)] hover:scale-105 active:scale-95 border-2 border-white/30'
-                            }`}
-                            title={isListening ? "Toca para detener dictado" : "Toca para empezar a dictar por voz"}
-                        >
-                            {isListening ? (
-                                <MicOff size={42} className="text-white drop-shadow-md" />
-                            ) : (
-                                <Mic size={42} className="text-white drop-shadow-md group-hover:scale-110 transition-transform" />
-                            )}
-                        </button>
-
-                        <div className="text-center">
-                            <p className="text-xs font-black uppercase tracking-wider text-white">
-                                {isListening ? '🔴 Escuchando tu voz...' : 'Toca el micrófono para dictar'}
-                            </p>
-                            <p className="text-[10px] text-gray-400 mt-0.5">
-                                {isListening 
-                                    ? 'Habla claro; toca de nuevo cuando termines para redactar' 
-                                    : 'Presiona y di tu mensaje; la IA lo convertirá en correo formal'}
-                            </p>
-                        </div>
-
-                        {/* Ondas sonoras animadas al escuchar */}
-                        {isListening && (
-                            <div className="flex items-center justify-center gap-1 h-6 py-0.5">
-                                {[40, 75, 100, 60, 95, 45, 85, 55, 90, 70, 80, 50].map((h, i) => (
-                                    <div
-                                        key={i}
-                                        className="w-1 bg-gradient-to-t from-red-500 via-rose-400 to-purple-300 rounded-full animate-pulse"
-                                        style={{ height: `${h}%`, animationDelay: `${i * 60}ms` }}
-                                    />
-                                ))}
-                            </div>
-                        )}
-                    </div>
-
-                    {/* Caja de Idea dictada / editable */}
-                    <div className="space-y-2">
-                        <div className="flex items-center justify-between">
-                            <span className="text-[10px] font-black uppercase tracking-wider text-purple-300">
-                                {idea ? 'Idea o Mensaje dictado:' : 'Mensaje:'}
-                            </span>
-                            {idea && (
-                                <button
-                                    type="button"
-                                    onClick={() => { setIdea(''); toast.info('Texto limpiado'); }}
-                                    className="text-[10px] font-bold text-gray-400 hover:text-white flex items-center gap-1 cursor-pointer"
-                                >
-                                    <RotateCcw size={10} />
-                                    <span>Borrar</span>
-                                </button>
-                            )}
-                        </div>
-
-                        <textarea
-                            value={idea}
-                            onChange={onIdeaChange}
-                            placeholder="Aquí aparecerá lo que dictes por voz, o puedes escribir directamente aquí..."
-                            rows={3}
-                            className="w-full p-3 bg-slate-950/80 border border-purple-500/30 rounded-xl text-xs text-white placeholder-gray-500 outline-none focus:border-purple-400 leading-relaxed font-sans shadow-inner resize-none"
-                        />
-
-                        {/* Botón principal de Redacción con IA */}
-                        <button
-                            type="button"
-                            onClick={() => handleGenerate()}
-                            disabled={isLoading || (!idea.trim() && !previousEmail.trim() && attachedImages.length === 0)}
-                            className="w-full py-3.5 bg-gradient-to-r from-purple-600 via-indigo-600 to-blue-600 hover:from-purple-500 hover:to-blue-500 text-white rounded-xl font-black text-xs uppercase tracking-wider shadow-xl shadow-purple-600/30 flex items-center justify-center gap-2 active:scale-95 transition-all disabled:opacity-50 cursor-pointer border border-purple-400/30"
-                        >
-                            {isLoading ? (
-                                <>
-                                    <RefreshCw className="animate-spin" size={16} />
-                                    <span>Redactando Correo con IA...</span>
-                                </>
-                            ) : (
-                                <>
-                                    <Sparkles size={16} className="text-yellow-300" />
-                                    <span>Redactar Correo con IA</span>
-                                </>
-                            )}
-                        </button>
-                    </div>
-
-                    {/* Previsualización rápida y acciones instantáneas en móvil */}
-                    {generatedContent && !isLoading && (
-                        <div className="pt-2 border-t border-purple-500/20 space-y-2.5 bg-purple-950/30 -mx-4 -mb-4 p-4 rounded-b-3xl">
-                            <div className="flex items-center justify-between">
-                                <span className="text-[10px] font-black uppercase tracking-wider text-emerald-400 flex items-center gap-1">
-                                    <Check size={12} />
-                                    <span>Correo Listo</span>
-                                </span>
-                                <span className="text-[10px] text-gray-400 truncate max-w-[160px] italic">
-                                    {generatedContent.emailSubject}
-                                </span>
-                            </div>
-
-                            {/* Botones de acción directa 1 toque */}
-                            <div className="grid grid-cols-3 gap-2">
-                                <button
-                                    type="button"
-                                    onClick={() => handleCopyToClipboard(generatedContent.emailBody, 'email')}
-                                    className={`py-2 px-2 rounded-xl text-xs font-black uppercase flex items-center justify-center gap-1 transition-all cursor-pointer ${
-                                        copied === 'email' ? 'bg-green-600 text-white' : 'bg-gray-800 text-gray-200 hover:bg-gray-700 border border-gray-700'
-                                    }`}
-                                >
-                                    <Copy size={12} />
-                                    <span>{copied === 'email' ? '¡Copiado!' : 'Copiar'}</span>
-                                </button>
-                                <button
-                                    type="button"
-                                    onClick={() => handleOpenOutlookWeb(generatedContent.emailSubject, generatedContent.emailBody)}
-                                    className="py-2 px-2 bg-gradient-to-r from-blue-600 to-indigo-600 text-white rounded-xl text-xs font-black uppercase flex items-center justify-center gap-1 shadow-md cursor-pointer border border-blue-400/30"
-                                    title="Abrir en Outlook Web"
-                                >
-                                    <ExternalLink size={12} />
-                                    <span>Outlook</span>
-                                </button>
-                                <button
-                                    type="button"
-                                    onClick={() => handleSendWhatsApp(generatedContent.whatsappMessage)}
-                                    className="py-2 px-2 bg-gradient-to-r from-green-600 to-emerald-600 text-white rounded-xl text-xs font-black uppercase flex items-center justify-center gap-1 shadow-md cursor-pointer border border-green-400/30"
-                                    title="Enviar por WhatsApp"
-                                >
-                                    <MessageSquare size={12} />
-                                    <span>WhatsApp</span>
-                                </button>
-                            </div>
-                        </div>
-                    )}
-                </div>
-            )}
-
-            {/* ========================================================================= */}
             {/* BARRA SUPERIOR DE DESTINATARIO Y CONTACTOS (ESTILO OUTLOOK / GMAIL) */}
             {/* ========================================================================= */}
             <div className="bg-gray-900/80 backdrop-blur-xl p-3.5 sm:p-4 rounded-2xl border border-purple-500/25 mb-5 shadow-xl space-y-3">
@@ -1682,6 +1973,52 @@ const EmailGenerator: React.FC<EmailGeneratorProps> = ({ attachedImages, onAttac
                             )}
                         </div>
 
+                        {/* Selector directo de Género (Hombre / Mujer) para la IA */}
+                        <div className="flex items-center bg-gray-800/90 border border-gray-700/80 rounded-xl p-0.5 shrink-0" title="Selecciona si es Hombre o Mujer para asegurar concordancia perfecta en el correo">
+                            <button
+                                type="button"
+                                onClick={() => setRecipientGender('M')}
+                                className={`px-2.5 py-1.5 rounded-lg text-xs font-black transition-all cursor-pointer flex items-center gap-1 ${
+                                    recipientGender === 'M' ? 'bg-blue-600 text-white shadow ring-1 ring-blue-400' : 'text-gray-400 hover:text-white'
+                                }`}
+                                title="Tratamiento en masculino (Estimado, Arq., bienvenido)"
+                            >
+                                <span>👨 Hombre</span>
+                            </button>
+                            <button
+                                type="button"
+                                onClick={() => setRecipientGender('F')}
+                                className={`px-2.5 py-1.5 rounded-lg text-xs font-black transition-all cursor-pointer flex items-center gap-1 ${
+                                    recipientGender === 'F' ? 'bg-pink-600 text-white shadow ring-1 ring-pink-400' : 'text-gray-400 hover:text-white'
+                                }`}
+                                title="Tratamiento en femenino (Estimada, Arq., bienvenida)"
+                            >
+                                <span>👩 Mujer</span>
+                            </button>
+                        </div>
+
+                        {/* Botón rápido Alguien no guardado */}
+                        <button
+                            type="button"
+                            onClick={() => {
+                                setIsNewContactMode(!isNewContactMode);
+                                if (!isNewContactMode) {
+                                    setSelectedContactIndex('');
+                                    setRecipientName('');
+                                    setRecipientEmailUser('');
+                                    setRecipientTitle('Lic.');
+                                }
+                            }}
+                            className={`px-2.5 py-1.5 rounded-xl border text-[11px] font-black uppercase transition-all cursor-pointer flex items-center gap-1 shrink-0 ${
+                                isNewContactMode 
+                                    ? 'bg-indigo-600 text-white border-indigo-400 shadow-md ring-1 ring-indigo-300' 
+                                    : 'bg-gray-800 text-indigo-300 border-indigo-500/40 hover:bg-gray-700'
+                            }`}
+                            title="Generar correo para alguien que no esté guardado en contactos"
+                        >
+                            <span>➕ {isNewContactMode ? 'Ver Guardados' : 'Alguien no guardado'}</span>
+                        </button>
+
                         {/* Botón Apodo / Formal + Botón Editar Detalles */}
                         <div className="flex items-center gap-1.5 shrink-0">
                             <button
@@ -1713,82 +2050,128 @@ const EmailGenerator: React.FC<EmailGeneratorProps> = ({ attachedImages, onAttac
                         </div>
                     </div>
 
-                    {/* Buscador predictivo + Selector de toda la lista */}
-                    <div className="flex items-center gap-2 flex-grow lg:max-w-md">
-                        {/* Buscador predictivo con sugerencias flotantes */}
-                        <div className="relative flex-grow">
-                            <div className="flex items-center bg-gray-800 border border-gray-700 rounded-xl px-2.5 py-1.5 focus-within:border-purple-500 transition-colors">
-                                <Search size={14} className="text-gray-400 mr-2 shrink-0" />
-                                <input 
+                    {/* Buscador predictivo + Selector de toda la lista O Formulario rápido para Alguien no guardado */}
+                    {isNewContactMode ? (
+                        <div className="flex flex-col sm:flex-row items-stretch sm:items-center gap-2 flex-grow lg:max-w-xl bg-gray-950/90 p-2.5 rounded-xl border border-indigo-500/40">
+                            <div className="flex-1">
+                                <input
                                     type="text"
-                                    value={contactSearchQuery}
-                                    onChange={(e) => setContactSearchQuery(e.target.value)}
-                                    onFocus={() => setIsSearchFocused(true)}
-                                    placeholder="Buscar contacto o correo..."
-                                    className="w-full bg-transparent text-xs text-white font-medium outline-none placeholder-gray-500"
+                                    value={recipientName}
+                                    onChange={(e) => setRecipientName(e.target.value)}
+                                    placeholder="Nombre de la persona (ej. Lic. Mariana Torres)"
+                                    className="w-full bg-gray-900 border border-gray-700 rounded-lg px-2.5 py-1.5 text-xs text-white font-bold outline-none focus:border-indigo-400"
                                 />
-                                {contactSearchQuery && (
-                                    <button 
-                                        type="button"
-                                        onClick={() => setContactSearchQuery('')}
-                                        className="text-gray-400 hover:text-white text-xs px-1 cursor-pointer"
-                                    >
-                                        ✕
-                                    </button>
+                            </div>
+                            <div className="flex-1">
+                                <input
+                                    type="email"
+                                    value={recipientEmailUser}
+                                    onChange={(e) => {
+                                        setRecipientEmailUser(e.target.value);
+                                        setRecipientEmailDomain('');
+                                        setRecipientEmailTld('');
+                                    }}
+                                    placeholder="correo@empresa.com"
+                                    className="w-full bg-gray-900 border border-gray-700 rounded-lg px-2.5 py-1.5 text-xs text-white font-mono outline-none focus:border-indigo-400"
+                                />
+                            </div>
+                            <div className="shrink-0 flex items-center gap-1">
+                                <button
+                                    type="button"
+                                    onClick={() => handleSaveNewContact(false)}
+                                    disabled={isSavingContact || !recipientName.trim()}
+                                    className="px-2.5 py-1.5 bg-indigo-600 hover:bg-indigo-500 text-white text-[11px] font-black rounded-lg transition-colors cursor-pointer disabled:opacity-50"
+                                    title="Guardar ahora en Base de Datos"
+                                >
+                                    {isSavingContact ? 'Guardando...' : '💾 Guardar BD'}
+                                </button>
+                                <button
+                                    type="button"
+                                    onClick={() => setIsNewContactMode(false)}
+                                    className="px-2 py-1.5 bg-gray-800 hover:bg-gray-700 text-gray-300 text-[11px] font-bold rounded-lg transition-colors cursor-pointer"
+                                    title="Volver a contactos guardados"
+                                >
+                                    ✕
+                                </button>
+                            </div>
+                        </div>
+                    ) : (
+                        <div className="flex items-center gap-2 flex-grow lg:max-w-md">
+                            {/* Buscador predictivo con sugerencias flotantes */}
+                            <div className="relative flex-grow">
+                                <div className="flex items-center bg-gray-800 border border-gray-700 rounded-xl px-2.5 py-1.5 focus-within:border-purple-500 transition-colors">
+                                    <Search size={14} className="text-gray-400 mr-2 shrink-0" />
+                                    <input 
+                                        type="text"
+                                        value={contactSearchQuery}
+                                        onChange={(e) => setContactSearchQuery(e.target.value)}
+                                        onFocus={() => setIsSearchFocused(true)}
+                                        placeholder="Buscar contacto o correo..."
+                                        className="w-full bg-transparent text-xs text-white font-medium outline-none placeholder-gray-500"
+                                    />
+                                    {contactSearchQuery && (
+                                        <button 
+                                            type="button"
+                                            onClick={() => setContactSearchQuery('')}
+                                            className="text-gray-400 hover:text-white text-xs px-1 cursor-pointer"
+                                        >
+                                            ✕
+                                        </button>
+                                    )}
+                                </div>
+
+                                {/* Dropdown predictivo flotante */}
+                                {isSearchFocused && filteredSearchContacts.length > 0 && (
+                                    <div className="absolute top-full left-0 right-0 mt-1 bg-gray-900 border border-purple-500/40 rounded-xl shadow-2xl z-50 overflow-hidden divide-y divide-gray-800 max-h-56 overflow-y-auto">
+                                        {filteredSearchContacts.map((c) => {
+                                            const cName = String(getDBValue(c, ['cliente', 'nombre']) || '');
+                                            const cEmail = String(getDBValue(c, 'correo') || '');
+                                            const cTitle = String(getDBValue(c, ['lic', 'titulo']) || '');
+                                            const originalIndex = sortedContacts.findIndex(x => x === c);
+                                            const isFav = favorites.some(f => f.trim() === cName.trim());
+
+                                            return (
+                                                <div 
+                                                    key={c.id || cName}
+                                                    onClick={() => selectContactByIndex(originalIndex, sortedContacts)}
+                                                    className="p-2.5 hover:bg-purple-600/20 cursor-pointer flex items-center justify-between transition-colors"
+                                                >
+                                                    <div className="truncate">
+                                                        <div className="flex items-center gap-1.5">
+                                                            {cTitle && <span className="text-[10px] font-bold text-purple-400">{cTitle}</span>}
+                                                            <span className="text-xs font-bold text-white">{cName}</span>
+                                                        </div>
+                                                        <span className="text-[10px] text-gray-400 truncate block">{cEmail}</span>
+                                                    </div>
+                                                    {isFav && <Star size={12} className="text-yellow-400 shrink-0" fill="currentColor" />}
+                                                </div>
+                                            );
+                                        })}
+                                    </div>
                                 )}
                             </div>
 
-                            {/* Dropdown predictivo flotante */}
-                            {isSearchFocused && filteredSearchContacts.length > 0 && (
-                                <div className="absolute top-full left-0 right-0 mt-1 bg-gray-900 border border-purple-500/40 rounded-xl shadow-2xl z-50 overflow-hidden divide-y divide-gray-800 max-h-56 overflow-y-auto">
-                                    {filteredSearchContacts.map((c) => {
-                                        const cName = String(getDBValue(c, ['cliente', 'nombre']) || '');
-                                        const cEmail = String(getDBValue(c, 'correo') || '');
-                                        const cTitle = String(getDBValue(c, ['lic', 'titulo']) || '');
-                                        const originalIndex = sortedContacts.findIndex(x => x === c);
-                                        const isFav = favorites.some(f => f.trim() === cName.trim());
-
-                                        return (
-                                            <div 
-                                                key={c.id || cName}
-                                                onClick={() => selectContactByIndex(originalIndex, sortedContacts)}
-                                                className="p-2.5 hover:bg-purple-600/20 cursor-pointer flex items-center justify-between transition-colors"
-                                            >
-                                                <div className="truncate">
-                                                    <div className="flex items-center gap-1.5">
-                                                        {cTitle && <span className="text-[10px] font-bold text-purple-400">{cTitle}</span>}
-                                                        <span className="text-xs font-bold text-white">{cName}</span>
-                                                    </div>
-                                                    <span className="text-[10px] text-gray-400 truncate block">{cEmail}</span>
-                                                </div>
-                                                {isFav && <Star size={12} className="text-yellow-400 shrink-0" fill="currentColor" />}
-                                            </div>
-                                        );
-                                    })}
+                            {/* Selector desplegable de lista completa */}
+                            <div className="relative min-w-[160px] hidden sm:block">
+                                <select 
+                                    value={selectedContactIndex} 
+                                    onChange={handleContactSelect} 
+                                    className="w-full p-2 bg-gray-800 border border-gray-700 rounded-xl text-xs text-white font-bold appearance-none pr-7 outline-none focus:border-purple-500/50 cursor-pointer truncate"
+                                >
+                                    <option value="">Lista ({sortedContacts.length})...</option>
+                                    {sortedContacts.map((c, i) => (
+                                        <option key={i} value={i}>
+                                            {favorites.some(f => f.trim() === String(getDBValue(c, 'cliente') || '').trim()) ? '★ ' : ''}
+                                            {getDBValue(c, 'cliente')}
+                                        </option>
+                                    ))}
+                                </select>
+                                <div className="absolute right-2.5 top-1/2 -translate-y-1/2 pointer-events-none text-gray-400 text-xs">
+                                    ▼
                                 </div>
-                            )}
-                        </div>
-
-                        {/* Selector desplegable de lista completa */}
-                        <div className="relative min-w-[160px] hidden sm:block">
-                            <select 
-                                value={selectedContactIndex} 
-                                onChange={handleContactSelect} 
-                                className="w-full p-2 bg-gray-800 border border-gray-700 rounded-xl text-xs text-white font-bold appearance-none pr-7 outline-none focus:border-purple-500/50 cursor-pointer truncate"
-                            >
-                                <option value="">Lista ({sortedContacts.length})...</option>
-                                {sortedContacts.map((c, i) => (
-                                    <option key={i} value={i}>
-                                        {favorites.some(f => f.trim() === String(getDBValue(c, 'cliente') || '').trim()) ? '★ ' : ''}
-                                        {getDBValue(c, 'cliente')}
-                                    </option>
-                                ))}
-                            </select>
-                            <div className="absolute right-2.5 top-1/2 -translate-y-1/2 pointer-events-none text-gray-400 text-xs">
-                                ▼
                             </div>
                         </div>
-                    </div>
+                    )}
                 </div>
 
                 {/* Accesos Rápidos de Contactos Frecuentes (1 Clic) + Saludo Activo */}
@@ -1903,7 +2286,7 @@ const EmailGenerator: React.FC<EmailGeneratorProps> = ({ attachedImages, onAttac
                                 <div className="sm:col-span-2">
                                     <button 
                                         type="button"
-                                        onClick={handleSaveNewContact} 
+                                        onClick={() => handleSaveNewContact(false)} 
                                         disabled={isSavingContact} 
                                         className="w-full h-[34px] bg-purple-600 hover:bg-purple-500 text-white rounded-lg text-xs font-black uppercase flex items-center justify-center gap-1.5 transition-all cursor-pointer shadow-md disabled:opacity-50"
                                     >
