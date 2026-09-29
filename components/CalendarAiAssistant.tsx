@@ -237,12 +237,20 @@ Contexto actual:
     ${config.memoria_ia?.perfil ? `* Perfil: ${config.memoria_ia.perfil}` : ''}
     ${config.memoria_ia?.laboral ? `* Laboral: ${config.memoria_ia.laboral}` : ''}
     ${config.memoria_ia?.personal ? `* Personal: ${config.memoria_ia.personal}` : ''}
-- Eventos: ${JSON.stringify(events)}
+- Eventos: ${JSON.stringify((events || []).slice(-50).map(e => ({ title: e.title, date: e.date, time: e.time, type: e.type })))}
 - Pendientes de Trabajo: ${JSON.stringify(workPending)}
 `;
 
       // Prepare sanitized history for Gemini (must start with 'user' and alternate roles)
-      const validMessages = messages.filter(m => m.content && !m.content.startsWith('Hubo un error') && !m.content.startsWith('⚠️'));
+      const validMessages = messages.filter(m => 
+        m.content && 
+        !m.content.startsWith('Hubo un error') && 
+        !m.content.startsWith('⚠️') &&
+        !m.content.toLowerCase().includes('excedido la cuota') &&
+        !m.content.toLowerCase().includes('límite de cuota') &&
+        !m.content.toLowerCase().includes('error al conectar') &&
+        !m.content.toLowerCase().includes('hubo un detalle')
+      );
       
       const contents: any[] = [];
       for (const m of validMessages) {
