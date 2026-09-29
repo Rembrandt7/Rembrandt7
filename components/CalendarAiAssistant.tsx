@@ -15,7 +15,8 @@ import {
   AlertTriangle,
   CheckCircle2,
   User,
-  X
+  X,
+  RotateCcw
 } from 'lucide-react';
 import { motion, AnimatePresence } from 'motion/react';
 
@@ -674,6 +675,17 @@ Contexto actual:
               VOZ
             </button>
           </div>
+
+          <button
+            onClick={() => {
+              setMessages([]);
+              performAiRequest("Hola. Por favor analiza mi calendario, pendientes de trabajo, pagos y el clima. Dame un resumen estratégico de mis prioridades para hoy.", true);
+            }}
+            className="p-2 bg-gray-800 hover:bg-gray-700 text-gray-400 hover:text-purple-400 rounded-lg transition-all border border-gray-700"
+            title="Reiniciar conversación y actualizar análisis"
+          >
+            <RotateCcw size={15} />
+          </button>
 
           {onClose && (
             <button 
