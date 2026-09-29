@@ -10,7 +10,7 @@ dotenv.config();
 
 async function startServer() {
   const app = express();
-  const PORT = 3005;
+  const PORT = process.env.PORT ? parseInt(process.env.PORT, 10) : 3000;
 
   app.use(express.json({ limit: '10mb' }));
   app.use(express.urlencoded({ limit: '10mb', extended: true }));

@@ -2,6 +2,7 @@ import React, { useState, useEffect, useRef } from 'react';
 import { GoogleGenAI, LiveServerMessage, Modality } from '@google/genai';
 import { Mic, MicOff, Loader2 } from 'lucide-react';
 import { useLinks } from '../contexts/LinkContext';
+import { getGeminiClient, getResolvedApiKey } from '../services/geminiService';
 
 interface LiveAssistantProps {
   onClose?: () => void;
@@ -22,18 +23,15 @@ const LiveAssistant: React.FC<LiveAssistantProps> = ({ onClose }) => {
   const startLive = async () => {
     setIsConnecting(true);
     try {
-      const apiKey = googleApiConfig?.apiKey || process.env.GEMINI_API_KEY || '';
-      const ai = new GoogleGenAI({ 
-        apiKey: googleApiConfig?.apiKey || process.env.GEMINI_API_KEY || '',
-        baseUrl: `${window.location.origin}/api/proxy/google`
-      });
+      const apiKey = googleApiConfig?.apiKey || getResolvedApiKey();
+      const ai = getGeminiClient(apiKey);
       
       const AudioContextClass = window.AudioContext || (window as any).webkitAudioContext;
       audioOutputContextRef.current = new AudioContextClass({ sampleRate: 24000 });
       nextPlayTimeRef.current = audioOutputContextRef.current.currentTime;
 
       const sessionPromise = ai.live.connect({
-        model: "gemini-3.1-flash-preview-native-audio-preview-12-2025",
+        model: "gemini-2.5-flash",
         callbacks: {
           onopen: async () => {
             setIsConnected(true);

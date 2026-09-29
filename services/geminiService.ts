@@ -6,9 +6,9 @@ import { getFriendlyAiErrorMessage, isQuotaError, isUnavailableError } from '../
  */
 export const GEMINI_MODELS = {
   PRIMARY: 'gemini-2.5-flash',
-  FALLBACK: 'gemini-1.5-flash',
+  FALLBACK: 'gemini-2.5-flash-lite',
   PRO: 'gemini-2.5-pro',
-  FLASH_LITE: 'gemini-2.0-flash-lite',
+  FLASH_LITE: 'gemini-2.5-flash-lite',
 } as const;
 
 export type GeminiModelName = string;
@@ -23,24 +23,23 @@ export function getResolvedApiKey(customApiKey?: string): string {
     return customApiKey.trim();
   }
 
-  // Check localStorage for GoogleApiConfig
-  try {
-    const storedConfig = localStorage.getItem('google_api_config');
-    if (storedConfig) {
-      const parsed = JSON.parse(storedConfig);
-      if (parsed?.apiKey && parsed.apiKey.trim()) {
-        return parsed.apiKey.trim();
+  // Check localStorage for GoogleApiConfig (support both camelCase and snake_case keys)
+  if (typeof window !== 'undefined' && window.localStorage) {
+    try {
+      const storedConfig = localStorage.getItem('googleApiConfig') || localStorage.getItem('google_api_config');
+      if (storedConfig) {
+        const parsed = JSON.parse(storedConfig);
+        if (parsed?.apiKey && parsed.apiKey.trim()) {
+          return parsed.apiKey.trim();
+        }
       }
+    } catch (e) {
+      // Ignore localStorage parse errors
     }
-  } catch (e) {
-    // Ignore localStorage parse errors
   }
 
-  // Fallback to process.env
-  const envKey = (typeof process !== 'undefined' && process.env) 
-    ? (process.env.GEMINI_API_KEY || process.env.API_KEY || (process.env as any).VITE_GEMINI_API_KEY)
-    : '';
-
+  // Fallback to process.env (Vite replaces these exact tokens at build/dev time)
+  const envKey = process.env.GEMINI_API_KEY || process.env.API_KEY || '';
   return (envKey || '').trim();
 }
 
@@ -60,9 +59,9 @@ export function getGeminiClient(customApiKey?: string): GoogleGenAI {
     return cachedClient.client;
   }
 
+  // Connect directly from browser to Google Generative Language API
   const client = new GoogleGenAI({
     apiKey,
-    baseUrl: `${window.location.origin}/api/proxy/google`,
   });
 
   cachedClient = { apiKey, client };

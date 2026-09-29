@@ -1,7 +1,7 @@
 
 import React, { useState, useRef, useEffect } from 'react';
 import { Type, GenerateContentResponse } from "@google/genai";
-import { generateContentWithFallback, getGeminiClient, GEMINI_MODELS } from '../services/geminiService';
+import { generateContentWithFallback, getGeminiClient, GEMINI_MODELS, getResolvedApiKey } from '../services/geminiService';
 import { useLinks } from '../contexts/LinkContext';
 import { CalendarEvent, Note } from '../types';
 import { loadADN } from '../services/memoriaService';
@@ -38,6 +38,7 @@ const CalendarAiAssistant: React.FC<CalendarAiAssistantProps> = ({ onClose }) =>
   const userRoutine = config.userRoutine || 'No definida aún.';
   const workPending = config.workPending || [];
   const memoria_ia = config.memoria_ia || '';
+  const effectiveApiKey = googleApiConfig?.apiKey || getResolvedApiKey();
 
   useEffect(() => {
     const fetchADN = async () => {
@@ -49,7 +50,7 @@ const CalendarAiAssistant: React.FC<CalendarAiAssistantProps> = ({ onClose }) =>
 
   // Proactive strategic greeting
   useEffect(() => {
-    if (messages.length === 0 && googleApiConfig?.apiKey) {
+    if (messages.length === 0 && effectiveApiKey) {
       const triggerInitialAnalysis = async () => {
         // We don't want to show the internal prompt to the user
         const internalPrompt = "Hola. Por favor analiza mi calendario, pendientes de trabajo, pagos y el clima. Dame un resumen estratégico de mis prioridades para hoy. Si no hay nada urgente, dame el clima detallado y un consejo de estudio basado en mis intereses.";
@@ -68,7 +69,7 @@ const CalendarAiAssistant: React.FC<CalendarAiAssistantProps> = ({ onClose }) =>
       const timer = setTimeout(triggerInitialAnalysis, 1000);
       return () => clearTimeout(timer);
     }
-  }, [googleApiConfig]);
+  }, [effectiveApiKey]);
 
   useEffect(() => {
     if (scrollRef.current) {
@@ -84,7 +85,14 @@ const CalendarAiAssistant: React.FC<CalendarAiAssistantProps> = ({ onClose }) =>
     setIsLoading(true);
 
     try {
-      const apiKey = googleApiConfig?.apiKey;
+      const apiKey = effectiveApiKey;
+      if (!apiKey) {
+        setMessages(prev => [...prev, { 
+          role: 'model', 
+          content: '⚠️ No se ha detectado una API Key de Gemini configurada. Por favor ve al panel de configuración de Google APIs o asegúrate de que esté configurada en Ajustes.' 
+        }]);
+        return;
+      }
       const ai = getGeminiClient(apiKey);
       
       const weatherData = localStorage.getItem('weatherData');
@@ -161,12 +169,31 @@ Contexto actual:
 - Pendientes de Trabajo: ${JSON.stringify(workPending)}
 `;
 
+      // Prepare sanitized history for Gemini (must start with 'user' and alternate roles)
+      const validMessages = messages.filter(m => m.content && !m.content.startsWith('Hubo un error') && !m.content.startsWith('⚠️'));
+      
+      const contents: any[] = [];
+      for (const m of validMessages) {
+        if (contents.length === 0 && m.role === 'model') {
+          contents.push({ role: 'user', parts: [{ text: 'Hola Estratega' }] });
+        }
+        const lastTurn = contents[contents.length - 1];
+        if (lastTurn && lastTurn.role === m.role) {
+          lastTurn.parts.push({ text: m.content });
+        } else {
+          contents.push({ role: m.role, parts: [{ text: m.content }] });
+        }
+      }
+      
+      if (contents.length > 0 && contents[contents.length - 1].role === 'user') {
+        contents[contents.length - 1].parts.push({ text: userMessage });
+      } else {
+        contents.push({ role: 'user', parts: [{ text: userMessage }] });
+      }
+
       const response = await generateContentWithFallback({
         model: GEMINI_MODELS.PRIMARY,
-        contents: [
-          ...messages.map(m => ({ role: m.role, parts: [{ text: m.content }] })),
-          { role: 'user', parts: [{ text: userMessage }] }
-        ],
+        contents,
         config: {
           systemInstruction,
           tools: [{
@@ -325,9 +352,10 @@ Contexto actual:
       const functionCalls = response.functionCalls;
       let imageResult: { data: string; mimeType: string } | null = null;
       
-      if (functionCalls) {
+      if (functionCalls && functionCalls.length > 0) {
         let newConfig = { ...config };
         let updated = false;
+        const executedDescriptions: string[] = [];
 
         for (const call of functionCalls) {
           if (call.name === 'add_event') {
@@ -352,28 +380,34 @@ Contexto actual:
               color: args.type === 'birthday' ? '#f59e0b' : args.type === 'medical' ? '#ef4444' : args.type === 'payment' ? '#10b981' : args.type === 'trabajo' ? '#eab308' : '#3b82f6'
             };
             newConfig.calendarEvents = [...(newConfig.calendarEvents || []), newEv];
+            executedDescriptions.push(`📅 Evento añadido: "${args.title}" el ${args.date}${args.time ? ' a las ' + args.time : ''}.`);
             updated = true;
           } else if (call.name === 'update_event') {
             const args = call.args as any;
             newConfig.calendarEvents = (newConfig.calendarEvents || []).map(e => 
               e.id === args.id ? { ...e, ...args } : e
             );
+            executedDescriptions.push(`✏️ Evento actualizado.`);
             updated = true;
           } else if (call.name === 'delete_event') {
             const args = call.args as any;
             newConfig.calendarEvents = (newConfig.calendarEvents || []).filter(e => e.id !== args.id);
+            executedDescriptions.push(`🗑️ Evento eliminado.`);
             updated = true;
           } else if (call.name === 'update_routine') {
             const args = call.args as any;
             newConfig.userRoutine = args.routine;
+            executedDescriptions.push(`⏰ Rutina actualizada.`);
             updated = true;
           } else if (call.name === 'add_pending') {
             const args = call.args as any;
             newConfig.workPending = [...(newConfig.workPending || []), args.task];
+            executedDescriptions.push(`📌 Pendiente agregado: "${args.task}".`);
             updated = true;
           } else if (call.name === 'delete_pending') {
             const args = call.args as any;
             newConfig.workPending = (newConfig.workPending || []).filter((_: any, i: number) => i !== args.index);
+            executedDescriptions.push(`✅ Pendiente completado/eliminado.`);
             updated = true;
           } else if (call.name === 'add_note') {
             const args = call.args as any;
@@ -392,11 +426,13 @@ Contexto actual:
             };
 
             newConfig.notes = [...(newConfig.notes || []), newNote];
+            executedDescriptions.push(`📝 Nota agregada: "${args.content}".`);
             updated = true;
           } else if (call.name === 'delete_note') {
             const args = call.args as any;
             if (Array.isArray(newConfig.notes)) {
               newConfig.notes = newConfig.notes.filter(n => n.id !== args.id);
+              executedDescriptions.push(`🗑️ Nota eliminada.`);
               updated = true;
             }
           } else if (call.name === 'add_study_topic') {
@@ -409,20 +445,33 @@ Contexto actual:
               avance: args.avance || 0
             };
             newConfig.estudios = [...(newConfig.estudios || []), newEstudio];
+            executedDescriptions.push(`📚 Tema de estudio agregado: "${args.nombre}".`);
             updated = true;
           } else if (call.name === 'update_ai_memory') {
             const args = call.args as any;
-            newConfig.memoria_ia = args.memory;
+            if (typeof newConfig.memoria_ia === 'object' && newConfig.memoria_ia !== null) {
+              newConfig.memoria_ia = {
+                ...newConfig.memoria_ia,
+                personal: (newConfig.memoria_ia.personal ? newConfig.memoria_ia.personal + '\n' : '') + args.memory
+              };
+            } else {
+              newConfig.memoria_ia = { perfil: '', estilo: '', laboral: '', personal: args.memory };
+            }
+            executedDescriptions.push(`🧠 Memoria IA actualizada.`);
             updated = true;
           } else if (call.name === 'generate_image') {
             const args = call.args as any;
-            const imgResponse = await ai.models.generateContent({
-              model: 'gemini-3.1-flash-preview-image',
-              contents: { parts: [{ text: args.prompt }] },
-            });
-            const part = imgResponse.candidates?.[0]?.content?.parts?.find(p => p.inlineData);
-            if (part?.inlineData) {
-              imageResult = { data: part.inlineData.data, mimeType: part.inlineData.mimeType };
+            try {
+              const imgResponse = await ai.models.generateContent({
+                model: 'gemini-2.5-flash-image',
+                contents: { parts: [{ text: args.prompt }] },
+              });
+              const part = imgResponse.candidates?.[0]?.content?.parts?.find(p => p.inlineData);
+              if (part?.inlineData) {
+                imageResult = { data: part.inlineData.data, mimeType: part.inlineData.mimeType };
+              }
+            } catch (imgErr) {
+              console.warn("Error generando imagen con Gemini:", imgErr);
             }
           }
         }
@@ -432,21 +481,38 @@ Contexto actual:
           await saveToSupabase();
         }
 
-        // After function call, we need to get a text response from the model
-        const followUp = await ai.models.generateContent({
-          model: "gemini-3.1-flash-preview",
-          contents: [
-            ...messages.map(m => ({ role: m.role, parts: [{ text: m.content }] })),
-            { role: 'user', parts: [{ text: userMessage }] },
-            { role: 'model', parts: response.candidates[0].content.parts },
-            { role: 'user', parts: [{ text: "Acción realizada con éxito. Por favor resume lo que hiciste y dame tu análisis estratégico." }] }
-          ],
-          config: { systemInstruction }
-        });
-        
+        // Generate follow up response explaining what was done and providing strategic analysis
+        let followUpText = '';
+        try {
+          const functionResponses = functionCalls.map(call => ({
+            functionResponse: {
+              name: call.name,
+              response: { result: "success", executed: true }
+            }
+          }));
+
+          const followUp = await generateContentWithFallback({
+            model: GEMINI_MODELS.PRIMARY,
+            contents: [
+              ...contents,
+              { role: 'model', parts: response.candidates?.[0]?.content?.parts || [] },
+              { role: 'user', parts: functionResponses }
+            ],
+            config: { systemInstruction }
+          }, { apiKey });
+
+          followUpText = followUp.text || '';
+        } catch (followUpErr) {
+          console.warn("Follow-up generation notice, using structured fallback:", followUpErr);
+        }
+
+        const fallbackSummary = executedDescriptions.length > 0 
+          ? `Listo Rembrandt. He realizado las siguientes acciones:\n\n${executedDescriptions.join('\n')}\n\n¿Deseas que analicemos o agendemos algo más?` 
+          : 'He procesado tu solicitud exitosamente.';
+
         setMessages(prev => [...prev, { 
           role: 'model', 
-          content: followUp.text || 'He procesado tu solicitud.',
+          content: followUpText || fallbackSummary,
           imageBase64: imageResult?.data,
           mimeType: imageResult?.mimeType
         }]);
@@ -455,9 +521,10 @@ Contexto actual:
       }
     } catch (error: any) {
       console.error('AI Error:', error);
-      const errorMessage = error.status === 429 
-        ? 'Lo siento Rembrandt, he excedido mi cuota de análisis por ahora. Por favor, intenta de nuevo en unos momentos.'
-        : 'Hubo un error al conectar con el Estratega. Por favor intenta de nuevo.';
+      const isQuota = error?.status === 429 || error?.message?.includes('429') || error?.message?.includes('quota') || error?.message?.includes('RESOURCE_EXHAUSTED');
+      const errorMessage = isQuota 
+        ? 'Lo siento Rembrandt, he excedido la cuota de análisis de Gemini por ahora. Por favor, intenta de nuevo en unos momentos.'
+        : `Hubo un error al conectar con el Estratega (${error?.message || 'Error de conexión'}). Por favor intenta de nuevo.`;
       setMessages(prev => [...prev, { role: 'model', content: errorMessage }]);
     } finally {
       setIsLoading(false);

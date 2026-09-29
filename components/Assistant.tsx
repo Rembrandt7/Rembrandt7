@@ -1,6 +1,7 @@
 
 import React, { useState, useRef, useEffect } from 'react';
 import { GoogleGenAI, Modality, Type, FunctionDeclaration } from '@google/genai';
+import { getGeminiClient, GEMINI_MODELS } from '../services/geminiService';
 import { Message } from '../types';
 import Spinner from './common/Spinner';
 import IconButton from './common/IconButton';
@@ -43,10 +44,7 @@ const Assistant: React.FC<AssistantProps> = ({ messages, setMessages, onAttachIm
             throw new Error("No se ha configurado la API Key de Gemini. Configúrala en los ajustes.");
         }
 
-        const ai = new GoogleGenAI({ 
-            apiKey,
-            baseUrl: `${window.location.origin}/api/proxy/google`
-        });
+        const ai = getGeminiClient(apiKey);
 
         const imageRequestKeywords = [
             // Spanish
@@ -61,7 +59,7 @@ const Assistant: React.FC<AssistantProps> = ({ messages, setMessages, onAttachIm
 
         if (isImageRequest) {
             const response = await ai.models.generateContent({
-                model: 'gemini-3.1-flash-preview-image',
+                model: 'gemini-2.5-flash-image',
                 contents: { parts: [{ text: input }] },
                 config: { responseModalities: [Modality.IMAGE] },
             });
@@ -173,7 +171,7 @@ Puedes usar las herramientas proporcionadas para añadir notas, eventos al calen
             ];
 
             const response = await ai.models.generateContent({
-                model: 'gemini-3.1-flash-preview',
+                model: GEMINI_MODELS.PRIMARY,
                 contents: contents as any,
                 config: {
                     systemInstruction,

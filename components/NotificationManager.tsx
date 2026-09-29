@@ -1,7 +1,7 @@
 
 import React, { useEffect, useRef } from 'react';
 import { useLinks } from '../contexts/LinkContext';
-import { GoogleGenAI } from '@google/genai';
+import { getGeminiClient, GEMINI_MODELS } from '../services/geminiService';
 import { AppNotification } from '../types';
 import { toast } from 'sonner';
 
@@ -60,11 +60,8 @@ const NotificationManager: React.FC = () => {
 
     const generateNotification = async (slotLabel: string) => {
       try {
-        const ai = new GoogleGenAI({ 
-            apiKey: googleApiConfig?.apiKey || process.env.API_KEY || process.env.GEMINI_API_KEY || '',
-            baseUrl: `${window.location.origin}/api/proxy/google`
-        });
-        const model = "gemini-3.1-flash-preview";
+        const ai = getGeminiClient(googleApiConfig?.apiKey);
+        const model = GEMINI_MODELS.PRIMARY;
         
         let context = "";
         if (slotLabel === 'Mañana') {
