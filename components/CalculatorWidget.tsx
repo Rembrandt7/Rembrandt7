@@ -1,5 +1,5 @@
 import React, { useState, useEffect, useRef } from 'react';
-import { Calculator, X, Delete, Box, Copy, MessageSquare, RefreshCw, Zap, ShoppingBag } from 'lucide-react';
+import { Calculator, X, Delete, Box, Copy, MessageSquare, RefreshCw, Zap, ShoppingBag, Sparkles, Check } from 'lucide-react';
 import { toast } from 'sonner';
 import { supabase } from '../services/supabaseClient';
 
@@ -9,9 +9,8 @@ interface HistoryItem {
 }
 
 const MATERIAL_POWER: Record<string, number> = {
-  PLA: 125,
-  PETG: 155,
-  Especial: 200,
+  'Común': 155, // PLA / PETG: 155W por defecto (considerando el más alto)
+  'Especial': 200, // TPU / ABS / Otros: 200W
 };
 
 const CalculatorWidget: React.FC = () => {
@@ -32,13 +31,14 @@ const CalculatorWidget: React.FC = () => {
   const historyEndRef = useRef<HTMLDivElement>(null);
 
   // 3D Calculator State (Minimal and Fast)
-  const [material, setMaterial] = useState<'PLA' | 'PETG' | 'Especial'>('PLA');
-  const [filamentPrice, setFilamentPrice] = useState(400); // Precio estándar por defecto
+  const [material, setMaterial] = useState<'Común' | 'Especial'>('Común');
+  const [filamentPrice, setFilamentPrice] = useState(400); // Precio estándar por defecto ($400)
   const [weightUsed, setWeightUsed] = useState(100); // Gramos
   const [printHours, setPrintHours] = useState(5);
   const [printMinutes, setPrintMinutes] = useState(0);
   const [laborCostManual, setLaborCostManual] = useState(0);
   const [markup, setMarkup] = useState(30);
+  const [selectedPriceTier, setSelectedPriceTier] = useState<'amigo' | 'comercial' | 'sugerida'>('comercial');
   const [pieceName, setPieceName] = useState('');
   const [isSavingOrder, setIsSavingOrder] = useState(false);
 
@@ -281,13 +281,32 @@ const CalculatorWidget: React.FC = () => {
   // --- 3D Calculator Calculations ---
   const totalHours = printHours + (printMinutes / 60);
   const filamentCost = (filamentPrice / 1000) * weightUsed;
-  const power = MATERIAL_POWER[material] || 125;
+  const power = MATERIAL_POWER[material] || 155;
   const energyCost = (power / 1000) * totalHours * 2.5; // 2.5 MXN/kWh
   const maintenanceCost = totalHours * 5; // 5 MXN/hr
   const baseCost = filamentCost + energyCost + maintenanceCost + laborCostManual;
+
+  // 1. Precio Amigo (+15%)
   const friendPrice = baseCost * 1.15;
+
+  // 2. Precio Comercial (según margen seleccionado, ej: 30%)
   const commercialPrice = baseCost * (1 + markup / 100);
   const profit = commercialPrice - baseCost;
+
+  // 3. Tarifa Sugerida (Reglas de Mercado):
+  // - Merma de filamento y purga (8% extra de material)
+  const filamentoSugerido = (filamentPrice / 1000) * (weightUsed * 1.08);
+  let costoSugeridoBase = filamentoSugerido + energyCost + maintenanceCost + laborCostManual;
+  // - Tasa de riesgo en impresiones largas (>= 8 horas: +10% sobre costo)
+  if (totalHours >= 8) {
+    costoSugeridoBase *= 1.10;
+  }
+  // - Tarifa fija de setup / preparación de cama y archivo ($20 MXN)
+  const setupFee = 20;
+  // - Margen profesional del 45% + Setup fee
+  const sugeridoCalculado = (costoSugeridoBase * 1.45) + setupFee;
+  // - Piso mínimo de arranque ($45 MXN para evitar trabajos no rentables)
+  const tarifaSugerida = Math.max(sugeridoCalculado, 45);
 
   const formatCurrency = (val: number) => 
     new Intl.NumberFormat('es-MX', { style: 'currency', currency: 'MXN' }).format(val);
@@ -297,20 +316,40 @@ const CalculatorWidget: React.FC = () => {
     toast.success(`Precio (${type}) copiado: ${formatCurrency(value)}`);
   };
 
-  const copyQuoteForWhatsApp = (type: 'comercial' | 'amigo' = 'comercial') => {
-    const isFriend = type === 'amigo';
-    const price = isFriend ? friendPrice : commercialPrice;
+  const copyQuoteForWhatsApp = (type: 'comercial' | 'amigo' | 'sugerida' = 'comercial') => {
+    let price = commercialPrice;
+    let label = 'Total';
+    let header = '🖨️ *Cotización de Impresión 3D*';
+    
+    if (type === 'amigo') {
+      price = friendPrice;
+      label = 'Precio Amigo';
+      header = '👋 *Cotización Especial Amigo (Impresión 3D)*';
+    } else if (type === 'sugerida') {
+      price = tarifaSugerida;
+      label = 'Tarifa Sugerida';
+      header = '⭐ *Cotización Profesional (Impresión 3D)*';
+    }
+
     const timeFormatted = `${printHours > 0 ? `${printHours}h ` : ''}${printMinutes > 0 ? `${printMinutes}m` : (printHours === 0 ? '0m' : '')}`;
-    const header = isFriend ? '👋 *Cotización Especial Amigo (Impresión 3D)*' : '🖨️ *Cotización de Impresión 3D*';
+    const matLabel = material === 'Común' ? 'PLA / PETG Estándar' : 'Material Especial';
+    
     const quoteText = `${header}\n\n` +
       `🧩 *Pieza:* ${pieceName.trim() || 'Modelo 3D'}\n` +
-      `🧵 *Material:* ${material}\n` +
+      `🧵 *Material:* ${matLabel}\n` +
       `⚖️ *Peso:* ${weightUsed}g\n` +
       `⏱️ *Tiempo:* ${timeFormatted || 'N/A'}\n` +
-      `💵 *${isFriend ? 'Precio Amigo' : 'Total'}:* ${formatCurrency(price)}\n\n` +
+      `💵 *${label}:* ${formatCurrency(price)}\n\n` +
       `_¿Deseas proceder con la impresión?_ 👍`;
+      
     navigator.clipboard.writeText(quoteText);
-    toast.success(`¡Cotización ${isFriend ? 'Amigo' : 'Comercial'} para WhatsApp copiada!`);
+    toast.success(`¡Cotización (${type === 'amigo' ? 'Amigo' : type === 'sugerida' ? 'Sugerida' : 'Comercial'}) para WhatsApp copiada!`);
+  };
+
+  const getFinalOrderPrice = () => {
+    if (selectedPriceTier === 'amigo') return friendPrice;
+    if (selectedPriceTier === 'sugerida') return tarifaSugerida;
+    return commercialPrice;
   };
 
   const handleAddOrder = async () => {
@@ -319,6 +358,8 @@ const CalculatorWidget: React.FC = () => {
       toast.error('Por favor escribe el nombre de la pieza antes de agregar el pedido');
       return;
     }
+
+    const orderFinalPrice = getFinalOrderPrice();
 
     setIsSavingOrder(true);
     try {
@@ -339,7 +380,7 @@ const CalculatorWidget: React.FC = () => {
         id: Date.now().toString(),
         name: finalName,
         cost: Number(baseCost.toFixed(2)),
-        price: Number(commercialPrice.toFixed(2)),
+        price: Number(orderFinalPrice.toFixed(2)),
         advance: 0,
         paid: false, // Pedido pendiente de pago / autorizado
         date: new Date().toISOString().split('T')[0]
@@ -366,7 +407,7 @@ const CalculatorWidget: React.FC = () => {
         const newQueueItem = {
           id: Date.now().toString(),
           name: finalName,
-          material: material,
+          material: material === 'Común' ? 'PETG/PLA' : 'Especial',
           time: `${printHours}h ${printMinutes.toString().padStart(2, '0')}m`,
           cost: Number(baseCost.toFixed(2))
         };
@@ -383,7 +424,7 @@ const CalculatorWidget: React.FC = () => {
         console.warn('Queue sync error', err);
       }
 
-      toast.success(`¡Pedido "${finalName}" registrado en la lista de pedidos e impresión!`);
+      toast.success(`¡Pedido "${finalName}" registrado con éxito por ${formatCurrency(orderFinalPrice)}!`);
       setPieceName('');
     } catch (err) {
       console.error(err);
@@ -394,13 +435,14 @@ const CalculatorWidget: React.FC = () => {
   };
 
   const reset3DCalculator = () => {
-    setMaterial('PLA');
+    setMaterial('Común');
     setFilamentPrice(400);
     setWeightUsed(100);
     setPrintHours(5);
     setPrintMinutes(0);
     setLaborCostManual(0);
     setMarkup(30);
+    setSelectedPriceTier('comercial');
     setPieceName('');
     toast.info('Calculadora 3D restablecida');
   };
@@ -546,7 +588,7 @@ const CalculatorWidget: React.FC = () => {
           </div>
         </div>
       ) : (
-        /* --- 3D Calculator View: Sencilla y Rápida --- */
+        /* --- 3D Calculator View: Sencilla y Rápida con 3 Tarifas --- */
         <div className="flex-1 overflow-y-auto p-3.5 space-y-3 custom-scrollbar bg-gray-900 text-gray-200">
           
           {/* 1. Presets Rápidos */}
@@ -576,27 +618,37 @@ const CalculatorWidget: React.FC = () => {
             </div>
           </div>
 
-          {/* 2. Material (PLA / PETG estándar, o Especial) */}
+          {/* 2. Material (Común PLA/PETG a 155W por defecto, o Especial a 200W) */}
           <div className="space-y-1">
             <div className="flex justify-between items-center">
               <label className="text-[10px] font-black uppercase tracking-wider text-gray-400">Material</label>
               <span className="text-[9px] text-gray-500">Color indiferente</span>
             </div>
-            <div className="grid grid-cols-3 gap-1 p-0.5 bg-slate-950/70 border border-gray-800 rounded-xl h-[34px] items-center text-xs font-bold">
-              {(['PLA', 'PETG', 'Especial'] as const).map(mat => (
-                <button
-                  key={mat}
-                  type="button"
-                  onClick={() => setMaterial(mat)}
-                  className={`h-[26px] rounded-lg transition-all text-[11px] font-black ${
-                    material === mat
-                      ? 'bg-blue-600 text-white shadow-sm'
-                      : 'text-gray-400 hover:text-white'
-                  }`}
-                >
-                  {mat === 'Especial' ? 'Especial (200W)' : `${mat} (${MATERIAL_POWER[mat]}W)`}
-                </button>
-              ))}
+            <div className="grid grid-cols-2 gap-1.5 p-0.5 bg-slate-950/70 border border-gray-800 rounded-xl h-[34px] items-center text-xs font-bold">
+              <button
+                type="button"
+                onClick={() => setMaterial('Común')}
+                className={`h-[26px] rounded-lg transition-all text-[11px] font-black flex items-center justify-center gap-1.5 ${
+                  material === 'Común'
+                    ? 'bg-blue-600 text-white shadow-sm'
+                    : 'text-gray-400 hover:text-white'
+                }`}
+              >
+                <span>Común (PLA / PETG)</span>
+                <span className="text-[9px] opacity-80 font-normal">155W</span>
+              </button>
+              <button
+                type="button"
+                onClick={() => setMaterial('Especial')}
+                className={`h-[26px] rounded-lg transition-all text-[11px] font-black flex items-center justify-center gap-1.5 ${
+                  material === 'Especial'
+                    ? 'bg-purple-600 text-white shadow-sm'
+                    : 'text-gray-400 hover:text-white'
+                }`}
+              >
+                <span>Especial (TPU / ABS)</span>
+                <span className="text-[9px] opacity-80 font-normal">200W</span>
+              </button>
             </div>
           </div>
 
@@ -686,7 +738,7 @@ const CalculatorWidget: React.FC = () => {
             </div>
           </div>
 
-          {/* 5. Labor extra y Margen */}
+          {/* 5. Labor extra y Margen Comercial */}
           <div className="grid grid-cols-2 gap-2">
             <div className="space-y-1">
               <label className="text-[10px] font-black uppercase tracking-wider text-gray-400">Labor / Extra ($)</label>
@@ -703,7 +755,7 @@ const CalculatorWidget: React.FC = () => {
             </div>
 
             <div className="space-y-1">
-              <label className="text-[10px] font-black uppercase tracking-wider text-gray-400">Margen (%)</label>
+              <label className="text-[10px] font-black uppercase tracking-wider text-gray-400">Margen Com. (%)</label>
               <div className="grid grid-cols-4 gap-1 p-0.5 bg-slate-950/70 border border-gray-800 rounded-xl h-[34px] items-center">
                 {[15, 20, 30, 50].map(m => (
                   <button 
@@ -740,33 +792,49 @@ const CalculatorWidget: React.FC = () => {
               </div>
             )}
             <div className="flex justify-between items-center text-xs pt-0.5">
-              <span className="text-blue-400 font-black uppercase tracking-wider text-[10px]">Costo Producción:</span>
+              <span className="text-blue-400 font-black uppercase tracking-wider text-[10px]">Costo Producción Base:</span>
               <span className="text-blue-300 font-black text-sm">{formatCurrency(baseCost)}</span>
             </div>
           </div>
 
-          {/* 7. Precios Sugeridos con Botones para Compartir WhatsApp */}
+          {/* 7. Las 3 Tarifas: Precio Amigo, Precio Comercial y Tarifa Sugerida */}
           <div className="space-y-2 pt-1">
-            {/* Precio Amigo con botón WhatsApp */}
-            <div className="p-2.5 bg-emerald-500/10 border border-emerald-500/20 rounded-xl flex items-center justify-between">
-              <div>
-                <p className="text-[9px] font-black text-emerald-400 uppercase tracking-wider">Precio Amigo (+15%)</p>
-                <p className="text-base font-black text-white">{formatCurrency(friendPrice)}</p>
+            <div className="flex items-center justify-between px-0.5">
+              <span className="text-[10px] font-black uppercase tracking-wider text-gray-400">Tarifas (Toca para seleccionar pedido)</span>
+            </div>
+
+            {/* 1. Precio Amigo */}
+            <div 
+              onClick={() => setSelectedPriceTier('amigo')}
+              className={`p-2.5 rounded-xl border transition-all cursor-pointer flex items-center justify-between ${
+                selectedPriceTier === 'amigo'
+                  ? 'bg-emerald-500/20 border-emerald-500 ring-1 ring-emerald-500/50 shadow-md'
+                  : 'bg-emerald-500/10 border-emerald-500/20 hover:border-emerald-500/40'
+              }`}
+            >
+              <div className="flex items-center gap-2">
+                <div className={`w-3.5 h-3.5 rounded-full border flex items-center justify-center ${selectedPriceTier === 'amigo' ? 'border-emerald-400 bg-emerald-400 text-slate-950' : 'border-gray-600'}`}>
+                  {selectedPriceTier === 'amigo' && <Check size={10} strokeWidth={3} />}
+                </div>
+                <div>
+                  <p className="text-[9px] font-black text-emerald-400 uppercase tracking-wider">Precio Amigo (+15%)</p>
+                  <p className="text-base font-black text-white">{formatCurrency(friendPrice)}</p>
+                </div>
               </div>
-              <div className="flex items-center gap-1">
+              <div className="flex items-center gap-1" onClick={e => e.stopPropagation()}>
                 <button 
                   type="button"
                   onClick={() => copyQuoteForWhatsApp('amigo')} 
-                  className="px-2 py-1.5 bg-emerald-600 hover:bg-emerald-500 text-white rounded-lg text-[10px] font-black flex items-center gap-1 shadow-sm transition-all"
-                  title="Compartir cotización de precio amigo por WhatsApp"
+                  className="px-2 py-1 bg-emerald-600 hover:bg-emerald-500 text-white rounded-lg text-[10px] font-black flex items-center gap-1 shadow-sm transition-all"
+                  title="Compartir cotización amigo por WhatsApp"
                 >
-                  <MessageSquare size={13} />
+                  <MessageSquare size={12} />
                   <span>WhatsApp</span>
                 </button>
                 <button 
                   type="button"
                   onClick={() => handleCopy(friendPrice, 'amigo')} 
-                  className="p-1.5 bg-emerald-500/20 hover:bg-emerald-500/30 text-emerald-300 rounded-lg transition-all"
+                  className="p-1 bg-emerald-500/20 hover:bg-emerald-500/30 text-emerald-300 rounded-lg transition-all"
                   title="Copiar precio amigo"
                 >
                   <Copy size={13} />
@@ -774,30 +842,87 @@ const CalculatorWidget: React.FC = () => {
               </div>
             </div>
 
-            {/* Precio Comercial con botón WhatsApp */}
-            <div className="p-2.5 bg-gradient-to-r from-blue-600/20 to-indigo-600/20 border border-blue-500/30 rounded-xl flex items-center justify-between">
-              <div>
-                <p className="text-[9px] font-black text-blue-300 uppercase tracking-wider">Precio Comercial (+{markup}%)</p>
-                <div className="flex items-center gap-1.5">
-                  <p className="text-lg font-black text-white">{formatCurrency(commercialPrice)}</p>
-                  <span className="text-[10px] text-green-400 font-black">+{formatCurrency(profit)}</span>
+            {/* 2. Precio Comercial */}
+            <div 
+              onClick={() => setSelectedPriceTier('comercial')}
+              className={`p-2.5 rounded-xl border transition-all cursor-pointer flex items-center justify-between ${
+                selectedPriceTier === 'comercial'
+                  ? 'bg-blue-600/25 border-blue-500 ring-1 ring-blue-500/50 shadow-md'
+                  : 'bg-blue-600/10 border-blue-500/20 hover:border-blue-500/40'
+              }`}
+            >
+              <div className="flex items-center gap-2">
+                <div className={`w-3.5 h-3.5 rounded-full border flex items-center justify-center ${selectedPriceTier === 'comercial' ? 'border-blue-400 bg-blue-400 text-slate-950' : 'border-gray-600'}`}>
+                  {selectedPriceTier === 'comercial' && <Check size={10} strokeWidth={3} />}
+                </div>
+                <div>
+                  <p className="text-[9px] font-black text-blue-300 uppercase tracking-wider">Precio Comercial (+{markup}%)</p>
+                  <div className="flex items-center gap-1.5">
+                    <p className="text-base font-black text-white">{formatCurrency(commercialPrice)}</p>
+                    <span className="text-[9px] text-green-400 font-bold">+{formatCurrency(profit)}</span>
+                  </div>
                 </div>
               </div>
-              <div className="flex gap-1 items-center">
+              <div className="flex gap-1 items-center" onClick={e => e.stopPropagation()}>
                 <button 
                   type="button"
                   onClick={() => copyQuoteForWhatsApp('comercial')} 
-                  className="px-2 py-1.5 bg-green-600 hover:bg-green-500 text-white rounded-lg text-[10px] font-black flex items-center gap-1 shadow-sm transition-all"
+                  className="px-2 py-1 bg-blue-600 hover:bg-blue-500 text-white rounded-lg text-[10px] font-black flex items-center gap-1 shadow-sm transition-all"
                   title="Compartir cotización comercial por WhatsApp"
                 >
-                  <MessageSquare size={13} />
+                  <MessageSquare size={12} />
                   <span>WhatsApp</span>
                 </button>
                 <button 
                   type="button"
                   onClick={() => handleCopy(commercialPrice, 'comercial')} 
-                  className="p-1.5 bg-blue-600 hover:bg-blue-500 text-white rounded-lg transition-all"
+                  className="p-1 bg-blue-600/20 hover:bg-blue-500/30 text-blue-300 rounded-lg transition-all"
                   title="Copiar precio comercial"
+                >
+                  <Copy size={13} />
+                </button>
+              </div>
+            </div>
+
+            {/* 3. Tarifa Sugerida (Con Merma, Setup Fee, Riesgo y Piso Mínimo) */}
+            <div 
+              onClick={() => setSelectedPriceTier('sugerida')}
+              className={`p-2.5 rounded-xl border transition-all cursor-pointer flex items-center justify-between ${
+                selectedPriceTier === 'sugerida'
+                  ? 'bg-gradient-to-r from-amber-500/25 via-purple-600/25 to-blue-600/25 border-amber-400 ring-1 ring-amber-400/50 shadow-md'
+                  : 'bg-gradient-to-r from-amber-500/10 via-purple-600/15 to-blue-600/10 border-amber-500/30 hover:border-amber-400/50'
+              }`}
+            >
+              <div className="flex items-center gap-2">
+                <div className={`w-3.5 h-3.5 rounded-full border flex items-center justify-center ${selectedPriceTier === 'sugerida' ? 'border-amber-400 bg-amber-400 text-slate-950' : 'border-gray-600'}`}>
+                  {selectedPriceTier === 'sugerida' && <Check size={10} strokeWidth={3} />}
+                </div>
+                <div>
+                  <div className="flex items-center gap-1">
+                    <Sparkles size={11} className="text-amber-400" />
+                    <p className="text-[9px] font-black text-amber-300 uppercase tracking-wider">Tarifa Sugerida</p>
+                  </div>
+                  <div className="flex items-center gap-1.5">
+                    <p className="text-base font-black text-white">{formatCurrency(tarifaSugerida)}</p>
+                    <span className="text-[8px] text-amber-400/90 font-semibold">(Merma + Setup + Riesgo)</span>
+                  </div>
+                </div>
+              </div>
+              <div className="flex gap-1 items-center" onClick={e => e.stopPropagation()}>
+                <button 
+                  type="button"
+                  onClick={() => copyQuoteForWhatsApp('sugerida')} 
+                  className="px-2 py-1 bg-amber-600 hover:bg-amber-500 text-white rounded-lg text-[10px] font-black flex items-center gap-1 shadow-sm transition-all"
+                  title="Compartir tarifa sugerida por WhatsApp"
+                >
+                  <MessageSquare size={12} />
+                  <span>WhatsApp</span>
+                </button>
+                <button 
+                  type="button"
+                  onClick={() => handleCopy(tarifaSugerida, 'sugerida')} 
+                  className="p-1 bg-amber-500/20 hover:bg-amber-500/30 text-amber-300 rounded-lg transition-all"
+                  title="Copiar tarifa sugerida"
                 >
                   <Copy size={13} />
                 </button>
@@ -832,7 +957,9 @@ const CalculatorWidget: React.FC = () => {
               ) : (
                 <>
                   <ShoppingBag size={14} />
-                  <span>Agregar Pedido a la Lista</span>
+                  <span>
+                    Agregar Pedido ({formatCurrency(getFinalOrderPrice())})
+                  </span>
                 </>
               )}
             </button>
@@ -870,7 +997,7 @@ const CalculatorWidget: React.FC = () => {
   return (
     <div 
       className="fixed right-3 sm:right-4 bottom-24 z-[60] w-[calc(100vw-24px)] max-w-sm sm:w-80 bg-gray-900 border border-gray-700 rounded-3xl shadow-2xl overflow-hidden flex flex-col animate-fade-in" 
-      style={{ height: '580px', maxHeight: '85vh' }}
+      style={{ height: '620px', maxHeight: '88vh' }}
     >
       {calculatorContent}
     </div>
