@@ -29,6 +29,7 @@ interface CalculationResults {
   friendPrice: number;
   commercialPrice: number;
   profit: number;
+  tarifaSugerida: number;
 }
 
 interface SalesEntry {
@@ -108,7 +109,7 @@ const getNearestColorName = (hex: string): string => {
 };
 
 const MATERIAL_POWER = {
-  PLA: 125,
+  PLA: 155, // 155W por defecto (considerando PETG/PLA)
   TPU: 125,
   PETG: 155,
 };
@@ -167,6 +168,7 @@ const ThreeDCalculator: React.FC<ThreeDCalculatorProps> = ({ viewMode = 'all', o
     friendPrice: 0,
     commercialPrice: 0,
     profit: 0,
+    tarifaSugerida: 0,
   });
 
   const calculateResults = useCallback(() => {
@@ -181,6 +183,14 @@ const ThreeDCalculator: React.FC<ThreeDCalculatorProps> = ({ viewMode = 'all', o
     const commercialPrice = totalProductionCost * (1 + markup / 100);
     const profit = commercialPrice - totalProductionCost;
 
+    // Tarifa Sugerida (Estudio de mercado: Merma 8%, Setup $20, Riesgo 10% si >8h, Piso $45)
+    const filamentoSugerido = (filamentPrice / 1000) * (weightUsed * 1.08);
+    let costoSugeridoBase = filamentoSugerido + eCost + mCost + laborCostManual;
+    if (totalHours >= 8) costoSugeridoBase *= 1.10;
+    const setupFee = 20;
+    const sugeridoCalculado = (costoSugeridoBase * 1.45) + setupFee;
+    const tarifaSugerida = Math.max(sugeridoCalculado, 45);
+
     setResults({
       filamentCost: fCost,
       energyCost: eCost,
@@ -190,6 +200,7 @@ const ThreeDCalculator: React.FC<ThreeDCalculatorProps> = ({ viewMode = 'all', o
       friendPrice,
       commercialPrice,
       profit,
+      tarifaSugerida,
     });
   }, [filamentPrice, weightUsed, printHours, printMinutes, material, laborCostManual, markup]);
 
@@ -562,18 +573,31 @@ const ThreeDCalculator: React.FC<ThreeDCalculatorProps> = ({ viewMode = 'all', o
     setLastProposedColorName(fil.customName || '');
   };
 
-  const copyQuoteForWhatsApp = (type: 'comercial' | 'amigo' = 'comercial') => {
-    const price = type === 'comercial' ? results.commercialPrice : results.friendPrice;
+  const copyQuoteForWhatsApp = (type: 'comercial' | 'amigo' | 'sugerida' = 'comercial') => {
+    let price = results.commercialPrice;
+    let label = 'Total';
+    let header = '📦 *Cotización de Impresión 3D*';
+
+    if (type === 'amigo') {
+      price = results.friendPrice;
+      label = 'Precio Amigo';
+      header = '👋 *Cotización Especial Amigo (Impresión 3D)*';
+    } else if (type === 'sugerida') {
+      price = results.tarifaSugerida;
+      label = 'Tarifa Sugerida';
+      header = '⭐ *Cotización Profesional (Impresión 3D)*';
+    }
+
     const timeFormatted = `${printHours > 0 ? `${printHours}h ` : ''}${printMinutes > 0 ? `${printMinutes}m` : (printHours === 0 ? '0m' : '')}`;
-    const quoteText = `📦 *Cotización de Impresión 3D*\n\n` +
+    const quoteText = `${header}\n\n` +
       `🔹 *Pieza:* ${pieceName.trim() || 'Modelo 3D'}\n` +
       `🔹 *Material:* ${material} ${selectedFilamentId ? `(En Stock)` : ''}\n` +
       `🔹 *Peso:* ${weightUsed}g\n` +
       `🔹 *Tiempo:* ${timeFormatted || 'N/A'}\n` +
-      `🔹 *Total:* ${formatCurrency(price)}\n\n` +
+      `🔹 *${label}:* ${formatCurrency(price)}\n\n` +
       `_¿Deseas proceder con la impresión?_ 🚀`;
     navigator.clipboard.writeText(quoteText);
-    toast.success('¡Cotización para WhatsApp copiada!');
+    toast.success(`¡Cotización (${type === 'amigo' ? 'Amigo' : type === 'sugerida' ? 'Sugerida' : 'Comercial'}) para WhatsApp copiada!`);
   };
 
   const handleTransferToSales = () => {
@@ -796,39 +820,71 @@ const ThreeDCalculator: React.FC<ThreeDCalculatorProps> = ({ viewMode = 'all', o
                </div>
             </div>
 
-            {/* Precios Sugeridos y Botones de Copiado */}
-            <div className="flex flex-col sm:flex-row gap-2.5 pt-2 border-t border-white/5">
-               <div className="flex-1 p-3 bg-white/[0.03] border border-white/5 rounded-xl flex items-center justify-between">
-                  <div>
-                     <p className="text-[8px] font-black text-green-400 uppercase tracking-widest mb-0.5">Precio Amigo</p>
-                     <span className="text-xl font-black text-white">{formatCurrency(results.friendPrice)}</span>
-                  </div>
-                  <button onClick={() => handleCopy(results.friendPrice, 'amigo')} className="p-2 bg-green-500/10 hover:bg-green-500/20 text-green-400 rounded-lg transition-all" title="Copiar precio amigo"><Copy size={15}/></button>
-               </div>
-               <div className="flex-[1.3] p-3 bg-gradient-to-r from-blue-600/20 to-indigo-600/20 border border-blue-500/30 rounded-xl flex items-center justify-between relative overflow-hidden">
-                    <div>
-                       <p className="text-[8px] font-black text-blue-300 uppercase tracking-widest mb-0.5">Precio Comercial</p>
-                       <div className="flex items-center gap-1.5">
-                          <span className="text-2xl font-black text-white">{formatCurrency(results.commercialPrice)}</span>
-                          <span className="text-[10px] text-green-400 font-black">+{formatCurrency(results.profit)}</span>
-                       </div>
-                    </div>
-                     <div className="flex gap-1.5 items-center">
-                        <button 
-                           onClick={handleTransferToSales} 
-                           className="px-2 py-2 bg-gradient-to-r from-emerald-600 to-teal-600 hover:from-emerald-500 hover:to-teal-500 text-white rounded-lg text-[9px] font-black uppercase tracking-wider flex items-center gap-1 shadow-md transition-all active:scale-95 shrink-0" 
-                           title="Registrar esta cotización en el Panel de Ventas"
-                        >
-                           <TrendingUp size={13} />
-                           <span>A Ventas</span>
-                        </button>
-                        <button onClick={() => copyQuoteForWhatsApp('comercial')} className="px-2.5 py-2 bg-green-600 hover:bg-green-500 text-white rounded-lg text-[9px] font-black uppercase tracking-wider flex items-center gap-1 shadow-md transition-all shrink-0" title="Copiar cotización para WhatsApp">
-                           <MessageSquare size={13} />
-                           <span>WhatsApp</span>
-                        </button>
-                        <button onClick={() => handleCopy(results.commercialPrice, 'comercial')} className="p-2 bg-blue-600 hover:bg-blue-500 text-white rounded-lg text-xs font-black transition-all shrink-0" title="Copiar precio comercial"><Copy size={15}/></button>
+            {/* Precios Sugeridos y Botones de Copiado: 3 Tarifas */}
+            <div className="grid grid-cols-1 md:grid-cols-3 gap-2.5 pt-2 border-t border-white/5">
+               {/* 1. Precio Amigo */}
+               <div className="p-3 bg-white/[0.03] border border-white/5 rounded-xl flex flex-col justify-between">
+                  <div className="flex justify-between items-start mb-2">
+                     <div>
+                        <p className="text-[8px] font-black text-green-400 uppercase tracking-widest mb-0.5">Precio Amigo</p>
+                        <span className="text-xl font-black text-white">{formatCurrency(results.friendPrice)}</span>
                      </div>
-                 </div>
+                     <span className="text-[9px] text-green-400/80 font-bold">+15%</span>
+                  </div>
+                  <div className="flex gap-1 items-center">
+                     <button onClick={() => copyQuoteForWhatsApp('amigo')} className="flex-1 py-1.5 bg-emerald-600/30 hover:bg-emerald-600/50 text-emerald-300 rounded-lg text-[9px] font-black uppercase tracking-wider flex items-center justify-center gap-1 transition-all" title="WhatsApp amigo">
+                        <MessageSquare size={12} /> <span>WhatsApp</span>
+                     </button>
+                     <button onClick={() => handleCopy(results.friendPrice, 'amigo')} className="p-1.5 bg-green-500/10 hover:bg-green-500/20 text-green-400 rounded-lg transition-all" title="Copiar precio amigo"><Copy size={13}/></button>
+                  </div>
+               </div>
+
+               {/* 2. Precio Comercial */}
+               <div className="p-3 bg-gradient-to-r from-blue-600/20 to-indigo-600/20 border border-blue-500/30 rounded-xl flex flex-col justify-between relative overflow-hidden">
+                  <div className="flex justify-between items-start mb-2">
+                     <div>
+                        <p className="text-[8px] font-black text-blue-300 uppercase tracking-widest mb-0.5">Precio Comercial</p>
+                        <div className="flex items-center gap-1">
+                           <span className="text-xl font-black text-white">{formatCurrency(results.commercialPrice)}</span>
+                           <span className="text-[10px] text-green-400 font-black">+{formatCurrency(results.profit)}</span>
+                        </div>
+                     </div>
+                     <span className="text-[9px] text-blue-400 font-bold">+{markup}%</span>
+                  </div>
+                  <div className="flex gap-1 items-center">
+                     <button 
+                        onClick={handleTransferToSales} 
+                        className="px-2 py-1.5 bg-emerald-600 hover:bg-emerald-500 text-white rounded-lg text-[9px] font-black uppercase tracking-wider flex items-center gap-1 shadow-md transition-all active:scale-95 shrink-0" 
+                        title="Registrar esta cotización en el Panel de Ventas"
+                     >
+                        <TrendingUp size={12} /> <span>A Ventas</span>
+                     </button>
+                     <button onClick={() => copyQuoteForWhatsApp('comercial')} className="flex-1 py-1.5 bg-blue-600 hover:bg-blue-500 text-white rounded-lg text-[9px] font-black uppercase tracking-wider flex items-center justify-center gap-1 shadow-md transition-all shrink-0" title="Copiar cotización para WhatsApp">
+                        <MessageSquare size={12} /> <span>WhatsApp</span>
+                     </button>
+                     <button onClick={() => handleCopy(results.commercialPrice, 'comercial')} className="p-1.5 bg-blue-600/40 hover:bg-blue-600/60 text-white rounded-lg transition-all shrink-0" title="Copiar precio comercial"><Copy size={13}/></button>
+                  </div>
+               </div>
+
+               {/* 3. Tarifa Sugerida (Estudio de Mercado) */}
+               <div className="p-3 bg-gradient-to-r from-amber-500/20 via-purple-600/20 to-blue-600/20 border border-amber-500/40 rounded-xl flex flex-col justify-between relative overflow-hidden">
+                  <div className="flex justify-between items-start mb-2">
+                     <div>
+                        <div className="flex items-center gap-1">
+                           <Sparkles size={11} className="text-amber-400" />
+                           <p className="text-[8px] font-black text-amber-300 uppercase tracking-widest mb-0.5">Tarifa Sugerida</p>
+                        </div>
+                        <span className="text-xl font-black text-white">{formatCurrency(results.tarifaSugerida)}</span>
+                     </div>
+                     <span className="text-[8px] text-amber-400 font-bold text-right leading-tight">Merma+Setup<br/>+Riesgo</span>
+                  </div>
+                  <div className="flex gap-1 items-center">
+                     <button onClick={() => copyQuoteForWhatsApp('sugerida')} className="flex-1 py-1.5 bg-amber-600 hover:bg-amber-500 text-white rounded-lg text-[9px] font-black uppercase tracking-wider flex items-center justify-center gap-1 shadow-md transition-all shrink-0" title="Copiar cotización sugerida para WhatsApp">
+                        <MessageSquare size={12} /> <span>WhatsApp</span>
+                     </button>
+                     <button onClick={() => handleCopy(results.tarifaSugerida, 'sugerida')} className="p-1.5 bg-amber-500/20 hover:bg-amber-500/30 text-amber-300 rounded-lg transition-all shrink-0" title="Copiar tarifa sugerida"><Copy size={13}/></button>
+                  </div>
+               </div>
             </div>
           </div>
         </div>

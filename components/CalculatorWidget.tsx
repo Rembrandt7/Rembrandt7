@@ -17,7 +17,7 @@ const CalculatorWidget: React.FC = () => {
   const [isDesktop, setIsDesktop] = useState(window.innerWidth >= 1024);
   const [isOpen, setIsOpen] = useState(window.innerWidth >= 1024);
   const [mode, setMode] = useState<'standard' | '3d'>(() => {
-    return (localStorage.getItem('rembrandt_calc_mode') as 'standard' | '3d') || 'standard';
+    return (localStorage.getItem('rembrandt_calc_mode') as 'standard' | '3d') || '3d';
   });
 
   // Standard Calculator State
