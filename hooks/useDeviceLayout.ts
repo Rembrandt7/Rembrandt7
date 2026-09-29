@@ -36,17 +36,18 @@ export function useDeviceLayout(): DeviceLayoutInfo {
     const aspectRatio = width / (height || 1);
     const orientation = width >= height ? 'landscape' : 'portrait';
 
-    const isMobile = isMobileDevice();
-    const isDesktop = !isMobile;
+    const isMobileDeviceCheck = isMobileDevice();
+    const isMobile = isMobileDeviceCheck || width < 1024;
+    const isDesktop = width >= 1024 && !isMobileDeviceCheck;
 
-    // Detection for Galaxy Fold:
-    // When folded: Cover screen width is narrow (< 580px, typically 380px - 440px)
-    // When unfolded: Inner screen width is 580px - 1023px, and aspect ratio is square-ish (0.7 to 1.35)
+    // Detection for Galaxy Fold & Responsive Layouts:
+    // When folded: Cover screen width is narrow (< 580px, typically 280px - 440px)
+    // When unfolded: Inner screen width is 580px - 1023px, and aspect ratio is square-ish (~4:3)
     let isFoldCover = false;
     let isFoldUnfolded = false;
     let foldMode: FoldMode = 'desktop';
 
-    if (isDesktop) {
+    if (width >= 1024) {
       foldMode = 'desktop';
     } else if (width < 580) {
       isFoldCover = true;

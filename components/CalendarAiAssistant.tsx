@@ -25,6 +25,78 @@ interface CalendarAiAssistantProps {
   onClose?: () => void;
 }
 
+function normalizeDate(rawDate: string): string {
+  if (!rawDate) return new Date().toISOString().split('T')[0];
+  const trimmed = rawDate.trim();
+  if (/^\d{4}-\d{2}-\d{2}$/.test(trimmed)) return trimmed;
+
+  const currentYear = new Date().getFullYear();
+  const monthsMap: Record<string, string> = {
+    enero: '01', febrero: '02', marzo: '03', abril: '04',
+    mayo: '05', junio: '06', julio: '07', agosto: '08',
+    septiembre: '09', setiembre: '09', octubre: '10', noviembre: '11', diciembre: '12'
+  };
+
+  const match = trimmed.toLowerCase().match(/(\d{1,2})\s*(?:de\s*)?([a-zñ]+)(?:\s*(?:de\s*)?(\d{4}))?/i);
+  if (match) {
+    const day = match[1].padStart(2, '0');
+    const monthName = match[2].toLowerCase();
+    const year = match[3] || currentYear.toString();
+    const month = monthsMap[monthName];
+    if (month) {
+      return `${year}-${month}-${day}`;
+    }
+  }
+
+  const slashMatch = trimmed.match(/^(\d{1,2})[\/\-](\d{1,2})[\/\-](\d{2,4})$/);
+  if (slashMatch) {
+    const day = slashMatch[1].padStart(2, '0');
+    const month = slashMatch[2].padStart(2, '0');
+    let year = slashMatch[3];
+    if (year.length === 2) year = `20${year}`;
+    return `${year}-${month}-${day}`;
+  }
+
+  return trimmed;
+}
+
+function tryLocalFallback(userMessage: string): { event?: CalendarEvent; description?: string } | null {
+  const lower = userMessage.toLowerCase();
+  const isBirthday = lower.includes('cumpleaños') || lower.includes('cumple');
+  const isAddEvent = lower.includes('agrega') || lower.includes('añadir') || lower.includes('añade') || lower.includes('agenda') || lower.includes('guarda') || lower.includes('crea');
+
+  if (isBirthday || isAddEvent) {
+    const dateStr = normalizeDate(userMessage);
+    if (dateStr && /^\d{4}-\d{2}-\d{2}$/.test(dateStr)) {
+      let title = userMessage;
+      title = title.replace(/^(?:puedes\s+)?(?:por\s+favor\s+)?(?:agrega(?:r)?|añade|añadir|agenda(?:r)?|crea(?:r)?)\s+(?:un\s+|el\s+)?/i, '');
+      title = title.replace(/\s+(?:el\s+)?(?:\d{1,2}\s+(?:de\s+)?[a-zñ]+(?:\s+(?:de\s+)?\d{4})?|\d{1,2}[\/\-]\d{1,2}(?:[\/\-]\d{2,4})?)/i, '');
+      title = title.trim();
+      if (!title || title.length < 2) {
+        title = isBirthday ? 'Cumpleaños' : 'Nuevo evento';
+      } else {
+        title = title.charAt(0).toUpperCase() + title.slice(1);
+      }
+
+      const eventType = isBirthday ? 'birthday' : 'event';
+      const newEv: CalendarEvent = {
+        id: Date.now().toString() + Math.random().toString(36).substr(2, 5),
+        title,
+        date: dateStr,
+        type: eventType,
+        recurrence: isBirthday ? 'yearly' : 'none',
+        color: isBirthday ? '#f59e0b' : '#3b82f6'
+      };
+
+      return {
+        event: newEv,
+        description: `📅 Evento añadido: "${title}" el ${dateStr}.`
+      };
+    }
+  }
+  return null;
+}
+
 const CalendarAiAssistant: React.FC<CalendarAiAssistantProps> = ({ onClose }) => {
   const { config, updateConfig, saveToSupabase, googleApiConfig } = useLinks();
   const [mode, setMode] = useState<'text' | 'voice'>('text');
@@ -204,7 +276,10 @@ Contexto actual:
                   type: Type.OBJECT,
                   properties: {
                     title: { type: Type.STRING },
-                    date: { type: Type.STRING },
+                    date: { 
+                      type: Type.STRING, 
+                      description: "Fecha del evento en formato AAAA-MM-DD (ej: 2026-08-19). Si el usuario no menciona el año, asume el año 2026." 
+                    },
                     time: { type: Type.STRING },
                     description: { type: Type.STRING },
                     type: { type: Type.STRING, enum: ['event', 'holiday', 'vacation', 'mountain', 'party', 'off', 'medical', 'birthday', 'payment', 'trabajo'] },
@@ -360,10 +435,11 @@ Contexto actual:
         for (const call of functionCalls) {
           if (call.name === 'add_event') {
             const args = call.args as any;
+            const validDate = normalizeDate(args.date);
             const newEv: CalendarEvent = {
               id: Date.now().toString() + Math.random().toString(36).substr(2, 5),
               title: args.title,
-              date: args.date,
+              date: validDate,
               time: args.time,
               description: args.description,
               type: args.type || 'event',
@@ -380,7 +456,7 @@ Contexto actual:
               color: args.type === 'birthday' ? '#f59e0b' : args.type === 'medical' ? '#ef4444' : args.type === 'payment' ? '#10b981' : args.type === 'trabajo' ? '#eab308' : '#3b82f6'
             };
             newConfig.calendarEvents = [...(newConfig.calendarEvents || []), newEv];
-            executedDescriptions.push(`📅 Evento añadido: "${args.title}" el ${args.date}${args.time ? ' a las ' + args.time : ''}.`);
+            executedDescriptions.push(`📅 Evento añadido: "${args.title}" el ${validDate}${args.time ? ' a las ' + args.time : ''}.`);
             updated = true;
           } else if (call.name === 'update_event') {
             const args = call.args as any;
@@ -478,7 +554,9 @@ Contexto actual:
 
         if (updated) {
           updateConfig(newConfig);
-          await saveToSupabase();
+          saveToSupabase(newConfig, { showToast: false, immediate: true }).catch(sbErr => 
+            console.warn("Supabase background save notice:", sbErr)
+          );
         }
 
         // Generate follow up response explaining what was done and providing strategic analysis
@@ -487,6 +565,7 @@ Contexto actual:
           const functionResponses = functionCalls.map(call => ({
             functionResponse: {
               name: call.name,
+              id: (call as any).id,
               response: { result: "success", executed: true }
             }
           }));
@@ -521,10 +600,31 @@ Contexto actual:
       }
     } catch (error: any) {
       console.error('AI Error:', error);
-      const isQuota = error?.status === 429 || error?.message?.includes('429') || error?.message?.includes('quota') || error?.message?.includes('RESOURCE_EXHAUSTED');
+
+      // Attempt smart local fallback if user was asking to add an event or note
+      const fallbackResult = tryLocalFallback(userMessage);
+      if (fallbackResult?.event) {
+        const newEv = fallbackResult.event;
+        const newConfig = {
+          ...config,
+          calendarEvents: [...(config.calendarEvents || []), newEv]
+        };
+        updateConfig(newConfig);
+        saveToSupabase(newConfig, { showToast: false, immediate: true }).catch(err => 
+          console.warn("Error guardando fallback en Supabase:", err)
+        );
+
+        setMessages(prev => [...prev, {
+          role: 'model',
+          content: `Listo Rembrandt. He procesado tu solicitud de forma local:\n\n${fallbackResult.description}\n\n*(Nota: Conexión con IA restableciéndose).*`
+        }]);
+        return;
+      }
+
+      const isQuota = error?.status === 429 || error?.message?.includes('429') || error?.message?.toLowerCase().includes('quota') || error?.message?.includes('RESOURCE_EXHAUSTED');
       const errorMessage = isQuota 
-        ? 'Lo siento Rembrandt, he excedido la cuota de análisis de Gemini por ahora. Por favor, intenta de nuevo en unos momentos.'
-        : `Hubo un error al conectar con el Estratega (${error?.message || 'Error de conexión'}). Por favor intenta de nuevo.`;
+        ? 'Lo siento Rembrandt, he excedido la cuota de consultas de Gemini por ahora. Las claves gratuitas tienen un límite por minuto. Por favor, intenta de nuevo en unos momentos.'
+        : `Hubo un detalle al conectar con el Estratega (${error?.message || 'Error de conexión'}). Por favor intenta de nuevo.`;
       setMessages(prev => [...prev, { role: 'model', content: errorMessage }]);
     } finally {
       setIsLoading(false);

@@ -6,9 +6,9 @@ import { getFriendlyAiErrorMessage, isQuotaError, isUnavailableError } from '../
  */
 export const GEMINI_MODELS = {
   PRIMARY: 'gemini-2.5-flash',
-  FALLBACK: 'gemini-2.5-flash-lite',
+  FALLBACK: 'gemini-3.5-flash-lite',
   PRO: 'gemini-2.5-pro',
-  FLASH_LITE: 'gemini-2.5-flash-lite',
+  FLASH_LITE: 'gemini-3.5-flash-lite',
 } as const;
 
 export type GeminiModelName = string;
@@ -45,7 +45,6 @@ export function getResolvedApiKey(customApiKey?: string): string {
 
 /**
  * Returns a configured GoogleGenAI client singleton or a newly configured client for a custom key.
- * Always routes through the local NodeJS proxy (/api/proxy/google) to evade network and firewall restrictions.
  */
 export function getGeminiClient(customApiKey?: string): GoogleGenAI {
   const apiKey = getResolvedApiKey(customApiKey);
@@ -75,7 +74,7 @@ export interface GeminiRequestOptions {
 }
 
 /**
- * Executes generateContent with automatic retry and model fallback on 503/429 errors.
+ * Executes generateContent with automatic retry and model fallback cascade on 503/429 errors.
  * Accepts either:
  *   generateContentWithFallback(params, options)
  *   or legacy: generateContentWithFallback(ai, params, options)
@@ -102,13 +101,24 @@ export async function generateContentWithFallback(
   }
 
   const primaryModel = params?.model || GEMINI_MODELS.PRIMARY;
-  const fallbackModel = options?.fallbackModel || GEMINI_MODELS.FALLBACK;
-  const maxRetries = options?.retries ?? 2;
+  const customFallback = options?.fallbackModel;
+  // Multi-model resilience order
+  const modelCascade: string[] = [primaryModel];
+  if (customFallback && !modelCascade.includes(customFallback)) {
+    modelCascade.push(customFallback);
+  }
+  if (!modelCascade.includes(GEMINI_MODELS.FALLBACK)) {
+    modelCascade.push(GEMINI_MODELS.FALLBACK);
+  }
+  if (!modelCascade.includes(GEMINI_MODELS.PRO)) {
+    modelCascade.push(GEMINI_MODELS.PRO);
+  }
 
-  let attempt = 0;
-  let currentModel = primaryModel;
+  let modelIdx = 0;
+  let lastError: any = null;
 
-  while (attempt <= maxRetries) {
+  while (modelIdx < modelCascade.length) {
+    const currentModel = modelCascade[modelIdx];
     try {
       const response = await ai.models.generateContent({
         ...params,
@@ -116,34 +126,48 @@ export async function generateContentWithFallback(
       });
       return response;
     } catch (err: any) {
-      attempt++;
-      console.warn(`[GeminiService] Attempt ${attempt} failed with model ${currentModel}:`, err.message || err);
+      lastError = err;
+      console.warn(`[GeminiService] Call failed with model ${currentModel}:`, err?.message || err);
 
       const isUnavailable = isUnavailableError(err);
       const isQuota = isQuotaError(err);
 
-      // If primary model failed due to high demand or quota and we haven't tried fallback yet
-      if ((isUnavailable || isQuota) && currentModel !== fallbackModel) {
-        console.warn(`[GeminiService] Switching to fallback model: ${fallbackModel}`);
-        currentModel = fallbackModel;
-        continue;
+      // If error is 503, 429, or 404 (model not found), advance to next model in cascade
+      if (isUnavailable || isQuota || err?.status === 404 || String(err).includes('404')) {
+        modelIdx++;
+        if (modelIdx < modelCascade.length) {
+          console.warn(`[GeminiService] Switching to cascade model: ${modelCascade[modelIdx]}`);
+          // Small backoff before next model attempt
+          await new Promise(res => setTimeout(res, 500));
+          continue;
+        }
       }
 
-      // If we still have retries left for transient errors, wait with exponential backoff
-      if (attempt <= maxRetries && isUnavailable) {
-        const delay = Math.pow(2, attempt) * 1000;
-        console.log(`[GeminiService] Retrying in ${delay}ms...`);
-        await new Promise(res => setTimeout(res, delay));
-        continue;
+      // If user had a custom API key that hit quota, attempt once with the default system key if available
+      const defaultEnvKey = (process.env.GEMINI_API_KEY || '').trim();
+      if (isQuota && options?.apiKey && defaultEnvKey && options.apiKey !== defaultEnvKey) {
+        try {
+          console.warn('[GeminiService] Custom key hit quota. Falling back to default system key...');
+          const fallbackAi = new GoogleGenAI({ apiKey: defaultEnvKey });
+          const response = await fallbackAi.models.generateContent({
+            ...params,
+            model: primaryModel,
+          });
+          return response;
+        } catch (fbErr) {
+          console.warn('[GeminiService] Default key fallback also failed:', fbErr);
+        }
       }
 
-      // No more retries or non-recoverable error
-      const friendlyMessage = getFriendlyAiErrorMessage(err, !!options?.apiKey);
-      const enhancedError = new Error(friendlyMessage);
-      (enhancedError as any).originalError = err;
-      throw enhancedError;
+      break;
     }
   }
+
+  const friendlyMessage = getFriendlyAiErrorMessage(lastError, !!options?.apiKey);
+  const enhancedError = new Error(friendlyMessage);
+  (enhancedError as any).originalError = lastError;
+  (enhancedError as any).status = lastError?.status || lastError?.statusCode;
+  throw enhancedError;
 }
 
 /**

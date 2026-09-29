@@ -4,16 +4,17 @@
 
 export function isQuotaError(error: any): boolean {
   if (!error) return false;
-  const message = error.message || String(error);
+  const message = (error.message || String(error)).toLowerCase();
   const status = error.status || error.statusCode;
 
   return (
     status === 429 ||
     message.includes('429') ||
-    message.toLowerCase().includes('quota') ||
-    message.toLowerCase().includes('limit') ||
-    message.toLowerCase().includes('exhausted') ||
-    message.toLowerCase().includes('resource_exhausted')
+    message.includes('quota') ||
+    message.includes('resource_exhausted') ||
+    message.includes('rate_limit') ||
+    message.includes('ratelimit') ||
+    message.includes('too many requests')
   );
 }
 
