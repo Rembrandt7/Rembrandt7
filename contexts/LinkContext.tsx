@@ -785,6 +785,7 @@ export const LinkProvider: React.FC<{ children: React.ReactNode }> = ({ children
             const mwItem = section3D.items.find((l: any) => l.name === 'MakerWorld');
             if (mwItem) {
               mwItem.href = 'https://makerworld.com/es';
+              mwItem.iconSvg = `<img src="/makerworld_premium.png" class="w-full h-full object-contain rounded-lg" alt="MakerWorld" />`;
             }
           }
         }
@@ -1092,6 +1093,7 @@ export const LinkProvider: React.FC<{ children: React.ReactNode }> = ({ children
               const mwItem = section3D.items.find((l: any) => l.name === 'MakerWorld');
               if (mwItem) {
                 mwItem.href = 'https://makerworld.com/es';
+                mwItem.iconSvg = `<img src="/makerworld_premium.png" class="w-full h-full object-contain rounded-lg" alt="MakerWorld" />`;
               }
             }
           }

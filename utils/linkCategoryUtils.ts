@@ -126,8 +126,15 @@ export function normalizeAndDeduplicateLinksBar(links: LinkItem[]): LinkItem[] {
     if (nameLower === 'flow' && (item.id === '10' || !item.id)) {
       item.id = 'flow';
     }
-    if ((nameLower === 'makerworld' || nameLower === 'maker world') && (!item.id || item.id === '1' || item.id === '10')) {
+    if (nameLower === 'makerworld' || nameLower === 'maker world') {
       item.id = 'makerworld';
+      item.name = 'MakerWorld';
+      item.category = 'trabajo';
+      item.href = 'https://makerworld.com/es';
+      item.colorClass = 'text-teal-400 hover:text-teal-300';
+      item.outlineColor = '#10b981';
+      item.outlineWidth = 10;
+      item.iconSvg = `<img src="/makerworld_premium.png" class="w-10 h-10 object-contain rounded-xl" alt="MakerWorld" />`;
     }
 
     // Check duplicate by normalized name

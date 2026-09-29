@@ -18,13 +18,18 @@ const getDefaultCategories = (): LinkCategory[] => {
             const parsed = JSON.parse(saved);
             if (Array.isArray(parsed) && parsed.length > 0) {
                 const valid = parsed.filter((c: any) => c === 'trabajo' || c === 'compras' || c === 'social') as LinkCategory[];
-                if (valid.length > 0) return valid;
+                if (valid.length > 0) {
+                    // Garantizar que trabajo siempre esté activo si no estaba para que MakerWorld no desaparezca
+                    if (!valid.includes('trabajo')) {
+                        valid.unshift('trabajo');
+                    }
+                    return valid;
+                }
             }
         }
     } catch (e) {}
-    // Compu por defecto: trabajo
-    // Cel por defecto: compras y social
-    return isMobileDevice() ? ['compras', 'social'] : ['trabajo'];
+    // Por defecto en compu y cel: mostrar trabajo para que MakerWorld, Javer y Flow siempre aparezcan
+    return isMobileDevice() ? ['trabajo', 'compras', 'social'] : ['trabajo'];
 };
 
 const LinkIcon: React.FC<{ 

@@ -1,5 +1,5 @@
 // Rembrandt IA Studio - Service Worker
-const CACHE_NAME = 'rembrandt-pwa-v3';
+const CACHE_NAME = 'rembrandt-pwa-v4';
 const STATIC_ASSETS = [
   '/',
   '/index.html',
@@ -7,7 +7,10 @@ const STATIC_ASSETS = [
   '/icon.svg',
   '/icon-192.png',
   '/icon-512.png',
-  '/apple-touch-icon.png'
+  '/apple-touch-icon.png',
+  '/makerworld_premium.png',
+  '/javer_premium.png',
+  '/flow_premium.png'
 ];
 
 self.addEventListener('install', (event) => {

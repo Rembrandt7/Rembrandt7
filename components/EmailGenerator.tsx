@@ -8,7 +8,7 @@ import { cleanJsonResponse } from '../utils/jsonUtils';
 import { 
   Trash2, Mail, MessageSquare, Star, Sparkles, Send, 
   RefreshCw, Pencil, Save, Copy, AlertTriangle, Mic, MicOff, RotateCcw, 
-  Bot, Newspaper, ExternalLink, Bookmark, Building2, CheckCircle2, 
+  Bot, Newspaper, ExternalLink, Bookmark, Building2, CheckCircle2, Check,
   Clock, Zap, Search, Image as ImageIcon, Users, ChevronDown, ChevronUp
 } from 'lucide-react';
 import { motion, AnimatePresence } from 'motion/react';
@@ -1471,6 +1471,175 @@ const EmailGenerator: React.FC<EmailGeneratorProps> = ({ attachedImages, onAttac
                     </div>
                 </motion.div>
             )}</AnimatePresence>
+
+            {/* ========================================================================= */}
+            {/* HERO MÓVIL: BOTÓN GRANDE DE MICRÓFONO PARA DICTAR Y REDACTAR CORREO PRIMERO */}
+            {/* ========================================================================= */}
+            {isMobile && (
+                <div className="mb-5 bg-gradient-to-br from-purple-950/80 via-slate-900/95 to-indigo-950/80 border-2 border-purple-500/50 rounded-3xl p-4 sm:p-5 shadow-2xl shadow-purple-950/50 space-y-4">
+                    {/* Header del Hero Móvil */}
+                    <div className="flex items-center justify-between border-b border-purple-500/20 pb-3">
+                        <div className="flex items-center gap-2">
+                            <div className="p-2 bg-gradient-to-tr from-purple-600 to-indigo-600 rounded-xl text-white shadow-md">
+                                <Sparkles size={16} />
+                            </div>
+                            <div>
+                                <h3 className="text-xs font-black uppercase text-white tracking-wider flex items-center gap-1.5">
+                                    <span>Dictar Correo por Voz</span>
+                                    <span className="text-[9px] bg-amber-400 text-black font-extrabold px-1.5 py-0.5 rounded-full uppercase">Móvil</span>
+                                </h3>
+                                <p className="text-[10px] text-purple-200/80">Toca el micrófono, habla tu idea y redacta con IA</p>
+                            </div>
+                        </div>
+
+                        {/* Destinatario rápido */}
+                        <div className="text-right">
+                            <span className="text-[9px] font-bold text-gray-400 uppercase block">Para:</span>
+                            <span className="text-[11px] font-black text-purple-300 truncate max-w-[120px] block">
+                                {recipientName || 'Sin destinatario'}
+                            </span>
+                        </div>
+                    </div>
+
+                    {/* Botón Central Grande para el Micrófono */}
+                    <div className="flex flex-col items-center justify-center py-2 space-y-3">
+                        <button
+                            type="button"
+                            onClick={toggleListening}
+                            className={`group relative flex items-center justify-center rounded-full transition-all duration-300 cursor-pointer ${
+                                isListening
+                                    ? 'w-24 h-24 sm:w-28 sm:h-28 bg-red-600 text-white shadow-[0_0_50px_rgba(239,68,68,0.7)] ring-8 ring-red-500/30 scale-105 animate-pulse'
+                                    : 'w-24 h-24 sm:w-28 sm:h-28 bg-gradient-to-tr from-purple-600 via-indigo-600 to-pink-500 text-white shadow-[0_0_40px_rgba(168,85,247,0.5)] hover:scale-105 active:scale-95 border-2 border-white/30'
+                            }`}
+                            title={isListening ? "Toca para detener dictado" : "Toca para empezar a dictar por voz"}
+                        >
+                            {isListening ? (
+                                <MicOff size={42} className="text-white drop-shadow-md" />
+                            ) : (
+                                <Mic size={42} className="text-white drop-shadow-md group-hover:scale-110 transition-transform" />
+                            )}
+                        </button>
+
+                        <div className="text-center">
+                            <p className="text-xs font-black uppercase tracking-wider text-white">
+                                {isListening ? '🔴 Escuchando tu voz...' : 'Toca el micrófono para dictar'}
+                            </p>
+                            <p className="text-[10px] text-gray-400 mt-0.5">
+                                {isListening 
+                                    ? 'Habla claro; toca de nuevo cuando termines para redactar' 
+                                    : 'Presiona y di tu mensaje; la IA lo convertirá en correo formal'}
+                            </p>
+                        </div>
+
+                        {/* Ondas sonoras animadas al escuchar */}
+                        {isListening && (
+                            <div className="flex items-center justify-center gap-1 h-6 py-0.5">
+                                {[40, 75, 100, 60, 95, 45, 85, 55, 90, 70, 80, 50].map((h, i) => (
+                                    <div
+                                        key={i}
+                                        className="w-1 bg-gradient-to-t from-red-500 via-rose-400 to-purple-300 rounded-full animate-pulse"
+                                        style={{ height: `${h}%`, animationDelay: `${i * 60}ms` }}
+                                    />
+                                ))}
+                            </div>
+                        )}
+                    </div>
+
+                    {/* Caja de Idea dictada / editable */}
+                    <div className="space-y-2">
+                        <div className="flex items-center justify-between">
+                            <span className="text-[10px] font-black uppercase tracking-wider text-purple-300">
+                                {idea ? 'Idea o Mensaje dictado:' : 'Mensaje:'}
+                            </span>
+                            {idea && (
+                                <button
+                                    type="button"
+                                    onClick={() => { setIdea(''); toast.info('Texto limpiado'); }}
+                                    className="text-[10px] font-bold text-gray-400 hover:text-white flex items-center gap-1 cursor-pointer"
+                                >
+                                    <RotateCcw size={10} />
+                                    <span>Borrar</span>
+                                </button>
+                            )}
+                        </div>
+
+                        <textarea
+                            value={idea}
+                            onChange={onIdeaChange}
+                            placeholder="Aquí aparecerá lo que dictes por voz, o puedes escribir directamente aquí..."
+                            rows={3}
+                            className="w-full p-3 bg-slate-950/80 border border-purple-500/30 rounded-xl text-xs text-white placeholder-gray-500 outline-none focus:border-purple-400 leading-relaxed font-sans shadow-inner resize-none"
+                        />
+
+                        {/* Botón principal de Redacción con IA */}
+                        <button
+                            type="button"
+                            onClick={() => handleGenerate()}
+                            disabled={isLoading || (!idea.trim() && !previousEmail.trim() && attachedImages.length === 0)}
+                            className="w-full py-3.5 bg-gradient-to-r from-purple-600 via-indigo-600 to-blue-600 hover:from-purple-500 hover:to-blue-500 text-white rounded-xl font-black text-xs uppercase tracking-wider shadow-xl shadow-purple-600/30 flex items-center justify-center gap-2 active:scale-95 transition-all disabled:opacity-50 cursor-pointer border border-purple-400/30"
+                        >
+                            {isLoading ? (
+                                <>
+                                    <RefreshCw className="animate-spin" size={16} />
+                                    <span>Redactando Correo con IA...</span>
+                                </>
+                            ) : (
+                                <>
+                                    <Sparkles size={16} className="text-yellow-300" />
+                                    <span>Redactar Correo con IA</span>
+                                </>
+                            )}
+                        </button>
+                    </div>
+
+                    {/* Previsualización rápida y acciones instantáneas en móvil */}
+                    {generatedContent && !isLoading && (
+                        <div className="pt-2 border-t border-purple-500/20 space-y-2.5 bg-purple-950/30 -mx-4 -mb-4 p-4 rounded-b-3xl">
+                            <div className="flex items-center justify-between">
+                                <span className="text-[10px] font-black uppercase tracking-wider text-emerald-400 flex items-center gap-1">
+                                    <Check size={12} />
+                                    <span>Correo Listo</span>
+                                </span>
+                                <span className="text-[10px] text-gray-400 truncate max-w-[160px] italic">
+                                    {generatedContent.emailSubject}
+                                </span>
+                            </div>
+
+                            {/* Botones de acción directa 1 toque */}
+                            <div className="grid grid-cols-3 gap-2">
+                                <button
+                                    type="button"
+                                    onClick={() => handleCopyToClipboard(generatedContent.emailBody, 'email')}
+                                    className={`py-2 px-2 rounded-xl text-xs font-black uppercase flex items-center justify-center gap-1 transition-all cursor-pointer ${
+                                        copied === 'email' ? 'bg-green-600 text-white' : 'bg-gray-800 text-gray-200 hover:bg-gray-700 border border-gray-700'
+                                    }`}
+                                >
+                                    <Copy size={12} />
+                                    <span>{copied === 'email' ? '¡Copiado!' : 'Copiar'}</span>
+                                </button>
+                                <button
+                                    type="button"
+                                    onClick={() => handleOpenOutlookWeb(generatedContent.emailSubject, generatedContent.emailBody)}
+                                    className="py-2 px-2 bg-gradient-to-r from-blue-600 to-indigo-600 text-white rounded-xl text-xs font-black uppercase flex items-center justify-center gap-1 shadow-md cursor-pointer border border-blue-400/30"
+                                    title="Abrir en Outlook Web"
+                                >
+                                    <ExternalLink size={12} />
+                                    <span>Outlook</span>
+                                </button>
+                                <button
+                                    type="button"
+                                    onClick={() => handleSendWhatsApp(generatedContent.whatsappMessage)}
+                                    className="py-2 px-2 bg-gradient-to-r from-green-600 to-emerald-600 text-white rounded-xl text-xs font-black uppercase flex items-center justify-center gap-1 shadow-md cursor-pointer border border-green-400/30"
+                                    title="Enviar por WhatsApp"
+                                >
+                                    <MessageSquare size={12} />
+                                    <span>WhatsApp</span>
+                                </button>
+                            </div>
+                        </div>
+                    )}
+                </div>
+            )}
 
             {/* ========================================================================= */}
             {/* BARRA SUPERIOR DE DESTINATARIO Y CONTACTOS (ESTILO OUTLOOK / GMAIL) */}
