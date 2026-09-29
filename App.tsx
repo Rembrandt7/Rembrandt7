@@ -62,10 +62,13 @@ const CalendarTab = lazy(() => import('./components/CalendarTab'));
 const NotesTab = lazy(() => import('./components/NotesTab'));
 const Nutricion = lazy(() => import('./components/Nutricion'));
 const ThreeDPrinting = lazy(() => import('./components/ThreeDPrinting'));
-const CalendarAiAssistant = lazy(() => import('./components/CalendarAiAssistant'));
+const PanchoAssistantModal = lazy(() => import('./components/Pancho/PanchoAssistantModal'));
 const WorkspaceHub = lazy(() => import('./components/WorkspaceHub'));
 const TeleprompterTab = lazy(() => import('./components/TeleprompterTab'));
 const PersonalTab = lazy(() => import('./components/PersonalTab'));
+
+import { PanchoFloatingButton } from './components/Pancho/PanchoFloatingButton';
+import { PanchoState } from './components/Pancho/PanchoRobotAvatar';
 
 import LinksBar from './components/LinksBar';
 import AiSidebar from './components/AiSidebar';
@@ -281,7 +284,14 @@ const MainLayout: React.FC = () => {
   const [tempTabName, setTempTabName] = useState('');
   const [leftSidebarOpen, setLeftSidebarOpen] = useState(window.innerWidth >= 1024);
   const [isAssistantOpen, setIsAssistantOpen] = useState(false);
+  const [panchoState, setPanchoState] = useState<PanchoState>('idle');
   const [assistantMessages, setAssistantMessages] = useState<Message[]>([]);
+
+  useEffect(() => {
+    const handleOpenPancho = () => setIsAssistantOpen(true);
+    window.addEventListener('open-pancho', handleOpenPancho);
+    return () => window.removeEventListener('open-pancho', handleOpenPancho);
+  }, []);
 
   useEffect(() => {
     const handleResize = () => {
@@ -937,20 +947,15 @@ const MainLayout: React.FC = () => {
         </div>
 
         
-        {/* Floating Assistant Button */}
-        {!isAssistantOpen && (
-          <motion.button
-            whileHover={{ scale: 1.1, boxShadow: "0px 0px 20px rgba(147, 51, 234, 0.6)" }}
-            whileTap={{ scale: 0.9 }}
-            onClick={() => setIsAssistantOpen(true)}
-            className="fixed bottom-20 lg:bottom-6 right-4 lg:right-6 p-3.5 lg:p-4 bg-gradient-to-r from-purple-600 to-pink-600 text-white rounded-full shadow-2xl z-40 pointer-events-auto"
-            title="Abrir Asistente IA"
-          >
-            <MessageSquare size={24} />
-          </motion.button>
-        )}
+        {/* Unified Persistent Pancho Floating Button */}
+        <PanchoFloatingButton
+          activeTabId={activeTabId}
+          panchoState={panchoState}
+          isOpen={isAssistantOpen}
+          onClick={() => setIsAssistantOpen(true)}
+        />
 
-        {/* Assistant Component */}
+        {/* Pancho Assistant Modal */}
         <AnimatePresence>
           {isAssistantOpen && (
             <motion.div 
@@ -958,10 +963,16 @@ const MainLayout: React.FC = () => {
               animate={{ opacity: 1, y: 0, scale: 1 }}
               exit={{ opacity: 0, y: 50, scale: 0.9 }}
               transition={{ type: 'spring', damping: 25, stiffness: 300 }}
-              className="fixed bottom-20 lg:bottom-4 right-2 sm:right-4 w-[calc(100vw-16px)] sm:w-[450px] max-w-[450px] h-[75vh] sm:h-[650px] glass-panel-heavy rounded-3xl shadow-2xl flex flex-col z-40 overflow-hidden ring-1 ring-white/10"
+              className="fixed bottom-20 lg:bottom-4 right-2 sm:right-4 w-[calc(100vw-16px)] sm:w-[480px] max-w-[480px] h-[75vh] sm:h-[680px] glass-panel-heavy rounded-3xl shadow-2xl flex flex-col z-50 overflow-hidden ring-1 ring-white/10 pointer-events-auto"
             >
-              <Suspense fallback={<TabLoadingFallback message="Cargando asistente..." />}>
-                <CalendarAiAssistant onClose={() => setIsAssistantOpen(false)} />
+              <Suspense fallback={<TabLoadingFallback message="Cargando a Pancho 🐶..." />}>
+                <PanchoAssistantModal 
+                  onClose={() => setIsAssistantOpen(false)}
+                  activeTabId={activeTabId}
+                  setActiveTabId={setActiveTabId}
+                  panchoState={panchoState}
+                  setPanchoState={setPanchoState}
+                />
               </Suspense>
             </motion.div>
           )}

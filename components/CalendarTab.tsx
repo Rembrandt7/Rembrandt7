@@ -29,7 +29,6 @@ import {
   Palmtree,
   Sun
 } from 'lucide-react';
-import CalendarAiAssistant from './CalendarAiAssistant';
 import WeatherForecast from './WeatherForecast';
 import { toast } from 'sonner';
 
@@ -1220,9 +1219,11 @@ const CalendarTab: React.FC = () => {
           {/* AI Button */}
           <div className="relative group/btn">
             <button
-              onClick={() => setIsAiOpen(true)}
+              onClick={() => {
+                window.dispatchEvent(new CustomEvent('open-pancho'));
+              }}
               className={`relative flex flex-col items-center justify-center p-3 text-white rounded-lg transition-all shadow-lg h-[88px] w-[88px] overflow-hidden ${config.calendarSettings?.aiButton?.color || 'bg-purple-600 hover:bg-purple-700'}`}
-              title={config.calendarSettings?.aiButton?.label || "Asistente Estratégico"}
+              title={config.calendarSettings?.aiButton?.label || "Pancho Estratega"}
             >
               <div className="flex-1 flex items-center justify-center">
                 {config.calendarSettings?.aiButton?.svg ? (
@@ -2027,12 +2028,7 @@ const CalendarTab: React.FC = () => {
         <WeatherForecast />
       </div>
 
-      {/* AI Assistant Drawer */}
-      <div className={`fixed inset-y-0 right-0 w-full sm:w-[400px] bg-gray-900 shadow-2xl z-[150] transform transition-transform duration-300 ease-in-out border-l border-gray-700 ${isAiOpen ? 'translate-x-0' : 'translate-x-full'}`}>
-        <div className="h-full flex flex-col">
-          <CalendarAiAssistant onClose={() => setIsAiOpen(false)} />
-        </div>
-      </div>
+
 
       {/* Vacation Days Assigned List Modal */}
       {isVacationListOpen && (
