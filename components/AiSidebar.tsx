@@ -152,7 +152,7 @@ const AiSidebar: React.FC<AiSidebarProps> = ({ isOpen }) => {
                         items={(config.aiSidebar?.models || []).filter(m => {
                             const name = (m.name || '').toLowerCase();
                             const href = (m.href || '').toLowerCase();
-                            return !name.includes('gemini') && !name.includes('jimmy') && !name.includes('llimi') && !href.includes('gemini.google.com');
+                            return !name.includes('gemini') && !name.includes('jimmy') && !name.includes('llimi') && !href.includes('gemini.google.com') && !href.includes('jimmy');
                         })}
                         isEditing={isEditing}
                         onReorder={(newItems) => updateConfig({ ...config, aiSidebar: { ...config.aiSidebar, models: newItems } })}

@@ -806,7 +806,7 @@ export const LinkProvider: React.FC<{ children: React.ReactNode }> = ({ children
           finalConfig.aiSidebar.models = finalConfig.aiSidebar.models.filter((m: any) => {
             const name = (m.name || '').toLowerCase();
             const href = (m.href || '').toLowerCase();
-            return !name.includes('gemini') && !name.includes('jimmy') && !name.includes('llimi') && !href.includes('gemini.google.com');
+            return !name.includes('gemini') && !name.includes('jimmy') && !name.includes('llimi') && !href.includes('gemini.google.com') && !href.includes('jimmy');
           });
         }
 
@@ -1112,7 +1112,7 @@ export const LinkProvider: React.FC<{ children: React.ReactNode }> = ({ children
             parsed.aiSidebar.models = parsed.aiSidebar.models.filter((m: any) => {
               const name = (m.name || '').toLowerCase();
               const href = (m.href || '').toLowerCase();
-              return !name.includes('gemini') && !name.includes('jimmy') && !name.includes('llimi') && !href.includes('gemini.google.com');
+              return !name.includes('gemini') && !name.includes('jimmy') && !name.includes('llimi') && !href.includes('gemini.google.com') && !href.includes('jimmy');
             });
           }
 
