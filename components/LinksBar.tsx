@@ -9,7 +9,7 @@ import { getSmartLinkTarget, openSmartMobileApp } from '../utils/appLinkUtils';
 import { inferLinkCategory, LinkCategory, CATEGORY_DEFINITIONS, normalizeAndDeduplicateLinksBar } from '../utils/linkCategoryUtils';
 import { isMobileDevice } from '../utils/deviceUtils';
 
-const DEFAULT_CATEGORIES_STORAGE_KEY = 'rembrandt_active_link_categories';
+const DEFAULT_CATEGORIES_STORAGE_KEY = 'rembrandt_active_link_categories_v2';
 
 const getDefaultCategories = (): LinkCategory[] => {
     try {
@@ -19,17 +19,13 @@ const getDefaultCategories = (): LinkCategory[] => {
             if (Array.isArray(parsed) && parsed.length > 0) {
                 const valid = parsed.filter((c: any) => c === 'trabajo' || c === 'compras' || c === 'social') as LinkCategory[];
                 if (valid.length > 0) {
-                    // Garantizar que trabajo siempre esté activo si no estaba para que MakerWorld no desaparezca
-                    if (!valid.includes('trabajo')) {
-                        valid.unshift('trabajo');
-                    }
                     return valid;
                 }
             }
         }
     } catch (e) {}
-    // Por defecto en compu y cel: mostrar trabajo para que MakerWorld, Javer y Flow siempre aparezcan
-    return isMobileDevice() ? ['trabajo', 'compras', 'social'] : ['trabajo'];
+    // Por defecto en la app: trabajo desactivado, solo compras y social activas
+    return ['compras', 'social'];
 };
 
 const LinkIcon: React.FC<{ 
@@ -57,7 +53,7 @@ const LinkIcon: React.FC<{
     };
 
     return (
-        <div className="relative group flex items-center justify-center flex-1 max-w-[92px] min-w-[28px]">
+        <div className="relative group flex items-center justify-center shrink-0 w-11 h-11 sm:w-14 sm:h-14 md:w-16 md:h-16">
             {isEditing && !isFirst && (
                 <button onClick={() => onMove(item.id, 'left')} className="absolute -left-3 z-40 p-1 bg-gray-700 rounded-full text-white hover:bg-gray-600 shadow-md">
                     <ChevronLeft size={12} />
@@ -68,7 +64,7 @@ const LinkIcon: React.FC<{
                 target={smartTarget} 
                 rel="noopener noreferrer" 
                 onClick={handleClick}
-                className={`flex items-center justify-center w-full aspect-square max-w-[86px] max-h-[86px] min-w-[28px] min-h-[28px] rounded-2xl sm:rounded-3xl transition-all duration-300 group ${item.colorClass} hover:scale-[1.10] hover:-translate-y-1 ${isEditing ? 'opacity-100 cursor-default' : ''} ${hasBg ? 'bg-white/5 hover:bg-white/10 hover:shadow-[0_8px_25px_rgba(255,255,255,0.1)] border border-white/10' : ''} [&_svg]:w-[65%] [&_svg]:h-[65%] [&_svg]:max-w-[54px] [&_svg]:max-h-[54px] [&_img]:w-[70%] [&_img]:h-[70%] [&_img]:max-w-[56px] [&_img]:max-h-[56px] [&_img]:object-contain`}
+                className={`flex items-center justify-center w-full h-full rounded-2xl sm:rounded-3xl transition-all duration-300 group ${item.colorClass} hover:scale-[1.10] hover:-translate-y-1 ${isEditing ? 'opacity-100 cursor-default' : ''} ${hasBg ? 'bg-white/5 hover:bg-white/10 hover:shadow-[0_8px_25px_rgba(255,255,255,0.1)] border border-white/10' : ''} [&_svg]:w-[65%] [&_svg]:h-[65%] [&_svg]:max-w-[54px] [&_svg]:max-h-[54px] [&_img]:w-[70%] [&_img]:h-[70%] [&_img]:max-w-[56px] [&_img]:max-h-[56px] [&_img]:object-contain`}
                 title={item.name}
                 style={{
                     filter: item.outlineColor && item.outlineWidth ? `drop-shadow(0 0 ${item.outlineWidth}px ${item.outlineColor})` : undefined
@@ -267,14 +263,14 @@ const LinksBar: React.FC = () => {
     };
 
     return (
-        <div className="w-full bg-black/30 backdrop-blur-xl border border-white/5 p-3.5 sm:p-4.5 mb-6 relative group/bar shadow-2xl rounded-2xl">
+        <div className="w-full bg-black/30 backdrop-blur-xl border border-white/5 p-2.5 sm:p-4 mb-3 sm:mb-6 relative group/bar shadow-2xl rounded-2xl">
             {/* Edit Controls - Always visible for better discovery */}
             <div className="absolute top-4 right-4 flex flex-col gap-2 z-50">
             </div>
 
             {isEditing && (
                 <div className="absolute top-2 left-2 flex flex-col gap-2 z-20">
-                    <div className="flex gap-2 animate-fade-in">
+                    <div className="flex gap-2 animate-fade-in flex-wrap">
                         <button 
                             onClick={handleCreateNew}
                             className="flex items-center gap-1 px-3 py-1 bg-blue-600 hover:bg-blue-500 text-white text-xs rounded-full shadow-lg"
@@ -345,9 +341,9 @@ const LinksBar: React.FC = () => {
                 </div>
             )}
 
-            <div className={`flex flex-col items-center gap-3.5 max-w-full mx-auto w-full px-1 ${isEditing ? 'mt-14' : 'mt-0.5'}`}>
+            <div className={`flex flex-col items-center gap-2.5 sm:gap-3.5 max-w-full mx-auto w-full px-0.5 sm:px-1 ${isEditing ? 'mt-14' : 'mt-0.5'}`}>
                 {/* Selector de Categorías: Selección múltiple de tarjetas (1 o más activas simultáneamente) */}
-                <div className="flex items-center justify-center gap-2 sm:gap-2.5 w-full overflow-x-auto no-scrollbar py-0.5">
+                <div className="flex items-center justify-start sm:justify-center gap-1.5 sm:gap-2.5 w-full overflow-x-auto no-scrollbar py-0.5 px-0.5">
                     {CATEGORY_DEFINITIONS.map(cat => {
                         const count = cleanLinksBar.filter(l => (l.category || inferLinkCategory(l)) === cat.id).length;
                         const isActive = activeCategories.includes(cat.id);
@@ -357,7 +353,7 @@ const LinksBar: React.FC = () => {
                                 key={cat.id}
                                 type="button"
                                 onClick={() => toggleCategory(cat.id)}
-                                className={`group/pill relative flex items-center gap-1.5 px-3.5 py-1.5 rounded-full text-xs font-semibold transition-all duration-200 border whitespace-nowrap cursor-pointer select-none ${
+                                className={`group/pill relative flex items-center gap-1 sm:gap-1.5 px-2.5 sm:px-3.5 py-1 sm:py-1.5 rounded-full text-[11px] sm:text-xs font-semibold transition-all duration-200 border whitespace-nowrap cursor-pointer select-none shrink-0 ${
                                     isActive 
                                         ? `${cat.activeClass} shadow-md scale-[1.02]` 
                                         : `bg-white/5 border-white/10 text-gray-400 opacity-60 hover:opacity-100 hover:scale-[1.01] ${cat.hoverClass}`
@@ -396,7 +392,7 @@ const LinksBar: React.FC = () => {
                     isEditing={isEditing}
                     onReorder={handleReorder}
                     strategy={rectSortingStrategy}
-                    className="flex flex-nowrap items-center justify-between sm:justify-center gap-1 sm:gap-2 md:gap-2.5 lg:gap-3 xl:gap-3.5 w-full py-1 overflow-x-hidden min-h-[52px]"
+                    className="flex items-center justify-start sm:justify-center gap-2 sm:gap-3 w-full py-1.5 overflow-x-auto no-scrollbar scroll-smooth min-h-[54px] px-1"
                     renderItem={(link, index) => (
                         <LinkIcon 
                             key={link.id} 

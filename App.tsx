@@ -598,7 +598,7 @@ const MainLayout: React.FC = () => {
     switch (activeTab.componentKey) {
       case 'Generador de Email':
         return (
-          <div className="glass-panel p-6 rounded-3xl shadow-2xl w-full mt-8">
+          <div className="glass-panel p-2.5 sm:p-4 md:p-6 rounded-2xl sm:rounded-3xl shadow-2xl w-full mt-2 sm:mt-6">
             <EmailGenerator attachedImages={imagesForEmail} onAttachmentsChange={setImagesForEmail} />
           </div>
         );
@@ -639,7 +639,7 @@ const MainLayout: React.FC = () => {
         return <TeleprompterTab />;
       default:
         return (
-          <div className="glass-panel p-6 rounded-3xl shadow-2xl w-full mt-8">
+          <div className="glass-panel p-2.5 sm:p-4 md:p-6 rounded-2xl sm:rounded-3xl shadow-2xl w-full mt-2 sm:mt-6">
             <EmailGenerator attachedImages={imagesForEmail} onAttachmentsChange={setImagesForEmail} />
           </div>
         );
@@ -774,69 +774,69 @@ const MainLayout: React.FC = () => {
               </header>
 
               {/* MOBILE & GALAXY FOLD HEADER (< 1024px) */}
-              <header className="flex lg:hidden w-full mb-3 pt-2 px-1 justify-between items-center gap-2">
-                  <div className="flex items-center gap-2">
+              <header className="flex lg:hidden w-full mb-2.5 pt-1.5 px-0.5 sm:px-1 justify-between items-center gap-1 sm:gap-2">
+                  <div className="flex items-center gap-1 sm:gap-2 min-w-0">
                     <button 
                       onClick={() => setLeftSidebarOpen(!leftSidebarOpen)} 
-                      className="p-2 hover:bg-gray-800 rounded-xl text-gray-400 hover:text-white transition-colors"
+                      className="p-1.5 sm:p-2 hover:bg-gray-800 rounded-xl text-gray-400 hover:text-white transition-colors shrink-0"
                       title="Menú lateral"
                     >
-                      <Menu size={22} />
+                      <Menu size={20} />
                     </button>
-                    <div className="flex flex-col">
-                      <h1 className="text-lg font-black text-transparent bg-clip-text bg-gradient-to-r from-purple-400 to-pink-600 truncate">
+                    <div className="flex flex-col min-w-0">
+                      <h1 className="text-base sm:text-lg font-black text-transparent bg-clip-text bg-gradient-to-r from-purple-400 to-pink-600 truncate leading-tight">
                         Rembrandt IA
                       </h1>
                       {isFoldUnfolded ? (
-                        <span className="text-[9px] text-cyan-400 font-mono font-bold flex items-center gap-1">
+                        <span className="text-[8px] sm:text-[9px] text-cyan-400 font-mono font-bold flex items-center gap-1">
                           <Maximize2 size={9} /> Fold Desplegado
                         </span>
                       ) : (
-                        <span className="text-[9px] text-purple-400/80 font-mono">
-                          Fold Cerrado
+                        <span className="text-[8px] sm:text-[9px] text-purple-400/80 font-mono">
+                          Plegado
                         </span>
                       )}
                     </div>
                   </div>
 
-                  <div className="flex items-center gap-1">
+                  <div className="flex items-center gap-0.5 sm:gap-1 shrink-0">
                     <button
                       onClick={() => window.dispatchEvent(new CustomEvent('open-global-search'))}
-                      className="p-2 text-purple-300 hover:text-white bg-purple-500/10 border border-purple-500/20 rounded-xl"
+                      className="p-1.5 sm:p-2 text-purple-300 hover:text-white bg-purple-500/10 border border-purple-500/20 rounded-xl"
                       title="Buscar (Ctrl+K)"
                     >
-                      <Search size={18} />
+                      <Search size={16} />
                     </button>
                     <button 
                       onClick={() => saveToSupabase(undefined, { showToast: true, immediate: true })} 
-                      className="relative p-2 text-gray-300 hover:text-white hover:bg-white/10 rounded-xl"
+                      className="relative p-1.5 sm:p-2 text-gray-300 hover:text-white hover:bg-white/10 rounded-xl"
                       title="Guardar en la nube"
                     >
-                      <Save size={18} className={syncStatus === 'saving' ? 'animate-pulse text-amber-400' : syncStatus === 'error' ? 'text-rose-400' : 'text-gray-300'} />
-                      {syncStatus === 'synced' && <span className="absolute top-1.5 right-1.5 h-1.5 w-1.5 rounded-full bg-emerald-400"></span>}
-                      {syncStatus === 'saving' && <span className="absolute top-1.5 right-1.5 h-1.5 w-1.5 rounded-full bg-amber-400 animate-ping"></span>}
-                      {syncStatus === 'error' && <span className="absolute top-1.5 right-1.5 h-1.5 w-1.5 rounded-full bg-rose-500"></span>}
+                      <Save size={16} className={syncStatus === 'saving' ? 'animate-pulse text-amber-400' : syncStatus === 'error' ? 'text-rose-400' : 'text-gray-300'} />
+                      {syncStatus === 'synced' && <span className="absolute top-1 right-1 h-1.5 w-1.5 rounded-full bg-emerald-400"></span>}
+                      {syncStatus === 'saving' && <span className="absolute top-1 right-1 h-1.5 w-1.5 rounded-full bg-amber-400 animate-ping"></span>}
+                      {syncStatus === 'error' && <span className="absolute top-1 right-1 h-1.5 w-1.5 rounded-full bg-rose-500"></span>}
                     </button>
                     <button 
                       onClick={toggleEditing} 
-                      className="p-2 text-gray-400 hover:text-white hover:bg-white/10 rounded-xl"
+                      className="p-1.5 sm:p-2 text-gray-400 hover:text-white hover:bg-white/10 rounded-xl"
                       title="Personalizar"
                     >
-                      <Settings size={18} />
+                      <Settings size={16} />
                     </button>
                     <button 
                       onClick={handleToggleDatabaseTab} 
-                      className={`p-2 rounded-xl ${isDatabaseActive ? 'bg-blue-600 text-white' : 'text-blue-400 hover:bg-blue-500/20'}`}
+                      className={`p-1.5 sm:p-2 rounded-xl ${isDatabaseActive ? 'bg-blue-600 text-white' : 'text-blue-400 hover:bg-blue-500/20'}`}
                       title="Base de Datos"
                     >
-                      <Database size={18} />
+                      <Database size={16} />
                     </button>
                     <button 
                       onClick={fetchConfigFromSupabaseManual} 
-                      className="p-2 text-gray-400 hover:text-white hover:bg-white/10 rounded-xl"
+                      className="p-1.5 sm:p-2 text-gray-400 hover:text-white hover:bg-white/10 rounded-xl"
                       title="Actualizar"
                     >
-                      <RefreshCw size={18} />
+                      <RefreshCw size={16} />
                     </button>
                   </div>
               </header>

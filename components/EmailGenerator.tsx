@@ -1711,41 +1711,42 @@ const EmailGenerator: React.FC<EmailGeneratorProps> = ({ attachedImages, onAttac
             {/* ========================================================================= */}
             {isMobile && (
                 <div className="mb-4 space-y-2.5">
-                    <div className="flex items-center gap-2 flex-wrap">
+                    <div className="grid grid-cols-2 sm:grid-cols-4 gap-2 w-full">
                         <a 
                             href="https://academiartificial.com/noticias-ia/" 
                             target="_blank" 
                             rel="noopener noreferrer"
-                            className="flex-1 min-w-[130px] flex items-center justify-center gap-1.5 px-3 py-2 bg-gradient-to-r from-blue-600/30 to-indigo-600/30 hover:from-blue-600/50 text-blue-300 rounded-xl border border-blue-500/30 text-xs font-black uppercase tracking-wider transition-all shadow-sm"
+                            className="w-full flex items-center justify-center gap-1.5 px-2.5 py-2 bg-gradient-to-r from-blue-600/30 to-indigo-600/30 hover:from-blue-600/50 text-blue-300 rounded-xl border border-blue-500/30 text-[11px] sm:text-xs font-black uppercase tracking-wider transition-all shadow-sm truncate"
                             title="Ver noticias de IA en Academia Artificial"
                         >
-                            <Newspaper size={13} className="text-blue-400" />
-                            <span>alejavi noticias</span>
-                            <ExternalLink size={11} className="opacity-70" />
+                            <Newspaper size={13} className="text-blue-400 shrink-0" />
+                            <span className="truncate">alejavi noticias</span>
+                            <ExternalLink size={10} className="opacity-70 shrink-0" />
                         </a>
                         <button 
                             onClick={() => setShowAiConsultant(!showAiConsultant)} 
-                            className={`flex-1 min-w-[120px] px-3 py-2 rounded-xl text-xs font-black uppercase border transition-all flex items-center justify-center gap-1.5 cursor-pointer ${
+                            className={`w-full px-2.5 py-2 rounded-xl text-[11px] sm:text-xs font-black uppercase border transition-all flex items-center justify-center gap-1.5 cursor-pointer truncate ${
                                 showAiConsultant 
                                     ? 'bg-amber-500/20 text-amber-300 border-amber-500/50 shadow-amber-500/20' 
                                     : 'bg-gray-800 text-purple-300 border-gray-700'
                             }`}
                         >
-                            <Bot size={14} />
-                            <span>IA Consejera</span>
+                            <Bot size={13} className="shrink-0" />
+                            <span className="truncate">IA Consejera</span>
                         </button>
                         <button 
                             onClick={() => setShowHistory(!showHistory)} 
-                            className="px-3 py-2 bg-gray-800 rounded-xl text-xs font-black uppercase text-gray-300 border border-gray-700 cursor-pointer"
+                            className="w-full px-2.5 py-2 bg-gray-800 hover:bg-gray-700 rounded-xl text-[11px] sm:text-xs font-black uppercase text-gray-300 border border-gray-700 cursor-pointer flex items-center justify-center gap-1.5"
                         >
-                            Historial
+                            <Clock size={13} className="shrink-0 text-gray-400" />
+                            <span>Historial</span>
                         </button>
                         <button 
                             onClick={handleResetAll} 
                             title="Reiniciar todos los campos" 
-                            className="px-3 py-2 bg-gray-800 hover:bg-red-600/20 text-gray-400 hover:text-red-400 rounded-xl text-xs font-black uppercase border border-gray-700 transition-all flex items-center justify-center gap-1 cursor-pointer"
+                            className="w-full px-2.5 py-2 bg-gray-800 hover:bg-red-600/20 text-gray-400 hover:text-red-400 rounded-xl text-[11px] sm:text-xs font-black uppercase border border-gray-700 transition-all flex items-center justify-center gap-1 cursor-pointer"
                         >
-                            <RotateCcw size={14} />
+                            <RotateCcw size={13} className="shrink-0" />
                             <span>Reset</span>
                         </button>
                     </div>
@@ -1753,31 +1754,31 @@ const EmailGenerator: React.FC<EmailGeneratorProps> = ({ attachedImages, onAttac
             )}
 
             {/* BARRA SUPERIOR DE CONTROL: MODOS Y ACCESO DIRECTO A OUTLOOK WEB */}
-            <div className="flex flex-col sm:flex-row items-stretch sm:items-center justify-between gap-3 mb-5">
-                <div className="flex items-center gap-2 p-1.5 bg-gray-900/90 rounded-2xl border border-gray-800 shadow-lg flex-grow sm:flex-grow-0 sm:min-w-[440px]">
+            <div className="flex flex-col sm:flex-row items-stretch sm:items-center justify-between gap-2.5 mb-4">
+                <div className="flex items-center gap-1 sm:gap-2 p-1 sm:p-1.5 bg-gray-900/90 rounded-2xl border border-gray-800 shadow-lg w-full sm:w-auto sm:min-w-[420px]">
                     <button
                         type="button"
                         onClick={() => setActiveMode('ai')}
-                        className={`flex-1 py-2.5 px-4 rounded-xl text-xs font-black uppercase tracking-wider flex items-center justify-center gap-2 transition-all cursor-pointer ${
+                        className={`flex-1 py-2 sm:py-2.5 px-2 sm:px-4 rounded-xl text-[10.5px] sm:text-xs font-black uppercase tracking-wider flex items-center justify-center gap-1.5 sm:gap-2 transition-all cursor-pointer ${
                             activeMode === 'ai'
                                 ? 'bg-gradient-to-r from-purple-600 via-indigo-600 to-blue-600 text-white shadow-md shadow-indigo-500/25'
                                 : 'text-gray-400 hover:text-white hover:bg-gray-800/60'
                         }`}
                     >
-                        <Sparkles size={15} className={activeMode === 'ai' ? 'text-purple-300' : ''} />
-                        <span>1. Redactor Libre con IA</span>
+                        <Sparkles size={14} className={activeMode === 'ai' ? 'text-purple-300' : ''} />
+                        <span className="truncate">1. Redactor Libre</span>
                     </button>
                     <button
                         type="button"
                         onClick={() => setActiveMode('quick')}
-                        className={`flex-1 py-2.5 px-4 rounded-xl text-xs font-black uppercase tracking-wider flex items-center justify-center gap-2 transition-all cursor-pointer ${
+                        className={`flex-1 py-2 sm:py-2.5 px-2 sm:px-4 rounded-xl text-[10.5px] sm:text-xs font-black uppercase tracking-wider flex items-center justify-center gap-1.5 sm:gap-2 transition-all cursor-pointer ${
                             activeMode === 'quick'
                                 ? 'bg-gradient-to-r from-purple-600 to-indigo-600 text-white shadow-md shadow-purple-500/25'
                                 : 'text-gray-400 hover:text-white hover:bg-gray-800/60'
                         }`}
                     >
-                        <Zap size={15} className={activeMode === 'quick' ? 'text-amber-300' : ''} />
-                        <span>2. Entregas y Formatos (0s)</span>
+                        <Zap size={14} className={activeMode === 'quick' ? 'text-amber-300' : ''} />
+                        <span className="truncate">2. Entregas (0s)</span>
                     </button>
                 </div>
 
@@ -1785,10 +1786,10 @@ const EmailGenerator: React.FC<EmailGeneratorProps> = ({ attachedImages, onAttac
                 <button
                     type="button"
                     onClick={() => handleOpenOutlookWeb()}
-                    className="px-4 py-2.5 bg-gradient-to-r from-blue-600 to-indigo-600 hover:from-blue-500 hover:to-indigo-500 text-white rounded-xl text-xs font-black uppercase tracking-wider shadow-lg shadow-blue-500/20 flex items-center justify-center gap-2 hover:scale-[1.02] active:scale-[0.98] transition-all cursor-pointer border border-blue-400/30"
+                    className="w-full sm:w-auto px-3.5 py-2 sm:py-2.5 bg-gradient-to-r from-blue-600 to-indigo-600 hover:from-blue-500 hover:to-indigo-500 text-white rounded-xl text-[11px] sm:text-xs font-black uppercase tracking-wider shadow-lg shadow-blue-500/20 flex items-center justify-center gap-1.5 sm:gap-2 hover:scale-[1.02] active:scale-[0.98] transition-all cursor-pointer border border-blue-400/30 shrink-0"
                     title="Abrir Outlook Web Javer 365 con el destinatario y contenido actual"
                 >
-                    <ExternalLink size={14} />
+                    <ExternalLink size={13} />
                     <span>Outlook Web (Javer 365)</span>
                 </button>
             </div>
