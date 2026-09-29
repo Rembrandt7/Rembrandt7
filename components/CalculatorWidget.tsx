@@ -618,36 +618,34 @@ const CalculatorWidget: React.FC = () => {
             </div>
           </div>
 
-          {/* 2. Material (Común PLA/PETG a 155W por defecto, o Especial a 200W) */}
+          {/* 2. Material (PLA / PETG a 155W por defecto, o Especial a 200W) */}
           <div className="space-y-1">
             <div className="flex justify-between items-center">
               <label className="text-[10px] font-black uppercase tracking-wider text-gray-400">Material</label>
-              <span className="text-[9px] text-gray-500">Color indiferente</span>
+              <span className="text-[9px] text-gray-500 font-medium">{material === 'Común' ? '155W' : '200W'}</span>
             </div>
             <div className="grid grid-cols-2 gap-1.5 p-0.5 bg-slate-950/70 border border-gray-800 rounded-xl h-[34px] items-center text-xs font-bold">
               <button
                 type="button"
                 onClick={() => setMaterial('Común')}
-                className={`h-[26px] rounded-lg transition-all text-[11px] font-black flex items-center justify-center gap-1.5 ${
+                className={`h-[26px] rounded-lg transition-all text-xs font-black flex items-center justify-center whitespace-nowrap truncate px-2 ${
                   material === 'Común'
                     ? 'bg-blue-600 text-white shadow-sm'
                     : 'text-gray-400 hover:text-white'
                 }`}
               >
-                <span>Común (PLA / PETG)</span>
-                <span className="text-[9px] opacity-80 font-normal">155W</span>
+                PLA / PETG
               </button>
               <button
                 type="button"
                 onClick={() => setMaterial('Especial')}
-                className={`h-[26px] rounded-lg transition-all text-[11px] font-black flex items-center justify-center gap-1.5 ${
+                className={`h-[26px] rounded-lg transition-all text-xs font-black flex items-center justify-center whitespace-nowrap truncate px-2 ${
                   material === 'Especial'
                     ? 'bg-purple-600 text-white shadow-sm'
                     : 'text-gray-400 hover:text-white'
                 }`}
               >
-                <span>Especial (TPU / ABS)</span>
-                <span className="text-[9px] opacity-80 font-normal">200W</span>
+                Especial
               </button>
             </div>
           </div>
