@@ -801,6 +801,15 @@ export const LinkProvider: React.FC<{ children: React.ReactNode }> = ({ children
           }
         }
 
+        // Ensure Gemini / Jimmy is removed from aiSidebar.models
+        if (finalConfig.aiSidebar && finalConfig.aiSidebar.models) {
+          finalConfig.aiSidebar.models = finalConfig.aiSidebar.models.filter((m: any) => {
+            const name = (m.name || '').toLowerCase();
+            const href = (m.href || '').toLowerCase();
+            return !name.includes('gemini') && !name.includes('jimmy') && !name.includes('llimi') && !href.includes('gemini.google.com');
+          });
+        }
+
         if (finalConfig.aiSidebar && finalConfig.aiSidebar.quickAccess) {
           const hasJaver = finalConfig.aiSidebar.quickAccess.some((l: any) => l.name === 'Javer Data Center' || l.href.includes('3a3196da-cb37-40b8-9a5d-48e74634248d'));
           if (!hasJaver) {
@@ -1096,6 +1105,15 @@ export const LinkProvider: React.FC<{ children: React.ReactNode }> = ({ children
                 mwItem.iconSvg = `<img src="/makerworld_premium.png" class="w-full h-full object-contain rounded-lg" alt="MakerWorld" />`;
               }
             }
+          }
+
+          // Ensure Gemini / Jimmy is removed from aiSidebar.models
+          if (parsed.aiSidebar && parsed.aiSidebar.models) {
+            parsed.aiSidebar.models = parsed.aiSidebar.models.filter((m: any) => {
+              const name = (m.name || '').toLowerCase();
+              const href = (m.href || '').toLowerCase();
+              return !name.includes('gemini') && !name.includes('jimmy') && !name.includes('llimi') && !href.includes('gemini.google.com');
+            });
           }
 
           if (parsed.aiSidebar && parsed.aiSidebar.quickAccess) {

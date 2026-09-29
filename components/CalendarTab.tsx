@@ -1480,6 +1480,10 @@ const CalendarTab: React.FC = () => {
                     const dayTokens = (config.calendarTokens || []).filter((t: any) => isTokenOnDate(t, date));
                     const activeTokens = dayTokens.filter((t: any) => t.currentActiveDate === dateStr || (isToday && t.currentActiveDate < dateStr));
 
+                    const reminderEvents = dayEvents.filter(e => (e.reminderMinutes && e.reminderMinutes > 0) || (e.type === 'payment' && !e.isPaid) || (e.type === 'trabajo' && !e.isFinished));
+                    const hasReminder = reminderEvents.length > 0 || activeTokens.some((t: any) => t.reminderMinutes && t.reminderMinutes > 0);
+                    const reminderCount = reminderEvents.length + activeTokens.filter((t: any) => t.reminderMinutes && t.reminderMinutes > 0).length;
+
                     const hasUnpaidPastPayment = dayEvents.some(e => {
                       if (e.type !== 'payment' || e.isPaid) return false;
                       const eventDate = new Date(e.date + 'T00:00:00');
@@ -1548,6 +1552,19 @@ const CalendarTab: React.FC = () => {
                           </div>
                         )}
 
+                        {/* Recordatorio Symbol / Badge */}
+                        {hasReminder && (
+                          <div 
+                            className="absolute top-1 left-1 flex items-center gap-0.5 px-1 py-0.5 rounded-full bg-amber-500/25 border border-amber-400/50 text-amber-300 shadow-[0_0_8px_rgba(245,158,11,0.4)] z-30 animate-pulse"
+                            title={`Recordatorio: ${reminderEvents.map(e => e.title).join(', ') || 'Pendiente activo'}`}
+                          >
+                            <Bell size={10} className="fill-amber-400 text-amber-300 shrink-0" />
+                            {reminderCount > 1 && (
+                              <span className="text-[8px] font-black leading-none">{reminderCount}</span>
+                            )}
+                          </div>
+                        )}
+
                         {/* Tokens */}
                         <div className="absolute top-1 right-1 flex flex-col gap-1 z-30">
                           {activeTokens.map((token: any) => (
@@ -1613,6 +1630,9 @@ const CalendarTab: React.FC = () => {
                               >
                                 {e.type === 'payment' && <DollarSign size={8} className="shrink-0" />}
                                 {e.type === 'trabajo' && <Brain size={8} className="shrink-0" />}
+                                {((e as any).reminderMinutes && (e as any).reminderMinutes > 0) && (
+                                  <Bell size={8} className="text-amber-400 shrink-0 fill-amber-400/60" />
+                                )}
                                 <span className="truncate uppercase">{e.title}</span>
                               </div>
                             ));
@@ -1975,7 +1995,12 @@ const CalendarTab: React.FC = () => {
                       >
                         <div className="flex justify-between items-start mb-1">
                           <div className="flex flex-col">
-                            <h4 className="font-bold text-white pr-8">{event.title}</h4>
+                            <h4 className="font-bold text-white pr-8 flex items-center gap-1.5">
+                              {event.reminderMinutes && event.reminderMinutes > 0 && (
+                                <Bell size={13} className="text-amber-400 fill-amber-400/50 shrink-0" title={`Recordatorio: ${event.reminderMinutes} min antes`} />
+                              )}
+                              <span>{event.title}</span>
+                            </h4>
                             {event.recurrence && event.recurrence !== 'none' && (
                               <span className="text-[10px] text-purple-400 font-bold uppercase tracking-wider">
                                 Repite: {

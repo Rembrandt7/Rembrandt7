@@ -8,6 +8,7 @@ interface PanchoFloatingButtonProps {
   isOpen: boolean;
   onClick: () => void;
   statusMessage?: string;
+  leftSidebarOpen?: boolean;
 }
 
 export const getPanchoRole = (activeTabId: string): { title: string; subtitle: string; icon: string; color: string } => {
@@ -66,6 +67,7 @@ export const PanchoFloatingButton: React.FC<PanchoFloatingButtonProps> = ({
   isOpen,
   onClick,
   statusMessage,
+  leftSidebarOpen = true,
 }) => {
   const role = getPanchoRole(activeTabId);
 
@@ -105,13 +107,53 @@ export const PanchoFloatingButton: React.FC<PanchoFloatingButtonProps> = ({
   if (isOpen) return null;
 
   return (
-    <div className="fixed bottom-20 lg:bottom-6 right-4 lg:right-6 z-50 pointer-events-auto flex items-center gap-2">
-      {/* Dynamic pill badge indicating active tab role */}
+    <div 
+      className={`fixed top-2.5 sm:top-3 z-40 pointer-events-auto flex items-center gap-2 transition-all duration-300 ${
+        leftSidebarOpen ? 'left-12 sm:left-14 lg:left-[338px]' : 'left-12 sm:left-14 lg:left-5'
+      }`}
+    >
+      {/* Main Avatar Button */}
+      <motion.button
+        whileHover={{ scale: 1.08 }}
+        whileTap={{ scale: 0.92 }}
+        onClick={onClick}
+        style={{ boxShadow: getGlowShadow() }}
+        className={`relative p-1.5 sm:p-2 rounded-full bg-gradient-to-br from-gray-900 via-gray-800 to-gray-950 border-2 ${getBorderColor()} shadow-2xl flex items-center justify-center transition-all group`}
+        title={`Abrir ${role.title}`}
+      >
+        {/* State Ping Indicator Ring */}
+        {panchoState === 'working' && (
+          <span className="absolute inset-0 rounded-full bg-amber-400/30 animate-ping" />
+        )}
+        {panchoState === 'attention' && (
+          <span className="absolute inset-0 rounded-full bg-pink-500/40 animate-ping" />
+        )}
+
+        {/* Pancho Dog Avatar */}
+        <PanchoRobotAvatar state={panchoState} size={38} showTail={false} />
+
+        {/* Small floating status badge dot on mobile */}
+        <span
+          className={`sm:hidden absolute top-0 right-0 w-3 h-3 rounded-full border-2 border-gray-900 ${
+            panchoState === 'working'
+              ? 'bg-amber-400'
+              : panchoState === 'success'
+              ? 'bg-emerald-400'
+              : panchoState === 'error'
+              ? 'bg-red-500'
+              : panchoState === 'attention'
+              ? 'bg-pink-500'
+              : 'bg-cyan-400'
+          }`}
+        />
+      </motion.button>
+
+      {/* Dynamic pill badge indicating active tab role (to the right of avatar in top-left) */}
       <motion.div
-        initial={{ opacity: 0, x: 20 }}
+        initial={{ opacity: 0, x: -15 }}
         animate={{ opacity: 1, x: 0 }}
-        exit={{ opacity: 0, x: 20 }}
-        className="hidden sm:flex items-center gap-2 px-3 py-1.5 rounded-full bg-gray-900/90 backdrop-blur-md border border-white/10 shadow-xl cursor-pointer hover:border-white/20 transition-all"
+        exit={{ opacity: 0, x: -15 }}
+        className="hidden md:flex items-center gap-2 px-3 py-1.5 rounded-full bg-gray-900/90 backdrop-blur-md border border-white/10 shadow-xl cursor-pointer hover:border-white/20 transition-all"
         onClick={onClick}
       >
         <span className="text-sm">{role.icon}</span>
@@ -130,42 +172,6 @@ export const PanchoFloatingButton: React.FC<PanchoFloatingButtonProps> = ({
           </span>
         </div>
       </motion.div>
-
-      {/* Main Avatar Button */}
-      <motion.button
-        whileHover={{ scale: 1.08 }}
-        whileTap={{ scale: 0.92 }}
-        onClick={onClick}
-        style={{ boxShadow: getGlowShadow() }}
-        className={`relative p-2 rounded-full bg-gradient-to-br from-gray-900 via-gray-800 to-gray-950 border-2 ${getBorderColor()} shadow-2xl flex items-center justify-center transition-all group`}
-        title={`Abrir ${role.title}`}
-      >
-        {/* State Ping Indicator Ring */}
-        {panchoState === 'working' && (
-          <span className="absolute inset-0 rounded-full bg-amber-400/30 animate-ping" />
-        )}
-        {panchoState === 'attention' && (
-          <span className="absolute inset-0 rounded-full bg-pink-500/40 animate-ping" />
-        )}
-
-        {/* Pancho Dog Avatar */}
-        <PanchoRobotAvatar state={panchoState} size={48} showTail={false} />
-
-        {/* Small floating status badge dot on mobile */}
-        <span
-          className={`sm:hidden absolute top-0 right-0 w-3.5 h-3.5 rounded-full border-2 border-gray-900 ${
-            panchoState === 'working'
-              ? 'bg-amber-400'
-              : panchoState === 'success'
-              ? 'bg-emerald-400'
-              : panchoState === 'error'
-              ? 'bg-red-500'
-              : panchoState === 'attention'
-              ? 'bg-pink-500'
-              : 'bg-cyan-400'
-          }`}
-        />
-      </motion.button>
     </div>
   );
 };

@@ -149,7 +149,11 @@ const AiSidebar: React.FC<AiSidebarProps> = ({ isOpen }) => {
                 <nav className="flex flex-col gap-1 px-3 pb-4">
                     <SortableLinkList 
                         id="aiSidebar.models"
-                        items={config.aiSidebar.models}
+                        items={(config.aiSidebar?.models || []).filter(m => {
+                            const name = (m.name || '').toLowerCase();
+                            const href = (m.href || '').toLowerCase();
+                            return !name.includes('gemini') && !name.includes('jimmy') && !name.includes('llimi') && !href.includes('gemini.google.com');
+                        })}
                         isEditing={isEditing}
                         onReorder={(newItems) => updateConfig({ ...config, aiSidebar: { ...config.aiSidebar, models: newItems } })}
                         strategy={verticalListSortingStrategy}

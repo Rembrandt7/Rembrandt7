@@ -15,7 +15,7 @@ const MATERIAL_POWER: Record<string, number> = {
 
 const CalculatorWidget: React.FC = () => {
   const [isDesktop, setIsDesktop] = useState(window.innerWidth >= 1024);
-  const [isOpen, setIsOpen] = useState(window.innerWidth >= 1024);
+  const [isOpen, setIsOpen] = useState(false);
   const [mode, setMode] = useState<'standard' | '3d'>(() => {
     return (localStorage.getItem('rembrandt_calc_mode') as 'standard' | '3d') || '3d';
   });
@@ -46,9 +46,6 @@ const CalculatorWidget: React.FC = () => {
     const handleResize = () => {
       const desktop = window.innerWidth >= 1024;
       setIsDesktop(desktop);
-      if (desktop) {
-        setIsOpen(true);
-      }
     };
     window.addEventListener('resize', handleResize);
     return () => window.removeEventListener('resize', handleResize);

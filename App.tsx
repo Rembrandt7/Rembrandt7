@@ -953,17 +953,20 @@ const MainLayout: React.FC = () => {
           panchoState={panchoState}
           isOpen={isAssistantOpen}
           onClick={() => setIsAssistantOpen(true)}
+          leftSidebarOpen={leftSidebarOpen}
         />
 
         {/* Pancho Assistant Modal */}
         <AnimatePresence>
           {isAssistantOpen && (
             <motion.div 
-              initial={{ opacity: 0, y: 50, scale: 0.9 }}
+              initial={{ opacity: 0, y: -20, scale: 0.95 }}
               animate={{ opacity: 1, y: 0, scale: 1 }}
-              exit={{ opacity: 0, y: 50, scale: 0.9 }}
+              exit={{ opacity: 0, y: -20, scale: 0.95 }}
               transition={{ type: 'spring', damping: 25, stiffness: 300 }}
-              className="fixed bottom-20 lg:bottom-4 right-2 sm:right-4 w-[calc(100vw-16px)] sm:w-[480px] max-w-[480px] h-[75vh] sm:h-[680px] glass-panel-heavy rounded-3xl shadow-2xl flex flex-col z-50 overflow-hidden ring-1 ring-white/10 pointer-events-auto"
+              className={`fixed top-14 sm:top-16 ${
+                leftSidebarOpen ? 'lg:left-[338px]' : 'lg:left-6'
+              } left-2 sm:left-4 w-[calc(100vw-16px)] sm:w-[480px] max-w-[480px] h-[78vh] sm:h-[680px] glass-panel-heavy rounded-3xl shadow-2xl flex flex-col z-50 overflow-hidden ring-1 ring-white/10 pointer-events-auto`}
             >
               <Suspense fallback={<TabLoadingFallback message="Cargando a Pancho 🐶..." />}>
                 <PanchoAssistantModal 
