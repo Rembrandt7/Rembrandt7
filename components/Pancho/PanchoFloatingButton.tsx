@@ -108,8 +108,8 @@ export const PanchoFloatingButton: React.FC<PanchoFloatingButtonProps> = ({
 
   return (
     <div 
-      className={`fixed top-2.5 sm:top-3 z-40 pointer-events-auto flex items-center gap-2 transition-all duration-300 ${
-        leftSidebarOpen ? 'left-12 sm:left-14 lg:left-[338px]' : 'left-12 sm:left-14 lg:left-5'
+      className={`fixed top-3 z-50 pointer-events-auto flex items-center gap-2 transition-all duration-300 ${
+        leftSidebarOpen ? 'left-14 sm:left-16 lg:left-[345px]' : 'left-14 sm:left-16 lg:left-6'
       }`}
     >
       {/* Main Avatar Button */}

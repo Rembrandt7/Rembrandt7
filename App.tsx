@@ -715,9 +715,11 @@ const MainLayout: React.FC = () => {
           <div className="flex flex-col items-center p-2 sm:p-4 min-h-full pb-24"> 
               {/* DESKTOP HEADER (Large screens >= 1024px) */}
               <header className="hidden lg:flex w-full max-w-screen-2xl mb-6 pt-4 px-6 justify-between items-center gap-2">
-                  <h1 className="text-2xl md:text-4xl lg:text-5xl font-bold text-transparent bg-clip-text bg-gradient-to-r from-purple-400 to-pink-600 truncate">
-                    Rembrandt IA Studio
-                  </h1>
+                  <div className="flex items-center gap-4 min-w-0">
+                    <h1 className="text-2xl md:text-4xl lg:text-5xl font-bold text-transparent bg-clip-text bg-gradient-to-r from-purple-400 to-pink-600 truncate">
+                      Rembrandt IA Studio
+                    </h1>
+                  </div>
                   <div className="hidden md:block flex-1 mx-8">
                     <ReminderDisplay />
                   </div>
