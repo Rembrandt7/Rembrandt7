@@ -4,6 +4,16 @@ import ReactDOM from 'react-dom/client';
 import App from './App';
 import ErrorBoundary from './components/ErrorBoundary';
 
+// --- AUTO-RECOVERY FOR DYNAMIC CHUNKS ON NEW DEPLOYMENTS ---
+window.addEventListener('vite:preloadError', (event) => {
+    console.warn('[Deployment Sync] Vite chunk preload error detected. Auto-reloading with latest build...', event);
+    const lastReload = parseInt(sessionStorage.getItem('last-chunk-reload') || '0', 10);
+    if (Date.now() - lastReload > 8000) {
+        sessionStorage.setItem('last-chunk-reload', Date.now().toString());
+        window.location.reload();
+    }
+});
+
 // --- INTERCEPT FETCH FOR PROXY ---
 // To evade corporate firewalls, all calls to Google Gemini API from the client 
 // (which are performed by @google/genai via global fetch) are intercepted and 

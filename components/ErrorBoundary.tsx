@@ -28,6 +28,21 @@ class ErrorBoundary extends Component<Props, State> {
   public componentDidCatch(error: Error, errorInfo: ErrorInfo) {
     console.error("Uncaught error:", error, errorInfo);
     this.setState({ errorInfo });
+
+    // Auto-recover from stale chunks across deployments
+    const isChunkError =
+      error?.message?.includes('dynamically imported module') ||
+      error?.message?.includes('Failed to fetch dynamically') ||
+      error?.message?.includes('Failed to fetch');
+
+    if (isChunkError) {
+      const lastReload = parseInt(sessionStorage.getItem('last-chunk-reload') || '0', 10);
+      if (Date.now() - lastReload > 8000) {
+        sessionStorage.setItem('last-chunk-reload', Date.now().toString());
+        console.warn('Auto-recovering from missing dynamic chunk by clearing cache and reloading...');
+        this.handleCleanCacheAndReload();
+      }
+    }
   }
 
   private handleCopyError = async () => {

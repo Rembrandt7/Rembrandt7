@@ -43,29 +43,60 @@ import { AnimatePresence, motion } from 'motion/react';
 import TabButton from './components/common/TabButton';
 import { useDeviceLayout } from './hooks/useDeviceLayout';
 
+// Resilient dynamic import helper to recover from stale chunks across deployments
+function lazyWithRetry<T extends React.ComponentType<any>>(
+  factory: () => Promise<{ default: T }>
+) {
+  return lazy(async () => {
+    try {
+      return await factory();
+    } catch (error: any) {
+      const isChunkError =
+        error?.message?.includes('dynamically imported module') ||
+        error?.message?.includes('Failed to fetch dynamically') ||
+        error?.message?.includes('Failed to fetch') ||
+        error?.name === 'TypeError';
+
+      const lastReload = parseInt(sessionStorage.getItem('last-chunk-reload') || '0', 10);
+      if (isChunkError && Date.now() - lastReload > 8000) {
+        sessionStorage.setItem('last-chunk-reload', Date.now().toString());
+        if ('caches' in window) {
+          try {
+            const keys = await caches.keys();
+            await Promise.all(keys.map(k => caches.delete(k)));
+          } catch (_) {}
+        }
+        window.location.reload();
+        return { default: (() => null) as unknown as T };
+      }
+      throw error;
+    }
+  });
+}
+
 // Lazy-loaded tab components for optimized startup performance and reduced memory footprint
-const VideoGenerator = lazy(() => import('./components/VideoGenerator'));
-const EmailGenerator = lazy(() => import('./components/EmailGenerator'));
-const TextToSpeech = lazy(() => import('./components/TextToSpeech'));
-const Whiteboard = lazy(() => import('./components/Whiteboard'));
-const Renders = lazy(() => import('./components/Renders'));
-const Prompts = lazy(() => import('./components/Prompts'));
-const Engineer = lazy(() => import('./components/Engineer'));
-const CommandsTab = lazy(() => import('./components/CommandsTab'));
-const UsefulTools = lazy(() => import('./components/UsefulTools'));
-const Credenciales = lazy(() => import('./components/Credenciales'));
-const Dashboard = lazy(() => import('./components/Dashboard'));
-const Finanzas = lazy(() => import('./components/Finanzas'));
-const DatabaseViewer = lazy(() => import('./components/DatabaseViewer'));
-const CustomTabContent = lazy(() => import('./components/CustomTabContent'));
-const CalendarTab = lazy(() => import('./components/CalendarTab'));
-const NotesTab = lazy(() => import('./components/NotesTab'));
-const Nutricion = lazy(() => import('./components/Nutricion'));
-const ThreeDPrinting = lazy(() => import('./components/ThreeDPrinting'));
-const PanchoAssistantModal = lazy(() => import('./components/Pancho/PanchoAssistantModal'));
-const WorkspaceHub = lazy(() => import('./components/WorkspaceHub'));
-const TeleprompterTab = lazy(() => import('./components/TeleprompterTab'));
-const PersonalTab = lazy(() => import('./components/PersonalTab'));
+const VideoGenerator = lazyWithRetry(() => import('./components/VideoGenerator'));
+const EmailGenerator = lazyWithRetry(() => import('./components/EmailGenerator'));
+const TextToSpeech = lazyWithRetry(() => import('./components/TextToSpeech'));
+const Whiteboard = lazyWithRetry(() => import('./components/Whiteboard'));
+const Renders = lazyWithRetry(() => import('./components/Renders'));
+const Prompts = lazyWithRetry(() => import('./components/Prompts'));
+const Engineer = lazyWithRetry(() => import('./components/Engineer'));
+const CommandsTab = lazyWithRetry(() => import('./components/CommandsTab'));
+const UsefulTools = lazyWithRetry(() => import('./components/UsefulTools'));
+const Credenciales = lazyWithRetry(() => import('./components/Credenciales'));
+const Dashboard = lazyWithRetry(() => import('./components/Dashboard'));
+const Finanzas = lazyWithRetry(() => import('./components/Finanzas'));
+const DatabaseViewer = lazyWithRetry(() => import('./components/DatabaseViewer'));
+const CustomTabContent = lazyWithRetry(() => import('./components/CustomTabContent'));
+const CalendarTab = lazyWithRetry(() => import('./components/CalendarTab'));
+const NotesTab = lazyWithRetry(() => import('./components/NotesTab'));
+const Nutricion = lazyWithRetry(() => import('./components/Nutricion'));
+const ThreeDPrinting = lazyWithRetry(() => import('./components/ThreeDPrinting'));
+const PanchoAssistantModal = lazyWithRetry(() => import('./components/Pancho/PanchoAssistantModal'));
+const WorkspaceHub = lazyWithRetry(() => import('./components/WorkspaceHub'));
+const TeleprompterTab = lazyWithRetry(() => import('./components/TeleprompterTab'));
+const PersonalTab = lazyWithRetry(() => import('./components/PersonalTab'));
 
 import { PanchoFloatingButton } from './components/Pancho/PanchoFloatingButton';
 import { PanchoState } from './components/Pancho/PanchoRobotAvatar';
