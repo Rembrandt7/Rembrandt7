@@ -27,7 +27,8 @@ import {
   RefreshCw,
   AlertTriangle,
   Palmtree,
-  Sun
+  Sun,
+  Bell
 } from 'lucide-react';
 import WeatherForecast from './WeatherForecast';
 import { toast } from 'sonner';
