@@ -342,6 +342,8 @@ const EmailGenerator: React.FC<EmailGeneratorProps> = ({ attachedImages, onAttac
     const [recipientTitle, setRecipientTitle] = useState('Arq.');
     const [titlesList] = useState<string[]>(DEFAULT_TITLES);
     const [recipientName, setRecipientName] = useState('Erik Gabino');
+    const [recipientNickname, setRecipientNickname] = useState('Arqui');
+    const [recipientRelation, setRecipientRelation] = useState('Javer');
     const [recipientGender, setRecipientGender] = useState<Gender>('M');
     const [recipientEmailUser, setRecipientEmailUser] = useState('egabino');
     const [recipientEmailDomain, setRecipientEmailDomain] = useState('@javer');
@@ -619,16 +621,22 @@ const EmailGenerator: React.FC<EmailGeneratorProps> = ({ attachedImages, onAttac
         const contact = list[idx];
         if (!contact) return;
         setSelectedContactIndex(String(idx));
-        setRecipientName(String(getDBValue(contact, ['cliente', 'nombre']) || ''));
+        const cName = String(getDBValue(contact, ['cliente', 'nombre']) || '');
+        setRecipientName(cName);
         const dbTitle = getDBValue(contact, ['lic', 'titulo']) || '';
         setRecipientTitle(dbTitle);
-        const gen = String(getDBValue(contact, 'genero') || '').toLowerCase();
+        const gen = String(getDBValue(contact, ['genero', 'Genero']) || '').toLowerCase();
         const isFemale = gen.startsWith('f') || gen.includes('muj') || gen.includes('fem');
         setRecipientGender(isFemale ? 'F' : 'M');
         const email = getDBValue(contact, 'correo') || '';
         if (email) {
             setRecipientEmailUser(email);
         }
+        const dbApodo = getDBValue(contact, ['Apodo(manera en que me refiero)', 'apodo', 'alias']) || '';
+        setRecipientNickname(dbApodo || cName.split(' ')[0] || '');
+        const dbRelacion = getDBValue(contact, ['Relacion', 'relacion']) || 'Javer';
+        setRecipientRelation(dbRelacion);
+
         setContactSearchQuery('');
         setIsSearchFocused(false);
     }, []);
@@ -638,6 +646,8 @@ const EmailGenerator: React.FC<EmailGeneratorProps> = ({ attachedImages, onAttac
         if (idxVal === '') {
             setSelectedContactIndex('');
             setRecipientName('');
+            setRecipientNickname('');
+            setRecipientRelation('Javer');
             setRecipientTitle('');
             setRecipientEmailUser('');
             return;
@@ -688,6 +698,8 @@ const EmailGenerator: React.FC<EmailGeneratorProps> = ({ attachedImages, onAttac
         } else {
             setSelectedContactIndex('');
             setRecipientName('Erik Gabino');
+            setRecipientNickname('Arqui');
+            setRecipientRelation('Javer');
             setRecipientTitle('Arq.');
             setRecipientGender('M');
             setRecipientEmailUser('egabino');
@@ -767,15 +779,12 @@ const EmailGenerator: React.FC<EmailGeneratorProps> = ({ attachedImages, onAttac
         const hour = new Date().getHours();
         const timeGreeting = hour < 12 ? 'Buen día' : hour < 19 ? 'Buenas tardes' : 'Buenas noches';
         
-        const idx = parseInt(selectedContactIndex, 10);
-        const contact = !isNaN(idx) ? sortedContacts[idx] : null;
-        const dataApodo = contact ? getDBValue(contact, ['apodo', 'alias']) : null;
-        
-        const finalRecipient = (useNickname && dataApodo) 
-            ? dataApodo 
+        const effectiveNickname = recipientNickname.trim();
+        const finalRecipient = (useNickname && effectiveNickname) 
+            ? effectiveNickname 
             : (recipientName ? (recipientTitle ? `${recipientTitle} ${recipientName}` : recipientName) : '');
         return finalRecipient ? `${timeGreeting} ${finalRecipient}` : timeGreeting;
-    }, [selectedContactIndex, sortedContacts, useNickname, recipientName, recipientTitle]);
+    }, [useNickname, recipientNickname, recipientName, recipientTitle]);
 
     const toggleDeliverable = useCallback((item: DeliverableType) => {
         setActivePresetId(null);
@@ -863,13 +872,12 @@ const EmailGenerator: React.FC<EmailGeneratorProps> = ({ attachedImages, onAttac
             }
         }
         
-        autoSaveContactIfNew();
         const subject = encodeURIComponent(subjectText || '');
         const body = encodeURIComponent(stripHtml(bodyText || ''));
         const to = encodeURIComponent(fullRecipientEmail || '');
         const url = `https://outlook.office.com/mail/deeplink/compose?to=${to}&subject=${subject}&body=${body}`;
         window.open(url, '_blank');
-    }, [activeMode, generatedContent, livePreview, project, idea, getPresetGreeting, fullRecipientEmail, autoSaveContactIfNew]);
+    }, [activeMode, generatedContent, livePreview, project, idea, getPresetGreeting, fullRecipientEmail]);
 
     // Copiado enriquecido (HTML + texto plano)
     const handleCopyToClipboard = async (text: string, type: CopiedState) => {
@@ -909,8 +917,6 @@ const EmailGenerator: React.FC<EmailGeneratorProps> = ({ attachedImages, onAttac
             toast.error('Introduce una idea o adjunta una imagen de referencia.'); 
             return; 
         }
-        // Guardar contacto automáticamente en la base de datos si es nuevo
-        autoSaveContactIfNew();
         setIsLoading(true); setError(null);
         try {
             const apiKey = googleApiConfig?.apiKey || process.env.GEMINI_API_KEY;
@@ -919,11 +925,10 @@ const EmailGenerator: React.FC<EmailGeneratorProps> = ({ attachedImages, onAttac
             const hour = new Date().getHours();
             const timeGreeting = hour < 12 ? 'Buen día' : hour < 19 ? 'Buenas tardes' : 'Buenas noches';
             
-            const idx = parseInt(selectedContactIndex, 10);
-            const contact = !isNaN(idx) ? sortedContacts[idx] : null;
-            const dataApodo = contact ? getDBValue(contact, ['apodo', 'alias']) : null;
-            
-            const finalRecipient = (useNickname && dataApodo) ? dataApodo : recipientName;
+            const effectiveNickname = recipientNickname.trim();
+            const finalRecipient = (useNickname && effectiveNickname) 
+                ? effectiveNickname 
+                : (recipientName ? (recipientTitle ? `${recipientTitle} ${recipientName}` : recipientName) : '');
             const greeting = finalRecipient ? `${timeGreeting} ${finalRecipient}` : timeGreeting;
             
             const systemInstruction = `Eres un experto en comunicación ejecutiva y estratégica para el sector inmobiliario y de arquitectura.
@@ -934,9 +939,10 @@ const EmailGenerator: React.FC<EmailGeneratorProps> = ({ attachedImages, onAttac
             2. FORMATO: Usa DOBLE SALTO DE LÍNEA (\\n\\n) después del saludo y entre CADA párrafo.
             3. ESTRUCTURA: Usa listas numeradas o viñetas claras para puntos importantes. No amontones el texto.
             4. FIRMA: Termina SIEMPRE con: "Atte.\\n\\nArq. Rembrandt Blanco Arrambide".
-            5. DESTINATARIO: "${finalRecipient}".
+            5. DESTINATARIO: "${recipientName}".
+               TRATAMIENTO EN SALUDO: "${finalRecipient}".
                GÉNERO DEL DESTINATARIO: ${recipientGender === 'F' ? 'Mujer / Femenino (debes redactar en femenino: Estimada, Licenciada, Arquitecta, Ingeniera, bienvenida, atenta, agradecida, etc.)' : 'Hombre / Masculino (debes redactar en masculino: Estimado, Licenciado, Arquitecto, Ingeniero, bienvenido, atento, agradecido, etc.)'}. Asegúrate de que toda la redacción, los tratamientos y los saludos hacia el destinatario concuerden exactamente con este género.
-               IMPORTANTE: Si está activo el uso de apodo o nombre corto, refiérete al destinatario siempre por su apodo ("${finalRecipient}") en lugar de su nombre formal completo.
+               ${useNickname && effectiveNickname ? `IMPORTANTE: Modo apodo activo. Dirígete y refiérete al destinatario por su apodo o trato directo: "${effectiveNickname}" (en el saludo inicial y menciones directas en el cuerpo del mensaje) en lugar de su nombre formal.` : `IMPORTANTE: Dirígete al destinatario formalmente como "${finalRecipient}".`}
             6. CONTEXTO: Proyecto: "${project}".
             7. IDEA A DESARROLLAR: "${targetIdea}". 
             8. CONTEXTO ANTERIOR: "${previousEmail}".
@@ -1010,7 +1016,7 @@ const EmailGenerator: React.FC<EmailGeneratorProps> = ({ attachedImages, onAttac
             setError(friendlyMsg); 
             toast.error("Error al generar: " + friendlyMsg);
         } finally { setIsLoading(false); }
-    }, [idea, previousEmail, tone, messageLength, recipientName, project, useNickname, selectedContactIndex, sortedContacts, googleApiConfig, updateConfig, attachedImages, recipientGender, autoSaveContactIfNew]);
+    }, [idea, previousEmail, tone, messageLength, recipientName, recipientNickname, recipientTitle, project, useNickname, googleApiConfig, updateConfig, attachedImages, recipientGender]);
 
     // Micro-ajustes rápidos con IA
     const handleQuickAdjust = (type: 'shorter' | 'formal' | 'urgent' | 'reminder') => {
@@ -1130,56 +1136,102 @@ const EmailGenerator: React.FC<EmailGeneratorProps> = ({ attachedImages, onAttac
         }
     };
 
-    const handleSaveNewContact = async (silent = false) => {
-        if (!recipientName.trim()) { 
-            if (!silent) toast.error("Ingresa un nombre para el contacto"); 
+    const handleSaveContactToSupabase = async (customData?: {
+        name?: string;
+        title?: string;
+        gender?: Gender;
+        email?: string;
+        nickname?: string;
+        relation?: string;
+    }) => {
+        const cleanName = (customData?.name ?? recipientName).trim();
+        if (!cleanName) { 
+            toast.error("Ingresa un nombre para el contacto antes de guardar en Supabase"); 
             return; 
         }
         setIsSavingContact(true);
         try {
-            const emailToSave = fullRecipientEmail.trim();
-            const payload = { 
-                cliente: recipientName.trim(), 
-                lic: recipientTitle.trim() || '', 
-                genero: recipientGender === 'M' ? 'Hombre' : 'Mujer', 
-                correo: emailToSave 
-            };
-            const res = await fetch(`${SUPABASE_CONFIG.URL}/rest/v1/Contactos`, {
-                method: 'POST',
-                headers: { 
-                    'apikey': SUPABASE_CONFIG.KEY, 
-                    'Authorization': `Bearer ${SUPABASE_CONFIG.KEY}`, 
-                    'Content-Type': 'application/json',
-                    'Prefer': 'return=representation'
-                },
-                body: JSON.stringify(payload)
+            const emailToSave = (customData?.email ?? fullRecipientEmail).trim();
+            const titleToSave = (customData?.title ?? recipientTitle).trim();
+            const genderVal = (customData?.gender ?? recipientGender) === 'M' ? 'Hombre' : 'Mujer';
+            const nicknameToSave = (customData?.nickname ?? recipientNickname).trim();
+            const relationToSave = (customData?.relation ?? recipientRelation).trim() || 'Javer';
+
+            // Buscar si ya existe en Supabase (por nombre o correo)
+            const existingContact = sortedContacts.find(c => {
+                const cName = String(getDBValue(c, ['cliente', 'nombre']) || '').trim().toLowerCase();
+                const cEmail = String(getDBValue(c, 'correo') || '').trim().toLowerCase();
+                return (cName && cName === cleanName.toLowerCase()) || 
+                       (emailToSave && cEmail && cEmail === emailToSave.toLowerCase());
             });
+
+            const payload: any = { 
+                cliente: cleanName, 
+                lic: titleToSave || null, 
+                Genero: genderVal,
+                correo: emailToSave || null,
+                "Apodo(manera en que me refiero)": nicknameToSave || null,
+                Relacion: relationToSave
+            };
+
+            let res: Response;
+            if (existingContact) {
+                const targetKey = getDBValue(existingContact, ['cliente', 'nombre']) || cleanName;
+                res = await fetch(`${SUPABASE_CONFIG.URL}/rest/v1/Contactos?cliente=eq.${encodeURIComponent(targetKey)}`, {
+                    method: 'PATCH',
+                    headers: { 
+                        'apikey': SUPABASE_CONFIG.KEY, 
+                        'Authorization': `Bearer ${SUPABASE_CONFIG.KEY}`, 
+                        'Content-Type': 'application/json',
+                        'Prefer': 'return=representation'
+                    },
+                    body: JSON.stringify(payload)
+                });
+            } else {
+                res = await fetch(`${SUPABASE_CONFIG.URL}/rest/v1/Contactos`, {
+                    method: 'POST',
+                    headers: { 
+                        'apikey': SUPABASE_CONFIG.KEY, 
+                        'Authorization': `Bearer ${SUPABASE_CONFIG.KEY}`, 
+                        'Content-Type': 'application/json',
+                        'Prefer': 'return=representation'
+                    },
+                    body: JSON.stringify(payload)
+                });
+            }
+
             if (res.ok) {
                 await fetchContacts();
-                toast.success(`Contacto "${recipientName}" guardado en la Base de Datos`);
+                toast.success(`Contacto "${cleanName}" guardado en Supabase con éxito`);
+                setIsNewContactMode(false);
             } else {
                 const newContact = { 
                     id: Date.now().toString(), 
-                    cliente: recipientName, 
+                    cliente: cleanName, 
                     correo: emailToSave, 
-                    lic: recipientTitle, 
-                    genero: recipientGender === 'M' ? 'Hombre' : 'Mujer' 
+                    lic: titleToSave, 
+                    Genero: genderVal,
+                    "Apodo(manera en que me refiero)": nicknameToSave,
+                    Relacion: relationToSave
                 };
-                setContacts(prev => [newContact, ...prev]);
+                setContacts(prev => [newContact, ...prev.filter(c => String(getDBValue(c, 'cliente')).toLowerCase() !== cleanName.toLowerCase())]);
                 try {
                     const cached = localStorage.getItem('cached-contacts');
-                    const parsed = cached ? JSON.parse(cached) : [];
-                    localStorage.setItem('cached-contacts', JSON.stringify([newContact, ...parsed]));
+                    const parsed: any[] = cached ? JSON.parse(cached) : [];
+                    localStorage.setItem('cached-contacts', JSON.stringify([newContact, ...parsed.filter(c => String(getDBValue(c, 'cliente')).toLowerCase() !== cleanName.toLowerCase())]));
                 } catch {}
-                toast.success(`Contacto "${recipientName}" guardado`);
+                toast.warning(`Guardado localmente (sin sincronizar en Supabase)`);
+                setIsNewContactMode(false);
             }
         } catch (e) { 
             console.error(e); 
-            if (!silent) toast.error("Error al guardar contacto"); 
+            toast.error("Error al conectar con Supabase"); 
         } finally { 
             setIsSavingContact(false); 
         }
     };
+
+    const handleSaveNewContact = handleSaveContactToSupabase;
 
     const deleteHistoryItem = (id: string) => updateConfig(prev => ({ ...prev, aiHistory: prev.aiHistory?.filter(h => h.id !== id) }));
 
@@ -1456,29 +1508,65 @@ const EmailGenerator: React.FC<EmailGeneratorProps> = ({ attachedImages, onAttac
                                 {isNewContactMode ? (
                                     <div className="space-y-2 pt-0.5">
                                         <div>
-                                            <label className="text-[9px] font-bold uppercase text-gray-400 block mb-0.5">Nombre de la persona</label>
+                                            <label className="text-[9px] font-bold uppercase text-gray-400 block mb-0.5">Nombre de la persona *</label>
                                             <input
                                                 type="text"
                                                 value={recipientName}
-                                                onChange={(e) => setRecipientName(e.target.value)}
-                                                placeholder="Ej. Ing. Carlos Salinas o Arq. Laura"
-                                                className="w-full p-2.5 bg-slate-950 border border-indigo-500/40 rounded-xl text-xs text-white font-bold outline-none focus:border-indigo-400 shadow-inner"
+                                                onChange={(e) => {
+                                                    const n = e.target.value;
+                                                    setRecipientName(n);
+                                                    if (!recipientNickname || recipientNickname === recipientName.split(' ')[0]) {
+                                                        setRecipientNickname(n.split(' ')[0]);
+                                                    }
+                                                }}
+                                                placeholder="Ej. Arq. Laura o Carlos Salinas"
+                                                className="w-full p-2 bg-slate-950 border border-indigo-500/40 rounded-xl text-xs text-white font-bold outline-none focus:border-indigo-400 shadow-inner"
                                             />
                                         </div>
-                                        <div>
-                                            <label className="text-[9px] font-bold uppercase text-gray-400 block mb-0.5">Correo electrónico</label>
-                                            <input
-                                                type="email"
-                                                value={recipientEmailUser}
-                                                onChange={(e) => setRecipientEmailUser(e.target.value)}
-                                                placeholder="ejemplo@correo.com"
-                                                className="w-full p-2.5 bg-slate-950 border border-indigo-500/40 rounded-xl text-xs text-white font-mono outline-none focus:border-indigo-400 shadow-inner"
-                                            />
+                                        <div className="grid grid-cols-2 gap-2">
+                                            <div>
+                                                <label className="text-[9px] font-bold uppercase text-yellow-400 block mb-0.5">🏷️ Apodo / Saludo</label>
+                                                <input
+                                                    type="text"
+                                                    value={recipientNickname}
+                                                    onChange={(e) => setRecipientNickname(e.target.value)}
+                                                    placeholder="Ej. Laura, Beto..."
+                                                    className="w-full p-2 bg-slate-950 border border-yellow-500/40 rounded-xl text-xs text-yellow-300 font-bold outline-none focus:border-yellow-400 shadow-inner"
+                                                />
+                                            </div>
+                                            <div>
+                                                <label className="text-[9px] font-bold uppercase text-gray-400 block mb-0.5">Correo</label>
+                                                <input
+                                                    type="email"
+                                                    value={recipientEmailUser}
+                                                    onChange={(e) => setRecipientEmailUser(e.target.value)}
+                                                    placeholder="correo@ejemplo.com"
+                                                    className="w-full p-2 bg-slate-950 border border-indigo-500/40 rounded-xl text-xs text-white font-mono outline-none focus:border-indigo-400 shadow-inner"
+                                                />
+                                            </div>
                                         </div>
-                                        <p className="text-[9px] text-emerald-400/90 font-medium flex items-center gap-1">
-                                            <span>💾</span>
-                                            <span>Se guardará automáticamente en tu base de datos al redactar o enviar.</span>
-                                        </p>
+                                        <div className="flex items-center gap-2 pt-1">
+                                            <button
+                                                type="button"
+                                                onClick={() => handleSaveContactToSupabase()}
+                                                disabled={isSavingContact || !recipientName.trim()}
+                                                className="flex-1 py-2 bg-indigo-600 hover:bg-indigo-500 text-white rounded-xl text-xs font-black uppercase flex items-center justify-center gap-1.5 transition-all cursor-pointer shadow-md disabled:opacity-50"
+                                            >
+                                                {isSavingContact ? <Spinner size="3" /> : <Save size={12} />}
+                                                <span>💾 Guardar en Supabase</span>
+                                            </button>
+                                            <button
+                                                type="button"
+                                                onClick={() => {
+                                                    setIsNewContactMode(false);
+                                                    toast.info(`Usando a "${recipientName}" sin guardar`);
+                                                }}
+                                                disabled={!recipientName.trim()}
+                                                className="py-2 px-3 bg-gray-800 hover:bg-gray-700 text-gray-300 rounded-xl text-xs font-bold transition-all cursor-pointer"
+                                            >
+                                                ⚡ Usar
+                                            </button>
+                                        </div>
                                     </div>
                                 ) : (
                                     /* Vista Contactos Guardados */
@@ -1515,6 +1603,38 @@ const EmailGenerator: React.FC<EmailGeneratorProps> = ({ attachedImages, onAttac
                                                 </option>
                                             ))}
                                         </select>
+
+                                        {/* Modificar Apodo y Saludo en Plegado */}
+                                        <div className="flex items-center gap-2 p-1.5 bg-slate-950/80 rounded-xl border border-yellow-500/30">
+                                            <button
+                                                type="button"
+                                                onClick={() => setUseNickname(!useNickname)}
+                                                className={`px-2 py-1 rounded-lg text-[10px] font-black uppercase transition-all ${
+                                                    useNickname ? 'bg-yellow-500/20 text-yellow-300' : 'bg-gray-800 text-gray-400'
+                                                }`}
+                                            >
+                                                {useNickname ? '🏷️ Apodo' : 'Formal'}
+                                            </button>
+                                            <input
+                                                type="text"
+                                                value={recipientNickname}
+                                                onChange={(e) => setRecipientNickname(e.target.value)}
+                                                placeholder="Modificar apodo..."
+                                                disabled={!useNickname}
+                                                className={`flex-1 bg-transparent text-xs font-bold outline-none ${
+                                                    useNickname ? 'text-yellow-200 placeholder-yellow-500/40' : 'text-gray-500 opacity-50'
+                                                }`}
+                                            />
+                                            <button
+                                                type="button"
+                                                onClick={() => handleSaveContactToSupabase()}
+                                                disabled={isSavingContact}
+                                                className="px-2 py-1 bg-purple-600/80 hover:bg-purple-600 text-white rounded-lg text-[10px] font-black uppercase transition-colors shrink-0 cursor-pointer"
+                                                title="Guardar este apodo en Supabase"
+                                            >
+                                                {isSavingContact ? '...' : '💾 BD'}
+                                            </button>
+                                        </div>
                                     </div>
                                 )}
 
@@ -2108,15 +2228,31 @@ const EmailGenerator: React.FC<EmailGeneratorProps> = ({ attachedImages, onAttac
 
                                 {isNewContactMode ? (
                                     <div className="space-y-2 pt-0.5">
+                                        <div>
+                                            <label className="text-[9px] font-bold uppercase text-gray-400 block mb-0.5">Nombre Completo *</label>
+                                            <input
+                                                type="text"
+                                                value={recipientName}
+                                                onChange={(e) => {
+                                                    const n = e.target.value;
+                                                    setRecipientName(n);
+                                                    if (!recipientNickname || recipientNickname === recipientName.split(' ')[0]) {
+                                                        setRecipientNickname(n.split(' ')[0]);
+                                                    }
+                                                }}
+                                                placeholder="Ej. Ing. Carlos Salinas"
+                                                className="w-full p-2 bg-slate-950 border border-indigo-500/40 rounded-xl text-xs text-white font-bold outline-none focus:border-indigo-400"
+                                            />
+                                        </div>
                                         <div className="grid grid-cols-2 gap-2">
                                             <div>
-                                                <label className="text-[9px] font-bold uppercase text-gray-400 block mb-0.5">Nombre</label>
+                                                <label className="text-[9px] font-bold uppercase text-yellow-400 block mb-0.5">🏷️ Apodo / Saludo</label>
                                                 <input
                                                     type="text"
-                                                    value={recipientName}
-                                                    onChange={(e) => setRecipientName(e.target.value)}
-                                                    placeholder="Ej. Ing. Carlos Salinas"
-                                                    className="w-full p-2 bg-slate-950 border border-indigo-500/40 rounded-xl text-xs text-white font-bold outline-none focus:border-indigo-400"
+                                                    value={recipientNickname}
+                                                    onChange={(e) => setRecipientNickname(e.target.value)}
+                                                    placeholder="Ej. Carlos, Beto..."
+                                                    className="w-full p-2 bg-slate-950 border border-yellow-500/40 rounded-xl text-xs text-yellow-300 font-bold outline-none focus:border-yellow-400"
                                                 />
                                             </div>
                                             <div>
@@ -2130,9 +2266,28 @@ const EmailGenerator: React.FC<EmailGeneratorProps> = ({ attachedImages, onAttac
                                                 />
                                             </div>
                                         </div>
-                                        <p className="text-[9px] text-emerald-400/90 font-medium">
-                                            💾 Se guardará automáticamente al enviar o redactar.
-                                        </p>
+                                        <div className="flex items-center gap-2 pt-1">
+                                            <button
+                                                type="button"
+                                                onClick={() => handleSaveContactToSupabase()}
+                                                disabled={isSavingContact || !recipientName.trim()}
+                                                className="flex-1 py-2 bg-indigo-600 hover:bg-indigo-500 text-white rounded-xl text-xs font-black uppercase flex items-center justify-center gap-1.5 transition-all cursor-pointer shadow-md disabled:opacity-50"
+                                            >
+                                                {isSavingContact ? <Spinner size="3" /> : <Save size={12} />}
+                                                <span>💾 Guardar en Supabase</span>
+                                            </button>
+                                            <button
+                                                type="button"
+                                                onClick={() => {
+                                                    setIsNewContactMode(false);
+                                                    toast.info(`Usando a "${recipientName}" sin guardar`);
+                                                }}
+                                                disabled={!recipientName.trim()}
+                                                className="py-2 px-3 bg-gray-800 hover:bg-gray-700 text-gray-300 rounded-xl text-xs font-bold transition-all cursor-pointer"
+                                            >
+                                                ⚡ Usar solo hoy
+                                            </button>
+                                        </div>
                                     </div>
                                 ) : (
                                     <div className="space-y-2">
@@ -2168,6 +2323,38 @@ const EmailGenerator: React.FC<EmailGeneratorProps> = ({ attachedImages, onAttac
                                                 </option>
                                             ))}
                                         </select>
+
+                                        {/* Modificar Apodo y Saludo en Modo Plegado Extendido */}
+                                        <div className="flex items-center gap-2 p-1.5 bg-slate-950/80 rounded-xl border border-yellow-500/30">
+                                            <button
+                                                type="button"
+                                                onClick={() => setUseNickname(!useNickname)}
+                                                className={`px-2 py-1 rounded-lg text-[10px] font-black uppercase transition-all ${
+                                                    useNickname ? 'bg-yellow-500/20 text-yellow-300' : 'bg-gray-800 text-gray-400'
+                                                }`}
+                                            >
+                                                {useNickname ? '🏷️ Apodo' : 'Formal'}
+                                            </button>
+                                            <input
+                                                type="text"
+                                                value={recipientNickname}
+                                                onChange={(e) => setRecipientNickname(e.target.value)}
+                                                placeholder="Modificar apodo..."
+                                                disabled={!useNickname}
+                                                className={`flex-1 bg-transparent text-xs font-bold outline-none ${
+                                                    useNickname ? 'text-yellow-200 placeholder-yellow-500/40' : 'text-gray-500 opacity-50'
+                                                }`}
+                                            />
+                                            <button
+                                                type="button"
+                                                onClick={() => handleSaveContactToSupabase()}
+                                                disabled={isSavingContact}
+                                                className="px-2 py-1 bg-purple-600/80 hover:bg-purple-600 text-white rounded-lg text-[10px] font-black uppercase transition-colors shrink-0 cursor-pointer"
+                                                title="Guardar este apodo en Supabase"
+                                            >
+                                                {isSavingContact ? '...' : '💾 BD'}
+                                            </button>
+                                        </div>
                                     </div>
                                 )}
 
@@ -2798,105 +2985,78 @@ const EmailGenerator: React.FC<EmailGeneratorProps> = ({ attachedImages, onAttac
                             </button>
                         </div>
 
-                        {/* Botón rápido Alguien no guardado */}
-                        <button
-                            type="button"
-                            onClick={() => {
-                                setIsNewContactMode(!isNewContactMode);
-                                if (!isNewContactMode) {
-                                    setSelectedContactIndex('');
-                                    setRecipientName('');
-                                    setRecipientEmailUser('');
-                                    setRecipientTitle('Lic.');
-                                }
-                            }}
-                            className={`px-2.5 py-1.5 rounded-xl border text-[11px] font-black uppercase transition-all cursor-pointer flex items-center gap-1 shrink-0 ${
-                                isNewContactMode 
-                                    ? 'bg-indigo-600 text-white border-indigo-400 shadow-md ring-1 ring-indigo-300' 
-                                    : 'bg-gray-800 text-indigo-300 border-indigo-500/40 hover:bg-gray-700'
-                            }`}
-                            title="Generar correo para alguien que no esté guardado en contactos"
-                        >
-                            <span>➕ {isNewContactMode ? 'Ver Guardados' : 'Alguien no guardado'}</span>
-                        </button>
-
-                        {/* Botón Apodo / Formal + Botón Editar Detalles */}
-                        <div className="flex items-center gap-1.5 shrink-0">
+                        {/* Control de Apodo en vivo */}
+                        <div className={`flex items-center gap-1.5 px-2.5 py-1 rounded-xl border transition-all ${
+                            useNickname 
+                                ? 'bg-yellow-500/10 border-yellow-500/40 text-yellow-300 shadow-sm' 
+                                : 'bg-gray-800/80 border-gray-700 text-gray-400'
+                        }`} title="Control del apodo con el que la IA saludará y se dirigirá a este contacto">
                             <button
                                 type="button"
                                 onClick={() => setUseNickname(!useNickname)}
-                                className={`px-2.5 py-1.5 rounded-lg border text-[11px] font-black uppercase transition-all cursor-pointer ${
-                                    useNickname 
-                                        ? 'border-yellow-500/50 text-yellow-400 bg-yellow-500/10 shadow-sm' 
-                                        : 'border-gray-700 text-gray-400 hover:text-gray-300 hover:bg-gray-800'
+                                className={`text-[10px] font-black uppercase px-2 py-0.5 rounded cursor-pointer transition-colors ${
+                                    useNickname ? 'bg-yellow-500/20 text-yellow-300 hover:bg-yellow-500/30' : 'bg-gray-700 text-gray-400 hover:text-white'
                                 }`}
-                                title={useNickname ? "Usando apodo en el saludo (si existe)" : "Usando nombre formal"}
+                                title={useNickname ? "Modo Apodo activo (clic para cambiar a Formal)" : "Modo Formal activo (clic para usar Apodo)"}
                             >
-                                {useNickname ? 'Apodo' : 'Formal'}
+                                {useNickname ? '🏷️ Apodo' : 'Formal'}
                             </button>
-
-                            <button
-                                type="button"
-                                onClick={() => setShowRecipientDetails(!showRecipientDetails)}
-                                className={`px-2.5 py-1.5 rounded-lg border text-[11px] font-black transition-all cursor-pointer flex items-center gap-1 ${
-                                    showRecipientDetails 
-                                        ? 'bg-purple-600 text-white border-purple-500 shadow-md' 
-                                        : 'bg-gray-800 text-gray-300 border-gray-700 hover:bg-gray-700 hover:text-white'
+                            <input
+                                type="text"
+                                value={recipientNickname}
+                                onChange={(e) => setRecipientNickname(e.target.value)}
+                                placeholder="Apodo..."
+                                disabled={!useNickname}
+                                title="Modifica aquí el apodo para dirigirte a esta persona (ej. Beto, Arqui, Mariana). Cambia el saludo en tiempo real."
+                                className={`bg-transparent text-xs font-bold outline-none w-20 sm:w-28 transition-opacity ${
+                                    useNickname ? 'text-yellow-200 placeholder-yellow-500/40' : 'text-gray-500 placeholder-gray-600 cursor-not-allowed opacity-50'
                                 }`}
-                                title={showRecipientDetails ? "Ocultar edición de contacto" : "Editar o guardar este contacto en base de datos"}
-                            >
-                                <Pencil size={11} />
-                                <span>{showRecipientDetails ? 'Ocultar' : 'Editar / BD'}</span>
-                            </button>
+                            />
                         </div>
+
+                        {/* Botón Agregar Contacto */}
+                        <button
+                            type="button"
+                            onClick={() => {
+                                const next = !isNewContactMode;
+                                setIsNewContactMode(next);
+                                if (next) {
+                                    setSelectedContactIndex('');
+                                    setRecipientName('');
+                                    setRecipientNickname('');
+                                    setRecipientEmailUser('');
+                                    setRecipientTitle('Arq.');
+                                    setShowRecipientDetails(false);
+                                }
+                            }}
+                            className={`px-3 py-1.5 rounded-xl border text-[11px] font-black uppercase transition-all cursor-pointer flex items-center gap-1.5 shrink-0 ${
+                                isNewContactMode 
+                                    ? 'bg-indigo-600 text-white border-indigo-400 shadow-md ring-1 ring-indigo-300' 
+                                    : 'bg-gray-800 text-indigo-300 border-indigo-500/40 hover:bg-gray-700 hover:text-white'
+                            }`}
+                            title="Agregar un nuevo contacto y guardarlo en Supabase si lo solicitas"
+                        >
+                            <span>➕ {isNewContactMode ? 'Cancelar nuevo' : 'Agregar Contacto'}</span>
+                        </button>
+
+                        {/* Botón Editar / BD */}
+                        <button
+                            type="button"
+                            onClick={() => {
+                                setShowRecipientDetails(!showRecipientDetails);
+                                if (!showRecipientDetails) setIsNewContactMode(false);
+                            }}
+                            className={`px-2.5 py-1.5 rounded-lg border text-[11px] font-black transition-all cursor-pointer flex items-center gap-1.5 shrink-0 ${
+                                showRecipientDetails 
+                                    ? 'bg-purple-600 text-white border-purple-500 shadow-md' 
+                                    : 'bg-gray-800 text-gray-300 border-gray-700 hover:bg-gray-700 hover:text-white'
+                            }`}
+                            title={showRecipientDetails ? "Ocultar edición de contacto" : "Editar o guardar este contacto en Supabase"}
+                        >
+                            <Pencil size={11} />
+                            <span>{showRecipientDetails ? 'Ocultar' : 'Editar / BD'}</span>
+                        </button>
                     </div>
-
-                    {/* Buscador predictivo + Selector de toda la lista O Formulario rápido para Alguien no guardado */}
-                    {isNewContactMode ? (
-                        <div className="flex flex-col sm:flex-row items-stretch sm:items-center gap-2 flex-grow lg:max-w-xl bg-gray-950/90 p-2.5 rounded-xl border border-indigo-500/40">
-                            <div className="flex-1">
-                                <input
-                                    type="text"
-                                    value={recipientName}
-                                    onChange={(e) => setRecipientName(e.target.value)}
-                                    placeholder="Nombre de la persona (ej. Lic. Mariana Torres)"
-                                    className="w-full bg-gray-900 border border-gray-700 rounded-lg px-2.5 py-1.5 text-xs text-white font-bold outline-none focus:border-indigo-400"
-                                />
-                            </div>
-                            <div className="flex-1">
-                                <input
-                                    type="email"
-                                    value={recipientEmailUser}
-                                    onChange={(e) => {
-                                        setRecipientEmailUser(e.target.value);
-                                        setRecipientEmailDomain('');
-                                        setRecipientEmailTld('');
-                                    }}
-                                    placeholder="correo@empresa.com"
-                                    className="w-full bg-gray-900 border border-gray-700 rounded-lg px-2.5 py-1.5 text-xs text-white font-mono outline-none focus:border-indigo-400"
-                                />
-                            </div>
-                            <div className="shrink-0 flex items-center gap-1">
-                                <button
-                                    type="button"
-                                    onClick={() => handleSaveNewContact(false)}
-                                    disabled={isSavingContact || !recipientName.trim()}
-                                    className="px-2.5 py-1.5 bg-indigo-600 hover:bg-indigo-500 text-white text-[11px] font-black rounded-lg transition-colors cursor-pointer disabled:opacity-50"
-                                    title="Guardar ahora en Base de Datos"
-                                >
-                                    {isSavingContact ? 'Guardando...' : '💾 Guardar BD'}
-                                </button>
-                                <button
-                                    type="button"
-                                    onClick={() => setIsNewContactMode(false)}
-                                    className="px-2 py-1.5 bg-gray-800 hover:bg-gray-700 text-gray-300 text-[11px] font-bold rounded-lg transition-colors cursor-pointer"
-                                    title="Volver a contactos guardados"
-                                >
-                                    ✕
-                                </button>
-                            </div>
-                        </div>
-                    ) : (
                         <div className="flex items-center gap-2 flex-grow lg:max-w-md">
                             {/* Buscador predictivo con sugerencias flotantes */}
                             <div className="relative flex-grow">
@@ -2972,8 +3132,168 @@ const EmailGenerator: React.FC<EmailGeneratorProps> = ({ attachedImages, onAttac
                                 </div>
                             </div>
                         </div>
-                    )}
                 </div>
+
+                {/* Formulario dedicado para Agregar Nuevo Contacto */}
+                <AnimatePresence>
+                    {isNewContactMode && (
+                        <motion.div
+                            initial={{ height: 0, opacity: 0 }}
+                            animate={{ height: 'auto', opacity: 1 }}
+                            exit={{ height: 0, opacity: 0 }}
+                            className="overflow-hidden pt-1"
+                        >
+                            <div className="p-4 bg-gradient-to-r from-purple-950/40 via-gray-900/95 to-indigo-950/40 rounded-2xl border-2 border-indigo-500/50 shadow-2xl space-y-3">
+                                <div className="flex items-center justify-between pb-2 border-b border-gray-800">
+                                    <div className="flex items-center gap-2">
+                                        <div className="p-1.5 bg-indigo-600 text-white rounded-lg shadow">
+                                            <Users size={14} />
+                                        </div>
+                                        <h4 className="text-xs font-black uppercase text-indigo-200 tracking-wider">
+                                            Agregar Nuevo Contacto
+                                        </h4>
+                                        <span className="text-[10px] text-gray-400">
+                                            (Se guardará en Supabase solo si lo solicitas)
+                                        </span>
+                                    </div>
+                                    <button
+                                        type="button"
+                                        onClick={() => setIsNewContactMode(false)}
+                                        className="text-gray-400 hover:text-white p-1 rounded-lg hover:bg-gray-800 transition-colors cursor-pointer text-xs font-bold"
+                                        title="Cerrar"
+                                    >
+                                        ✕
+                                    </button>
+                                </div>
+
+                                <div className="grid grid-cols-1 sm:grid-cols-12 gap-3 items-end">
+                                    <div className="sm:col-span-2">
+                                        <label className="text-[9px] text-gray-400 font-bold uppercase block mb-1">Título</label>
+                                        <select 
+                                            value={recipientTitle} 
+                                            onChange={e => setRecipientTitle(e.target.value)} 
+                                            className="w-full p-2 bg-gray-800 border border-gray-700 rounded-lg text-xs text-purple-300 font-black outline-none cursor-pointer"
+                                        >
+                                            {titlesList.map(t => <option key={t} value={t}>{t || 'Sin Título'}</option>)}
+                                        </select>
+                                    </div>
+
+                                    <div className="sm:col-span-4">
+                                        <label className="text-[9px] text-gray-400 font-bold uppercase block mb-1">Nombre Completo *</label>
+                                        <input 
+                                            value={recipientName} 
+                                            onChange={e => {
+                                                const n = e.target.value;
+                                                setRecipientName(n);
+                                                if (!recipientNickname || recipientNickname === recipientName.split(' ')[0]) {
+                                                    setRecipientNickname(n.split(' ')[0]);
+                                                }
+                                            }} 
+                                            className="w-full p-2 bg-gray-800 border border-gray-700 rounded-lg text-xs text-white font-bold outline-none focus:border-indigo-400" 
+                                            placeholder="Ej. Mariana Torres"
+                                        />
+                                    </div>
+
+                                    <div className="sm:col-span-3">
+                                        <label className="text-[9px] text-yellow-400 font-bold uppercase block mb-1 flex items-center gap-1">
+                                            <span>🏷️ Apodo / Saludo</span>
+                                            <span className="text-[8px] text-gray-400 font-normal">(Trato IA)</span>
+                                        </label>
+                                        <input 
+                                            value={recipientNickname} 
+                                            onChange={e => setRecipientNickname(e.target.value)} 
+                                            className="w-full p-2 bg-gray-800 border border-yellow-500/50 rounded-lg text-xs text-yellow-300 font-bold outline-none focus:border-yellow-400 placeholder-yellow-500/40" 
+                                            placeholder="Ej. Mariana, Beto..."
+                                            title="Cómo dirigirme a esta persona en el saludo"
+                                        />
+                                    </div>
+
+                                    <div className="sm:col-span-3">
+                                        <label className="text-[9px] text-gray-400 font-bold uppercase block mb-1">Género</label>
+                                        <div className="flex bg-gray-800 rounded-lg border border-gray-700 p-0.5 h-[34px]">
+                                            <button 
+                                                type="button"
+                                                onClick={() => setRecipientGender('M')} 
+                                                className={`flex-1 rounded text-[11px] font-black transition-all cursor-pointer ${recipientGender === 'M' ? 'bg-blue-600 text-white shadow' : 'text-gray-400 hover:text-white'}`}
+                                            >
+                                                👨 Hombre
+                                            </button>
+                                            <button 
+                                                type="button"
+                                                onClick={() => setRecipientGender('F')} 
+                                                className={`flex-1 rounded text-[11px] font-black transition-all cursor-pointer ${recipientGender === 'F' ? 'bg-pink-600 text-white shadow' : 'text-gray-400 hover:text-white'}`}
+                                            >
+                                                👩 Mujer
+                                            </button>
+                                        </div>
+                                    </div>
+
+                                    <div className="sm:col-span-5">
+                                        <label className="text-[9px] text-gray-400 font-bold uppercase block mb-1">Correo Electrónico</label>
+                                        <div className="flex gap-1 bg-gray-800 p-0.5 rounded-lg border border-gray-700 h-[34px] items-center">
+                                            <input 
+                                                value={recipientEmailUser} 
+                                                onChange={e => setRecipientEmailUser(e.target.value)} 
+                                                className="flex-grow bg-transparent px-1.5 text-xs font-bold text-white outline-none min-w-0" 
+                                                placeholder="usuario@correo.com"
+                                            />
+                                            <select 
+                                                value={recipientEmailDomain} 
+                                                onChange={e => setRecipientEmailDomain(e.target.value)} 
+                                                className="bg-gray-900 px-1 py-1 rounded text-[11px] font-black text-purple-400 outline-none cursor-pointer"
+                                            >
+                                                {emailDomains.map(d => <option key={d} value={d}>{d}</option>)}
+                                            </select>
+                                            <select 
+                                                value={recipientEmailTld} 
+                                                onChange={e => setRecipientEmailTld(e.target.value)} 
+                                                className="bg-gray-900 px-1 py-1 rounded text-[11px] font-bold text-gray-400 outline-none cursor-pointer"
+                                            >
+                                                {emailTlds.map(t => <option key={t} value={t}>{t}</option>)}
+                                            </select>
+                                        </div>
+                                    </div>
+
+                                    <div className="sm:col-span-3">
+                                        <label className="text-[9px] text-gray-400 font-bold uppercase block mb-1">Relación / Empresa</label>
+                                        <input
+                                            type="text"
+                                            value={recipientRelation}
+                                            onChange={e => setRecipientRelation(e.target.value)}
+                                            placeholder="Javer, Cliente..."
+                                            className="w-full p-2 bg-gray-800 border border-gray-700 rounded-lg text-xs text-white font-bold outline-none focus:border-indigo-400"
+                                        />
+                                    </div>
+
+                                    <div className="sm:col-span-4 flex items-center gap-2">
+                                        <button 
+                                            type="button"
+                                            onClick={() => handleSaveContactToSupabase()} 
+                                            disabled={isSavingContact || !recipientName.trim()} 
+                                            className="flex-1 h-[34px] bg-indigo-600 hover:bg-indigo-500 text-white rounded-lg text-xs font-black uppercase flex items-center justify-center gap-1.5 transition-all cursor-pointer shadow-md disabled:opacity-50"
+                                            title="Guardar contacto en la tabla Contactos de Supabase"
+                                        >
+                                            {isSavingContact ? <Spinner size="3" /> : <Save size={13} />}
+                                            <span>💾 Guardar en Supabase</span>
+                                        </button>
+                                        <button 
+                                            type="button"
+                                            onClick={() => {
+                                                setIsNewContactMode(false);
+                                                toast.info(`Usando a "${recipientName}" para este correo (sin guardar en Supabase)`);
+                                            }} 
+                                            disabled={!recipientName.trim()} 
+                                            className="px-2.5 h-[34px] bg-gray-800 hover:bg-gray-700 text-gray-300 rounded-lg text-xs font-bold transition-all cursor-pointer"
+                                            title="Usar solo para el correo actual sin guardar en Supabase"
+                                        >
+                                            ⚡ Usar hoy
+                                        </button>
+                                    </div>
+                                </div>
+                            </div>
+                        </motion.div>
+                    )}
+                </AnimatePresence>
 
                 {/* Accesos Rápidos de Contactos Frecuentes (1 Clic) + Saludo Activo */}
                 <div className="flex items-center justify-between gap-3 pt-2 border-t border-gray-800/80 flex-wrap">
@@ -3016,7 +3336,7 @@ const EmailGenerator: React.FC<EmailGeneratorProps> = ({ attachedImages, onAttac
                             exit={{ height: 0, opacity: 0 }}
                             className="overflow-hidden pt-2 border-t border-gray-800"
                         >
-                            <div className="p-3 bg-gray-950/80 rounded-xl border border-gray-800 grid grid-cols-1 sm:grid-cols-12 gap-3 items-end">
+                            <div className="p-3.5 bg-gray-950/90 rounded-2xl border border-purple-500/30 grid grid-cols-1 sm:grid-cols-12 gap-3 items-end shadow-xl">
                                 <div className="sm:col-span-2">
                                     <label className="text-[9px] text-gray-400 font-bold uppercase block mb-1">Título</label>
                                     <select 
@@ -3036,14 +3356,14 @@ const EmailGenerator: React.FC<EmailGeneratorProps> = ({ attachedImages, onAttac
                                             onClick={() => setRecipientGender('M')} 
                                             className={`flex-1 rounded text-[11px] font-black transition-all cursor-pointer ${recipientGender === 'M' ? 'bg-blue-600 text-white shadow' : 'text-gray-400'}`}
                                         >
-                                            M
+                                            👨 M
                                         </button>
                                         <button 
                                             type="button"
                                             onClick={() => setRecipientGender('F')} 
                                             className={`flex-1 rounded text-[11px] font-black transition-all cursor-pointer ${recipientGender === 'F' ? 'bg-pink-600 text-white shadow' : 'text-gray-400'}`}
                                         >
-                                            F
+                                            👩 F
                                         </button>
                                     </div>
                                 </div>
@@ -3053,8 +3373,22 @@ const EmailGenerator: React.FC<EmailGeneratorProps> = ({ attachedImages, onAttac
                                     <input 
                                         value={recipientName} 
                                         onChange={e => setRecipientName(e.target.value)} 
-                                        className="w-full p-2 bg-gray-800 border border-gray-700 rounded-lg text-xs text-white font-bold outline-none" 
+                                        className="w-full p-2 bg-gray-800 border border-gray-700 rounded-lg text-xs text-white font-bold outline-none focus:border-purple-400" 
                                         placeholder="Nombre..."
+                                    />
+                                </div>
+
+                                {/* Apodo / Cómo dirigirme */}
+                                <div className="sm:col-span-2">
+                                    <label className="text-[9px] text-yellow-400 font-bold uppercase block mb-1 flex items-center gap-1">
+                                        <span>🏷️ Apodo / Saludo</span>
+                                    </label>
+                                    <input 
+                                        value={recipientNickname} 
+                                        onChange={e => setRecipientNickname(e.target.value)} 
+                                        className="w-full p-2 bg-gray-800 border border-yellow-500/50 rounded-lg text-xs text-yellow-300 font-bold outline-none focus:border-yellow-400" 
+                                        placeholder="Ej. Beto, Arqui..."
+                                        title="Cómo dirigirme a este contacto. La IA saludará y se dirigirá a esta persona con este apodo."
                                     />
                                 </div>
 
@@ -3084,15 +3418,26 @@ const EmailGenerator: React.FC<EmailGeneratorProps> = ({ attachedImages, onAttac
                                     </div>
                                 </div>
 
-                                <div className="sm:col-span-2">
+                                <div className="sm:col-span-3">
+                                    <label className="text-[9px] text-gray-400 font-bold uppercase block mb-1">Relación / Empresa</label>
+                                    <input 
+                                        value={recipientRelation} 
+                                        onChange={e => setRecipientRelation(e.target.value)} 
+                                        className="w-full p-2 bg-gray-800 border border-gray-700 rounded-lg text-xs text-white font-medium outline-none focus:border-purple-400" 
+                                        placeholder="Javer, Cliente..."
+                                    />
+                                </div>
+
+                                <div className="sm:col-span-9 flex justify-end">
                                     <button 
                                         type="button"
-                                        onClick={() => handleSaveNewContact(false)} 
-                                        disabled={isSavingContact} 
-                                        className="w-full h-[34px] bg-purple-600 hover:bg-purple-500 text-white rounded-lg text-xs font-black uppercase flex items-center justify-center gap-1.5 transition-all cursor-pointer shadow-md disabled:opacity-50"
+                                        onClick={() => handleSaveContactToSupabase()} 
+                                        disabled={isSavingContact || !recipientName.trim()} 
+                                        className="px-4 h-[34px] bg-purple-600 hover:bg-purple-500 text-white rounded-lg text-xs font-black uppercase flex items-center justify-center gap-1.5 transition-all cursor-pointer shadow-md disabled:opacity-50"
+                                        title="Guardar o actualizar este contacto y su apodo en Supabase"
                                     >
                                         {isSavingContact ? <Spinner size="3" /> : <Save size={13} />}
-                                        <span>Guardar BD</span>
+                                        <span>💾 Guardar Cambios en Supabase</span>
                                     </button>
                                 </div>
                             </div>
