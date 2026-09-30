@@ -14,6 +14,7 @@ export enum Tab {
   ORGANIZER = 'Organizador',
   CHATGPT = 'Chat Gpt',
   USEFUL_TOOLS = 'Herramientas Útiles',
+  ARCHIVOS = 'Archivos',
 }
 
 export interface LinkItem {

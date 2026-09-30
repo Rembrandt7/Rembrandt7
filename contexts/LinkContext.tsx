@@ -14,6 +14,7 @@ const INITIAL_TABS: TabConfig[] = [
     { id: 'calendar', label: 'Calendario', type: 'system', componentKey: 'Calendario', isVisible: true, icon: 'Calendar' },
     { id: 'video-gen', label: 'Video', type: 'system', componentKey: 'Generador de Video', isVisible: true, icon: 'Video' },
     { id: '3d-print', label: 'Impresión 3D', type: 'system', componentKey: 'Impresión 3D', isVisible: true, icon: 'Box' },
+    { id: 'archivos', label: 'Archivos', type: 'system', componentKey: 'Archivos', isVisible: true, icon: 'Folder' },
     { id: 'teleprompter', label: 'Teleprompter', type: 'system', componentKey: 'Teleprompter', isVisible: true, icon: 'Music' },
 ];
 

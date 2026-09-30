@@ -36,7 +36,8 @@ import {
   Heart,
   Search,
   Maximize2,
-  ShieldCheck
+  ShieldCheck,
+  Folder
 } from 'lucide-react';
 import { Tab, TabConfig, LinkItem } from './types';
 import { AnimatePresence, motion } from 'motion/react';
@@ -97,6 +98,7 @@ const PanchoAssistantModal = lazyWithRetry(() => import('./components/Pancho/Pan
 const WorkspaceHub = lazyWithRetry(() => import('./components/WorkspaceHub'));
 const TeleprompterTab = lazyWithRetry(() => import('./components/TeleprompterTab'));
 const PersonalTab = lazyWithRetry(() => import('./components/PersonalTab'));
+const ArchivosTab = lazyWithRetry(() => import('./components/ArchivosTab'));
 
 import { PanchoFloatingButton } from './components/Pancho/PanchoFloatingButton';
 import { PanchoState } from './components/Pancho/PanchoRobotAvatar';
@@ -533,6 +535,13 @@ const MainLayout: React.FC = () => {
         const newTab: TabConfig = { id: '3d-print', label: 'Impresión 3D', type: 'system', componentKey: 'Impresión 3D', isVisible: true, icon: 'Box' };
         updateConfig({ ...config, tabs: [...config.tabs, newTab] });
       }
+
+      // Auto-add Archivos tab if missing
+      const hasArchivosTab = config.tabs.some(t => t.id === 'archivos' || t.componentKey === 'Archivos');
+      if (!hasArchivosTab) {
+        const newTab: TabConfig = { id: 'archivos', label: 'Archivos', type: 'system', componentKey: 'Archivos', isVisible: true, icon: 'Folder' };
+        updateConfig({ ...config, tabs: [...config.tabs, newTab] });
+      }
     }
   }, [config.tabs, activeTabId, updateConfig]);
 
@@ -627,6 +636,9 @@ const MainLayout: React.FC = () => {
     if (activeTabId === 'teleprompter') {
       return <TeleprompterTab />;
     }
+    if (activeTabId === 'archivos') {
+      return <ArchivosTab />;
+    }
 
     const activeTab = config.tabs.find(t => t.id === activeTabId);
     if (!activeTab) return null;
@@ -645,6 +657,8 @@ const MainLayout: React.FC = () => {
         );
       case 'Personal':
         return <PersonalTab />;
+      case 'Archivos':
+        return <ArchivosTab />;
       case 'Finanzas':
         return <PersonalTab initialSubTab="finanzas" />;
       case 'Nutricion':
@@ -689,6 +703,7 @@ const MainLayout: React.FC = () => {
 
   const tabIcons: Record<string, React.ReactNode> = {
     'Personal': <ShieldCheck />,
+    'Archivos': <Folder />,
     'Bóveda': <Lock />,
     'Boveda': <Lock />,
     'Workspace': <FolderKanban />,
