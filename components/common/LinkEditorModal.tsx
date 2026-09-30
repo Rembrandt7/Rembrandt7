@@ -182,6 +182,22 @@ export const LinkEditorModal: React.FC<LinkEditorModalProps> = ({ isOpen, onClos
                                 />
                             </div>
 
+                            {/* Contador de Uso / Frecuencia */}
+                            {typeof formData.clickCount === 'number' && formData.clickCount > 0 && (
+                                <div className="flex items-center justify-between p-3.5 rounded-xl bg-white/5 border border-white/10 text-xs">
+                                    <span className="text-gray-300">
+                                        Frecuencia de uso: <strong className="text-emerald-400 font-bold ml-1">{formData.clickCount} {formData.clickCount === 1 ? 'clic registrado' : 'clics registrados'}</strong>
+                                    </span>
+                                    <button
+                                        type="button"
+                                        onClick={() => setFormData(prev => ({ ...prev, clickCount: 0, lastClicked: undefined }))}
+                                        className="px-2.5 py-1 rounded-lg bg-yellow-500/10 hover:bg-yellow-500/20 text-yellow-400 border border-yellow-500/30 transition-all font-medium text-xs"
+                                    >
+                                        Reiniciar a 0
+                                    </button>
+                                </div>
+                            )}
+
                             {/* Categoría (Barra Principal) */}
                             <div className="space-y-2">
                                 <label className="flex items-center gap-2 text-xs font-bold text-gray-400 uppercase tracking-widest px-1">

@@ -27,6 +27,8 @@ export interface LinkItem {
   outlineWidth?: number;
   hasBackground?: boolean; // Whether to show the circular/square background
   category?: 'trabajo' | 'compras' | 'social'; // Category for linksBar filtering
+  clickCount?: number; // Number of times the shortcut has been opened
+  lastClicked?: number; // Timestamp of the last time it was clicked
 }
 
 export interface LinkSection {

@@ -2,24 +2,38 @@ import React, { useState } from 'react';
 import { useLinks } from '../contexts/LinkContext';
 import { LinkItem } from '../types';
 import { LinkEditorModal } from './common/LinkEditorModal';
-import { Edit, Trash2, Plus } from 'lucide-react';
+import { Edit, Trash2, Plus, RotateCcw } from 'lucide-react';
 import { SortableLinkList } from './common/SortableLinkList';
 import { verticalListSortingStrategy } from '@dnd-kit/sortable';
+import { recordQuickAccessClick, sortQuickAccessByUsage, resetQuickAccessCounters } from '../utils/quickAccessUtils';
 
 const AiSidebarItem: React.FC<{ 
     item: LinkItem; 
     isEditing: boolean;
     onEdit: (item: LinkItem) => void;
     onDelete: (id: string) => void;
-}> = ({ item, isEditing, onEdit, onDelete }) => {
+    onClick?: () => void;
+    showClickBadge?: boolean;
+}> = ({ item, isEditing, onEdit, onDelete, onClick, showClickBadge }) => {
     return (
-        <div className="relative group">
+        <div className="relative group w-full">
             <a 
                 href={item.href} 
                 target="_blank" 
                 rel="noopener noreferrer" 
-                onClick={(e) => isEditing && e.preventDefault()}
-                className={`flex items-center gap-3 p-3 rounded-2xl transition-all duration-300 hover:bg-white/10 border border-transparent hover:border-white/10 hover:shadow-[0_0_15px_rgba(255,255,255,0.05)] group ${item.colorClass} ${isEditing ? 'opacity-50 cursor-default' : ''}`}
+                onClick={(e) => {
+                    if (isEditing) {
+                        e.preventDefault();
+                    } else {
+                        onClick?.();
+                    }
+                }}
+                onAuxClick={(e) => {
+                    if (!isEditing && e.button === 1) {
+                        onClick?.();
+                    }
+                }}
+                className={`flex items-center gap-3 p-2.5 rounded-2xl transition-all duration-300 hover:bg-white/10 border border-transparent hover:border-white/10 hover:shadow-[0_0_15px_rgba(255,255,255,0.05)] group w-full ${item.colorClass || ''} ${isEditing ? 'opacity-50 cursor-default' : ''}`}
             >
                 <div 
                     className="w-8 h-8 flex-shrink-0 flex items-center justify-center transition-transform group-hover:scale-110" 
@@ -28,7 +42,18 @@ const AiSidebarItem: React.FC<{
                     }}
                     dangerouslySetInnerHTML={{ __html: item.iconSvg }} 
                 />
-                <span className="font-semibold text-gray-400 group-hover:text-white">{item.name}</span>
+                <span className="font-semibold text-gray-400 group-hover:text-white truncate flex-1 text-left">
+                    {item.name}
+                </span>
+
+                {showClickBadge && !isEditing && typeof item.clickCount === 'number' && item.clickCount > 0 && (
+                    <span 
+                        className="text-[10px] font-bold px-2 py-0.5 rounded-full bg-white/5 text-gray-400 group-hover:text-emerald-400 group-hover:bg-emerald-500/10 border border-white/5 transition-colors shrink-0 tabular-nums"
+                        title={`Usado ${item.clickCount} ${item.clickCount === 1 ? 'vez' : 'veces'}`}
+                    >
+                        {item.clickCount}
+                    </span>
+                )}
             </a>
             {isEditing && (
                 <div className="absolute right-2 top-1/2 -translate-y-1/2 flex gap-1 z-30">
@@ -103,9 +128,12 @@ const AiSidebar: React.FC<AiSidebarProps> = ({ isOpen }) => {
             // Standard update or add within same section
             let list = [...newConfig.aiSidebar[activeSection]];
             if (currentLink) {
-                list = list.map(l => l.id === item.id ? item : l);
+                list = list.map(l => l.id === item.id ? { ...l, ...item } : l);
             } else {
-                list.push({ ...item, id: item.id || Date.now().toString() });
+                list.push({ ...item, id: item.id || Date.now().toString(), clickCount: 0 });
+            }
+            if (activeSection === 'quickAccess') {
+                list = sortQuickAccessByUsage(list);
             }
             newConfig.aiSidebar[activeSection] = list;
         }
@@ -113,6 +141,33 @@ const AiSidebar: React.FC<AiSidebarProps> = ({ isOpen }) => {
         updateConfig(newConfig);
         setModalOpen(false);
         setCurrentLink(null);
+    };
+
+    const handleQuickAccessClick = (id: string) => {
+        if (isEditing) return;
+        updateConfig((prev) => {
+            const currentList = prev.aiSidebar?.quickAccess || [];
+            const sorted = recordQuickAccessClick(currentList, id);
+            return {
+                ...prev,
+                aiSidebar: {
+                    ...prev.aiSidebar,
+                    quickAccess: sorted
+                }
+            };
+        });
+    };
+
+    const handleResetQuickAccessCounters = () => {
+        if (window.confirm('¿Deseas reiniciar los contadores de clics de los Accesos Rápidos?')) {
+            updateConfig((prev) => ({
+                ...prev,
+                aiSidebar: {
+                    ...prev.aiSidebar,
+                    quickAccess: resetQuickAccessCounters(prev.aiSidebar?.quickAccess || [])
+                }
+            }));
+        }
     };
 
     const handleDeleteLink = (id: string, section: 'models' | 'quickAccess') => {
@@ -158,6 +213,7 @@ const AiSidebar: React.FC<AiSidebarProps> = ({ isOpen }) => {
                         onReorder={(newItems) => updateConfig({ ...config, aiSidebar: { ...config.aiSidebar, models: newItems } })}
                         strategy={verticalListSortingStrategy}
                         className="flex flex-col gap-1"
+                        itemClassName="w-full"
                         renderItem={(item) => (
                             <AiSidebarItem 
                                 key={item.id} 
@@ -176,9 +232,18 @@ const AiSidebar: React.FC<AiSidebarProps> = ({ isOpen }) => {
                         Accesos Rápidos
                     </h2>
                     {isEditing && (
-                        <button onClick={() => openModal('quickAccess')} className="text-green-500 hover:text-green-400">
-                            <Plus size={16} />
-                        </button>
+                        <div className="flex items-center gap-2">
+                            <button 
+                                onClick={handleResetQuickAccessCounters} 
+                                className="text-gray-400 hover:text-amber-400 transition-colors p-1"
+                                title="Reiniciar contadores de clics"
+                            >
+                                <RotateCcw size={14} />
+                            </button>
+                            <button onClick={() => openModal('quickAccess')} className="text-green-500 hover:text-green-400 p-1">
+                                <Plus size={16} />
+                            </button>
+                        </div>
                     )}
                 </div>
 
@@ -190,11 +255,14 @@ const AiSidebar: React.FC<AiSidebarProps> = ({ isOpen }) => {
                         onReorder={(newItems) => updateConfig({ ...config, aiSidebar: { ...config.aiSidebar, quickAccess: newItems } })}
                         strategy={verticalListSortingStrategy}
                         className="flex flex-col gap-1"
+                        itemClassName="w-full"
                         renderItem={(item) => (
                             <AiSidebarItem 
                                 key={item.id} 
                                 item={item} 
                                 isEditing={isEditing}
+                                showClickBadge={true}
+                                onClick={() => handleQuickAccessClick(item.id)}
                                 onEdit={(i) => openModal('quickAccess', i)}
                                 onDelete={(id) => handleDeleteLink(id, 'quickAccess')}
                             />

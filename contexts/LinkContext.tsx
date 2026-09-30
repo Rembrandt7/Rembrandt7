@@ -4,6 +4,7 @@ import { supabase } from '../services/supabaseClient';
 import { toast } from 'sonner';
 import { normalizeAndDeduplicateNotes } from '../utils/noteUtils';
 import { normalizeAndDeduplicateLinksBar } from '../utils/linkCategoryUtils';
+import { sortQuickAccessByUsage } from '../utils/quickAccessUtils';
 
 const INITIAL_TABS: TabConfig[] = [
     { id: 'email-gen', label: 'Email', type: 'system', componentKey: 'Generador de Email', isVisible: true, icon: 'Mail' },
@@ -823,6 +824,7 @@ export const LinkProvider: React.FC<{ children: React.ReactNode }> = ({ children
               }
             }
           }
+          finalConfig.aiSidebar.quickAccess = sortQuickAccessByUsage(finalConfig.aiSidebar.quickAccess);
         }
 
         // Migration for notes into config
@@ -1129,6 +1131,7 @@ export const LinkProvider: React.FC<{ children: React.ReactNode }> = ({ children
                 }
               }
             }
+            parsed.aiSidebar.quickAccess = sortQuickAccessByUsage(parsed.aiSidebar.quickAccess);
           }
 
           setConfig(parsed);
