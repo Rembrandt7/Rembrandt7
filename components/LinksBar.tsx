@@ -213,19 +213,22 @@ const LinksBar: React.FC = () => {
     const isLinkAlwaysVisible = (link: LinkItem) => {
         const name = (link.name || '').toLowerCase();
         const href = (link.href || '').toLowerCase();
-        return name.includes('whatsapp') || href.includes('whatsapp') || link.id === '2' || name.includes('renders remb') || link.id === 'renders-remb';
+        return name.includes('whatsapp') || href.includes('whatsapp') || link.id === '2';
     };
 
     const isLinkIncludedInFilter = (link: LinkItem) => {
-        if (isLinkAlwaysVisible(link)) return true; // WhatsApp y Renders Remb siempre visibles
+        const name = (link.name || '').toLowerCase();
+        const href = (link.href || '').toLowerCase();
+        if (link.id === 'renders-remb' || name.includes('renders remb') || href.includes('renders%20remb')) return false;
+        if (isLinkAlwaysVisible(link)) return true; // WhatsApp siempre visible
         const cat = link.category || inferLinkCategory(link);
         return activeCategories.includes(cat);
     };
 
-    // Deduplicate on the fly so Javer, Flow, MakerWorld and others never appear duplicated
-    const cleanLinksBar = Array.isArray(normalizeAndDeduplicateLinksBar(config?.linksBar || []))
+    // Deduplicate on the fly so Javer, Flow, MakerWorld and others never appear duplicated, and exclude renders remb
+    const cleanLinksBar = (Array.isArray(normalizeAndDeduplicateLinksBar(config?.linksBar || []))
         ? normalizeAndDeduplicateLinksBar(config?.linksBar || [])
-        : [];
+        : []).filter(l => l.id !== 'renders-remb' && !(l.name || '').toLowerCase().includes('renders remb') && !(l.href || '').toLowerCase().includes('renders%20remb'));
     const filteredLinks = cleanLinksBar.filter(isLinkIncludedInFilter);
 
     const handleReorder = (newSubset: LinkItem[]) => {

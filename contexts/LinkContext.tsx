@@ -156,16 +156,6 @@ const INITIAL_CONFIG: AppConfig = {
         category: "trabajo",
         colorClass: "text-cyan-400 hover:text-cyan-300",
         iconSvg: `<svg viewBox="0 0 100 100" class="w-full h-full p-0.5" xmlns="http://www.w3.org/2000/svg"><defs><linearGradient id="capcut-tile-bg" x1="0%" y1="0%" x2="100%" y2="100%"><stop offset="0%" stop-color="#0a0a0f"/><stop offset="50%" stop-color="#12131a"/><stop offset="100%" stop-color="#181a24"/></linearGradient><linearGradient id="capcut-blade-top" x1="0%" y1="0%" x2="100%" y2="100%"><stop offset="0%" stop-color="#ffffff"/><stop offset="100%" stop-color="#e2e8f0"/></linearGradient></defs><rect width="100" height="100" rx="22" fill="url(#capcut-tile-bg)" stroke="#272935" stroke-width="1.5"/><rect x="4" y="4" width="92" height="92" rx="19" fill="none" stroke="rgba(255,255,255,0.06)" stroke-width="1"/><g transform="translate(0, 0)"><path d="M 23 27 C 21.5 27 20 28.5 20 30.5 L 20 37 C 20 38.5 20.8 39.8 22.2 40.5 L 50 56.5 L 77.8 40.5 C 79.2 39.8 80 38.5 80 37 L 80 30.5 C 80 28.5 78.5 27 77 27 C 76 27 75 27.5 74.2 28 L 50 42 L 25.8 28 C 25 27.5 24 27 23 27 Z" fill="url(#capcut-blade-top)"/><path d="M 23 73 C 21.5 73 20 71.5 20 69.5 L 20 63 C 20 61.5 20.8 60.2 22.2 59.5 L 50 43.5 L 77.8 59.5 C 79.2 60.2 80 61.5 80 63 L 80 69.5 C 80 71.5 78.5 73 77 73 C 76 73 75 72.5 74.2 72 L 50 58 L 25.8 72 C 25 72.5 24 73 23 73 Z" fill="url(#capcut-blade-top)"/></g></svg>`
-    },
-    {
-        id: 'renders-remb',
-        href: "https://javer-my.sharepoint.com/personal/rblanco_javer_com_mx/Documents/Renders%20Remb",
-        name: "Renders Remb",
-        category: "trabajo",
-        colorClass: "text-violet-400 hover:text-violet-300",
-        iconSvg: `<svg viewBox="0 0 100 100" class="w-full h-full p-0.5" xmlns="http://www.w3.org/2000/svg"><defs><linearGradient id="rr-bg-grad" x1="0%" y1="0%" x2="100%" y2="100%"><stop offset="0%" stop-color="#0f172a"/><stop offset="50%" stop-color="#1e1b4b"/><stop offset="100%" stop-color="#31104b"/></linearGradient><linearGradient id="rr-cube-top" x1="0%" y1="0%" x2="100%" y2="100%"><stop offset="0%" stop-color="#a855f7"/><stop offset="100%" stop-color="#6366f1"/></linearGradient><linearGradient id="rr-cube-left" x1="0%" y1="0%" x2="100%" y2="100%"><stop offset="0%" stop-color="#4f46e5"/><stop offset="100%" stop-color="#3730a3"/></linearGradient><linearGradient id="rr-cube-right" x1="0%" y1="0%" x2="100%" y2="100%"><stop offset="0%" stop-color="#7c3aed"/><stop offset="100%" stop-color="#581c87"/></linearGradient><linearGradient id="rr-sun-grad" x1="0%" y1="0%" x2="100%" y2="100%"><stop offset="0%" stop-color="#38bdf8"/><stop offset="100%" stop-color="#06b6d4"/></linearGradient></defs><rect width="100" height="100" rx="22" fill="url(#rr-bg-grad)" stroke="#8b5cf6" stroke-width="1.5" stroke-opacity="0.5"/><rect x="4" y="4" width="92" height="92" rx="18" fill="none" stroke="rgba(255,255,255,0.08)" stroke-width="1"/><g transform="translate(50, 48)"><polygon points="0,-28 26,-13 0,2 -26,-13" fill="url(#rr-cube-top)" stroke="#c084fc" stroke-width="1" stroke-linejoin="round"/><polygon points="-26,-13 0,2 0,32 -26,17" fill="url(#rr-cube-left)" stroke="#818cf8" stroke-width="1" stroke-linejoin="round"/><polygon points="0,2 26,-13 26,17 0,32" fill="url(#rr-cube-right)" stroke="#a855f7" stroke-width="1" stroke-linejoin="round"/><circle cx="0" cy="2" r="3" fill="#ffffff" opacity="0.9"/></g><circle cx="25" cy="24" r="5" fill="url(#rr-sun-grad)"/><path d="M 20 78 L 32 78 M 26 72 L 26 84" stroke="#38bdf8" stroke-width="1.5" stroke-linecap="round" opacity="0.6"/><text x="50" y="91" font-family="system-ui, sans-serif" font-size="9" font-weight="900" fill="#e2e8f0" text-anchor="middle" letter-spacing="1">RENDERS</text></svg>`,
-        outlineColor: '#8b5cf6',
-        outlineWidth: 10
     }
   ],
 
@@ -179,7 +169,6 @@ const INITIAL_CONFIG: AppConfig = {
         { id: 'ai-4', name: 'DeepSeek', href: 'https://chat.deepseek.com/', colorClass: 'text-blue-600 hover:text-blue-500', iconSvg: '<svg class="w-full h-full fill-current" viewBox="0 0 24 24"><path d="M20 2H4c-1.1 0-2 .9-2 2v18l4-4h14c1.1 0 2-.9 2-2V4c0-1.1-.9-2-2-2zm0 14H6l-2 2V4h16v12z"/><path d="M12 6c-1.66 0-3 1.34-3 3s1.34 3 3 3 3-1.34 3-3-1.34-3-3-3zm0 4c-.55 0-1-.45-1-1s.45-1 1-1 1 .45 1 1-1 1 1z"/></svg>' }
     ],
     quickAccess: [
-        { id: 'qa-renders-remb', name: 'Renders Remb', href: 'https://javer-my.sharepoint.com/personal/rblanco_javer_com_mx/Documents/Renders%20Remb', colorClass: 'hover:text-purple-400', iconSvg: '<svg class="w-full h-full" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><polygon points="12 2 2 7 12 12 22 7 12 2" /><polyline points="2 17 12 22 22 17" /><polyline points="2 12 12 17 22 12" /></svg>' },
         { id: 'qa-1', name: 'Rendair', href: 'https://rendair.ai/dashboard', colorClass: 'hover:text-teal-400', iconSvg: '<svg class="w-full h-full" viewBox="0 0 64 64" xmlns="http://www.w3.org/2000/svg"><circle cx="32" cy="32" r="28" fill="#4fd1c5"/><text x="32" y="42" fontFamily="Arial, sans-serif" fontSize="28" fontWeight="bold" fill="black" textAnchor="middle">r</text></svg>' },
         { id: 'qa-javer', name: 'Javer Data Center', href: 'https://aistudio.google.com/apps/3a3196da-cb37-40b8-9a5d-48e74634248d?showPreview=true&showAssistant=true', colorClass: 'hover:text-blue-400', iconSvg: '<svg class="w-full h-full" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg"><defs><linearGradient id="javer-dc-grad" x1="0%" y1="0%" x2="100%" y2="100%"><stop offset="0%" stop-color="#3b82f6" /><stop offset="50%" stop-color="#06b6d4" /><stop offset="100%" stop-color="#3b82f6" /></linearGradient></defs><rect x="3" y="3" width="18" height="18" rx="3" stroke="url(#javer-dc-grad)" stroke-width="2" /><line x1="3" y1="9" x2="21" y2="9" stroke="url(#javer-dc-grad)" stroke-width="1.5" /><line x1="3" y1="15" x2="21" y2="15" stroke="url(#javer-dc-grad)" stroke-width="1.5" stroke-dasharray="2 2" /><circle cx="7" cy="6" r="1" fill="#60a5fa" /><circle cx="11" cy="6" r="1" fill="#34d399" /><circle cx="7" cy="12" r="1" fill="#34d399" /><circle cx="11" cy="12" r="1" fill="#60a5fa" /><circle cx="7" cy="18" r="1" fill="#f43f5e" /><circle cx="11" cy="18" r="1" fill="#34d399" /><path d="M17 5v11a3 3 0 0 1-5 2.2" stroke="url(#javer-dc-grad)" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" /></svg>' },
         { id: 'qa-2', name: 'Compresor', href: 'https://aistudio.google.com/apps/drive/1SqLlOs1puc_GGSLIqmhQetfRwL-8hiFK?showAssistant=true&resourceKey=&showPreview=true', colorClass: 'hover:text-yellow-400', iconSvg: '<svg class="w-full h-full fill-none stroke-current stroke-2" viewBox="0 0 24 24" strokeLinecap="round" strokeLinejoin="round"><path d="M4 14h6m-6 4h6m6-10h4m-4 4h4M4 10l4-4m0 0l4 4m-4-4v12M20 14l-4 4m0 0l-4-4m4 4V6" /></svg>' },
@@ -887,13 +876,11 @@ export const LinkProvider: React.FC<{ children: React.ReactNode }> = ({ children
               }
             }
           }
-          const hasRendersRemb = finalConfig.aiSidebar.quickAccess.some((l: any) => l.name === 'Renders Remb' || l.id === 'qa-renders-remb' || l.href.includes('Renders%20Remb'));
-          if (!hasRendersRemb) {
-            const rendersLink = INITIAL_CONFIG.aiSidebar.quickAccess.find(l => l.name === 'Renders Remb');
-            if (rendersLink) {
-              finalConfig.aiSidebar.quickAccess.unshift(rendersLink);
-            }
-          }
+          finalConfig.aiSidebar.quickAccess = finalConfig.aiSidebar.quickAccess.filter((l: any) => {
+            const name = (l.name || '').toLowerCase();
+            const href = (l.href || '').toLowerCase();
+            return l.id !== 'qa-renders-remb' && !name.includes('renders remb') && !href.includes('renders%20remb');
+          });
           finalConfig.aiSidebar.quickAccess = sortQuickAccessByUsage(finalConfig.aiSidebar.quickAccess);
         }
 
@@ -1240,6 +1227,11 @@ export const LinkProvider: React.FC<{ children: React.ReactNode }> = ({ children
           }
 
           if (parsed.aiSidebar && parsed.aiSidebar.quickAccess) {
+            parsed.aiSidebar.quickAccess = parsed.aiSidebar.quickAccess.filter((l: any) => {
+              const name = (l.name || '').toLowerCase();
+              const href = (l.href || '').toLowerCase();
+              return l.id !== 'qa-renders-remb' && !name.includes('renders remb') && !href.includes('renders%20remb');
+            });
             const hasJaver = parsed.aiSidebar.quickAccess.some((l: any) => l.name === 'Javer Data Center' || l.href.includes('3a3196da-cb37-40b8-9a5d-48e74634248d'));
             if (!hasJaver) {
               const javerLink = INITIAL_CONFIG.aiSidebar.quickAccess.find(l => l.name === 'Javer Data Center');
