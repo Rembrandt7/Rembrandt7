@@ -1656,7 +1656,7 @@ const EmailGenerator: React.FC<EmailGeneratorProps> = ({ attachedImages, onAttac
                                                     : 'bg-slate-950 text-gray-400 hover:text-white border border-gray-800'
                                             }`}
                                         >
-                                            <span>👨 Hombre</span>
+                                            <span>👨 H</span>
                                             <span className="text-[9px] opacity-80">(Estimado)</span>
                                         </button>
                                         <button
@@ -1668,7 +1668,7 @@ const EmailGenerator: React.FC<EmailGeneratorProps> = ({ attachedImages, onAttac
                                                     : 'bg-slate-950 text-gray-400 hover:text-white border border-gray-800'
                                             }`}
                                         >
-                                            <span>👩 Mujer</span>
+                                            <span>👩 M</span>
                                             <span className="text-[9px] opacity-80">(Estimada)</span>
                                         </button>
                                     </div>
@@ -2373,7 +2373,7 @@ const EmailGenerator: React.FC<EmailGeneratorProps> = ({ attachedImages, onAttac
                                                     : 'bg-slate-950 text-gray-400 hover:text-white border border-gray-800'
                                             }`}
                                         >
-                                            👨 Hombre
+                                            👨 H
                                         </button>
                                         <button
                                             type="button"
@@ -2384,7 +2384,7 @@ const EmailGenerator: React.FC<EmailGeneratorProps> = ({ attachedImages, onAttac
                                                     : 'bg-slate-950 text-gray-400 hover:text-white border border-gray-800'
                                             }`}
                                         >
-                                            👩 Mujer
+                                            👩 M
                                         </button>
                                     </div>
                                 </div>
@@ -2925,24 +2925,22 @@ const EmailGenerator: React.FC<EmailGeneratorProps> = ({ attachedImages, onAttac
                 <>
                     <div className="bg-gray-900/80 backdrop-blur-xl p-3.5 sm:p-4 rounded-2xl border border-purple-500/25 mb-5 shadow-xl space-y-3">
                 {/* Fila principal: Indicador Para + Chip Destinatario Activo + Búsqueda Rápida + Acciones */}
-                <div className="flex flex-col lg:flex-row lg:items-center justify-between gap-3">
+                <div className="flex flex-nowrap items-center justify-between gap-2 overflow-x-auto no-scrollbar py-0.5">
                     
                     {/* Destinatario Activo con Saludo y Correo */}
-                    <div className="flex items-center gap-2.5 flex-wrap sm:flex-nowrap">
-                        <div className="flex items-center gap-2 shrink-0">
-                            <div className="p-2 bg-gradient-to-r from-purple-600 to-indigo-600 text-white rounded-xl shadow-md">
-                                <Users size={16} />
-                            </div>
-                            <span className="text-xs font-black uppercase tracking-wider text-purple-300">Para:</span>
+                    <div className="flex items-center gap-2 flex-nowrap shrink-0">
+                        <div className="flex items-center gap-1.5 px-2.5 py-1 bg-gradient-to-r from-purple-600 to-indigo-600 text-white rounded-xl shadow-md shrink-0 h-8">
+                            <Users size={14} />
+                            <span className="text-xs font-black uppercase tracking-wider text-purple-100">Para:</span>
                         </div>
 
                         {/* Ficha Activa */}
-                        <div className="flex items-center gap-2 bg-gray-800/90 border border-gray-700/80 rounded-xl px-3 py-1.5 shadow-inner flex-wrap sm:flex-nowrap">
-                            <span className="text-xs font-black text-white">
+                        <div className="flex items-center gap-2 bg-gray-800/90 border border-gray-700/80 rounded-xl px-2.5 py-1 shadow-inner shrink-0 h-8">
+                            <span className="text-xs font-black text-white whitespace-nowrap">
                                 {recipientTitle ? `${recipientTitle} ` : ''}{recipientName || 'Sin destinatario'}
                             </span>
                             {fullRecipientEmail && (
-                                <span className="text-[11px] font-mono text-purple-300/90 bg-purple-500/10 px-2 py-0.5 rounded border border-purple-500/20 truncate max-w-[200px] sm:max-w-xs">
+                                <span className="text-[11px] font-mono text-purple-300/90 bg-purple-500/10 px-1.5 py-0.5 rounded border border-purple-500/20 truncate max-w-[130px] sm:max-w-[170px]">
                                     {fullRecipientEmail}
                                 </span>
                             )}
@@ -2953,7 +2951,7 @@ const EmailGenerator: React.FC<EmailGeneratorProps> = ({ attachedImages, onAttac
                                         navigator.clipboard.writeText(fullRecipientEmail);
                                         toast.success("Correo copiado al portapapeles");
                                     }}
-                                    className="text-gray-400 hover:text-purple-300 transition-colors p-0.5 cursor-pointer"
+                                    className="text-gray-400 hover:text-purple-300 transition-colors p-0.5 cursor-pointer shrink-0"
                                     title="Copiar correo"
                                 >
                                     <Copy size={13} />
@@ -2961,32 +2959,32 @@ const EmailGenerator: React.FC<EmailGeneratorProps> = ({ attachedImages, onAttac
                             )}
                         </div>
 
-                        {/* Selector directo de Género (Hombre / Mujer) para la IA */}
-                        <div className="flex items-center bg-gray-800/90 border border-gray-700/80 rounded-xl p-0.5 shrink-0" title="Selecciona si es Hombre o Mujer para asegurar concordancia perfecta en el correo">
+                        {/* Selector directo de Género (👨 H / 👩 M) para la IA */}
+                        <div className="flex items-center bg-gray-800/90 border border-gray-700/80 rounded-xl p-0.5 shrink-0 h-8" title="Selecciona si es Hombre o Mujer para asegurar concordancia perfecta en el correo">
                             <button
                                 type="button"
                                 onClick={() => setRecipientGender('M')}
-                                className={`px-2.5 py-1.5 rounded-lg text-xs font-black transition-all cursor-pointer flex items-center gap-1 ${
+                                className={`px-2 h-full rounded-lg text-xs font-black transition-all cursor-pointer flex items-center gap-1 ${
                                     recipientGender === 'M' ? 'bg-blue-600 text-white shadow ring-1 ring-blue-400' : 'text-gray-400 hover:text-white'
                                 }`}
-                                title="Tratamiento en masculino (Estimado, Arq., bienvenido)"
+                                title="Hombre (Tratamiento en masculino: Estimado, Arq., bienvenido)"
                             >
-                                <span>👨 Hombre</span>
+                                <span>👨 H</span>
                             </button>
                             <button
                                 type="button"
                                 onClick={() => setRecipientGender('F')}
-                                className={`px-2.5 py-1.5 rounded-lg text-xs font-black transition-all cursor-pointer flex items-center gap-1 ${
+                                className={`px-2 h-full rounded-lg text-xs font-black transition-all cursor-pointer flex items-center gap-1 ${
                                     recipientGender === 'F' ? 'bg-pink-600 text-white shadow ring-1 ring-pink-400' : 'text-gray-400 hover:text-white'
                                 }`}
-                                title="Tratamiento en femenino (Estimada, Arq., bienvenida)"
+                                title="Mujer (Tratamiento en femenino: Estimada, Arq., bienvenida)"
                             >
-                                <span>👩 Mujer</span>
+                                <span>👩 M</span>
                             </button>
                         </div>
 
-                        {/* Control de Apodo en vivo */}
-                        <div className={`flex items-center gap-1.5 px-2.5 py-1 rounded-xl border transition-all ${
+                        {/* Control de Apodo en vivo: ancho uniforme y compacto igual que las demás pestañas */}
+                        <div className={`flex items-center gap-1 px-2 py-0.5 rounded-xl border transition-all shrink-0 h-8 ${
                             useNickname 
                                 ? 'bg-yellow-500/10 border-yellow-500/40 text-yellow-300 shadow-sm' 
                                 : 'bg-gray-800/80 border-gray-700 text-gray-400'
@@ -2994,7 +2992,7 @@ const EmailGenerator: React.FC<EmailGeneratorProps> = ({ attachedImages, onAttac
                             <button
                                 type="button"
                                 onClick={() => setUseNickname(!useNickname)}
-                                className={`text-[10px] font-black uppercase px-2 py-0.5 rounded cursor-pointer transition-colors ${
+                                className={`text-[10px] font-black uppercase px-1.5 py-0.5 rounded cursor-pointer transition-colors shrink-0 ${
                                     useNickname ? 'bg-yellow-500/20 text-yellow-300 hover:bg-yellow-500/30' : 'bg-gray-700 text-gray-400 hover:text-white'
                                 }`}
                                 title={useNickname ? "Modo Apodo activo (clic para cambiar a Formal)" : "Modo Formal activo (clic para usar Apodo)"}
@@ -3007,8 +3005,8 @@ const EmailGenerator: React.FC<EmailGeneratorProps> = ({ attachedImages, onAttac
                                 onChange={(e) => setRecipientNickname(e.target.value)}
                                 placeholder="Apodo..."
                                 disabled={!useNickname}
-                                title="Modifica aquí el apodo para dirigirte a esta persona (ej. Beto, Arqui, Mariana). Cambia el saludo en tiempo real."
-                                className={`bg-transparent text-xs font-bold outline-none w-20 sm:w-28 transition-opacity ${
+                                title="Modifica aquí el apodo para dirigirte a esta persona (ej. Beto, Arqui, Mariana)"
+                                className={`bg-transparent text-xs font-bold outline-none w-14 sm:w-16 transition-opacity whitespace-nowrap ${
                                     useNickname ? 'text-yellow-200 placeholder-yellow-500/40' : 'text-gray-500 placeholder-gray-600 cursor-not-allowed opacity-50'
                                 }`}
                             />
@@ -3029,14 +3027,14 @@ const EmailGenerator: React.FC<EmailGeneratorProps> = ({ attachedImages, onAttac
                                     setShowRecipientDetails(false);
                                 }
                             }}
-                            className={`px-3 py-1.5 rounded-xl border text-[11px] font-black uppercase transition-all cursor-pointer flex items-center gap-1.5 shrink-0 ${
+                            className={`px-2.5 h-8 rounded-xl border text-[11px] font-black uppercase transition-all cursor-pointer flex items-center gap-1 shrink-0 whitespace-nowrap ${
                                 isNewContactMode 
                                     ? 'bg-indigo-600 text-white border-indigo-400 shadow-md ring-1 ring-indigo-300' 
                                     : 'bg-gray-800 text-indigo-300 border-indigo-500/40 hover:bg-gray-700 hover:text-white'
                             }`}
                             title="Agregar un nuevo contacto y guardarlo en Supabase si lo solicitas"
                         >
-                            <span>➕ {isNewContactMode ? 'Cancelar nuevo' : 'Agregar Contacto'}</span>
+                            <span>➕ {isNewContactMode ? 'Cancelar' : 'Contacto'}</span>
                         </button>
 
                         {/* Botón Editar / BD */}
@@ -3046,7 +3044,7 @@ const EmailGenerator: React.FC<EmailGeneratorProps> = ({ attachedImages, onAttac
                                 setShowRecipientDetails(!showRecipientDetails);
                                 if (!showRecipientDetails) setIsNewContactMode(false);
                             }}
-                            className={`px-2.5 py-1.5 rounded-lg border text-[11px] font-black transition-all cursor-pointer flex items-center gap-1.5 shrink-0 ${
+                            className={`px-2.5 h-8 rounded-xl border text-[11px] font-black transition-all cursor-pointer flex items-center gap-1 shrink-0 whitespace-nowrap ${
                                 showRecipientDetails 
                                     ? 'bg-purple-600 text-white border-purple-500 shadow-md' 
                                     : 'bg-gray-800 text-gray-300 border-gray-700 hover:bg-gray-700 hover:text-white'
@@ -3057,10 +3055,10 @@ const EmailGenerator: React.FC<EmailGeneratorProps> = ({ attachedImages, onAttac
                             <span>{showRecipientDetails ? 'Ocultar' : 'Editar / BD'}</span>
                         </button>
                     </div>
-                        <div className="flex items-center gap-2 flex-grow lg:max-w-md">
+                        <div className="flex items-center gap-2 flex-grow min-w-[200px] shrink-0">
                             {/* Buscador predictivo con sugerencias flotantes */}
                             <div className="relative flex-grow">
-                                <div className="flex items-center bg-gray-800 border border-gray-700 rounded-xl px-2.5 py-1.5 focus-within:border-purple-500 transition-colors">
+                                <div className="flex items-center bg-gray-800 border border-gray-700 rounded-xl px-2.5 h-8 focus-within:border-purple-500 transition-colors">
                                     <Search size={14} className="text-gray-400 mr-2 shrink-0" />
                                     <input 
                                         type="text"
@@ -3117,7 +3115,7 @@ const EmailGenerator: React.FC<EmailGeneratorProps> = ({ attachedImages, onAttac
                                 <select 
                                     value={selectedContactIndex} 
                                     onChange={handleContactSelect} 
-                                    className="w-full p-2 bg-gray-800 border border-gray-700 rounded-xl text-xs text-white font-bold appearance-none pr-7 outline-none focus:border-purple-500/50 cursor-pointer truncate"
+                                    className="w-full h-8 px-2.5 py-0 bg-gray-800 border border-gray-700 rounded-xl text-xs text-white font-bold appearance-none pr-7 outline-none focus:border-purple-500/50 cursor-pointer truncate"
                                 >
                                     <option value="">Lista ({sortedContacts.length})...</option>
                                     {sortedContacts.map((c, i) => (
@@ -3216,14 +3214,14 @@ const EmailGenerator: React.FC<EmailGeneratorProps> = ({ attachedImages, onAttac
                                                 onClick={() => setRecipientGender('M')} 
                                                 className={`flex-1 rounded text-[11px] font-black transition-all cursor-pointer ${recipientGender === 'M' ? 'bg-blue-600 text-white shadow' : 'text-gray-400 hover:text-white'}`}
                                             >
-                                                👨 Hombre
+                                                👨 H
                                             </button>
                                             <button 
                                                 type="button"
                                                 onClick={() => setRecipientGender('F')} 
                                                 className={`flex-1 rounded text-[11px] font-black transition-all cursor-pointer ${recipientGender === 'F' ? 'bg-pink-600 text-white shadow' : 'text-gray-400 hover:text-white'}`}
                                             >
-                                                👩 Mujer
+                                                👩 M
                                             </button>
                                         </div>
                                     </div>
