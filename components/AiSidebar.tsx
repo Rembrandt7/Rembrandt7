@@ -79,7 +79,11 @@ const AiSidebarItem: React.FC<{
     );
 };
 
-const GEMINI_PREMIUM_ICON_SVG = '<svg viewBox="0 0 24 24" class="w-full h-full" fill="none" xmlns="http://www.w3.org/2000/svg"><defs><linearGradient id="gemini-official-spark" x1="0%" y1="0%" x2="100%" y2="100%"><stop offset="0%" stopColor="#1ba0f2" /><stop offset="30%" stopColor="#4E87F5" /><stop offset="65%" stopColor="#9B72CB" /><stop offset="88%" stopColor="#D96570" /><stop offset="100%" stopColor="#ff5252" /></linearGradient><radialGradient id="gemini-center-gleam" cx="50%" cy="50%" r="35%"><stop offset="0%" stopColor="#ffffff" stopOpacity="0.95" /><stop offset="50%" stopColor="#ffffff" stopOpacity="0.4" /><stop offset="100%" stopColor="#ffffff" stopOpacity="0" /></radialGradient></defs><path d="M12 0.5C12 6.85 6.85 12 0.5 12C6.85 12 12 17.15 12 23.5C12 17.15 17.15 12 23.5 12C17.15 12 12 6.85 12 0.5Z" fill="url(#gemini-official-spark)" /><circle cx="12" cy="12" r="5" fill="url(#gemini-center-gleam)" /><circle cx="12" cy="12" r="1.5" fill="#ffffff" /></svg>';
+const GEMINI_PREMIUM_ICON_SVG = '<svg viewBox="0 0 28 28" class="w-full h-full" fill="none" xmlns="http://www.w3.org/2000/svg"><defs><linearGradient id="gemini-main-spark-grad" x1="0%" y1="0%" x2="100%" y2="100%"><stop offset="0%" stopColor="#38bdf8"/><stop offset="25%" stopColor="#4E87F5"/><stop offset="55%" stopColor="#9B72CB"/><stop offset="80%" stopColor="#D96570"/><stop offset="100%" stopColor="#ff5252"/></linearGradient><linearGradient id="gemini-twin-grad" x1="0%" y1="0%" x2="100%" y2="100%"><stop offset="0%" stopColor="#67e8f9"/><stop offset="100%" stopColor="#818cf8"/></linearGradient><radialGradient id="gemini-glow-core" cx="48%" cy="52%" r="42%"><stop offset="0%" stopColor="#ffffff" stopOpacity="0.95"/><stop offset="45%" stopColor="#ffffff" stopOpacity="0.3"/><stop offset="100%" stopColor="#ffffff" stopOpacity="0"/></radialGradient></defs><path d="M13.5 1.5C13.5 8.2 8.2 13.5 1.5 13.5C8.2 13.5 13.5 18.8 13.5 25.5C13.5 18.8 18.8 13.5 25.5 13.5C18.8 13.5 13.5 8.2 13.5 1.5Z" fill="url(#gemini-main-spark-grad)"/><circle cx="13.5" cy="13.5" r="5" fill="url(#gemini-glow-core)"/><circle cx="13.5" cy="13.5" r="1.6" fill="#ffffff"/><path d="M22.5 2C22.5 3.7 21 5 19.5 5C21 5 22.5 6.3 22.5 8C22.5 6.3 24 5 25.5 5C24 5 22.5 3.7 22.5 2Z" fill="url(#gemini-twin-grad)" opacity="0.95"/><circle cx="22.5" cy="5" r="0.8" fill="#ffffff"/></svg>';
+
+const CHATGPT_PREMIUM_ICON_SVG = '<svg viewBox="0 0 24 24" class="w-full h-full" fill="none" xmlns="http://www.w3.org/2000/svg"><defs><linearGradient id="chatgpt-emerald-grad" x1="0%" y1="0%" x2="100%" y2="100%"><stop offset="0%" stopColor="#34d399"/><stop offset="50%" stopColor="#10b981"/><stop offset="100%" stopColor="#059669"/></linearGradient></defs><path d="M22.2819 9.8211a5.9847 5.9847 0 0 0-.5157-4.9108 6.0462 6.0462 0 0 0-6.5098-2.9A6.0651 6.0651 0 0 0 4.9807 4.1818a5.9847 5.9847 0 0 0-3.9977 2.9 6.0462 6.0462 0 0 0 .7427 7.0966 5.98 5.98 0 0 0 .511 4.9107 6.051 6.051 0 0 0 6.5146 2.9001A5.9847 5.9847 0 0 0 13.2599 24a6.0557 6.0557 0 0 0 5.7718-4.2058 5.9894 5.9894 0 0 0 3.9977-2.9001 6.0557 6.0557 0 0 0-.7475-7.0729zm-9.022 12.6081a4.4755 4.4755 0 0 1-2.8764-1.0408l.1419-.0804 4.7783-2.7582a.7948.7948 0 0 0 .3927-.6813v-6.7369l2.02 1.168a.071.071 0 0 1 .038.052v5.5826a4.5045 4.5045 0 0 1-4.4945 4.4944zm-9.6607-4.1254a4.4708 4.4708 0 0 1-.5346-3.0137l.142.0852 4.783 2.7582a.7712.7712 0 0 0 .7806 0l5.8428-3.3685v2.3324a.0804.0804 0 0 1-.0332.0615L9.74 19.9502a4.4992 4.4992 0 0 1-6.1408-1.6464zM2.3408 7.8956a4.485 4.485 0 0 1 2.3655-1.9728V11.6a.7664.7664 0 0 0 .3879.6765l5.8144 3.3543-2.0201 1.168a.0757.0757 0 0 1-.071 0l-4.8303-2.7865A4.504 4.504 0 0 1 2.3408 7.8956zm16.0993 3.8558L12.5973 8.3829l2.02-1.168a.0757.0757 0 0 1 .071 0l4.8303 2.7913a4.4944 4.4944 0 0 1-.6765 8.1042v-5.6772a.79.79 0 0 0-.4023-.6813zm2.0107-3.0231l-.142-.0852-4.7735-2.7818a.7759.7759 0 0 0-.7854 0L9.409 9.2297V6.8974a.0662.0662 0 0 1 .0284-.0615l4.8303-2.7866a4.4992 4.4992 0 0 1 6.6802 4.66zM8.3065 12.863l-2.02-1.163a.0804.0804 0 0 1-.038-.0567V6.0742a4.4992 4.4992 0 0 1 7.3757-3.4537l-.142.0805L8.704 5.459a.7948.7948 0 0 0-.3927.6813v6.7227zm1.1449-1.9213l2.5484-1.4721 2.5484 1.4721v2.9442l-2.5484 1.4721-2.5484-1.4721z" fill="url(#chatgpt-emerald-grad)"/></svg>';
+
+const CLAUDE_PREMIUM_ICON_SVG = '<svg viewBox="0 0 24 24" class="w-full h-full" fill="none" xmlns="http://www.w3.org/2000/svg"><defs><linearGradient id="claude-terracotta-grad" x1="0%" y1="0%" x2="100%" y2="100%"><stop offset="0%" stopColor="#fb923c"/><stop offset="50%" stopColor="#f97316"/><stop offset="100%" stopColor="#ea580c"/></linearGradient></defs><path d="M4.743 19.387l4.707-2.736.216-.62-2.148-1.248h-1.28l-1.495 4.604zm5.093-3.693l2.148 1.248.514-.298v-3.79l-1.92-1.114-.742.66zm.937-4.526l1.727 1.002.514-.298V8.082l-1.727-.996-.514.298zm-1.89-1.096l-1.727-.996-.514.298V13.06l1.727.996.514-.298zm7.375 7.643l-4.707-2.736-.216-.62 2.148-1.248h1.28l1.495 4.604zm-5.093-3.693l-2.148 1.248-.514-.298v-3.79l1.92-1.114.742.66zm-.937-4.526l-1.727 1.002-.514-.298V8.082l1.727-.996.514.298zm1.89-1.096l1.727-.996.514.298V13.06l-1.727.996-.514-.298z" fill="url(#claude-terracotta-grad)"/></svg>';
 
 const AiCompactTrioItem: React.FC<{
     item: LinkItem;
@@ -88,6 +92,33 @@ const AiCompactTrioItem: React.FC<{
     onDelete: (id: string) => void;
 }> = ({ item, isEditing, onEdit, onDelete }) => {
     const isGemini = item.id === 'ai-gemini' || item.id === 'gd-1' || item.name?.toLowerCase().includes('gemini');
+    const isChatGPT = item.id === 'ai-1' || item.name?.toLowerCase().includes('chatgpt');
+    const isClaude = item.id === 'ai-5' || item.name?.toLowerCase().includes('claude');
+
+    let iconSvg = item.iconSvg;
+    let cardStyle = '';
+    let iconGlow = '';
+    let dotColor = '';
+
+    if (isGemini) {
+        iconSvg = GEMINI_PREMIUM_ICON_SVG;
+        cardStyle = 'bg-gradient-to-br from-blue-600/30 via-indigo-600/25 to-pink-600/30 hover:from-blue-600/45 hover:via-purple-600/40 hover:to-pink-600/45 border-blue-400/40 hover:border-purple-300/80 shadow-[0_0_15px_rgba(78,135,245,0.25)] hover:shadow-[0_0_28px_rgba(168,85,247,0.65),0_0_12px_rgba(56,189,248,0.4)] scale-[1.03]';
+        iconGlow = 'drop-shadow(0 0 6px rgba(168,85,247,0.85)) drop-shadow(0 0 14px rgba(56,189,248,0.6))';
+        dotColor = 'bg-gradient-to-r from-cyan-400 via-purple-400 to-pink-500 shadow-[0_0_8px_rgba(168,85,247,0.8)]';
+    } else if (isChatGPT) {
+        iconSvg = CHATGPT_PREMIUM_ICON_SVG;
+        cardStyle = 'bg-gradient-to-br from-emerald-500/15 via-teal-500/10 to-emerald-600/20 hover:from-emerald-500/30 hover:via-teal-500/25 hover:to-emerald-600/35 border-emerald-500/30 hover:border-teal-300 shadow-[0_0_15px_rgba(16,185,129,0.2)] hover:shadow-[0_0_25px_rgba(16,185,129,0.5),0_0_10px_rgba(45,212,191,0.35)]';
+        iconGlow = 'drop-shadow(0 0 6px rgba(16,185,129,0.8)) drop-shadow(0 0 12px rgba(45,212,191,0.5))';
+        dotColor = 'bg-emerald-400 shadow-[0_0_8px_rgba(16,185,129,0.8)]';
+    } else if (isClaude) {
+        iconSvg = CLAUDE_PREMIUM_ICON_SVG;
+        cardStyle = 'bg-gradient-to-br from-amber-500/15 via-orange-500/10 to-amber-600/20 hover:from-amber-500/30 hover:via-orange-500/25 hover:to-amber-600/35 border-amber-500/30 hover:border-orange-300 shadow-[0_0_15px_rgba(249,115,22,0.2)] hover:shadow-[0_0_25px_rgba(249,115,22,0.5),0_0_10px_rgba(251,146,60,0.35)]';
+        iconGlow = 'drop-shadow(0 0 6px rgba(249,115,22,0.8)) drop-shadow(0 0 12px rgba(251,146,60,0.5))';
+        dotColor = 'bg-orange-400 shadow-[0_0_8px_rgba(249,115,22,0.8)]';
+    } else {
+        cardStyle = 'bg-white/[0.04] hover:bg-white/12 border-white/5 hover:border-white/20 hover:shadow-[0_0_15px_rgba(255,255,255,0.08)]';
+        dotColor = 'bg-gray-400';
+    }
 
     return (
         <div className="relative group flex items-center justify-center flex-1 min-w-0">
@@ -98,33 +129,28 @@ const AiCompactTrioItem: React.FC<{
                 onClick={(e) => {
                     if (isEditing) e.preventDefault();
                 }}
-                className={`relative flex items-center justify-center w-full h-11 rounded-xl transition-all duration-300 group overflow-hidden ${
-                    isGemini 
-                        ? 'bg-gradient-to-br from-blue-600/30 via-indigo-600/25 to-pink-600/30 hover:from-blue-600/45 hover:via-purple-600/40 hover:to-pink-600/45 border border-blue-400/50 hover:border-purple-300 shadow-[0_0_16px_rgba(78,135,245,0.35)] hover:shadow-[0_0_28px_rgba(168,85,247,0.65)] ring-1 ring-white/20 scale-[1.03]' 
-                        : 'bg-white/[0.04] hover:bg-white/12 hover:shadow-[0_0_15px_rgba(255,255,255,0.08)] border border-white/5 hover:border-white/20'
-                } ${item.colorClass || ''} ${isEditing ? 'opacity-50 cursor-default' : ''}`}
+                className={`relative flex items-center justify-center w-full h-12 rounded-xl transition-all duration-300 group overflow-hidden border backdrop-blur-sm hover:-translate-y-0.5 active:translate-y-0 active:scale-95 ${cardStyle} ${item.colorClass || ''} ${isEditing ? 'opacity-50 cursor-default' : ''}`}
                 title={item.name}
             >
-                {/* Luminous aura shimmer on hover for Gemini */}
-                {isGemini && (
-                    <div className="absolute inset-0 bg-gradient-to-tr from-cyan-400/0 via-white/25 to-pink-400/0 opacity-40 group-hover:opacity-100 transition-opacity duration-500 pointer-events-none" />
-                )}
+                {/* Reflejo specular / shimmer al hacer hover */}
+                <div className="absolute inset-0 bg-gradient-to-tr from-transparent via-white/[0.12] to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-300 pointer-events-none" />
 
                 <div 
                     className={`${isGemini ? 'w-7 h-7' : 'w-6 h-6'} flex-shrink-0 flex items-center justify-center transition-transform duration-200 group-hover:scale-115 relative z-10`} 
                     style={{
                         filter: item.outlineColor && item.outlineWidth 
                             ? `drop-shadow(0 0 ${item.outlineWidth}px ${item.outlineColor})` 
-                            : (isGemini ? 'drop-shadow(0 0 6px rgba(168,85,247,0.8)) drop-shadow(0 0 14px rgba(78,135,245,0.6))' : undefined)
+                            : (iconGlow || undefined)
                     }}
-                    dangerouslySetInnerHTML={{ __html: isGemini ? GEMINI_PREMIUM_ICON_SVG : item.iconSvg }} 
+                    dangerouslySetInnerHTML={{ __html: iconSvg }} 
                 />
 
-                {/* Tooltip con el nombre: visible únicamente al poner el mouse encima */}
+                {/* Tooltip elegante con el nombre y dot indicador */}
                 {!isEditing && (
-                    <div className="absolute top-full mt-2 left-1/2 -translate-x-1/2 px-2.5 py-1 bg-gray-950/95 backdrop-blur-md border border-white/10 text-white text-[11px] font-bold rounded-lg opacity-0 group-hover:opacity-100 transition-all duration-200 pointer-events-none whitespace-nowrap z-50 shadow-2xl scale-95 group-hover:scale-100">
-                        {item.name}
-                        <div className="absolute left-1/2 bottom-full -translate-x-1/2 translate-y-1 w-2 h-2 bg-gray-950/95 border-l border-t border-white/10 transform rotate-45" />
+                    <div className="absolute top-full mt-2 left-1/2 -translate-x-1/2 px-2.5 py-1 bg-gray-950/90 backdrop-blur-xl border border-white/15 text-white text-[11px] font-bold rounded-full opacity-0 group-hover:opacity-100 transition-all duration-200 pointer-events-none whitespace-nowrap z-50 shadow-[0_8px_25px_rgba(0,0,0,0.6)] scale-95 group-hover:scale-100 flex items-center gap-1.5">
+                        <span className={`w-1.5 h-1.5 rounded-full shrink-0 ${dotColor}`} />
+                        <span>{item.name}</span>
+                        <div className="absolute left-1/2 bottom-full -translate-x-1/2 translate-y-1 w-2 h-2 bg-gray-950/90 border-l border-t border-white/15 transform rotate-45" />
                     </div>
                 )}
             </a>
@@ -335,7 +361,7 @@ const AiSidebar: React.FC<AiSidebarProps> = ({ isOpen }) => {
                 
                 <nav className="flex flex-col gap-1 px-3 pb-4">
                     {/* Renglón principal con 3 IAs: Gemini | ChatGPT | Claude (solo icono, nombre en hover) */}
-                    <div className="flex items-center gap-1.5 p-1 bg-white/[0.03] border border-white/5 rounded-2xl mb-1">
+                    <div className="grid grid-cols-3 gap-2 p-1.5 bg-gradient-to-b from-white/[0.06] to-white/[0.02] border border-white/10 rounded-2xl mb-2 shadow-[0_4px_20px_rgba(0,0,0,0.3)] backdrop-blur-md">
                         {topTrio.map((item) => (
                             <AiCompactTrioItem 
                                 key={item.id}
