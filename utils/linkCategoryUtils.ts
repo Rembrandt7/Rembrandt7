@@ -136,6 +136,29 @@ export function normalizeAndDeduplicateLinksBar(links: LinkItem[]): LinkItem[] {
       item.outlineWidth = 10;
       item.iconSvg = `<img src="/makerworld_premium.png" class="w-10 h-10 object-contain rounded-xl" alt="MakerWorld" />`;
     }
+    if (nameLower === 'maket ai' || nameLower === 'maket') {
+      item.id = 'maket-ai';
+      item.name = 'Maket AI';
+      item.category = 'trabajo';
+      item.href = 'https://app.maket.ai/dashboard';
+      item.colorClass = 'text-sky-400 hover:text-sky-300';
+      item.iconSvg = `<svg viewBox="0 0 100 100" class="w-full h-full p-0.5" xmlns="http://www.w3.org/2000/svg"><defs><linearGradient id="maket-bp-bg" x1="0%" y1="0%" x2="100%" y2="100%"><stop offset="0%" stop-color="#0b1e36"/><stop offset="50%" stop-color="#072a4a"/><stop offset="100%" stop-color="#034373"/></linearGradient><pattern id="maket-bp-grid" width="10" height="10" patternUnits="userSpaceOnUse"><path d="M 10 0 L 0 0 0 10" fill="none" stroke="#38bdf8" stroke-width="0.6" stroke-opacity="0.25"/></pattern></defs><rect width="100" height="100" rx="22" fill="url(#maket-bp-bg)" stroke="#38bdf8" stroke-width="1.5" stroke-opacity="0.4"/><rect x="5" y="5" width="90" height="90" rx="17" fill="url(#maket-bp-grid)"/><rect x="20" y="20" width="60" height="56" rx="2" fill="none" stroke="#38bdf8" stroke-width="3.5" stroke-linejoin="round"/><line x1="20" y1="48" x2="52" y2="48" stroke="#7dd3fc" stroke-width="3" stroke-linecap="square"/><line x1="52" y1="48" x2="52" y2="76" stroke="#7dd3fc" stroke-width="3" stroke-linecap="square"/><line x1="52" y1="36" x2="80" y2="36" stroke="#7dd3fc" stroke-width="3" stroke-linecap="square"/><line x1="36" y1="48" x2="48" y2="48" stroke="#ffffff" stroke-width="2.5" stroke-linecap="round"/><path d="M 36 48 A 12 12 0 0 0 48 36" fill="none" stroke="#bae6fd" stroke-width="1.5" stroke-dasharray="2.5,2"/><line x1="30" y1="20" x2="46" y2="20" stroke="#ffffff" stroke-width="3.5"/><line x1="20" y1="83" x2="80" y2="83" stroke="#93c5fd" stroke-width="1.2"/><line x1="20" y1="80" x2="20" y2="86" stroke="#93c5fd" stroke-width="1.5"/><line x1="80" y1="80" x2="80" y2="86" stroke="#93c5fd" stroke-width="1.5"/><polygon points="20,83 24,81.5 24,84.5" fill="#93c5fd"/><polygon points="80,83 76,81.5 76,84.5" fill="#93c5fd"/><circle cx="70" cy="27" r="5" fill="#072a4a" stroke="#38bdf8" stroke-width="1"/><polygon points="70,23 72,27 70,26" fill="#38bdf8"/><polygon points="70,23 68,27 70,26" fill="#ffffff"/></svg>`;
+    }
+    if (nameLower === 'capcut') {
+      item.id = 'capcut';
+      item.name = 'CapCut';
+      item.category = 'trabajo';
+      item.href = 'https://www.capcut.com/my-edit?start_tab=video';
+      item.colorClass = 'text-cyan-400 hover:text-cyan-300';
+      item.iconSvg = `<svg viewBox="0 0 100 100" class="w-full h-full p-0.5" xmlns="http://www.w3.org/2000/svg"><defs><linearGradient id="capcut-tile-bg" x1="0%" y1="0%" x2="100%" y2="100%"><stop offset="0%" stop-color="#0a0a0f"/><stop offset="50%" stop-color="#12131a"/><stop offset="100%" stop-color="#181a24"/></linearGradient><linearGradient id="capcut-blade-top" x1="0%" y1="0%" x2="100%" y2="100%"><stop offset="0%" stop-color="#ffffff"/><stop offset="100%" stop-color="#e2e8f0"/></linearGradient></defs><rect width="100" height="100" rx="22" fill="url(#capcut-tile-bg)" stroke="#272935" stroke-width="1.5"/><rect x="4" y="4" width="92" height="92" rx="19" fill="none" stroke="rgba(255,255,255,0.06)" stroke-width="1"/><g transform="translate(0, 0)"><path d="M 23 27 C 21.5 27 20 28.5 20 30.5 L 20 37 C 20 38.5 20.8 39.8 22.2 40.5 L 50 56.5 L 77.8 40.5 C 79.2 39.8 80 38.5 80 37 L 80 30.5 C 80 28.5 78.5 27 77 27 C 76 27 75 27.5 74.2 28 L 50 42 L 25.8 28 C 25 27.5 24 27 23 27 Z" fill="url(#capcut-blade-top)"/><path d="M 23 73 C 21.5 73 20 71.5 20 69.5 L 20 63 C 20 61.5 20.8 60.2 22.2 59.5 L 50 43.5 L 77.8 59.5 C 79.2 60.2 80 61.5 80 63 L 80 69.5 C 80 71.5 78.5 73 77 73 C 76 73 75 72.5 74.2 72 L 50 58 L 25.8 72 C 25 72.5 24 73 23 73 Z" fill="url(#capcut-blade-top)"/></g></svg>`;
+    }
+    if (nameLower === 'amazon') {
+      item.id = 'amazon';
+      item.name = 'Amazon';
+      item.category = 'compras';
+      item.colorClass = 'text-amber-400 hover:text-amber-300';
+      item.iconSvg = `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 100 100" class="w-full h-full p-0.5"><defs><linearGradient id="amazon-bg-grad" x1="0%" y1="0%" x2="100%" y2="100%"><stop offset="0%" stop-color="#131921"/><stop offset="100%" stop-color="#1f2833"/></linearGradient></defs><rect width="100" height="100" rx="22" fill="url(#amazon-bg-grad)" stroke="#232f3e" stroke-width="1.5"/><rect x="4" y="4" width="92" height="92" rx="18" fill="none" stroke="rgba(255,255,255,0.06)" stroke-width="1"/><path d="M53.8 47.7c0 3.2.1 5.9-1.4 8.7-1.1 2.1-2.9 3.4-5 3.4-2.9 0-4.6-2.2-4.6-5.5 0-6.5 5.3-7.7 11-7.7v1.1zm7.3-19.4c-.4-.5-1.2-.4-1.7-.1-2.9 1.4-6.4 2-9.6 2-7.5 0-12.7-3.3-12.7-11.2 0-6.2 3.6-10.3 9.4-11.8 4.7-1.1 11-1.2 11-5.7 0-3.6-2.7-5.3-6.6-5.3-4.3 0-6.2 2-6.7 5.7 0 .7-.6 1.2-1.3 1.2l-6.8-.7c-.7-.1-1.2-.6-1.1-1.3.9-7.1 6.7-11.4 15.9-11.4 8.4 0 14.8 4.3 14.8 13v17c0 2.1.8 3.1 1.6 4.1.5.7.5 1.3 0 1.8l-5.8 4.8c-.6.5-1.1.4-1.6-.3-.6-.8-1.2-1.7-1.4-2.8z" fill="#FFFFFF" transform="translate(18, 12) scale(0.65)"/><path d="M22 68c13 8 31 8.8 47 2 1-.4 1.6.3.8 1.2-9 8-24 11-37 6-2-.8-2.8-2-.6-3 1.5-.7 3-1.2 4.6-1.7 1.2-.4 2.4.8 1.2 1.2-10 3.8-22 .7-27-7.4-.3-.5.2-1.1.8-.8 7 4 15 5.8 24 4.8 1.3-.2 1.3-1.9 0-1.7-8 1-16-.8-23-4.6-.6-.3-1.1.3-.8.8z" fill="#FF9900"/><path d="M68 69c-1-.4-2.8.3-4.1.9-.5.3-.4 1 .1 1.2 3.2 1.2 6.4 3.2 8.3 6.2.3.5 1 .3 1.1-.3.3-3.4-.1-7.4-2.2-10.4-.3-.5-1-.4-1.2.1-.6 1.7-1.2 3.5-2 5.3z" fill="#FF9900"/></svg>`;
+    }
 
     // Check duplicate by normalized name
     if (nameLower && seenNames.has(nameLower)) {
