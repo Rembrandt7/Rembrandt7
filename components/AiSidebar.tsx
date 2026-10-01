@@ -79,12 +79,16 @@ const AiSidebarItem: React.FC<{
     );
 };
 
+const GEMINI_PREMIUM_ICON_SVG = '<svg viewBox="0 0 24 24" class="w-full h-full" fill="none" xmlns="http://www.w3.org/2000/svg"><defs><linearGradient id="gemini-official-spark" x1="0%" y1="0%" x2="100%" y2="100%"><stop offset="0%" stopColor="#1ba0f2" /><stop offset="30%" stopColor="#4E87F5" /><stop offset="65%" stopColor="#9B72CB" /><stop offset="88%" stopColor="#D96570" /><stop offset="100%" stopColor="#ff5252" /></linearGradient><radialGradient id="gemini-center-gleam" cx="50%" cy="50%" r="35%"><stop offset="0%" stopColor="#ffffff" stopOpacity="0.95" /><stop offset="50%" stopColor="#ffffff" stopOpacity="0.4" /><stop offset="100%" stopColor="#ffffff" stopOpacity="0" /></radialGradient></defs><path d="M12 0.5C12 6.85 6.85 12 0.5 12C6.85 12 12 17.15 12 23.5C12 17.15 17.15 12 23.5 12C17.15 12 12 6.85 12 0.5Z" fill="url(#gemini-official-spark)" /><circle cx="12" cy="12" r="5" fill="url(#gemini-center-gleam)" /><circle cx="12" cy="12" r="1.5" fill="#ffffff" /></svg>';
+
 const AiCompactTrioItem: React.FC<{
     item: LinkItem;
     isEditing: boolean;
     onEdit: (item: LinkItem) => void;
     onDelete: (id: string) => void;
 }> = ({ item, isEditing, onEdit, onDelete }) => {
+    const isGemini = item.id === 'ai-gemini' || item.id === 'gd-1' || item.name?.toLowerCase().includes('gemini');
+
     return (
         <div className="relative group flex items-center justify-center flex-1 min-w-0">
             <a 
@@ -94,15 +98,26 @@ const AiCompactTrioItem: React.FC<{
                 onClick={(e) => {
                     if (isEditing) e.preventDefault();
                 }}
-                className={`relative flex items-center justify-center w-full h-11 rounded-xl transition-all duration-300 bg-white/[0.04] hover:bg-white/12 hover:shadow-[0_0_15px_rgba(255,255,255,0.08)] border border-white/5 hover:border-white/20 group ${item.colorClass || ''} ${isEditing ? 'opacity-50 cursor-default' : ''}`}
+                className={`relative flex items-center justify-center w-full h-11 rounded-xl transition-all duration-300 group overflow-hidden ${
+                    isGemini 
+                        ? 'bg-gradient-to-br from-blue-600/30 via-indigo-600/25 to-pink-600/30 hover:from-blue-600/45 hover:via-purple-600/40 hover:to-pink-600/45 border border-blue-400/50 hover:border-purple-300 shadow-[0_0_16px_rgba(78,135,245,0.35)] hover:shadow-[0_0_28px_rgba(168,85,247,0.65)] ring-1 ring-white/20 scale-[1.03]' 
+                        : 'bg-white/[0.04] hover:bg-white/12 hover:shadow-[0_0_15px_rgba(255,255,255,0.08)] border border-white/5 hover:border-white/20'
+                } ${item.colorClass || ''} ${isEditing ? 'opacity-50 cursor-default' : ''}`}
                 title={item.name}
             >
+                {/* Luminous aura shimmer on hover for Gemini */}
+                {isGemini && (
+                    <div className="absolute inset-0 bg-gradient-to-tr from-cyan-400/0 via-white/25 to-pink-400/0 opacity-40 group-hover:opacity-100 transition-opacity duration-500 pointer-events-none" />
+                )}
+
                 <div 
-                    className="w-6 h-6 flex-shrink-0 flex items-center justify-center transition-transform duration-200 group-hover:scale-110" 
+                    className={`${isGemini ? 'w-7 h-7' : 'w-6 h-6'} flex-shrink-0 flex items-center justify-center transition-transform duration-200 group-hover:scale-115 relative z-10`} 
                     style={{
-                        filter: item.outlineColor && item.outlineWidth ? `drop-shadow(0 0 ${item.outlineWidth}px ${item.outlineColor})` : undefined
+                        filter: item.outlineColor && item.outlineWidth 
+                            ? `drop-shadow(0 0 ${item.outlineWidth}px ${item.outlineColor})` 
+                            : (isGemini ? 'drop-shadow(0 0 6px rgba(168,85,247,0.8)) drop-shadow(0 0 14px rgba(78,135,245,0.6))' : undefined)
                     }}
-                    dangerouslySetInnerHTML={{ __html: item.iconSvg }} 
+                    dangerouslySetInnerHTML={{ __html: isGemini ? GEMINI_PREMIUM_ICON_SVG : item.iconSvg }} 
                 />
 
                 {/* Tooltip con el nombre: visible únicamente al poner el mouse encima */}
@@ -251,7 +266,7 @@ const AiSidebar: React.FC<AiSidebarProps> = ({ isOpen }) => {
         name: 'Gemini',
         href: 'https://gemini.google.com/app',
         colorClass: 'text-blue-400 hover:text-blue-300',
-        iconSvg: '<svg viewBox="0 0 24 24" class="w-full h-full"><defs><linearGradient id="gemini-ai-grad" x1="0%" y1="0%" x2="100%" y2="100%"><stop offset="0%" stopColor="#4E87F5" /><stop offset="50%" stopColor="#9B72CB" /><stop offset="100%" stopColor="#D96570" /></linearGradient></defs><path fill="url(#gemini-ai-grad)" d="M12 2L14.8 8.6L21.4 11.4L14.8 14.2L12 20.8L9.2 14.2L2.6 11.4L9.2 8.6L12 2Z" /></svg>'
+        iconSvg: GEMINI_PREMIUM_ICON_SVG
     };
 
     const defaultChatGPT: LinkItem = {
@@ -275,7 +290,7 @@ const AiSidebar: React.FC<AiSidebarProps> = ({ isOpen }) => {
         const href = (m.href || '').toLowerCase();
         return name.includes('gemini') || href.includes('gemini.google.com') || m.id === 'ai-gemini' || m.id === 'gd-1';
     }) || defaultGemini;
-    geminiItem = { ...defaultGemini, ...geminiItem, id: geminiItem.id || 'ai-gemini' };
+    geminiItem = { ...defaultGemini, ...geminiItem, id: geminiItem.id || 'ai-gemini', iconSvg: GEMINI_PREMIUM_ICON_SVG };
 
     let chatGptItem = allModels.find(m => {
         const name = (m.name || '').toLowerCase();
