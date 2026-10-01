@@ -300,6 +300,14 @@ const MainLayout: React.FC = () => {
     );
   };
 
+  const isRenderTab = (t: { id?: string; label?: string; componentKey?: string }) => {
+    if (!t) return false;
+    const id = (t.id || '').toLowerCase();
+    const label = (t.label || '').toLowerCase();
+    const componentKey = (t.componentKey || '').toLowerCase();
+    return id.includes('render') || label.includes('render') || componentKey.includes('render');
+  };
+
   const isDatabaseActive = isDbTab({ id: activeTabId });
 
   const handleToggleDatabaseTab = () => {
@@ -541,6 +549,16 @@ const MainLayout: React.FC = () => {
       if (!hasArchivosTab) {
         const newTab: TabConfig = { id: 'archivos', label: 'Archivos', type: 'system', componentKey: 'Archivos', isVisible: true, icon: 'Folder' };
         updateConfig({ ...config, tabs: [...config.tabs, newTab] });
+      }
+
+      // Auto-remove any Renders / Renders Remb tab from horizontal tabs bar
+      const hasRenderTab = config.tabs.some(isRenderTab);
+      if (hasRenderTab) {
+        const newTabs = config.tabs.filter(t => !isRenderTab(t));
+        updateConfig({ ...config, tabs: newTabs });
+        if (isRenderTab({ id: activeTabId, label: activeTabId, componentKey: activeTabId })) {
+          setActiveTabId(newTabs[0]?.id || 'email-gen');
+        }
       }
     }
   }, [config.tabs, activeTabId, updateConfig]);
@@ -904,10 +922,10 @@ const MainLayout: React.FC = () => {
                       {/* DESKTOP NAVIGATION TABS (>= 1024px) */}
                       <nav className="hidden lg:flex w-full mb-4 flex-wrap justify-center gap-2 items-center">
                           <SortableContext 
-                            items={config.tabs.filter(t => t.isVisible && !isDbTab(t)).map(t => t.id)} 
+                            items={config.tabs.filter(t => t.isVisible && !isDbTab(t) && !isRenderTab(t)).map(t => t.id)} 
                             strategy={horizontalListSortingStrategy}
                           >
-                            {config.tabs.filter(t => t.isVisible && !isDbTab(t)).map((tab, index) => (
+                            {config.tabs.filter(t => t.isVisible && !isDbTab(t) && !isRenderTab(t)).map((tab, index) => (
                               <SortableTab 
                                   key={tab.id}
                                   tab={tab}
@@ -943,7 +961,7 @@ const MainLayout: React.FC = () => {
                         {isFoldUnfolded ? (
                           /* Galaxy Fold Desplegado: Vista en Rejilla optimizada para pantalla casi cuadrada (~4:3) */
                           <div className="grid grid-cols-3 sm:grid-cols-4 md:grid-cols-5 gap-2 w-full">
-                            {config.tabs.filter(t => t.isVisible && !isDbTab(t)).map((tab) => (
+                            {config.tabs.filter(t => t.isVisible && !isDbTab(t) && !isRenderTab(t)).map((tab) => (
                               <TabButton
                                 key={tab.id}
                                 label={tab.label}
@@ -957,7 +975,7 @@ const MainLayout: React.FC = () => {
                         ) : (
                           /* Galaxy Fold Plegado & Celulares normales: Cinta deslizable horizontalmente (Swipe ribbon) */
                           <div className="flex items-center gap-2 overflow-x-auto no-scrollbar py-1 w-full scroll-smooth">
-                            {config.tabs.filter(t => t.isVisible && !isDbTab(t)).map((tab) => (
+                            {config.tabs.filter(t => t.isVisible && !isDbTab(t) && !isRenderTab(t)).map((tab) => (
                               <TabButton
                                 key={tab.id}
                                 label={tab.label}

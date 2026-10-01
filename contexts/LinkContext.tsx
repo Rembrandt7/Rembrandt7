@@ -716,10 +716,15 @@ export const LinkProvider: React.FC<{ children: React.ReactNode }> = ({ children
               t.id === 'commands' || t.id === 'credenciales' || t.id === 'notas'
             );
 
-            finalConfig.tabs = finalConfig.tabs.filter((t: any) => 
-              t.id !== 'workspace' && t.id !== 'finanzas' && t.id !== 'nutricion' &&
-              t.id !== 'commands' && t.id !== 'credenciales' && t.id !== 'notas'
-            );
+            finalConfig.tabs = finalConfig.tabs.filter((t: any) => {
+              const id = (t.id || '').toLowerCase();
+              const label = (t.label || '').toLowerCase();
+              const comp = (t.componentKey || '').toLowerCase();
+              const isRender = id.includes('render') || label.includes('render') || comp.includes('render');
+              return !isRender &&
+                t.id !== 'workspace' && t.id !== 'finanzas' && t.id !== 'nutricion' &&
+                t.id !== 'commands' && t.id !== 'credenciales' && t.id !== 'notas';
+            });
 
             if (firstOldIndex !== -1) {
               finalConfig.tabs.splice(firstOldIndex, 0, personalTab);
@@ -732,11 +737,16 @@ export const LinkProvider: React.FC<{ children: React.ReactNode }> = ({ children
               }
             }
           } else {
-            // Clean up any remaining obsolete standalone tabs
-            finalConfig.tabs = finalConfig.tabs.filter((t: any) => 
-              t.id !== 'workspace' && t.id !== 'finanzas' && t.id !== 'nutricion' &&
-              t.id !== 'commands' && t.id !== 'credenciales' && t.id !== 'notas'
-            );
+            // Clean up any remaining obsolete standalone tabs and remove Renders tab
+            finalConfig.tabs = finalConfig.tabs.filter((t: any) => {
+              const id = (t.id || '').toLowerCase();
+              const label = (t.label || '').toLowerCase();
+              const comp = (t.componentKey || '').toLowerCase();
+              const isRender = id.includes('render') || label.includes('render') || comp.includes('render');
+              return !isRender &&
+                t.id !== 'workspace' && t.id !== 'finanzas' && t.id !== 'nutricion' &&
+                t.id !== 'commands' && t.id !== 'credenciales' && t.id !== 'notas';
+            });
           }
         }
 
@@ -1022,10 +1032,15 @@ export const LinkProvider: React.FC<{ children: React.ReactNode }> = ({ children
                 t.id === 'commands' || t.id === 'credenciales' || t.id === 'notas'
               );
 
-              parsed.tabs = parsed.tabs.filter((t: any) => 
-                t.id !== 'workspace' && t.id !== 'finanzas' && t.id !== 'nutricion' &&
-                t.id !== 'commands' && t.id !== 'credenciales' && t.id !== 'notas'
-              );
+              parsed.tabs = parsed.tabs.filter((t: any) => {
+                const id = (t.id || '').toLowerCase();
+                const label = (t.label || '').toLowerCase();
+                const comp = (t.componentKey || '').toLowerCase();
+                const isRender = id.includes('render') || label.includes('render') || comp.includes('render');
+                return !isRender &&
+                  t.id !== 'workspace' && t.id !== 'finanzas' && t.id !== 'nutricion' &&
+                  t.id !== 'commands' && t.id !== 'credenciales' && t.id !== 'notas';
+              });
 
               if (firstOldIndex !== -1) {
                 parsed.tabs.splice(firstOldIndex, 0, personalTab);
@@ -1038,10 +1053,15 @@ export const LinkProvider: React.FC<{ children: React.ReactNode }> = ({ children
                 }
               }
             } else {
-              parsed.tabs = parsed.tabs.filter((t: any) => 
-                t.id !== 'workspace' && t.id !== 'finanzas' && t.id !== 'nutricion' &&
-                t.id !== 'commands' && t.id !== 'credenciales' && t.id !== 'notas'
-              );
+              parsed.tabs = parsed.tabs.filter((t: any) => {
+                const id = (t.id || '').toLowerCase();
+                const label = (t.label || '').toLowerCase();
+                const comp = (t.componentKey || '').toLowerCase();
+                const isRender = id.includes('render') || label.includes('render') || comp.includes('render');
+                return !isRender &&
+                  t.id !== 'workspace' && t.id !== 'finanzas' && t.id !== 'nutricion' &&
+                  t.id !== 'commands' && t.id !== 'credenciales' && t.id !== 'notas';
+              });
             }
           }
           // Ensure usefulTools exist and have the new sections
