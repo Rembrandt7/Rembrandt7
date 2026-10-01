@@ -161,11 +161,12 @@ const INITIAL_CONFIG: AppConfig = {
 
   aiSidebar: {
     models: [
-        { id: 'ai-1', name: 'ChatGPT', href: 'https://chatgpt.com/', colorClass: 'text-teal-400 hover:text-teal-300', iconSvg: '<svg class="w-full h-full fill-current" viewBox="0 0 24 24"><path d="M18,4H6A2,2 0 0,0 4,6V18A2,2 0 0,0 6,20H18A2,2 0 0,0 20,18V6A2,2 0 0,0 18,4M9,8H11V10H9V8M13,8H15V10H13V8M9,12H15V16H9V12Z" /></svg>' },
+        { id: 'ai-gemini', name: 'Gemini', href: 'https://gemini.google.com/app', colorClass: 'text-blue-400 hover:text-blue-300', iconSvg: '<svg viewBox="0 0 24 24" class="w-full h-full"><defs><linearGradient id="gemini-ai-grad" x1="0%" y1="0%" x2="100%" y2="100%"><stop offset="0%" stopColor="#4E87F5" /><stop offset="50%" stopColor="#9B72CB" /><stop offset="100%" stopColor="#D96570" /></linearGradient></defs><path fill="url(#gemini-ai-grad)" d="M12 2L14.8 8.6L21.4 11.4L14.8 14.2L12 20.8L9.2 14.2L2.6 11.4L9.2 8.6L12 2Z" /></svg>' },
+        { id: 'ai-1', name: 'ChatGPT', href: 'https://chatgpt.com/', colorClass: 'text-teal-400 hover:text-teal-300', iconSvg: '<svg class="w-full h-full fill-current" viewBox="0 0 24 24"><path d="M22.2819 9.8211a5.9847 5.9847 0 0 0-.5157-4.9108 6.0462 6.0462 0 0 0-6.5098-2.9A6.0651 6.0651 0 0 0 4.9807 4.1818a5.9847 5.9847 0 0 0-3.9977 2.9 6.0462 6.0462 0 0 0 .7427 7.0966 5.98 5.98 0 0 0 .511 4.9107 6.051 6.051 0 0 0 6.5146 2.9001A5.9847 5.9847 0 0 0 13.2599 24a6.0557 6.0557 0 0 0 5.7718-4.2058 5.9894 5.9894 0 0 0 3.9977-2.9001 6.0557 6.0557 0 0 0-.7475-7.0729zm-9.022 12.6081a4.4755 4.4755 0 0 1-2.8764-1.0408l.1419-.0804 4.7783-2.7582a.7948.7948 0 0 0 .3927-.6813v-6.7369l2.02 1.168a.071.071 0 0 1 .038.052v5.5826a4.5045 4.5045 0 0 1-4.4945 4.4944zm-9.6607-4.1254a4.4708 4.4708 0 0 1-.5346-3.0137l.142.0852 4.783 2.7582a.7712.7712 0 0 0 .7806 0l5.8428-3.3685v2.3324a.0804.0804 0 0 1-.0332.0615L9.74 19.9502a4.4992 4.4992 0 0 1-6.1408-1.6464zM2.3408 7.8956a4.485 4.485 0 0 1 2.3655-1.9728V11.6a.7664.7664 0 0 0 .3879.6765l5.8144 3.3543-2.0201 1.168a.0757.0757 0 0 1-.071 0l-4.8303-2.7865A4.504 4.504 0 0 1 2.3408 7.8956zm16.0993 3.8558L12.5973 8.3829l2.02-1.168a.0757.0757 0 0 1 .071 0l4.8303 2.7913a4.4944 4.4944 0 0 1-.6765 8.1042v-5.6772a.79.79 0 0 0-.4023-.6813zm2.0107-3.0231l-.142-.0852-4.7735-2.7818a.7759.7759 0 0 0-.7854 0L9.409 9.2297V6.8974a.0662.0662 0 0 1 .0284-.0615l4.8303-2.7866a4.4992 4.4992 0 0 1 6.6802 4.66zM8.3065 12.863l-2.02-1.163a.0804.0804 0 0 1-.038-.0567V6.0742a4.4992 4.4992 0 0 1 7.3757-3.4537l-.142.0805L8.704 5.459a.7948.7948 0 0 0-.3927.6813v6.7227zm1.1449-1.9213l2.5484-1.4721 2.5484 1.4721v2.9442l-2.5484 1.4721-2.5484-1.4721z"/></svg>' },
+        { id: 'ai-5', name: 'Claude', href: 'https://claude.ai/new', colorClass: 'text-orange-400 hover:text-orange-300', iconSvg: '<svg class="w-full h-full fill-current" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg"><path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm1 15h-2v-2h2v2zm0-4h-2V7h2v6z" /></svg>' },
         { id: 'ai-2', name: 'Qwen', href: 'https://chat.qwen.ai/', colorClass: 'hover:text-purple-500', iconSvg: '<svg class="w-full h-full" viewBox="0 0 64 64" xmlns="http://www.w3.org/2000/svg"><circle cx="32" cy="32" r="28" fill="#8b5cf6"/><text x="32" y="44" fontFamily="Arial, sans-serif" fontSize="32" fontWeight="bold" fill="white" textAnchor="middle">Q</text></svg>' },
         { id: 'ai-3', name: 'Grok', href: 'https://grok.com/', colorClass: 'hover:text-gray-200', iconSvg: '<svg class="w-full h-full fill-none stroke-current stroke-[8]" viewBox="0 0 64 64"><circle cx="32" cy="32" r="26" /><line x1="16" y1="48" x2="48" y2="16" strokeLinecap="round"/></svg>' },
-        { id: 'ai-4', name: 'DeepSeek', href: 'https://chat.deepseek.com/', colorClass: 'text-blue-600 hover:text-blue-500', iconSvg: '<svg class="w-full h-full fill-current" viewBox="0 0 24 24"><path d="M20 2H4c-1.1 0-2 .9-2 2v18l4-4h14c1.1 0 2-.9 2-2V4c0-1.1-.9-2-2-2zm0 14H6l-2 2V4h16v12z"/><path d="M12 6c-1.66 0-3 1.34-3 3s1.34 3 3 3 3-1.34 3-3-1.34-3-3-3zm0 4c-.55 0-1-.45-1-1s.45-1 1-1 1 .45 1 1-1 1 1z"/></svg>' },
-        { id: 'ai-5', name: 'Claude', href: 'https://claude.ai/new', colorClass: 'text-orange-400 hover:text-orange-300', iconSvg: '<svg class="w-full h-full fill-current" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg"><path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm1 15h-2v-2h2v2zm0-4h-2V7h2v6z" /></svg>' }
+        { id: 'ai-4', name: 'DeepSeek', href: 'https://chat.deepseek.com/', colorClass: 'text-blue-600 hover:text-blue-500', iconSvg: '<svg class="w-full h-full fill-current" viewBox="0 0 24 24"><path d="M20 2H4c-1.1 0-2 .9-2 2v18l4-4h14c1.1 0 2-.9 2-2V4c0-1.1-.9-2-2-2zm0 14H6l-2 2V4h16v12z"/><path d="M12 6c-1.66 0-3 1.34-3 3s1.34 3 3 3 3-1.34 3-3-1.34-3-3-3zm0 4c-.55 0-1-.45-1-1s.45-1 1-1 1 .45 1 1-1 1 1z"/></svg>' }
     ],
     quickAccess: [
         { id: 'qa-1', name: 'Rendair', href: 'https://rendair.ai/dashboard', colorClass: 'hover:text-teal-400', iconSvg: '<svg class="w-full h-full" viewBox="0 0 64 64" xmlns="http://www.w3.org/2000/svg"><circle cx="32" cy="32" r="28" fill="#4fd1c5"/><text x="32" y="42" fontFamily="Arial, sans-serif" fontSize="28" fontWeight="bold" fill="black" textAnchor="middle">r</text></svg>' },
@@ -247,7 +248,6 @@ const INITIAL_CONFIG: AppConfig = {
     }
   ],
   googleDock: [
-    { id: 'gd-1', name: "Gemini", href: "https://gemini.google.com/app", colorClass: "bg-gradient-to-br from-blue-600/20 via-purple-600/20 to-red-600/20 border border-white/10 shadow-[0_0_15px_rgba(155,114,203,0.2)]", iconSvg: '<svg viewBox="0 0 24 24" class="w-full h-full filter drop-shadow-[0_0_5px_rgba(155,114,203,0.3)]"><defs><linearGradient id="gemini-dock-item" x1="0%" y1="0%" x2="100%" y2="100%"><stop offset="0%" stopColor="#4E87F5" /><stop offset="50%" stopColor="#9B72CB" /><stop offset="100%" stopColor="#D96570" /></linearGradient></defs><path fill="url(#gemini-dock-item)" d="M12 2L14.8 8.6L21.4 11.4L14.8 14.2L12 20.8L9.2 14.2L2.6 11.4L9.2 8.6L12 2Z" /></svg>' },
     { id: 'gd-2', name: "AI Studio", href: "https://aistudio.google.com/", colorClass: "text-blue-400", iconSvg: '<svg viewBox="0 0 24 24" class="w-8 h-8 fill-current"><path d="M9.813 15.904L9 18.75l-.813-2.846a4.5 4.5 0 00-3.09-3.09L2.25 12l2.846-.813a4.5 4.5 0 003.09-3.09L9 5.25l.813 2.846a4.5 4.5 0 003.09 3.09L15.75 12l-2.846.813a4.5 4.5 0 00-3.09 3.09zM18.259 17.404L18 18.333l-.259-.929a2.5 2.5 0 00-1.714-1.714l-.929-.259.929-.259a2.5 2.5 0 001.714-1.714l.259-.929.259.929a2.5 2.5 0 001.714 1.714l.929.259-.929.259a2.5 2.5 0 00-1.714 1.714z" /></svg>' },
     { id: 'gd-3', name: "Búsqueda", href: "https://www.google.com", colorClass: "text-blue-400", iconSvg: '<svg viewBox="0 0 24 24" class="w-8 h-8 fill-current"><path d="M15.5 14h-.79l-.28-.27A6.471 6.471 0 0 0 16 9.5 6.5 6.5 0 1 0 9.5 16c1.61 0 3.09-.59 4.23-1.57l.27.28v.79l5 4.99L20.49 19l-4.99-5zm-6 0C7.01 14 5 11.99 5 9.5S7.01 5 9.5 5 14 7.01 14 9.5 11.99 14 9.5 14z" /></svg>' },
     { id: 'gd-4', name: "Gmail", href: "https://mail.google.com", colorClass: "text-red-500", iconSvg: '<svg viewBox="0 0 24 24" class="w-8 h-8 fill-current"><path d="M20 4H4c-1.1 0-1.99.9-1.99 2L2 18c0 1.1.9 2 2 2h16c1.1 0 2-.9 2-2V6c0-1.1-.9-2-2-2zm0 4l-8 5-8-5V6l8 5 8-5v2z" /></svg>' },
@@ -803,13 +803,54 @@ export const LinkProvider: React.FC<{ children: React.ReactNode }> = ({ children
           }
         }
 
-        // Ensure Gemini / Jimmy is removed from aiSidebar.models
-        if (finalConfig.aiSidebar && finalConfig.aiSidebar.models) {
-          finalConfig.aiSidebar.models = finalConfig.aiSidebar.models.filter((m: any) => {
+        // Ensure Gemini is removed from googleDock and placed in aiSidebar.models
+        if (finalConfig.googleDock && Array.isArray(finalConfig.googleDock)) {
+          finalConfig.googleDock = finalConfig.googleDock.filter((m: any) => {
             const name = (m.name || '').toLowerCase();
             const href = (m.href || '').toLowerCase();
-            return !name.includes('gemini') && !name.includes('jimmy') && !name.includes('llimi') && !href.includes('gemini.google.com') && !href.includes('jimmy');
+            return m.id !== 'gd-1' && !name.includes('gemini') && !name.includes('jimmy') && !href.includes('gemini.google.com');
           });
+        }
+
+        // Ensure Gemini, ChatGPT, Claude are the top trio in aiSidebar.models
+        if (finalConfig.aiSidebar) {
+          if (!finalConfig.aiSidebar.models) finalConfig.aiSidebar.models = [];
+          
+          const defaultGemini = INITIAL_CONFIG.aiSidebar.models[0];
+          const defaultChatGPT = INITIAL_CONFIG.aiSidebar.models[1];
+          const defaultClaude = INITIAL_CONFIG.aiSidebar.models[2];
+
+          let geminiItem = finalConfig.aiSidebar.models.find((m: any) => {
+            const name = (m.name || '').toLowerCase();
+            const href = (m.href || '').toLowerCase();
+            return name.includes('gemini') || href.includes('gemini.google.com') || m.id === 'ai-gemini' || m.id === 'gd-1';
+          }) || defaultGemini;
+          geminiItem = { ...defaultGemini, ...geminiItem, id: 'ai-gemini', name: 'Gemini', href: 'https://gemini.google.com/app' };
+
+          let chatGptItem = finalConfig.aiSidebar.models.find((m: any) => {
+            const name = (m.name || '').toLowerCase();
+            const href = (m.href || '').toLowerCase();
+            return name.includes('chatgpt') || href.includes('chatgpt.com') || m.id === 'ai-1';
+          }) || defaultChatGPT;
+          chatGptItem = { ...defaultChatGPT, ...chatGptItem, id: 'ai-1', name: 'ChatGPT' };
+
+          let claudeItem = finalConfig.aiSidebar.models.find((m: any) => {
+            const name = (m.name || '').toLowerCase();
+            const href = (m.href || '').toLowerCase();
+            return name.includes('claude') || href.includes('claude.ai') || m.id === 'ai-5';
+          }) || defaultClaude;
+          claudeItem = { ...defaultClaude, ...claudeItem, id: 'ai-5', name: 'Claude' };
+
+          const otherModels = finalConfig.aiSidebar.models.filter((m: any) => {
+            const name = (m.name || '').toLowerCase();
+            const href = (m.href || '').toLowerCase();
+            const isGem = name.includes('gemini') || href.includes('gemini.google.com') || m.id === 'ai-gemini' || m.id === 'gd-1' || m.id === geminiItem.id;
+            const isGpt = name.includes('chatgpt') || href.includes('chatgpt.com') || m.id === 'ai-1' || m.id === chatGptItem.id;
+            const isCld = name.includes('claude') || href.includes('claude.ai') || m.id === 'ai-5' || m.id === claudeItem.id;
+            return !isGem && !isGpt && !isCld;
+          });
+
+          finalConfig.aiSidebar.models = [geminiItem, chatGptItem, claudeItem, ...otherModels];
         }
 
         if (finalConfig.aiSidebar && finalConfig.aiSidebar.quickAccess) {
@@ -1110,13 +1151,54 @@ export const LinkProvider: React.FC<{ children: React.ReactNode }> = ({ children
             }
           }
 
-          // Ensure Gemini / Jimmy is removed from aiSidebar.models
-          if (parsed.aiSidebar && parsed.aiSidebar.models) {
-            parsed.aiSidebar.models = parsed.aiSidebar.models.filter((m: any) => {
+          // Ensure Gemini is removed from googleDock and placed in aiSidebar.models
+          if (parsed.googleDock && Array.isArray(parsed.googleDock)) {
+            parsed.googleDock = parsed.googleDock.filter((m: any) => {
               const name = (m.name || '').toLowerCase();
               const href = (m.href || '').toLowerCase();
-              return !name.includes('gemini') && !name.includes('jimmy') && !name.includes('llimi') && !href.includes('gemini.google.com') && !href.includes('jimmy');
+              return m.id !== 'gd-1' && !name.includes('gemini') && !name.includes('jimmy') && !href.includes('gemini.google.com');
             });
+          }
+
+          // Ensure Gemini, ChatGPT, Claude are the top trio in aiSidebar.models
+          if (parsed.aiSidebar) {
+            if (!parsed.aiSidebar.models) parsed.aiSidebar.models = [];
+            
+            const defaultGemini = INITIAL_CONFIG.aiSidebar.models[0];
+            const defaultChatGPT = INITIAL_CONFIG.aiSidebar.models[1];
+            const defaultClaude = INITIAL_CONFIG.aiSidebar.models[2];
+
+            let geminiItem = parsed.aiSidebar.models.find((m: any) => {
+              const name = (m.name || '').toLowerCase();
+              const href = (m.href || '').toLowerCase();
+              return name.includes('gemini') || href.includes('gemini.google.com') || m.id === 'ai-gemini' || m.id === 'gd-1';
+            }) || defaultGemini;
+            geminiItem = { ...defaultGemini, ...geminiItem, id: 'ai-gemini', name: 'Gemini', href: 'https://gemini.google.com/app' };
+
+            let chatGptItem = parsed.aiSidebar.models.find((m: any) => {
+              const name = (m.name || '').toLowerCase();
+              const href = (m.href || '').toLowerCase();
+              return name.includes('chatgpt') || href.includes('chatgpt.com') || m.id === 'ai-1';
+            }) || defaultChatGPT;
+            chatGptItem = { ...defaultChatGPT, ...chatGptItem, id: 'ai-1', name: 'ChatGPT' };
+
+            let claudeItem = parsed.aiSidebar.models.find((m: any) => {
+              const name = (m.name || '').toLowerCase();
+              const href = (m.href || '').toLowerCase();
+              return name.includes('claude') || href.includes('claude.ai') || m.id === 'ai-5';
+            }) || defaultClaude;
+            claudeItem = { ...defaultClaude, ...claudeItem, id: 'ai-5', name: 'Claude' };
+
+            const otherModels = parsed.aiSidebar.models.filter((m: any) => {
+              const name = (m.name || '').toLowerCase();
+              const href = (m.href || '').toLowerCase();
+              const isGem = name.includes('gemini') || href.includes('gemini.google.com') || m.id === 'ai-gemini' || m.id === 'gd-1' || m.id === geminiItem.id;
+              const isGpt = name.includes('chatgpt') || href.includes('chatgpt.com') || m.id === 'ai-1' || m.id === chatGptItem.id;
+              const isCld = name.includes('claude') || href.includes('claude.ai') || m.id === 'ai-5' || m.id === claudeItem.id;
+              return !isGem && !isGpt && !isCld;
+            });
+
+            parsed.aiSidebar.models = [geminiItem, chatGptItem, claudeItem, ...otherModels];
           }
 
           if (parsed.aiSidebar && parsed.aiSidebar.quickAccess) {
