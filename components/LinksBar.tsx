@@ -223,7 +223,9 @@ const LinksBar: React.FC = () => {
     };
 
     // Deduplicate on the fly so Javer, Flow, MakerWorld and others never appear duplicated
-    const cleanLinksBar = normalizeAndDeduplicateLinksBar(config.linksBar);
+    const cleanLinksBar = Array.isArray(normalizeAndDeduplicateLinksBar(config?.linksBar || []))
+        ? normalizeAndDeduplicateLinksBar(config?.linksBar || [])
+        : [];
     const filteredLinks = cleanLinksBar.filter(isLinkIncludedInFilter);
 
     const handleReorder = (newSubset: LinkItem[]) => {
@@ -260,7 +262,7 @@ const LinksBar: React.FC = () => {
     };
 
     const handleDeleteLink = (id: string) => {
-        const newLinks = config.linksBar.filter(l => l.id !== id);
+        const newLinks = (config?.linksBar || []).filter(l => l.id !== id);
         updateConfig({ ...config, linksBar: normalizeAndDeduplicateLinksBar(newLinks) });
     };
 
