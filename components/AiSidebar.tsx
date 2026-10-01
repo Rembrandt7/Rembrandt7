@@ -6,6 +6,7 @@ import { Edit, Trash2, Plus, RotateCcw } from 'lucide-react';
 import { SortableLinkList } from './common/SortableLinkList';
 import { verticalListSortingStrategy } from '@dnd-kit/sortable';
 import { recordQuickAccessClick, sortQuickAccessByUsage, resetQuickAccessCounters } from '../utils/quickAccessUtils';
+import { toast } from 'sonner';
 
 const AiSidebarItem: React.FC<{ 
     item: LinkItem; 
@@ -25,6 +26,15 @@ const AiSidebarItem: React.FC<{
                     if (isEditing) {
                         e.preventDefault();
                     } else {
+                        if (item.id === 'qa-renders-remb' || (item.name || '').toLowerCase().includes('renders remb')) {
+                            const localPath = "C:\\Users\\rblanco\\OneDrive - Servicios Administrativos Javer, S.A. DE C.V\\Renders Remb";
+                            try {
+                                if (navigator.clipboard && navigator.clipboard.writeText) {
+                                    navigator.clipboard.writeText(localPath);
+                                    toast.success("Abriendo Renders Remb... ¡Ruta local copiada al portapapeles!");
+                                }
+                            } catch (err) {}
+                        }
                         onClick?.();
                     }
                 }}

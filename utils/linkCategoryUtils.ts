@@ -152,6 +152,16 @@ export function normalizeAndDeduplicateLinksBar(links: LinkItem[]): LinkItem[] {
       item.colorClass = 'text-cyan-400 hover:text-cyan-300';
       item.iconSvg = `<svg viewBox="0 0 100 100" class="w-full h-full p-0.5" xmlns="http://www.w3.org/2000/svg"><defs><linearGradient id="capcut-tile-bg" x1="0%" y1="0%" x2="100%" y2="100%"><stop offset="0%" stop-color="#0a0a0f"/><stop offset="50%" stop-color="#12131a"/><stop offset="100%" stop-color="#181a24"/></linearGradient><linearGradient id="capcut-blade-top" x1="0%" y1="0%" x2="100%" y2="100%"><stop offset="0%" stop-color="#ffffff"/><stop offset="100%" stop-color="#e2e8f0"/></linearGradient></defs><rect width="100" height="100" rx="22" fill="url(#capcut-tile-bg)" stroke="#272935" stroke-width="1.5"/><rect x="4" y="4" width="92" height="92" rx="19" fill="none" stroke="rgba(255,255,255,0.06)" stroke-width="1"/><g transform="translate(0, 0)"><path d="M 23 27 C 21.5 27 20 28.5 20 30.5 L 20 37 C 20 38.5 20.8 39.8 22.2 40.5 L 50 56.5 L 77.8 40.5 C 79.2 39.8 80 38.5 80 37 L 80 30.5 C 80 28.5 78.5 27 77 27 C 76 27 75 27.5 74.2 28 L 50 42 L 25.8 28 C 25 27.5 24 27 23 27 Z" fill="url(#capcut-blade-top)"/><path d="M 23 73 C 21.5 73 20 71.5 20 69.5 L 20 63 C 20 61.5 20.8 60.2 22.2 59.5 L 50 43.5 L 77.8 59.5 C 79.2 60.2 80 61.5 80 63 L 80 69.5 C 80 71.5 78.5 73 77 73 C 76 73 75 72.5 74.2 72 L 50 58 L 25.8 72 C 25 72.5 24 73 23 73 Z" fill="url(#capcut-blade-top)"/></g></svg>`;
     }
+    if (nameLower === 'renders remb' || nameLower === 'renders' || item.id === 'renders-remb') {
+      item.id = 'renders-remb';
+      item.name = 'Renders Remb';
+      item.category = 'trabajo';
+      item.href = 'https://javer-my.sharepoint.com/personal/rblanco_javer_com_mx/Documents/Renders%20Remb';
+      item.colorClass = 'text-violet-400 hover:text-violet-300';
+      item.outlineColor = '#8b5cf6';
+      item.outlineWidth = 10;
+      item.iconSvg = `<svg viewBox="0 0 100 100" class="w-full h-full p-0.5" xmlns="http://www.w3.org/2000/svg"><defs><linearGradient id="rr-bg-grad" x1="0%" y1="0%" x2="100%" y2="100%"><stop offset="0%" stop-color="#0f172a"/><stop offset="50%" stop-color="#1e1b4b"/><stop offset="100%" stop-color="#31104b"/></linearGradient><linearGradient id="rr-cube-top" x1="0%" y1="0%" x2="100%" y2="100%"><stop offset="0%" stop-color="#a855f7"/><stop offset="100%" stop-color="#6366f1"/></linearGradient><linearGradient id="rr-cube-left" x1="0%" y1="0%" x2="100%" y2="100%"><stop offset="0%" stop-color="#4f46e5"/><stop offset="100%" stop-color="#3730a3"/></linearGradient><linearGradient id="rr-cube-right" x1="0%" y1="0%" x2="100%" y2="100%"><stop offset="0%" stop-color="#7c3aed"/><stop offset="100%" stop-color="#581c87"/></linearGradient><linearGradient id="rr-sun-grad" x1="0%" y1="0%" x2="100%" y2="100%"><stop offset="0%" stop-color="#38bdf8"/><stop offset="100%" stop-color="#06b6d4"/></linearGradient></defs><rect width="100" height="100" rx="22" fill="url(#rr-bg-grad)" stroke="#8b5cf6" stroke-width="1.5" stroke-opacity="0.5"/><rect x="4" y="4" width="92" height="92" rx="18" fill="none" stroke="rgba(255,255,255,0.08)" stroke-width="1"/><g transform="translate(50, 48)"><polygon points="0,-28 26,-13 0,2 -26,-13" fill="url(#rr-cube-top)" stroke="#c084fc" stroke-width="1" stroke-linejoin="round"/><polygon points="-26,-13 0,2 0,32 -26,17" fill="url(#rr-cube-left)" stroke="#818cf8" stroke-width="1" stroke-linejoin="round"/><polygon points="0,2 26,-13 26,17 0,32" fill="url(#rr-cube-right)" stroke="#a855f7" stroke-width="1" stroke-linejoin="round"/><circle cx="0" cy="2" r="3" fill="#ffffff" opacity="0.9"/></g><circle cx="25" cy="24" r="5" fill="url(#rr-sun-grad)"/><path d="M 20 78 L 32 78 M 26 72 L 26 84" stroke="#38bdf8" stroke-width="1.5" stroke-linecap="round" opacity="0.6"/><text x="50" y="91" font-family="system-ui, sans-serif" font-size="9" font-weight="900" fill="#e2e8f0" text-anchor="middle" letter-spacing="1">RENDERS</text></svg>`;
+    }
     if (nameLower === 'amazon') {
       item.id = 'amazon';
       item.name = 'Amazon';
@@ -202,7 +212,19 @@ export function normalizeAndDeduplicateLinksBar(links: LinkItem[]): LinkItem[] {
     result.push(item);
   }
 
-  return result;
+  // Ensure Renders Remb is always included in linksBar
+  if (!result.some(l => l.id === 'renders-remb' || (l.name || '').toLowerCase() === 'renders remb')) {
+    result.push({
+      id: 'renders-remb',
+      name: 'Renders Remb',
+      category: 'trabajo',
+      href: 'https://javer-my.sharepoint.com/personal/rblanco_javer_com_mx/Documents/Renders%20Remb',
+      colorClass: 'text-violet-400 hover:text-violet-300',
+      outlineColor: '#8b5cf6',
+      outlineWidth: 10,
+      iconSvg: `<svg viewBox="0 0 100 100" class="w-full h-full p-0.5" xmlns="http://www.w3.org/2000/svg"><defs><linearGradient id="rr-bg-grad" x1="0%" y1="0%" x2="100%" y2="100%"><stop offset="0%" stop-color="#0f172a"/><stop offset="50%" stop-color="#1e1b4b"/><stop offset="100%" stop-color="#31104b"/></linearGradient><linearGradient id="rr-cube-top" x1="0%" y1="0%" x2="100%" y2="100%"><stop offset="0%" stop-color="#a855f7"/><stop offset="100%" stop-color="#6366f1"/></linearGradient><linearGradient id="rr-cube-left" x1="0%" y1="0%" x2="100%" y2="100%"><stop offset="0%" stop-color="#4f46e5"/><stop offset="100%" stop-color="#3730a3"/></linearGradient><linearGradient id="rr-cube-right" x1="0%" y1="0%" x2="100%" y2="100%"><stop offset="0%" stop-color="#7c3aed"/><stop offset="100%" stop-color="#581c87"/></linearGradient><linearGradient id="rr-sun-grad" x1="0%" y1="0%" x2="100%" y2="100%"><stop offset="0%" stop-color="#38bdf8"/><stop offset="100%" stop-color="#06b6d4"/></linearGradient></defs><rect width="100" height="100" rx="22" fill="url(#rr-bg-grad)" stroke="#8b5cf6" stroke-width="1.5" stroke-opacity="0.5"/><rect x="4" y="4" width="92" height="92" rx="18" fill="none" stroke="rgba(255,255,255,0.08)" stroke-width="1"/><g transform="translate(50, 48)"><polygon points="0,-28 26,-13 0,2 -26,-13" fill="url(#rr-cube-top)" stroke="#c084fc" stroke-width="1" stroke-linejoin="round"/><polygon points="-26,-13 0,2 0,32 -26,17" fill="url(#rr-cube-left)" stroke="#818cf8" stroke-width="1" stroke-linejoin="round"/><polygon points="0,2 26,-13 26,17 0,32" fill="url(#rr-cube-right)" stroke="#a855f7" stroke-width="1" stroke-linejoin="round"/><circle cx="0" cy="2" r="3" fill="#ffffff" opacity="0.9"/></g><circle cx="25" cy="24" r="5" fill="url(#rr-sun-grad)"/><path d="M 20 78 L 32 78 M 26 72 L 26 84" stroke="#38bdf8" stroke-width="1.5" stroke-linecap="round" opacity="0.6"/><text x="50" y="91" font-family="system-ui, sans-serif" font-size="9" font-weight="900" fill="#e2e8f0" text-anchor="middle" letter-spacing="1">RENDERS</text></svg>`
+    });
+  }
 }
 
 

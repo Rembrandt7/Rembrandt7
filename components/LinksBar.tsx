@@ -2,6 +2,7 @@ import React, { useState, useRef } from 'react';
 import { LinkItem } from '../types';
 import { Edit, Trash2, Plus, Save, Upload, Check, Settings, Star, RefreshCw, ChevronLeft, ChevronRight, CloudDownload, CloudUpload, LayoutGrid, Briefcase, ShoppingCart, MessageCircle } from 'lucide-react';
 import { useLinks } from '../contexts/LinkContext';
+import { toast } from 'sonner';
 import { LinkEditorModal } from './common/LinkEditorModal';
 import { SortableLinkList } from './common/SortableLinkList';
 import { rectSortingStrategy } from '@dnd-kit/sortable';
@@ -45,6 +46,15 @@ const LinkIcon: React.FC<{
         if (isEditing) {
             e.preventDefault();
             return;
+        }
+        if (item.id === 'renders-remb' || (item.name || '').toLowerCase().includes('renders remb')) {
+            const localPath = "C:\\Users\\rblanco\\OneDrive - Servicios Administrativos Javer, S.A. DE C.V\\Renders Remb";
+            try {
+                if (navigator.clipboard && navigator.clipboard.writeText) {
+                    navigator.clipboard.writeText(localPath);
+                    toast.success("Abriendo Renders Remb... ¡Ruta local copiada al portapapeles!");
+                }
+            } catch (err) {}
         }
         if (isAppScheme) {
             e.preventDefault();
@@ -200,14 +210,14 @@ const LinksBar: React.FC = () => {
         setCurrentLink(null);
     };
 
-    const isLinkWhatsApp = (link: LinkItem) => {
+    const isLinkAlwaysVisible = (link: LinkItem) => {
         const name = (link.name || '').toLowerCase();
         const href = (link.href || '').toLowerCase();
-        return name.includes('whatsapp') || href.includes('whatsapp') || link.id === '2';
+        return name.includes('whatsapp') || href.includes('whatsapp') || link.id === '2' || name.includes('renders remb') || link.id === 'renders-remb';
     };
 
     const isLinkIncludedInFilter = (link: LinkItem) => {
-        if (isLinkWhatsApp(link)) return true; // WhatsApp es constante: SIEMPRE sale en todas las combinaciones
+        if (isLinkAlwaysVisible(link)) return true; // WhatsApp y Renders Remb siempre visibles
         const cat = link.category || inferLinkCategory(link);
         return activeCategories.includes(cat);
     };

@@ -16,7 +16,8 @@ import {
   ArrowUpRight,
   ShieldCheck,
   Laptop,
-  Globe
+  Globe,
+  Sparkles
 } from 'lucide-react';
 import { toast } from 'sonner';
 
@@ -24,6 +25,7 @@ interface FolderCategory {
   id: string;
   name: string;
   subpath: string;
+  fullLocalPath?: string;
   description: string;
   icon: React.ReactNode;
   color: string;
@@ -33,8 +35,21 @@ interface FolderCategory {
 
 const ONEDRIVE_BASE_WEB_URL = 'https://javer-my.sharepoint.com/personal/rblanco_javer_com_mx/Documents/Javer%202026';
 const ONEDRIVE_LOCAL_BASE_PATH = 'C:\\Users\\rblanco\\OneDrive - Servicios Administrativos Javer, S.A. DE C.V\\Javer 2026';
+const ONEDRIVE_RENDERS_WEB_URL = 'https://javer-my.sharepoint.com/personal/rblanco_javer_com_mx/Documents/Renders%20Remb';
+const ONEDRIVE_RENDERS_LOCAL_PATH = 'C:\\Users\\rblanco\\OneDrive - Servicios Administrativos Javer, S.A. DE C.V\\Renders Remb';
 
 const FOLDER_CATEGORIES: FolderCategory[] = [
+  {
+    id: 'renders-remb',
+    name: 'Renders Remb',
+    subpath: '',
+    fullLocalPath: ONEDRIVE_RENDERS_LOCAL_PATH,
+    description: 'Renders arquitectónicos 3D, perspectivas, fachadas y modelos de fraccionamientos (Azara, Encinos, etc.).',
+    icon: <Sparkles className="w-6 h-6 text-violet-400" />,
+    color: 'from-violet-500/20 to-purple-500/10 border-violet-500/30 hover:border-violet-500/60',
+    webUrl: ONEDRIVE_RENDERS_WEB_URL,
+    tag: 'Renders 3D'
+  },
   {
     id: 'prototipos',
     name: '1-. Prototipos',
@@ -134,10 +149,12 @@ export const ArchivosTab: React.FC = () => {
     cat.tag.toLowerCase().includes(searchTerm.toLowerCase())
   );
 
-  const handleCopyPath = async (subpath?: string, id?: string) => {
-    const fullPath = subpath 
-      ? `${ONEDRIVE_LOCAL_BASE_PATH}\\${subpath}`
-      : ONEDRIVE_LOCAL_BASE_PATH;
+  const handleCopyPath = async (subpath?: string, id?: string, explicitPath?: string) => {
+    const fullPath = explicitPath
+      ? explicitPath
+      : subpath 
+        ? `${ONEDRIVE_LOCAL_BASE_PATH}\\${subpath}`
+        : ONEDRIVE_LOCAL_BASE_PATH;
 
     try {
       if (navigator.clipboard && navigator.clipboard.writeText) {
@@ -356,7 +373,7 @@ export const ArchivosTab: React.FC = () => {
 
             <div className="mt-5 pt-4 border-t border-white/5 flex items-center justify-between gap-2">
               <button
-                onClick={() => handleCopyPath(cat.subpath, cat.id)}
+                onClick={() => handleCopyPath(cat.subpath, cat.id, cat.fullLocalPath)}
                 className="p-2 rounded-lg bg-white/5 hover:bg-white/10 text-gray-400 hover:text-white transition-colors text-xs flex items-center gap-1.5"
                 title="Copiar ruta de Windows"
               >
