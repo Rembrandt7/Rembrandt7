@@ -35,21 +35,8 @@ interface FolderCategory {
 
 const ONEDRIVE_BASE_WEB_URL = 'https://javer-my.sharepoint.com/personal/rblanco_javer_com_mx/Documents/Javer%202026';
 const ONEDRIVE_LOCAL_BASE_PATH = 'C:\\Users\\rblanco\\OneDrive - Servicios Administrativos Javer, S.A. DE C.V\\Javer 2026';
-const ONEDRIVE_RENDERS_WEB_URL = 'https://javer-my.sharepoint.com/personal/rblanco_javer_com_mx/Documents/Renders%20Remb';
-const ONEDRIVE_RENDERS_LOCAL_PATH = 'C:\\Users\\rblanco\\OneDrive - Servicios Administrativos Javer, S.A. DE C.V\\Renders Remb';
 
 const FOLDER_CATEGORIES: FolderCategory[] = [
-  {
-    id: 'renders-remb',
-    name: 'Renders Remb',
-    subpath: '',
-    fullLocalPath: ONEDRIVE_RENDERS_LOCAL_PATH,
-    description: 'Renders arquitectónicos 3D, perspectivas, fachadas y modelos de fraccionamientos (Azara, Encinos, etc.).',
-    icon: <Sparkles className="w-6 h-6 text-violet-400" />,
-    color: 'from-violet-500/20 to-purple-500/10 border-violet-500/30 hover:border-violet-500/60',
-    webUrl: ONEDRIVE_RENDERS_WEB_URL,
-    tag: 'Renders 3D'
-  },
   {
     id: 'prototipos',
     name: '1-. Prototipos',
