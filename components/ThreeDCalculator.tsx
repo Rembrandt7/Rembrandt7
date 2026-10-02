@@ -177,10 +177,12 @@ const ThreeDCalculator: React.FC<ThreeDCalculatorProps> = ({ viewMode = 'all', o
     const power = MATERIAL_POWER[material];
     const eCost = (power / 1000) * totalHours * 2.5;
     const mCost = totalHours * 5;
-    const totalProductionCost = fCost + eCost + mCost + laborCostManual;
-    
-    const friendPrice = totalProductionCost * 1.15; 
-    const commercialPrice = totalProductionCost * (1 + markup / 100);
+    // Todos los precios redondeados hacia arriba a múltiplos de 5 sin decimales (terminan en 0 o 5, ej. 104.58 -> 105, 118.22 -> 120)
+    const rawFriendPrice = totalProductionCost * 1.15; 
+    const friendPrice = Math.max(Math.ceil(rawFriendPrice / 5) * 5, 5);
+
+    const rawCommercialPrice = totalProductionCost * (1 + markup / 100);
+    const commercialPrice = Math.max(Math.ceil(rawCommercialPrice / 5) * 5, 10);
     const profit = commercialPrice - totalProductionCost;
 
     // Tarifa Sugerida (Estudio de mercado: Merma 8%, Setup $20, Riesgo 10% si >8h, Piso $45)
@@ -242,7 +244,8 @@ const ThreeDCalculator: React.FC<ThreeDCalculatorProps> = ({ viewMode = 'all', o
   };
 
   const handleCopy = (value: number, type: string) => {
-    navigator.clipboard.writeText(value.toFixed(2));
+    const textToCopy = value % 1 === 0 ? value.toFixed(0) : value.toFixed(2);
+    navigator.clipboard.writeText(textToCopy);
     setCopiedType(type);
     toast.success(`Precio (${type}) copiado: ` + formatCurrency(value));
     setTimeout(() => setCopiedType(null), 2000);
@@ -622,7 +625,12 @@ const ThreeDCalculator: React.FC<ThreeDCalculatorProps> = ({ viewMode = 'all', o
     toast.success(`¡"${finalPieceName}" cargada al Registro de Ventas!`);
   };
 
-  const formatCurrency = (val: number) => new Intl.NumberFormat('es-MX', { style: 'currency', currency: 'MXN' }).format(val);
+  const formatCurrency = (val: number) => new Intl.NumberFormat('es-MX', { 
+    style: 'currency', 
+    currency: 'MXN',
+    minimumFractionDigits: val % 1 === 0 ? 0 : 2,
+    maximumFractionDigits: val % 1 === 0 ? 0 : 2
+  }).format(val);
 
   return (
     <div className="w-full h-full p-2 flex flex-col">

@@ -283,11 +283,13 @@ const CalculatorWidget: React.FC = () => {
   const maintenanceCost = totalHours * 5; // 5 MXN/hr
   const baseCost = filamentCost + energyCost + maintenanceCost + laborCostManual;
 
-  // 1. Precio Amigo (+15%)
-  const friendPrice = baseCost * 1.15;
+  // 1. Precio Amigo (+15%) redondeado hacia arriba a múltiplos de 5 sin decimales (termina en 0 o 5)
+  const rawFriendPrice = baseCost * 1.15;
+  const friendPrice = Math.max(Math.ceil(rawFriendPrice / 5) * 5, 5);
 
-  // 2. Precio Comercial (según margen seleccionado, ej: 30%)
-  const commercialPrice = baseCost * (1 + markup / 100);
+  // 2. Precio Comercial (según margen seleccionado, ej: 30%) redondeado hacia arriba a múltiplos de 5
+  const rawCommercialPrice = baseCost * (1 + markup / 100);
+  const commercialPrice = Math.max(Math.ceil(rawCommercialPrice / 5) * 5, 10);
   const profit = commercialPrice - baseCost;
 
   // 3. Tarifa Sugerida (Reglas de Mercado):
@@ -307,10 +309,16 @@ const CalculatorWidget: React.FC = () => {
   const tarifaSugerida = Math.max(Math.ceil(sugeridoCalculado / 5) * 5, 45);
 
   const formatCurrency = (val: number) => 
-    new Intl.NumberFormat('es-MX', { style: 'currency', currency: 'MXN' }).format(val);
+    new Intl.NumberFormat('es-MX', { 
+      style: 'currency', 
+      currency: 'MXN',
+      minimumFractionDigits: val % 1 === 0 ? 0 : 2,
+      maximumFractionDigits: val % 1 === 0 ? 0 : 2
+    }).format(val);
 
   const handleCopy = (value: number, type: string) => {
-    navigator.clipboard.writeText(value.toFixed(2));
+    const textToCopy = value % 1 === 0 ? value.toFixed(0) : value.toFixed(2);
+    navigator.clipboard.writeText(textToCopy);
     toast.success(`Precio (${type}) copiado: ${formatCurrency(value)}`);
   };
 
