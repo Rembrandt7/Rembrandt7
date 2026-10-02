@@ -302,8 +302,9 @@ const CalculatorWidget: React.FC = () => {
   const setupFee = 20;
   // - Margen profesional del 45% + Setup fee
   const sugeridoCalculado = (costoSugeridoBase * 1.45) + setupFee;
+  // - Redondeo hacia arriba al múltiplo de 5 más cercano sin decimales (termina en 0 o 5, ej. 104.58 -> 105, 118.22 -> 120)
   // - Piso mínimo de arranque ($45 MXN para evitar trabajos no rentables)
-  const tarifaSugerida = Math.max(sugeridoCalculado, 45);
+  const tarifaSugerida = Math.max(Math.ceil(sugeridoCalculado / 5) * 5, 45);
 
   const formatCurrency = (val: number) => 
     new Intl.NumberFormat('es-MX', { style: 'currency', currency: 'MXN' }).format(val);
@@ -337,7 +338,7 @@ const CalculatorWidget: React.FC = () => {
       `⚖️ *Peso:* ${weightUsed}g\n` +
       `⏱️ *Tiempo:* ${timeFormatted || 'N/A'}\n` +
       `💵 *${label}:* ${formatCurrency(price)}\n\n` +
-      `_¿Deseas proceder con la impresión?_ 👍`;
+      `Quedo a tus órdenes y al pendiente de cualquier duda o detalle. Saludos cordiales.`;
       
     navigator.clipboard.writeText(quoteText);
     toast.success(`¡Cotización (${type === 'amigo' ? 'Amigo' : type === 'sugerida' ? 'Sugerida' : 'Comercial'}) para WhatsApp copiada!`);

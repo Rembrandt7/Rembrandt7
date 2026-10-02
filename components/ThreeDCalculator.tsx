@@ -189,7 +189,8 @@ const ThreeDCalculator: React.FC<ThreeDCalculatorProps> = ({ viewMode = 'all', o
     if (totalHours >= 8) costoSugeridoBase *= 1.10;
     const setupFee = 20;
     const sugeridoCalculado = (costoSugeridoBase * 1.45) + setupFee;
-    const tarifaSugerida = Math.max(sugeridoCalculado, 45);
+    // Redondeo hacia arriba al múltiplo de 5 más cercano sin decimales (termina en 0 o 5, ej. 104.58 -> 105, 118.22 -> 120)
+    const tarifaSugerida = Math.max(Math.ceil(sugeridoCalculado / 5) * 5, 45);
 
     setResults({
       filamentCost: fCost,
@@ -595,7 +596,7 @@ const ThreeDCalculator: React.FC<ThreeDCalculatorProps> = ({ viewMode = 'all', o
       `🔹 *Peso:* ${weightUsed}g\n` +
       `🔹 *Tiempo:* ${timeFormatted || 'N/A'}\n` +
       `🔹 *${label}:* ${formatCurrency(price)}\n\n` +
-      `_¿Deseas proceder con la impresión?_ 🚀`;
+      `Quedo a tus órdenes y al pendiente de cualquier duda o detalle. Saludos cordiales.`;
     navigator.clipboard.writeText(quoteText);
     toast.success(`¡Cotización (${type === 'amigo' ? 'Amigo' : type === 'sugerida' ? 'Sugerida' : 'Comercial'}) para WhatsApp copiada!`);
   };
