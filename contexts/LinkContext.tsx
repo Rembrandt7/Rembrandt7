@@ -1745,6 +1745,16 @@ export const LinkProvider: React.FC<{ children: React.ReactNode }> = ({ children
         lastUploadedJsonRef.current = jsonString;
         localStorage.setItem('supabaseConfigFilename', configFilename);
         localStorage.setItem('appLinksConfig', JSON.stringify(configToSave));
+
+        // 5. Attempt local file save if running locally
+        try {
+          fetch('/api/config/save-local', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: jsonString
+          }).catch(() => {});
+        } catch (_) {}
+
         setSyncStatus('synced');
 
         if (showToast) {

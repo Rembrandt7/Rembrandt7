@@ -177,6 +177,7 @@ const ThreeDCalculator: React.FC<ThreeDCalculatorProps> = ({ viewMode = 'all', o
     const power = MATERIAL_POWER[material];
     const eCost = (power / 1000) * totalHours * 2.5;
     const mCost = totalHours * 5;
+    const totalProductionCost = fCost + eCost + mCost + laborCostManual;
     // Todos los precios redondeados hacia arriba a múltiplos de 5 sin decimales (terminan en 0 o 5, ej. 104.58 -> 105, 118.22 -> 120)
     const rawFriendPrice = totalProductionCost * 1.15; 
     const friendPrice = Math.max(Math.ceil(rawFriendPrice / 5) * 5, 5);

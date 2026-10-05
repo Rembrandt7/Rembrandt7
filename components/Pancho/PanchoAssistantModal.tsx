@@ -2,7 +2,7 @@ import React, { useState, useRef, useEffect, useMemo } from 'react';
 import { Type, GenerateContentResponse } from "@google/genai";
 import { generateContentWithFallback, getGeminiClient, GEMINI_MODELS, getResolvedApiKey } from '../../services/geminiService';
 import { useLinks } from '../../contexts/LinkContext';
-import { CalendarEvent, Note, LinkItem } from '../../types';
+import { CalendarEvent, Note, LinkItem, CalendarToken, TokenConditionType } from '../../types';
 import { loadADN } from '../../services/memoriaService';
 import { supabase } from '../../services/supabaseClient';
 import { 
@@ -82,6 +82,126 @@ function normalizeDate(rawDate: string): string {
   }
 
   return trimmed;
+}
+
+const REFERENCE_OFF_SATURDAY = new Date('2026-03-07T00:00:00');
+
+function getDayStatus(date: Date, eventsList: CalendarEvent[]): 'work' | 'off' | 'vacation' | 'off-custom' {
+  const y = date.getFullYear();
+  const m = String(date.getMonth() + 1).padStart(2, '0');
+  const d = String(date.getDate()).padStart(2, '0');
+  const dateStr = `${y}-${m}-${d}`;
+  
+  const isVacation = eventsList.some(e => {
+    if (e.date !== dateStr) return false;
+    const t = (e.title || '').toLowerCase();
+    const desc = (e.description || '').toLowerCase();
+    if (t.includes('solicitar') || desc.includes('solicitar')) return false;
+    return e.type === 'vacation' || t.includes('vacacion');
+  });
+  if (isVacation) return 'vacation';
+
+  const customOff = eventsList.find(e => e.date === dateStr && (e.type === 'holiday' || e.type === 'off'));
+  if (customOff) return 'off-custom';
+
+  const day = date.getDay();
+  if (day === 0) return 'off';
+  if (day >= 1 && day <= 5) return 'work';
+  if (day === 6) {
+    const diffTime = date.getTime() - REFERENCE_OFF_SATURDAY.getTime();
+    const diffDays = Math.round(diffTime / (1000 * 60 * 60 * 24));
+    const diffWeeks = Math.round(diffDays / 7);
+    return diffWeeks % 2 === 0 ? 'off' : 'work';
+  }
+  return 'work';
+}
+
+function adjustDateForTokenConditions(
+  baseDate: Date,
+  conditionType?: TokenConditionType,
+  conditionTarget?: string,
+  currentEvents: CalendarEvent[] = []
+): Date {
+  const result = new Date(baseDate);
+  result.setHours(0, 0, 0, 0);
+
+  if (!conditionType || conditionType === 'none') {
+    return result;
+  }
+
+  if (conditionType === 'workdays_only') {
+    let count = 0;
+    while (count < 30) {
+      const status = getDayStatus(result, currentEvents);
+      const day = result.getDay();
+      if (status === 'work' && day !== 0) {
+        break;
+      }
+      result.setDate(result.getDate() + 1);
+      count++;
+    }
+    return result;
+  }
+
+  if (conditionType === 'offdays_only') {
+    let count = 0;
+    while (count < 30) {
+      const status = getDayStatus(result, currentEvents);
+      const day = result.getDay();
+      if (status !== 'work' || day === 0 || day === 6) {
+        break;
+      }
+      result.setDate(result.getDate() + 1);
+      count++;
+    }
+    return result;
+  }
+
+  if (conditionType === 'one_day_before') {
+    const targetQuery = (conditionTarget || 'vacacion').toLowerCase().trim();
+    const y = result.getFullYear();
+    const m = String(result.getMonth() + 1).padStart(2, '0');
+    const d = String(result.getDate()).padStart(2, '0');
+    const refDateStr = `${y}-${m}-${d}`;
+    const matchingEvents = currentEvents
+      .filter(e => {
+        const t = (e.title || '').toLowerCase();
+        const desc = (e.description || '').toLowerCase();
+        const isMatch = targetQuery === 'vacacion' || targetQuery === 'vacaciones'
+          ? (e.type === 'vacation' || t.includes('vacacion'))
+          : (t.includes(targetQuery) || desc.includes(targetQuery));
+        return isMatch && e.date >= refDateStr;
+      })
+      .sort((a, b) => a.date.localeCompare(b.date));
+
+    if (matchingEvents.length > 0) {
+      const eventDate = new Date(matchingEvents[0].date + 'T00:00:00');
+      eventDate.setDate(eventDate.getDate() - 1);
+      return eventDate;
+    }
+    return result;
+  }
+
+  if (conditionType === 'payday_only') {
+    let count = 0;
+    while (count < 45) {
+      const day = result.getDate();
+      const lastDay = new Date(result.getFullYear(), result.getMonth() + 1, 0).getDate();
+      if (day === 15 || day === lastDay) {
+        if (result.getDay() === 0) {
+          result.setDate(result.getDate() - 2);
+        } else if (result.getDay() === 6) {
+          result.setDate(result.getDate() - 1);
+        }
+        break;
+      }
+      result.setDate(result.getDate() + 1);
+      count++;
+    }
+    return result;
+  }
+
+  return result;
 }
 
 export const PanchoAssistantModal: React.FC<PanchoAssistantModalProps> = ({
@@ -281,6 +401,21 @@ CONTEXTO Y CAPACIDADES POR PESTAÑA:
    - Si Rembrandt te pide agendar un evento, usa 'add_event' con fecha en formato YYYY-MM-DD.
    - Si te pide agregar una nota o producto a la lista de compras o notas de trabajo, usa 'add_note'.
    - Protege su descanso y sus horas de tráfico.
+   - DÍAS DE VACACIONES: Rembrandt tiene actualmente 22 días de vacaciones disponibles (de un total de 26).
+     * Si te pide editar o consultar sus días disponibles, usa 'set_vacation_days'. Si programa vacaciones en el calendario, se van restando automáticamente del saldo disponible.
+     * Puedes mover días de vacaciones usando 'move_vacation'.
+   - TOKENS DEL CALENDARIO Y CONDICIONANTES:
+     * Puedes agregar tokens con 'add_token', moverlos con 'move_token', modificarlos con 'update_token' o marcarlos completados con 'complete_token'.
+     * Condiciones ('conditionType'):
+       - 'none': Intervalo normal.
+       - 'workdays_only': Solo en días hábiles (lunes a viernes / sábados laborales). Si cae en día libre, se recorre al siguiente hábil.
+       - 'offdays_only': Solo en días libres (fines de semana o descansos).
+       - 'one_day_before': Un día antes de un evento específico o vacaciones (usa 'conditionTarget' para el nombre/tipo de evento).
+       - 'payday_only': Solo en días de pago/quincena (15 y fin de mes).
+   - REGLA DE ORO PARA EL TOKEN DEL CARRO ('cargar carro'):
+     * ¡LOS TOKENS DEL CARRO NUNCA QUEDAN EN EL PASADO! Siempre son en el presente o futuro.
+     * Si Rembrandt te dice "ya recargué", "ya cargué el carro", "listo el carro" o similar, llama de inmediato a 'complete_token' con tokenNameOrId: 'cargar carro'.
+     * Esto avanzará la fecha al siguiente ciclo en el futuro y se grabará automáticamente en el sistema y en la nube para no volver a preguntarle.
 
 2. HERRAMIENTAS ("useful-tools"):
    - Ayuda a examinar qué herramientas existen en su Barra Central (linksBar) y Secciones (usefulTools).
@@ -363,6 +498,90 @@ REGLAS DE RESPUESTA:
                   type: Type.OBJECT,
                   properties: { id: { type: Type.STRING } },
                   required: ["id"]
+                }
+              },
+              {
+                name: "set_vacation_days",
+                description: "Actualiza los días disponibles de vacaciones restantes de Rembrandt (ej. 22 días disponibles).",
+                parameters: {
+                  type: Type.OBJECT,
+                  properties: {
+                    availableDays: { type: Type.NUMBER, description: "Número de días disponibles restantes" },
+                    totalDays: { type: Type.NUMBER, description: "Total de días del periodo (opcional)" }
+                  },
+                  required: ["availableDays"]
+                }
+              },
+              {
+                name: "move_vacation",
+                description: "Mueve un día de vacaciones de una fecha a otra.",
+                parameters: {
+                  type: Type.OBJECT,
+                  properties: {
+                    fromDate: { type: Type.STRING, description: "Fecha actual en formato YYYY-MM-DD" },
+                    toDate: { type: Type.STRING, description: "Nueva fecha en formato YYYY-MM-DD" }
+                  },
+                  required: ["fromDate", "toDate"]
+                }
+              },
+              {
+                name: "add_token",
+                description: "Crea un nuevo token recurrente en el calendario con condicionantes de fecha.",
+                parameters: {
+                  type: Type.OBJECT,
+                  properties: {
+                    name: { type: Type.STRING, description: "Nombre del token (ej: Cargar Carro)" },
+                    intervalDays: { type: Type.NUMBER, description: "Intervalo de repetición en días (ej: 3)" },
+                    startDate: { type: Type.STRING, description: "Fecha de inicio en formato YYYY-MM-DD" },
+                    reminderTime: { type: Type.STRING, description: "Hora del recordatorio (ej: '20:00')" },
+                    conditionType: { 
+                      type: Type.STRING, 
+                      enum: ['none', 'workdays_only', 'offdays_only', 'one_day_before', 'payday_only'],
+                      description: "Condición: workdays_only (solo días hábiles), offdays_only (solo libres), one_day_before (un día antes de evento), payday_only (quincenas)" 
+                    },
+                    conditionTarget: { type: Type.STRING, description: "Nombre o tipo del evento para la condición (ej: 'vacaciones')" },
+                    symbol: { type: Type.STRING, description: "Icono: Zap, Clock, CheckCircle2, Brain, etc." },
+                    color: { type: Type.STRING, description: "Color hex (ej: #f59e0b)" }
+                  },
+                  required: ["name", "intervalDays"]
+                }
+              },
+              {
+                name: "move_token",
+                description: "Mueve o reprograma la fecha de un token.",
+                parameters: {
+                  type: Type.OBJECT,
+                  properties: {
+                    tokenNameOrId: { type: Type.STRING, description: "Nombre o ID del token a mover (ej: 'cargar carro')" },
+                    newDate: { type: Type.STRING, description: "Nueva fecha en formato YYYY-MM-DD" }
+                  },
+                  required: ["tokenNameOrId", "newDate"]
+                }
+              },
+              {
+                name: "complete_token",
+                description: "Marca un token (como cargar carro) como realizado/recargado, avanzando la fecha al próximo ciclo futuro y guardando automáticamente para que no vuelva a preguntar.",
+                parameters: {
+                  type: Type.OBJECT,
+                  properties: {
+                    tokenNameOrId: { type: Type.STRING, description: "Nombre o ID del token (ej: 'cargar carro')" }
+                  },
+                  required: ["tokenNameOrId"]
+                }
+              },
+              {
+                name: "update_token",
+                description: "Modifica propiedades de un token existente.",
+                parameters: {
+                  type: Type.OBJECT,
+                  properties: {
+                    tokenNameOrId: { type: Type.STRING, description: "Nombre o ID del token" },
+                    intervalDays: { type: Type.NUMBER },
+                    conditionType: { type: Type.STRING, enum: ['none', 'workdays_only', 'offdays_only', 'one_day_before', 'payday_only'] },
+                    conditionTarget: { type: Type.STRING },
+                    reminderTime: { type: Type.STRING }
+                  },
+                  required: ["tokenNameOrId"]
                 }
               },
               // Tools Tab
@@ -599,6 +818,229 @@ REGLAS DE RESPUESTA:
               concept: args.concept || 'Gasto'
             };
             toast.success(`💳 Gasto registrado en ${finalCardData.cardName}`);
+          }
+
+          else if (call.name === 'set_vacation_days') {
+            const availableDays = Number(args.availableDays) || 0;
+            const currentEvents = config.calendarEvents || [];
+            const usedDays = currentEvents.filter(e => {
+              const t = (e.title || '').toLowerCase();
+              const d = (e.description || '').toLowerCase();
+              if (t.includes('solicitar') || d.includes('solicitar')) return false;
+              return e.type === 'vacation' || t.includes('vacacion');
+            }).length;
+            const totalDays = args.totalDays ? Number(args.totalDays) : (availableDays + usedDays);
+            const updatedVacation = {
+              ...(config.vacationConfig || { initialDays: 11, daysAfterReset: 26, resetDate: '07-21' }),
+              availableDays: availableDays,
+              totalDays: totalDays,
+              initialDays: totalDays,
+              daysAfterReset: totalDays
+            };
+            const updatedConfig = { ...config, vacationConfig: updatedVacation };
+            updateConfig(updatedConfig);
+            saveToSupabase(updatedConfig, { showToast: false, immediate: true });
+            fetch('/api/config/save-local', {
+              method: 'POST',
+              headers: { 'Content-Type': 'application/json' },
+              body: JSON.stringify(updatedConfig)
+            }).catch(() => {});
+
+            finalCardType = 'event';
+            finalCardData = { title: `🌴 Vacaciones: ${availableDays} días disponibles (${totalDays} totales)` };
+            toast.success(`🌴 Días de vacaciones actualizados a ${availableDays} disponibles.`);
+          }
+
+          else if (call.name === 'move_vacation') {
+            const fromDate = normalizeDate(args.fromDate);
+            const toDate = normalizeDate(args.toDate);
+            let moved = false;
+            const updatedEvents = (config.calendarEvents || []).map(e => {
+              const t = (e.title || '').toLowerCase();
+              const isVac = e.type === 'vacation' || t.includes('vacacion');
+              if (!moved && isVac && e.date === fromDate) {
+                moved = true;
+                return { ...e, date: toDate };
+              }
+              return e;
+            });
+            if (moved) {
+              const updatedConfig = { ...config, calendarEvents: updatedEvents };
+              updateConfig(updatedConfig);
+              saveToSupabase(updatedConfig, { showToast: false, immediate: true });
+              fetch('/api/config/save-local', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify(updatedConfig)
+              }).catch(() => {});
+              finalCardType = 'event';
+              finalCardData = { title: `🌴 Vacación movida a ${toDate}` };
+              toast.success(`🌴 Vacación movida de ${fromDate} a ${toDate}`);
+            } else {
+              toast.error(`No se encontró vacación en ${fromDate}`);
+            }
+          }
+
+          else if (call.name === 'add_token') {
+            const startDate = normalizeDate(args.startDate || new Date().toISOString().split('T')[0]);
+            const tokenName = args.name || 'Nuevo Token';
+            const intervalDays = Number(args.intervalDays) || 3;
+            const conditionType = args.conditionType || 'none';
+            const conditionTarget = args.conditionTarget || '';
+            const reminderTime = args.reminderTime || '20:00';
+            const reminderMinutes = args.reminderMinutes !== undefined ? Number(args.reminderMinutes) : 30;
+            const symbol = args.symbol || 'Zap';
+            const color = args.color || '#f59e0b';
+
+            const baseD = new Date(startDate + 'T00:00:00');
+            const adjustedD = adjustDateForTokenConditions(baseD, conditionType, conditionTarget, config.calendarEvents || []);
+            const y = adjustedD.getFullYear();
+            const m = String(adjustedD.getMonth() + 1).padStart(2, '0');
+            const d = String(adjustedD.getDate()).padStart(2, '0');
+            const finalActiveDate = `${y}-${m}-${d}`;
+
+            const newToken: CalendarToken = {
+              id: Date.now().toString(),
+              name: tokenName,
+              symbol,
+              intervalDays,
+              startDate,
+              currentActiveDate: finalActiveDate,
+              color,
+              reminderMinutes,
+              reminderTime,
+              conditionType,
+              conditionTarget,
+              isCompleted: false
+            };
+
+            const updatedTokens = [...(config.calendarTokens || []), newToken];
+            const updatedConfig = { ...config, calendarTokens: updatedTokens };
+            updateConfig(updatedConfig);
+            saveToSupabase(updatedConfig, { showToast: false, immediate: true });
+            fetch('/api/config/save-local', {
+              method: 'POST',
+              headers: { 'Content-Type': 'application/json' },
+              body: JSON.stringify(updatedConfig)
+            }).catch(() => {});
+
+            finalCardType = 'event';
+            finalCardData = { title: `⚡ Token "${tokenName}" agregado`, date: finalActiveDate };
+            toast.success(`⚡ Token "${tokenName}" creado exitosamente`);
+          }
+
+          else if (call.name === 'move_token') {
+            const targetQuery = (args.tokenNameOrId || '').toLowerCase().trim();
+            const newDate = normalizeDate(args.newDate);
+            let movedName = '';
+
+            const updatedTokens = (config.calendarTokens || []).map((t: CalendarToken) => {
+              if (t.id === targetQuery || t.name.toLowerCase().includes(targetQuery)) {
+                movedName = t.name;
+                return { ...t, currentActiveDate: newDate, isCompleted: false };
+              }
+              return t;
+            });
+
+            if (movedName) {
+              const updatedConfig = { ...config, calendarTokens: updatedTokens };
+              updateConfig(updatedConfig);
+              saveToSupabase(updatedConfig, { showToast: false, immediate: true });
+              fetch('/api/config/save-local', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify(updatedConfig)
+              }).catch(() => {});
+              finalCardType = 'event';
+              finalCardData = { title: `⚡ Token "${movedName}" movido a ${newDate}` };
+              toast.success(`⚡ Token "${movedName}" reprogramado`);
+            } else {
+              toast.error(`No se encontró el token "${targetQuery}"`);
+            }
+          }
+
+          else if (call.name === 'complete_token') {
+            const targetQuery = (args.tokenNameOrId || 'carro').toLowerCase().trim();
+            const today = new Date();
+            today.setHours(0, 0, 0, 0);
+            const y = today.getFullYear();
+            const m = String(today.getMonth() + 1).padStart(2, '0');
+            const d = String(today.getDate()).padStart(2, '0');
+            const curTodayStr = `${y}-${m}-${d}`;
+            let completedName = '';
+
+            const updatedTokens = (config.calendarTokens || []).map((t: CalendarToken) => {
+              if (t.id === targetQuery || t.name.toLowerCase().includes(targetQuery)) {
+                completedName = t.name;
+                const nextDate = new Date(today.getTime());
+                nextDate.setDate(nextDate.getDate() + (t.intervalDays || 3));
+                const adjustedNextDate = adjustDateForTokenConditions(nextDate, t.conditionType, t.conditionTarget, config.calendarEvents || []);
+                const ny = adjustedNextDate.getFullYear();
+                const nm = String(adjustedNextDate.getMonth() + 1).padStart(2, '0');
+                const nd = String(adjustedNextDate.getDate()).padStart(2, '0');
+                const nextDateStr = `${ny}-${nm}-${nd}`;
+
+                try {
+                  localStorage.setItem(`token_completed_${t.id}`, curTodayStr);
+                  localStorage.removeItem(`token_snoozed_${t.id}`);
+                } catch (_) {}
+
+                return {
+                  ...t,
+                  currentActiveDate: nextDateStr,
+                  lastCompletedDate: curTodayStr,
+                  isCompleted: true,
+                  snoozedUntil: undefined
+                };
+              }
+              return t;
+            });
+
+            if (completedName) {
+              const updatedConfig = { ...config, calendarTokens: updatedTokens };
+              updateConfig(updatedConfig);
+              saveToSupabase(updatedConfig, { showToast: false, immediate: true });
+              fetch('/api/config/save-local', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify(updatedConfig)
+              }).catch(() => {});
+              finalCardType = 'event';
+              finalCardData = { title: `✅ ${completedName} recargado y completado` };
+              toast.success(`🚗 ¡Token "${completedName}" completado y grabado!`);
+            } else {
+              toast.error(`No se encontró el token "${targetQuery}"`);
+            }
+          }
+
+          else if (call.name === 'update_token') {
+            const targetQuery = (args.tokenNameOrId || '').toLowerCase().trim();
+            let updatedName = '';
+            const updatedTokens = (config.calendarTokens || []).map((t: CalendarToken) => {
+              if (t.id === targetQuery || t.name.toLowerCase().includes(targetQuery)) {
+                updatedName = t.name;
+                return {
+                  ...t,
+                  ...(args.intervalDays ? { intervalDays: Number(args.intervalDays) } : {}),
+                  ...(args.conditionType ? { conditionType: args.conditionType } : {}),
+                  ...(args.conditionTarget !== undefined ? { conditionTarget: args.conditionTarget } : {}),
+                  ...(args.reminderTime ? { reminderTime: args.reminderTime } : {})
+                };
+              }
+              return t;
+            });
+
+            if (updatedName) {
+              const updatedConfig = { ...config, calendarTokens: updatedTokens };
+              updateConfig(updatedConfig);
+              saveToSupabase(updatedConfig, { showToast: false, immediate: true });
+              fetch('/api/config/save-local', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify(updatedConfig)
+              }).catch(() => {});
+              toast.success(`⚡ Token "${updatedName}" actualizado`);
+            }
           }
         }
       }

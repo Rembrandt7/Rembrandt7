@@ -1,7 +1,7 @@
 
 import React, { useState, useMemo, useEffect } from 'react';
 import { useLinks } from '../contexts/LinkContext';
-import { CalendarEvent, CalendarToken, AppNotification } from '../types';
+import { CalendarEvent, CalendarToken, AppNotification, TokenConditionType } from '../types';
 import { motion, AnimatePresence } from 'motion/react';
 import { 
   ChevronLeft, 
@@ -28,7 +28,9 @@ import {
   AlertTriangle,
   Palmtree,
   Sun,
-  Bell
+  Bell,
+  Sliders,
+  Check
 } from 'lucide-react';
 import WeatherForecast from './WeatherForecast';
 import { toast } from 'sonner';
@@ -66,6 +68,10 @@ const CalendarTab: React.FC = () => {
   const [dismissedOverdueTokenIds, setDismissedOverdueTokenIds] = useState<string[]>([]);
   const [editingHeaderBtn, setEditingHeaderBtn] = useState<'save' | 'notes' | 'ai' | null>(null);
   const [isVacationListOpen, setIsVacationListOpen] = useState(false);
+  const [isEditingVacationConfig, setIsEditingVacationConfig] = useState(false);
+  const [editAvailableDays, setEditAvailableDays] = useState<number>(22);
+  const [editTotalDays, setEditTotalDays] = useState<number>(26);
+  const [editResetDate, setEditResetDate] = useState<string>('07-21');
   const [visibleTypes, setVisibleTypes] = useState<string[]>(['event', 'holiday', 'vacation', 'mountain', 'party', 'off', 'medical', 'birthday', 'payment', 'ingreso']);
   
   const [newEvent, setNewEvent] = useState<Omit<CalendarEvent, 'id'>>({
@@ -88,14 +94,26 @@ const CalendarTab: React.FC = () => {
     reminderMinutes: 30
   });
 
-  const [newToken, setNewToken] = useState({
+  const [newToken, setNewToken] = useState<{
+    name: string;
+    symbol: string;
+    intervalDays: number;
+    startDate: string;
+    color: string;
+    reminderMinutes: number;
+    reminderTime: string;
+    conditionType: TokenConditionType;
+    conditionTarget: string;
+  }>({
     name: '',
     symbol: 'Zap',
     intervalDays: 3,
     startDate: selectedDate,
     color: '#f59e0b',
     reminderMinutes: 30,
-    reminderTime: '20:00'
+    reminderTime: '20:00',
+    conditionType: 'none',
+    conditionTarget: ''
   });
 
   const getIcon = (iconName: string, size: number = 24) => {
@@ -203,6 +221,15 @@ const CalendarTab: React.FC = () => {
     const today = new Date();
     today.setHours(0, 0, 0, 0);
     const currentTodayStr = formatDate(today);
+
+    const isCar = (token.name || '').toLowerCase().includes('carro') ||
+                  (token.name || '').toLowerCase().includes('gasolina') ||
+                  (token.name || '').toLowerCase().includes('auto');
+
+    // Car tokens NEVER show on past days!
+    if (isCar && targetDateStr < currentTodayStr) {
+      return false;
+    }
     
     // Logic for "Pending / Overdue" tokens:
     // If the token's active date is in the past, it rolls forward to TODAY
@@ -222,7 +249,8 @@ const CalendarTab: React.FC = () => {
     const baseDateStr = activeDateStr < currentTodayStr ? currentTodayStr : activeDateStr;
     const nextDate = new Date(baseDateStr + 'T00:00:00');
     nextDate.setDate(nextDate.getDate() + (token.intervalDays || 1));
-    const nextDateStr = formatDate(nextDate);
+    const adjustedNextDate = adjustDateForTokenConditions(nextDate, token.conditionType, token.conditionTarget, events);
+    const nextDateStr = formatDate(adjustedNextDate);
     
     return targetDateStr === nextDateStr;
   };
@@ -234,18 +262,20 @@ const CalendarTab: React.FC = () => {
     if (e.type === 'vacation') return true;
     const title = (e.title || '').toLowerCase();
     const desc = (e.description || '').toLowerCase();
+    // Exclude reminders to solicit vacations
+    if (title.includes('solicitar') || desc.includes('solicitar')) return false;
     return title.includes('vacacion') || desc.includes('vacacion');
   };
 
-  const getDayStatus = (date: Date, events: CalendarEvent[]) => {
+  const getDayStatus = (date: Date, eventsList: CalendarEvent[]) => {
     const dateStr = formatDate(date);
     
     // 1. Check for Vacation events (custom vacation days assigned in calendar)
-    const isVacation = events.some(e => e.date === dateStr && isVacationEvent(e));
+    const isVacation = eventsList.some(e => e.date === dateStr && isVacationEvent(e));
     if (isVacation) return 'vacation';
 
     // 2. Check for other custom off days (holiday/off)
-    const customOff = events.find(e => e.date === dateStr && (e.type === 'holiday' || e.type === 'off'));
+    const customOff = eventsList.find(e => e.date === dateStr && (e.type === 'holiday' || e.type === 'off'));
     if (customOff) return 'off-custom';
 
     const day = date.getDay(); // 0: Sun, 1: Mon, ..., 6: Sat
@@ -264,6 +294,91 @@ const CalendarTab: React.FC = () => {
     }
     
     return 'work';
+  };
+
+  const adjustDateForTokenConditions = (
+    baseDate: Date,
+    conditionType?: TokenConditionType,
+    conditionTarget?: string,
+    currentEvents: CalendarEvent[] = events
+  ): Date => {
+    const result = new Date(baseDate);
+    result.setHours(0, 0, 0, 0);
+
+    if (!conditionType || conditionType === 'none') {
+      return result;
+    }
+
+    if (conditionType === 'workdays_only') {
+      let count = 0;
+      while (count < 30) {
+        const status = getDayStatus(result, currentEvents);
+        const day = result.getDay();
+        if (status === 'work' && day !== 0) {
+          break;
+        }
+        result.setDate(result.getDate() + 1);
+        count++;
+      }
+      return result;
+    }
+
+    if (conditionType === 'offdays_only') {
+      let count = 0;
+      while (count < 30) {
+        const status = getDayStatus(result, currentEvents);
+        const day = result.getDay();
+        if (status !== 'work' || day === 0 || day === 6) {
+          break;
+        }
+        result.setDate(result.getDate() + 1);
+        count++;
+      }
+      return result;
+    }
+
+    if (conditionType === 'one_day_before') {
+      const targetQuery = (conditionTarget || 'vacacion').toLowerCase().trim();
+      const refDateStr = formatDate(result);
+      const matchingEvents = currentEvents
+        .filter(e => {
+          const t = (e.title || '').toLowerCase();
+          const d = (e.description || '').toLowerCase();
+          const isMatch = targetQuery === 'vacacion' || targetQuery === 'vacaciones'
+            ? (e.type === 'vacation' || t.includes('vacacion'))
+            : (t.includes(targetQuery) || d.includes(targetQuery));
+          return isMatch && e.date >= refDateStr;
+        })
+        .sort((a, b) => a.date.localeCompare(b.date));
+
+      if (matchingEvents.length > 0) {
+        const eventDate = new Date(matchingEvents[0].date + 'T00:00:00');
+        eventDate.setDate(eventDate.getDate() - 1);
+        return eventDate;
+      }
+      return result;
+    }
+
+    if (conditionType === 'payday_only') {
+      let count = 0;
+      while (count < 45) {
+        const day = result.getDate();
+        const lastDay = new Date(result.getFullYear(), result.getMonth() + 1, 0).getDate();
+        if (day === 15 || day === lastDay) {
+          if (result.getDay() === 0) {
+            result.setDate(result.getDate() - 2); // Friday if Sunday
+          } else if (result.getDay() === 6) {
+            result.setDate(result.getDate() - 1); // Friday if Saturday
+          }
+          break;
+        }
+        result.setDate(result.getDate() + 1);
+        count++;
+      }
+      return result;
+    }
+
+    return result;
   };
 
   const vacationStats = useMemo(() => {
@@ -291,11 +406,9 @@ const CalendarTab: React.FC = () => {
     if (now < resetDateThisYear) {
       periodStart = new Date(currentYear - 1, resetMonth, resetDay);
       periodEnd = new Date(currentYear, resetMonth, resetDay - 1, 23, 59, 59);
-      allowance = vacConfig?.initialDays ?? (currentYear === 2026 ? 11 : 26);
     } else {
       periodStart = new Date(currentYear, resetMonth, resetDay);
       periodEnd = new Date(currentYear + 1, resetMonth, resetDay - 1, 23, 59, 59);
-      allowance = vacConfig?.daysAfterReset ?? 26;
     }
 
     const assignedVacationEvents = events.filter(e => isVacationEvent(e));
@@ -304,6 +417,17 @@ const CalendarTab: React.FC = () => {
       const eventDate = new Date(e.date + 'T00:00:00');
       return eventDate >= periodStart && eventDate <= periodEnd;
     }).length;
+
+    // Direct configuration of available days or total days
+    if (typeof vacConfig?.availableDays === 'number') {
+      allowance = vacConfig.availableDays + usedDays;
+    } else if (typeof vacConfig?.totalDays === 'number' && vacConfig.totalDays > 0) {
+      allowance = vacConfig.totalDays;
+    } else if (now < resetDateThisYear) {
+      allowance = vacConfig?.initialDays ?? (currentYear === 2026 ? 26 : 26);
+    } else {
+      allowance = vacConfig?.daysAfterReset ?? 26;
+    }
 
     // Calculate working days remaining until resetDate
     let workingDaysRemaining = 0;
@@ -327,6 +451,79 @@ const CalendarTab: React.FC = () => {
       assignedEvents: assignedVacationEvents.sort((a, b) => a.date.localeCompare(b.date))
     };
   }, [events, config.vacationConfig]);
+
+  const handleSaveVacationDays = async (availDays: number, totDays?: number, rDate?: string) => {
+    const used = vacationStats.used;
+    const calcTotal = totDays !== undefined && totDays > 0 ? totDays : (availDays + used);
+    const updatedVacConfig = {
+      ...(config.vacationConfig || { initialDays: 11, daysAfterReset: 26, resetDate: '07-21' }),
+      availableDays: availDays,
+      totalDays: calcTotal,
+      initialDays: calcTotal,
+      daysAfterReset: calcTotal,
+      resetDate: rDate || config.vacationConfig?.resetDate || '07-21'
+    };
+    const updatedConfig = {
+      ...config,
+      vacationConfig: updatedVacConfig
+    };
+    updateConfig(updatedConfig);
+    await saveToSupabase(updatedConfig, { immediate: true, showToast: false });
+    try {
+      fetch('/api/config/save-local', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(updatedConfig)
+      }).catch(() => {});
+    } catch (_) {}
+    setIsEditingVacationConfig(false);
+    toast.success(`Días de vacaciones guardados: ${availDays} disponibles de ${calcTotal} totales.`);
+  };
+
+  // Auto-normalize car tokens: Car tokens NEVER stay in the past!
+  useEffect(() => {
+    const tokens = (config.calendarTokens || []) as CalendarToken[];
+    let hasChanges = false;
+    const today = new Date();
+    today.setHours(0, 0, 0, 0);
+    const curTodayStr = formatDate(today);
+
+    const normalizedTokens = tokens.map((t: CalendarToken) => {
+      const isCar = (t.name || '').toLowerCase().includes('carro') || 
+                    (t.name || '').toLowerCase().includes('gasolina') || 
+                    (t.name || '').toLowerCase().includes('auto');
+      
+      if (isCar && t.currentActiveDate < curTodayStr) {
+        hasChanges = true;
+        const wasCompletedToday = t.lastCompletedDate === curTodayStr;
+        let nextDate = new Date(curTodayStr + 'T00:00:00');
+        if (wasCompletedToday) {
+          nextDate.setDate(nextDate.getDate() + (t.intervalDays || 3));
+        }
+        nextDate = adjustDateForTokenConditions(nextDate, t.conditionType, t.conditionTarget, events);
+        return {
+          ...t,
+          currentActiveDate: formatDate(nextDate),
+          isCompleted: wasCompletedToday
+        };
+      }
+      return t;
+    });
+
+    if (hasChanges) {
+      console.log("[CALENDAR] Auto-normalizing past car tokens to present/future...");
+      const updatedConfig = { ...config, calendarTokens: normalizedTokens };
+      updateConfig(updatedConfig);
+      saveToSupabase(updatedConfig, { immediate: true, showToast: false });
+      try {
+        fetch('/api/config/save-local', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify(updatedConfig)
+        }).catch(() => {});
+      } catch (_) {}
+    }
+  }, [config.calendarTokens, todayStr]);
 
   useEffect(() => {
     const handleKeyDown = (e: KeyboardEvent) => {
@@ -685,22 +882,31 @@ const CalendarTab: React.FC = () => {
   const handleAddToken = async () => {
     if (!newToken.name) return;
 
-    const token = {
+    let startDateObj = new Date(newToken.startDate + 'T00:00:00');
+    startDateObj = adjustDateForTokenConditions(startDateObj, newToken.conditionType, newToken.conditionTarget, events);
+    const adjustedStartDate = formatDate(startDateObj);
+
+    const token: CalendarToken = {
       ...newToken,
       id: editingToken ? editingToken.id : Date.now().toString(),
-      currentActiveDate: editingToken ? editingToken.currentActiveDate : newToken.startDate,
-      isCompleted: false
+      startDate: adjustedStartDate,
+      currentActiveDate: editingToken ? editingToken.currentActiveDate : adjustedStartDate,
+      isCompleted: false,
+      conditionType: newToken.conditionType,
+      conditionTarget: newToken.conditionTarget
     };
 
-    const tokens = config.calendarTokens || [];
+    const tokens = (config.calendarTokens || []) as CalendarToken[];
     const updatedTokens = editingToken
       ? tokens.map((t: any) => t.id === editingToken.id ? token : t)
       : [...tokens, token];
 
-    updateConfig({
+    const updatedConfig = {
       ...config,
       calendarTokens: updatedTokens
-    });
+    };
+
+    updateConfig(updatedConfig);
 
     setIsTokenModalOpen(false);
     setEditingToken(null);
@@ -711,9 +917,19 @@ const CalendarTab: React.FC = () => {
       startDate: selectedDate,
       color: '#f59e0b',
       reminderMinutes: 30,
-      reminderTime: '09:00'
+      reminderTime: '20:00',
+      conditionType: 'none',
+      conditionTarget: ''
     });
-    setTimeout(() => saveToSupabase(), 100);
+
+    await saveToSupabase(updatedConfig, { immediate: true, showToast: false });
+    try {
+      fetch('/api/config/save-local', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(updatedConfig)
+      }).catch(() => {});
+    } catch (_) {}
 
     // Auto-sync with Google Calendar in background if connected
     if (config.googleCalendarTokens) {
@@ -729,6 +945,11 @@ const CalendarTab: React.FC = () => {
     const now = nowTick;
 
     return allTokens.find((t: CalendarToken) => {
+      // 0. If dismissed in this active session, NEVER prompt again!
+      if (dismissedOverdueTokenIds.includes(t.id)) {
+        return false;
+      }
+
       // 1. If it was already completed today, NEVER ask again today!
       if (t.lastCompletedDate === todayStr) {
         return false;
@@ -757,11 +978,6 @@ const CalendarTab: React.FC = () => {
         return false; // Still within snooze window
       }
 
-      // 4. If dismissed in local memory state and snooze hasn't expired
-      if (dismissedOverdueTokenIds.includes(t.id) && snoozedUntil && now < snoozedUntil) {
-        return false;
-      }
-
       // It is due (past or today), not completed today, and snooze has expired: PROMPT!
       return true;
     });
@@ -779,9 +995,10 @@ const CalendarTab: React.FC = () => {
     const updatedTokens = tokens.map((t: CalendarToken) => {
       if (t.id === id) {
         if (alreadyCompleted) {
-          // Completed! Advance to next interval (e.g. today + 3 days)
-          const nextDate = new Date(currentTodayStr + 'T00:00:00');
+          // Completed! Advance strictly to next interval in the future (e.g. today + 3 days)
+          let nextDate = new Date(currentTodayStr + 'T00:00:00');
           nextDate.setDate(nextDate.getDate() + (t.intervalDays || 3));
+          nextDate = adjustDateForTokenConditions(nextDate, t.conditionType, t.conditionTarget, events);
           nextTargetDateStr = formatDate(nextDate);
           return {
             ...t,
@@ -829,7 +1046,7 @@ const CalendarTab: React.FC = () => {
     });
 
     if (alreadyCompleted) {
-      setDismissedOverdueTokenIds(prev => [...prev, id]);
+      setDismissedOverdueTokenIds(prev => [...new Set([...prev, id])]);
       try {
         localStorage.setItem(`token_completed_${id}`, currentTodayStr);
         localStorage.removeItem(`token_snoozed_${id}`);
@@ -853,6 +1070,13 @@ const CalendarTab: React.FC = () => {
 
     updateConfig(updatedConfig);
     await saveToSupabase(updatedConfig, { immediate: true, showToast: false });
+    try {
+      fetch('/api/config/save-local', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(updatedConfig)
+      }).catch(() => {});
+    } catch (_) {}
 
     if (alreadyCompleted) {
       // Clear any pending token notifications
@@ -1323,7 +1547,9 @@ const CalendarTab: React.FC = () => {
                   startDate: selectedDate,
                   color: '#f59e0b',
                   reminderMinutes: 30,
-                  reminderTime: '09:00'
+                  reminderTime: '20:00',
+                  conditionType: 'none',
+                  conditionTarget: ''
                 });
                 setIsTokenModalOpen(true);
               }}
@@ -1734,7 +1960,11 @@ const CalendarTab: React.FC = () => {
                               <button
                                 onClick={() => {
                                   setEditingToken(token);
-                                  setNewToken({ ...token });
+                                  setNewToken({
+                                    ...token,
+                                    conditionType: token.conditionType || 'none',
+                                    conditionTarget: token.conditionTarget || ''
+                                  });
                                   setIsTokenModalOpen(true);
                                 }}
                                 className="p-1 bg-gray-700 text-blue-400 hover:bg-gray-600 rounded-full shadow-lg"
@@ -2083,6 +2313,84 @@ const CalendarTab: React.FC = () => {
                 <X size={20} />
               </button>
             </div>
+
+            {/* Panel de Edición de Días Disponibles */}
+            {isEditingVacationConfig ? (
+              <div className="bg-gray-800/90 border border-emerald-500/40 rounded-xl p-4 my-3 space-y-3 shadow-inner">
+                <div className="flex justify-between items-center">
+                  <span className="text-xs font-bold text-emerald-300 uppercase flex items-center gap-1.5">
+                    <Sliders size={14} /> Ajustar Saldo de Vacaciones
+                  </span>
+                  <button 
+                    onClick={() => setIsEditingVacationConfig(false)}
+                    className="text-gray-400 hover:text-white text-xs px-2 py-0.5 rounded hover:bg-white/10"
+                  >
+                    Cancelar
+                  </button>
+                </div>
+                <div className="grid grid-cols-2 gap-3">
+                  <div>
+                    <label className="block text-[11px] text-gray-300 font-semibold mb-1">
+                      Días Disponibles Restantes
+                    </label>
+                    <input 
+                      type="number"
+                      value={editAvailableDays}
+                      onChange={(e) => {
+                        const val = parseInt(e.target.value) || 0;
+                        setEditAvailableDays(val);
+                        setEditTotalDays(val + vacationStats.used);
+                      }}
+                      className="w-full bg-gray-900 border border-emerald-500/50 rounded-lg px-3 py-2 text-white font-bold text-sm focus:outline-none focus:ring-2 focus:ring-emerald-500"
+                      min="0"
+                    />
+                    <p className="text-[10px] text-emerald-400/80 mt-1">Al usar días en el calendario, se irán restando automáticamente.</p>
+                  </div>
+                  <div>
+                    <label className="block text-[11px] text-gray-300 font-semibold mb-1">
+                      Días Totales del Periodo
+                    </label>
+                    <input 
+                      type="number"
+                      value={editTotalDays}
+                      onChange={(e) => {
+                        const val = parseInt(e.target.value) || 0;
+                        setEditTotalDays(val);
+                        setEditAvailableDays(Math.max(0, val - vacationStats.used));
+                      }}
+                      className="w-full bg-gray-900 border border-gray-700 rounded-lg px-3 py-2 text-white font-bold text-sm focus:outline-none focus:ring-2 focus:ring-emerald-500"
+                      min="0"
+                    />
+                    <p className="text-[10px] text-gray-400 mt-1">Total de días base del periodo laboral.</p>
+                  </div>
+                </div>
+                <div className="flex justify-end gap-2 pt-2 border-t border-gray-700/50">
+                  <button 
+                    onClick={() => handleSaveVacationDays(editAvailableDays, editTotalDays, editResetDate)}
+                    className="px-4 py-2 bg-emerald-600 hover:bg-emerald-500 text-white rounded-lg text-xs font-bold transition-all shadow flex items-center gap-1.5"
+                  >
+                    <Check size={14} /> Guardar Saldo
+                  </button>
+                </div>
+              </div>
+            ) : (
+              <div className="flex justify-between items-center bg-gray-800/50 px-3.5 py-2.5 rounded-xl border border-gray-700/60 my-3">
+                <span className="text-xs text-gray-300">
+                  Saldo actual: <strong className="text-emerald-400 font-black">{vacationStats.available} disponibles</strong> (de {vacationStats.total} totales)
+                </span>
+                <button
+                  onClick={() => {
+                    setEditAvailableDays(vacationStats.available);
+                    setEditTotalDays(vacationStats.total);
+                    setIsEditingVacationConfig(true);
+                  }}
+                  className="flex items-center gap-1.5 text-xs text-emerald-300 hover:text-white bg-emerald-500/20 hover:bg-emerald-500/30 border border-emerald-500/40 px-3 py-1.5 rounded-lg transition-colors font-bold shadow-sm"
+                >
+                  <Pencil size={12} />
+                  Editar Días Disponibles
+                </button>
+              </div>
+            )}
 
             <div className="space-y-2 max-h-[55vh] overflow-y-auto pr-1 custom-scrollbar my-4">
               {vacationStats.assignedEvents.map((vEvent) => {
@@ -2578,6 +2886,37 @@ const CalendarTab: React.FC = () => {
                       className="w-full bg-gray-900 border border-gray-700 rounded-lg px-4 py-2 text-white focus:ring-2 focus:ring-amber-500 outline-none"
                     />
                   </div>
+                {/* Condicionante de Fecha */}
+                <div className="space-y-1.5 bg-gray-900/60 p-3 rounded-xl border border-gray-700/60">
+                  <label className="block text-xs font-bold text-amber-400 uppercase">
+                    Condición / Regla de Fecha en Calendario
+                  </label>
+                  <select
+                    value={newToken.conditionType || 'none'}
+                    onChange={e => setNewToken({ ...newToken, conditionType: e.target.value as TokenConditionType })}
+                    className="w-full bg-gray-900 border border-gray-700 rounded-lg px-3 py-2 text-white focus:ring-2 focus:ring-amber-500 outline-none text-xs"
+                  >
+                    <option value="none">Sin condición (Cualquier día según intervalo)</option>
+                    <option value="workdays_only">🏢 Solo en días hábiles (Lunes a Viernes / Sábados laborales)</option>
+                    <option value="offdays_only">🏖️ Solo en días libres (Fines de semana / Descanso)</option>
+                    <option value="one_day_before">⏳ Un día antes de un evento (ej. Vacaciones)</option>
+                    <option value="payday_only">💰 Solo en días de quincena (15 o fin de mes)</option>
+                  </select>
+
+                  {newToken.conditionType === 'one_day_before' && (
+                    <div className="pt-1.5">
+                      <label className="block text-[11px] font-semibold text-gray-400 mb-1">
+                        Nombre o tipo del evento objetivo:
+                      </label>
+                      <input
+                        type="text"
+                        value={newToken.conditionTarget || ''}
+                        onChange={e => setNewToken({ ...newToken, conditionTarget: e.target.value })}
+                        placeholder="Ej: vacaciones (o nombre de reunión/evento)"
+                        className="w-full bg-gray-900 border border-amber-500/50 rounded-lg px-3 py-1.5 text-white text-xs focus:ring-2 focus:ring-amber-500 outline-none"
+                      />
+                    </div>
+                  )}
                 </div>
 
                 <button

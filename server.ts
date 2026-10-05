@@ -560,6 +560,29 @@ async function startServer() {
     }
   });
 
+  app.post(["/api/config/save-local", "/api/config/save-local/"], async (req, res) => {
+    try {
+      const fs = await import("fs");
+      const configData = req.body;
+      const candidates = [
+        path.resolve(process.cwd(), "..", "rembrandt_config2.json"),
+        path.resolve(process.cwd(), "rembrandt_config2.json")
+      ];
+      let saved = false;
+      for (const p of candidates) {
+        if (fs.existsSync(p)) {
+          fs.writeFileSync(p, JSON.stringify(configData, null, 2), "utf8");
+          console.log(`[CONFIG] Saved locally to ${p}`);
+          saved = true;
+        }
+      }
+      res.json({ success: true, saved });
+    } catch (e: any) {
+      console.warn("[CONFIG] Local file save failed:", e.message);
+      res.status(500).json({ error: e.message });
+    }
+  });
+
   app.post(/(.*)/, (req, res) => {
     console.log(`POST ${req.url} not matched`);
     res.status(404).json({ error: `Route ${req.url} not found` });

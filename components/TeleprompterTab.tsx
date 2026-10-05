@@ -351,6 +351,38 @@ const transposeText = (text: string, steps: number): string => {
   }).join('\n');
 };
 
+function safeParseSongJson(rawText: string) {
+  if (!rawText) return null;
+  const cleaned = rawText.replace(/```(?:json)?/gi, '').replace(/```/g, '').trim();
+
+  try {
+    return JSON.parse(cleaned);
+  } catch (e) {}
+
+  try {
+    const titleMatch = cleaned.match(/"title"\s*:\s*"([^"]+)"/);
+    const artistMatch = cleaned.match(/"artist"\s*:\s*"([^"]+)"/);
+    const keyMatch = cleaned.match(/"key"\s*:\s*"([^"]+)"/);
+    const mediaUrlMatch = cleaned.match(/"mediaUrl"\s*:\s*"([^"]+)"/);
+
+    let content = '';
+    const contentMatch = cleaned.match(/"content"\s*:\s*"([\s\S]*?)"\s*\}?\s*$/);
+    if (contentMatch) {
+      content = contentMatch[1].replace(/\\n/g, '\n').replace(/\\"/g, '"');
+    }
+
+    return {
+      title: titleMatch ? titleMatch[1] : '',
+      artist: artistMatch ? artistMatch[1] : '',
+      key: keyMatch ? keyMatch[1] : '',
+      mediaUrl: mediaUrlMatch ? mediaUrlMatch[1] : '',
+      content: content
+    };
+  } catch (err) {
+    return null;
+  }
+}
+
 const TeleprompterTab: React.FC = () => {
   // Songs collection
   const [songs, setSongs] = useState<SongItem[]>(() => {
@@ -700,7 +732,7 @@ const TeleprompterTab: React.FC = () => {
 
     const input = importInput.trim();
 
-    // 1. Try our high-speed scraper endpoint first (extracts LaCuerda directly & finds YouTube official video)
+    // 1. Try our high-speed scraper endpoint first (extracts CifraClub / LaCuerda directly & finds YouTube official video)
     try {
       const apiRes = await fetch('/api/song-import', {
         method: 'POST',
@@ -710,17 +742,17 @@ const TeleprompterTab: React.FC = () => {
 
       if (apiRes.ok) {
         const data = await apiRes.json();
-        if (data.success && data.content) {
+        if (data.success && data.content && data.content.trim().length > 20) {
           if (data.title) setModalTitle(data.title);
           if (data.artist) setModalArtist(data.artist);
           if (data.key) setModalKey(data.key);
           if (data.mediaUrl) setModalMediaUrl(data.mediaUrl);
-          if (data.content) setModalContent(data.content);
+          setModalContent(data.content);
 
-          toast.success(`Canción "${data.title}" importada con letra, acordes y video`);
+          toast.success(`Canción "${data.title || 'importada'}" cargada con letra, acordes y video`);
           setImportInput('');
           return;
-        } else if (data.success && data.title) {
+        } else if (data.success) {
           if (data.title) setModalTitle(data.title);
           if (data.artist) setModalArtist(data.artist);
           if (data.key) setModalKey(data.key);
@@ -731,25 +763,27 @@ const TeleprompterTab: React.FC = () => {
       console.warn('Backend song-import failed or offline, falling back to AI:', apiErr);
     }
 
-    // 2. If content is still missing, extract artist/title and prompt Gemini
+    // 2. If content is missing, prompt Gemini with safeParseSongJson
     try {
       let songHint = input;
-      if (input.includes('lacuerda.net')) {
+      if (input.includes('cifraclub') || input.includes('lacuerda.net')) {
         const parts = input.split('/').filter(Boolean);
-        const last = parts[parts.length - 1]?.replace(/\.shtml.*/, '').replace(/_/g, ' ');
-        const artistPart = parts[parts.length - 2]?.replace(/_/g, ' ');
+        const last = parts[parts.length - 1]?.replace(/\.(shtml|html|php).*/, '').replace(/[-_]/g, ' ');
+        const artistPart = parts[parts.length - 2]?.replace(/[-_]/g, ' ');
         songHint = `${artistPart} - ${last}`;
         if (!modalTitle && last) setModalTitle(last.charAt(0).toUpperCase() + last.slice(1));
         if (!modalArtist && artistPart) setModalArtist(artistPart.charAt(0).toUpperCase() + artistPart.slice(1));
+      } else if (modalTitle || modalArtist) {
+        songHint = `${modalArtist} - ${modalTitle}`.trim();
       }
 
-      const prompt = `Actúa como un transcriptor musical experto de LaCuerda.net y cancioneros de guitarra.
-Escribe la letra con los acordes completos de la canción: "${songHint}".
-Requisitos estrictos de formato LaCuerda.net:
-- Los acordes deben estar en su propia línea justo arriba de la sílaba o palabra donde suenan.
+      const prompt = `Actúa como un transcriptor musical experto de CifraClub.com, LaCuerda.net y cancioneros de guitarra.
+Escribe la letra con los acordes de guitarra EN SU PROPIA LÍNEA justo arriba de cada palabra donde suenan para la canción: "${songHint}".
+Requisitos estrictos de formato:
+- Acordes de guitarra colocados exactamente arriba de la letra.
+- OMITE tablaturas de punteo (ej. E|---, B|---), OMITE partituras de piano, solos complejos ni arreglos sofisticados. Solo acordes de guitarra arriba de la letra.
 - Usa etiquetas de sección como [Intro], [Verso 1], [Coro], [Puente], etc.
 - No omitas estrofas ni coros.
-- Identifica el tono base o capotraste si lo lleva.
 
 Responde ÚNICAMENTE con un JSON válido (sin backticks markdown):
 {
@@ -766,20 +800,74 @@ Responde ÚNICAMENTE con un JSON válido (sin backticks markdown):
       });
 
       const raw = res.candidates?.[0]?.content?.parts?.[0]?.text || '';
-      const cleaned = raw.replace(/```(?:json)?/gi, '').replace(/```/g, '').trim();
-      const parsed = JSON.parse(cleaned);
+      const parsed = safeParseSongJson(raw);
 
-      if (parsed.title) setModalTitle(parsed.title);
-      if (parsed.artist) setModalArtist(parsed.artist);
-      if (parsed.key) setModalKey(parsed.key);
-      if (parsed.mediaUrl && !modalMediaUrl) setModalMediaUrl(parsed.mediaUrl);
-      if (parsed.content) setModalContent(parsed.content);
+      if (parsed) {
+        if (parsed.title) setModalTitle(parsed.title);
+        if (parsed.artist) setModalArtist(parsed.artist);
+        if (parsed.key) setModalKey(parsed.key);
+        if (parsed.mediaUrl && !modalMediaUrl) setModalMediaUrl(parsed.mediaUrl);
+        if (parsed.content) setModalContent(parsed.content);
 
-      toast.success(`Canción "${parsed.title || 'importada'}" procesada con letra y acordes`);
-      setImportInput('');
+        toast.success(`Canción "${parsed.title || modalTitle || 'importada'}" procesada con letra y acordes`);
+        setImportInput('');
+      } else {
+        toast.error('No se pudo autocompletar la letra. Puedes escribirla o pegarla directamente.');
+      }
     } catch (err: any) {
       console.error('Error auto-importing song:', err);
-      toast.error('No se pudo autocompletar la letra. Puedes pegar la letra y acordes copiada.');
+      toast.error('No se pudo autocompletar la letra.');
+    } finally {
+      setIsImporting(false);
+    }
+  };
+
+  const handleGenerateAiChords = async () => {
+    const hint = `${modalArtist} ${modalTitle}`.trim() || importInput.trim();
+    if (!hint) {
+      toast.error('Escribe el título y artista para generar los acordes con IA');
+      return;
+    }
+    setIsImporting(true);
+    try {
+      const prompt = `Actúa como un transcriptor musical experto de CifraClub.com, LaCuerda.net y cancioneros de guitarra.
+Escribe la letra con los acordes de guitarra EN SU PROPIA LÍNEA justo arriba de cada palabra donde suenan para la canción: "${hint}".
+Requisitos estrictos de formato:
+- Acordes de guitarra colocados exactamente arriba de la letra.
+- OMITE tablaturas de punteo (ej. E|---, B|---), OMITE partituras de piano, solos complejos ni arreglos sofisticados. Solo acordes de guitarra arriba de la letra.
+- Usa etiquetas de sección como [Intro], [Verso 1], [Coro], [Puente], etc.
+- No omitas estrofas ni coros.
+
+Responde ÚNICAMENTE con un JSON válido (sin backticks markdown):
+{
+  "title": "Nombre de la canción",
+  "artist": "Nombre del artista o grupo",
+  "key": "Tono base",
+  "mediaUrl": "https://www.youtube.com/watch?v=...",
+  "content": "Letra completa con acordes en sus líneas correspondientes"
+}`;
+
+      const res = await generateContentWithFallback({
+        model: GEMINI_MODELS.PRIMARY,
+        contents: [{ role: 'user', parts: [{ text: prompt }] }],
+      });
+
+      const raw = res.candidates?.[0]?.content?.parts?.[0]?.text || '';
+      const parsed = safeParseSongJson(raw);
+
+      if (parsed && parsed.content) {
+        if (parsed.title && !modalTitle) setModalTitle(parsed.title);
+        if (parsed.artist && !modalArtist) setModalArtist(parsed.artist);
+        if (parsed.key && !modalKey) setModalKey(parsed.key);
+        if (parsed.mediaUrl && !modalMediaUrl) setModalMediaUrl(parsed.mediaUrl);
+        setModalContent(parsed.content);
+        toast.success('Letra y acordes generados correctamente con IA');
+      } else {
+        toast.error('No se pudieron generar los acordes. Intenta de nuevo.');
+      }
+    } catch (e) {
+      console.error(e);
+      toast.error('Error al generar acordes con IA');
     } finally {
       setIsImporting(false);
     }
@@ -1447,16 +1535,17 @@ Responde ÚNICAMENTE con un JSON válido (sin backticks markdown):
                   <div className="flex items-center justify-between">
                     <span className="text-xs font-bold text-amber-300 flex items-center gap-1.5">
                       <Sparkles size={14} className="text-amber-400" />
-                      Importar o Autocompletar con IA
+                      Auto-Cargar por URL (CifraClub, LaCuerda, etc.) o IA
                     </span>
-                    <span className="text-[10px] text-zinc-400">Pega un enlace de LaCuerda o nombre de canción</span>
+                    <span className="text-[10px] text-zinc-400">Pega un enlace de CifraClub, LaCuerda o nombre</span>
                   </div>
                   <div className="flex gap-2">
                     <input
                       type="text"
                       value={importInput}
                       onChange={(e) => setImportInput(e.target.value)}
-                      placeholder="Ej. https://acordes.lacuerda.net/... o 'Chano - Claramente'"
+                      onKeyDown={(e) => { if (e.key === 'Enter') handleAutoImport(); }}
+                      placeholder="Ej. https://www.cifraclub.com/cazuza/exagerado/ o https://acordes.lacuerda.net/..."
                       className="flex-grow bg-zinc-950 border border-white/10 rounded-xl px-3 py-1.5 text-xs text-white placeholder-zinc-500 focus:outline-none focus:border-amber-500"
                     />
                     <button
@@ -1466,7 +1555,7 @@ Responde ÚNICAMENTE con un JSON válido (sin backticks markdown):
                       className="px-3.5 py-1.5 bg-gradient-to-r from-amber-500 to-amber-600 hover:from-amber-400 hover:to-amber-500 text-black font-bold text-xs rounded-xl shadow-md flex items-center gap-1.5 shrink-0 disabled:opacity-50 transition-all cursor-pointer"
                     >
                       <Sparkles size={13} className={isImporting ? 'animate-spin' : ''} />
-                      <span>{isImporting ? 'Procesando...' : 'Autocompletar'}</span>
+                      <span>{isImporting ? 'Procesando...' : 'Auto-Cargar'}</span>
                     </button>
                   </div>
                 </div>
@@ -1552,6 +1641,16 @@ Responde ÚNICAMENTE con un JSON válido (sin backticks markdown):
                       Letra con Acordes (Formato LaCuerda.net) *
                     </label>
                     <div className="flex items-center gap-2">
+                      <button
+                        type="button"
+                        onClick={handleGenerateAiChords}
+                        disabled={isImporting}
+                        className="px-2 py-0.5 bg-amber-500/20 hover:bg-amber-500/30 text-amber-300 hover:text-white rounded-lg text-[10px] font-bold transition-all border border-amber-500/30 flex items-center gap-1"
+                        title="Generar la letra con acordes de guitarra usando IA"
+                      >
+                        <Sparkles size={11} className={isImporting ? 'animate-spin' : ''} />
+                        <span>{isImporting ? 'Generando...' : 'IA Generar Acordes'}</span>
+                      </button>
                       <button
                         type="button"
                         onClick={handleCleanFormatting}

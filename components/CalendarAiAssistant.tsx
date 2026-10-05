@@ -3,7 +3,7 @@ import React, { useState, useRef, useEffect } from 'react';
 import { Type, GenerateContentResponse } from "@google/genai";
 import { generateContentWithFallback, getGeminiClient, GEMINI_MODELS, getResolvedApiKey } from '../services/geminiService';
 import { useLinks } from '../contexts/LinkContext';
-import { CalendarEvent, Note } from '../types';
+import { CalendarEvent, Note, CalendarToken, TokenConditionType } from '../types';
 import { loadADN } from '../services/memoriaService';
 import { 
   Brain, 
@@ -210,6 +210,24 @@ Tus principios de gestión para Rembrandt:
    Si todo está en orden y el día está tranquilo, tu prioridad número 3 es dar un consejo de estudio útil basado en sus temas de estudio actuales o sugerir temas nuevos basados en tendencias (Grok).
    Evita mensajes banales o genéricos. Sé específico con sus datos.
 8. Gestión Proactiva: Si ves que el clima o las noticias de Grok pueden beneficiar o afectar sus planes, menciónalo y ofrece soluciones. Analiza si el mal clima (lluvia fuerte, calor extremo) requiere ajustar la rutina.
+9. Gestión de Vacaciones:
+   - Rembrandt puede pedirte que consultes, configures o actualices sus días disponibles de vacaciones.
+   - Si Rembrandt te dice cuántos días le quedan (ej: "actualmente me quedan 22 días de vacaciones" o "pon que tengo 22 días"), usa 'set_vacation_days' con availableDays: 22.
+   - Puedes mover días de vacaciones usando 'move_vacation'.
+   - Cada vez que se programa o usa una vacación en el calendario, se va restando automáticamente del saldo disponible.
+10. Tokens del Calendario y Condicionantes:
+   - Rembrandt utiliza tokens cíclicos o recurrentes (ej: 'cargar carro').
+   - Puedes agregar tokens con 'add_token', moverlos de fecha con 'move_token', o marcarlos como completados con 'complete_token'.
+   - Los tokens soportan CONDICIONANTES ('conditionType'):
+     * 'none': Se repite según los días de intervalo.
+     * 'workdays_only': Solo en días hábiles (Lunes a Viernes o Sábados laborales). Si cae en fin de semana/descanso, se ajusta al siguiente día hábil.
+     * 'offdays_only': Solo en días libres (fines de semana / descanso).
+     * 'one_day_before': Un día antes de un evento específico o vacaciones (usa 'conditionTarget' para el nombre/tipo de evento).
+     * 'payday_only': Solo en días de quincena (15 y fin de mes).
+11. Regla de Oro para el Token del Carro ('cargar carro'):
+   - ¡LOS TOKENS DEL CARRO NUNCA QUEDAN EN EL PASADO! Siempre deben mantenerse en el presente (hoy) o en el futuro.
+   - Si Rembrandt te dice "ya cargué el carro", "ya recargué", "listo el carro" o similar, llama INMEDIATAMENTE a 'complete_token' con tokenNameOrId: 'cargar carro'.
+   - Esto avanzará la fecha al próximo ciclo en el futuro y se grabará automáticamente en el sistema y en la nube para no volver a preguntarle.
 
 Funciones disponibles:
 - add_event: Añade un nuevo evento.
@@ -218,11 +236,17 @@ Funciones disponibles:
 - update_routine: Actualiza la rutina.
 - add_pending: Añade un pendiente de trabajo. Parámetro: task (string).
 - delete_pending: Elimina un pendiente. Parámetro: index (number).
-- add_note: Añade una nota o producto a la lista. Parámetros: content (texto), category ('recientes', 'compras', 'trabajo', 'notas'), quantity (opcional, por defecto '1'), unit (opcional, 'pza', 'litros', 'kilos', por defecto 'pza'), startDate (opcional, para trabajo).
-- add_study_topic: Añade un tema formal de estudio a la sección de Estudios. Parámetros: nombre (título del tema), descripcion (breve descripción), enlace (opcional, URL), avance (opcional, número 0-100).
+- add_note: Añade una nota o producto a la lista.
+- add_study_topic: Añade un tema formal de estudio a la sección de Estudios.
 - delete_note: Elimina una nota por su ID.
-- generate_image: Genera una imagen basada en una descripción. Parámetro: prompt (string).
-- update_ai_memory: Actualiza tu propia memoria a largo plazo (memoria_ia). Parámetro: memory (string). Úsala para información general, curiosidades o "conocimiento para la IA" que Rembrandt quiera que recuerdes pero que NO sea una tarea o nota personal.
+- generate_image: Genera una imagen basada en una descripción.
+- update_ai_memory: Actualiza la memoria a largo plazo.
+- set_vacation_days: Establece/actualiza los días disponibles de vacaciones restantes de Rembrandt (ej: 22). Parámetros: availableDays (number), totalDays (opcional, number).
+- move_vacation: Mueve un día de vacaciones a otra fecha. Parámetros: fromDate (YYYY-MM-DD), toDate (YYYY-MM-DD).
+- add_token: Crea un nuevo token recurrente. Parámetros: name (string), intervalDays (number), startDate (YYYY-MM-DD), reminderTime (opcional, '20:00'), conditionType ('none' | 'workdays_only' | 'offdays_only' | 'one_day_before' | 'payday_only'), conditionTarget (opcional).
+- move_token: Mueve la fecha de un token. Parámetros: tokenNameOrId (string), newDate (YYYY-MM-DD).
+- complete_token: Marca un token como realizado/cargado (ej. carro) avanzando su fecha a futuro y grabando automáticamente. Parámetro: tokenNameOrId (string).
+- update_token: Modifica un token existente. Parámetros: tokenNameOrId (string), intervalDays (opcional), conditionType (opcional), conditionTarget (opcional).
 
 REGLAS DE CATEGORIZACIÓN:
 1. Usa 'add_note' con categoría 'trabajo' SOLO para tareas o notas relacionadas con el trabajo de Rembrandt.
@@ -239,6 +263,8 @@ Contexto actual:
     ${config.memoria_ia?.laboral ? `* Laboral: ${config.memoria_ia.laboral}` : ''}
     ${config.memoria_ia?.personal ? `* Personal: ${config.memoria_ia.personal}` : ''}
 - Eventos: ${JSON.stringify((events || []).slice(-50).map(e => ({ title: e.title, date: e.date, time: e.time, type: e.type })))}
+- Tokens del Calendario: ${JSON.stringify(config.calendarTokens || [])}
+- Vacaciones Configuradas: ${JSON.stringify(config.vacationConfig || {})}
 - Pendientes de Trabajo: ${JSON.stringify(workPending)}
 `;
 
@@ -427,6 +453,90 @@ Contexto actual:
                   },
                   required: ["prompt"]
                 }
+              },
+              {
+                name: "set_vacation_days",
+                description: "Actualiza los días disponibles de vacaciones restantes de Rembrandt (ej. 22 días disponibles).",
+                parameters: {
+                  type: Type.OBJECT,
+                  properties: {
+                    availableDays: { type: Type.NUMBER, description: "Número de días disponibles restantes" },
+                    totalDays: { type: Type.NUMBER, description: "Total de días del periodo (opcional)" }
+                  },
+                  required: ["availableDays"]
+                }
+              },
+              {
+                name: "move_vacation",
+                description: "Mueve un día de vacaciones de una fecha a otra.",
+                parameters: {
+                  type: Type.OBJECT,
+                  properties: {
+                    fromDate: { type: Type.STRING, description: "Fecha actual en formato YYYY-MM-DD" },
+                    toDate: { type: Type.STRING, description: "Nueva fecha en formato YYYY-MM-DD" }
+                  },
+                  required: ["fromDate", "toDate"]
+                }
+              },
+              {
+                name: "add_token",
+                description: "Crea un nuevo token recurrente en el calendario con condicionantes de fecha.",
+                parameters: {
+                  type: Type.OBJECT,
+                  properties: {
+                    name: { type: Type.STRING, description: "Nombre del token (ej: Cargar Carro)" },
+                    intervalDays: { type: Type.NUMBER, description: "Intervalo de repetición en días (ej: 3)" },
+                    startDate: { type: Type.STRING, description: "Fecha de inicio en formato YYYY-MM-DD" },
+                    reminderTime: { type: Type.STRING, description: "Hora del recordatorio (ej: '20:00')" },
+                    conditionType: { 
+                      type: Type.STRING, 
+                      enum: ['none', 'workdays_only', 'offdays_only', 'one_day_before', 'payday_only'],
+                      description: "Condición: workdays_only (solo días hábiles), offdays_only (solo libres), one_day_before (un día antes de evento), payday_only (quincenas)" 
+                    },
+                    conditionTarget: { type: Type.STRING, description: "Nombre o tipo del evento para la condición (ej: 'vacaciones')" },
+                    symbol: { type: Type.STRING, description: "Icono: Zap, Clock, CheckCircle2, Brain, etc." },
+                    color: { type: Type.STRING, description: "Color hex (ej: #f59e0b)" }
+                  },
+                  required: ["name", "intervalDays"]
+                }
+              },
+              {
+                name: "move_token",
+                description: "Mueve o reprograma la fecha de un token.",
+                parameters: {
+                  type: Type.OBJECT,
+                  properties: {
+                    tokenNameOrId: { type: Type.STRING, description: "Nombre o ID del token a mover (ej: 'cargar carro')" },
+                    newDate: { type: Type.STRING, description: "Nueva fecha en formato YYYY-MM-DD" }
+                  },
+                  required: ["tokenNameOrId", "newDate"]
+                }
+              },
+              {
+                name: "complete_token",
+                description: "Marca un token (como cargar carro) como realizado/recargado, avanzando la fecha al próximo ciclo futuro y guardando automáticamente para que no vuelva a preguntar.",
+                parameters: {
+                  type: Type.OBJECT,
+                  properties: {
+                    tokenNameOrId: { type: Type.STRING, description: "Nombre o ID del token (ej: 'cargar carro')" }
+                  },
+                  required: ["tokenNameOrId"]
+                }
+              },
+              {
+                name: "update_token",
+                description: "Modifica propiedades de un token existente.",
+                parameters: {
+                  type: Type.OBJECT,
+                  properties: {
+                    tokenNameOrId: { type: Type.STRING, description: "Nombre o ID del token" },
+                    intervalDays: { type: Type.NUMBER },
+                    conditionType: { type: Type.STRING, enum: ['none', 'workdays_only', 'offdays_only', 'one_day_before', 'payday_only'] },
+                    conditionTarget: { type: Type.STRING },
+                    reminderTime: { type: Type.STRING }
+                  },
+                  required: ["tokenNameOrId"]
+                }
               }
             ]
           }]
@@ -558,6 +668,151 @@ Contexto actual:
             } catch (imgErr) {
               console.warn("Error generando imagen con Gemini:", imgErr);
             }
+          } else if (call.name === 'set_vacation_days') {
+            const args = call.args as any;
+            const availableDays = Number(args.availableDays) || 0;
+            const currentEvents = newConfig.calendarEvents || [];
+            const usedDays = currentEvents.filter(e => {
+              const t = (e.title || '').toLowerCase();
+              const d = (e.description || '').toLowerCase();
+              if (t.includes('solicitar') || d.includes('solicitar')) return false;
+              return e.type === 'vacation' || t.includes('vacacion');
+            }).length;
+            const totalDays = args.totalDays ? Number(args.totalDays) : (availableDays + usedDays);
+            newConfig.vacationConfig = {
+              ...(newConfig.vacationConfig || { initialDays: 11, daysAfterReset: 26, resetDate: '07-21' }),
+              availableDays: availableDays,
+              totalDays: totalDays,
+              initialDays: totalDays,
+              daysAfterReset: totalDays
+            };
+            executedDescriptions.push(`🌴 Días de vacaciones actualizados: ${availableDays} días disponibles (${totalDays} totales). Se irán restando cuando programes vacaciones.`);
+            updated = true;
+          } else if (call.name === 'move_vacation') {
+            const args = call.args as any;
+            const fromDate = normalizeDate(args.fromDate);
+            const toDate = normalizeDate(args.toDate);
+            const currentEvents = newConfig.calendarEvents || [];
+            let moved = false;
+            newConfig.calendarEvents = currentEvents.map(e => {
+              const t = (e.title || '').toLowerCase();
+              const isVac = e.type === 'vacation' || t.includes('vacacion');
+              if (!moved && isVac && e.date === fromDate) {
+                moved = true;
+                return { ...e, date: toDate };
+              }
+              return e;
+            });
+            if (moved) {
+              executedDescriptions.push(`🌴 Día de vacaciones movido de ${fromDate} a ${toDate}.`);
+              updated = true;
+            } else {
+              executedDescriptions.push(`⚠️ No se encontró vacación en la fecha ${fromDate} para mover.`);
+            }
+          } else if (call.name === 'add_token') {
+            const args = call.args as any;
+            const startDate = normalizeDate(args.startDate || new Date().toISOString().split('T')[0]);
+            const tokenName = args.name || 'Nuevo Token';
+            const intervalDays = Number(args.intervalDays) || 3;
+            const conditionType = args.conditionType || 'none';
+            const conditionTarget = args.conditionTarget || '';
+            const reminderTime = args.reminderTime || '20:00';
+            const reminderMinutes = args.reminderMinutes !== undefined ? Number(args.reminderMinutes) : 30;
+            const symbol = args.symbol || 'Zap';
+            const color = args.color || '#f59e0b';
+
+            const newToken: CalendarToken = {
+              id: Date.now().toString(),
+              name: tokenName,
+              symbol,
+              intervalDays,
+              startDate,
+              currentActiveDate: startDate,
+              color,
+              reminderMinutes,
+              reminderTime,
+              conditionType,
+              conditionTarget,
+              isCompleted: false
+            };
+
+            newConfig.calendarTokens = [...(newConfig.calendarTokens || []), newToken];
+            executedDescriptions.push(`⚡ Token "${tokenName}" agregado (cada ${intervalDays} días${conditionType !== 'none' ? ` con condición: ${conditionType}` : ''}).`);
+            updated = true;
+          } else if (call.name === 'move_token') {
+            const args = call.args as any;
+            const targetQuery = (args.tokenNameOrId || '').toLowerCase().trim();
+            const newDate = normalizeDate(args.newDate);
+            let movedTokenName = '';
+
+            newConfig.calendarTokens = (newConfig.calendarTokens || []).map((t: CalendarToken) => {
+              if (t.id === targetQuery || t.name.toLowerCase().includes(targetQuery)) {
+                movedTokenName = t.name;
+                return { ...t, currentActiveDate: newDate, isCompleted: false };
+              }
+              return t;
+            });
+
+            if (movedTokenName) {
+              executedDescriptions.push(`⚡ Token "${movedTokenName}" movido a la fecha ${newDate}.`);
+              updated = true;
+            } else {
+              executedDescriptions.push(`⚠️ No se encontró el token "${targetQuery}" para mover.`);
+            }
+          } else if (call.name === 'complete_token') {
+            const args = call.args as any;
+            const targetQuery = (args.tokenNameOrId || 'carro').toLowerCase().trim();
+            const today = new Date();
+            today.setHours(0, 0, 0, 0);
+            const curTodayStr = today.toISOString().split('T')[0];
+            let completedName = '';
+
+            newConfig.calendarTokens = (newConfig.calendarTokens || []).map((t: CalendarToken) => {
+              if (t.id === targetQuery || t.name.toLowerCase().includes(targetQuery)) {
+                completedName = t.name;
+                const nextDate = new Date(today.getTime());
+                nextDate.setDate(nextDate.getDate() + (t.intervalDays || 3));
+                const nextDateStr = nextDate.toISOString().split('T')[0];
+
+                try {
+                  localStorage.setItem(`token_completed_${t.id}`, curTodayStr);
+                  localStorage.removeItem(`token_snoozed_${t.id}`);
+                } catch (_) {}
+
+                return {
+                  ...t,
+                  currentActiveDate: nextDateStr,
+                  lastCompletedDate: curTodayStr,
+                  isCompleted: true,
+                  snoozedUntil: undefined
+                };
+              }
+              return t;
+            });
+
+            if (completedName) {
+              executedDescriptions.push(`✅ ¡Excelente! El token "${completedName}" se marcó como completado hoy y se reprogramó para su próxima fecha en el futuro. Grabado automáticamente.`);
+              updated = true;
+            } else {
+              executedDescriptions.push(`⚠️ No se encontró ningún token que coincida con "${targetQuery}".`);
+            }
+          } else if (call.name === 'update_token') {
+            const args = call.args as any;
+            const targetQuery = (args.tokenNameOrId || '').toLowerCase().trim();
+            newConfig.calendarTokens = (newConfig.calendarTokens || []).map((t: CalendarToken) => {
+              if (t.id === targetQuery || t.name.toLowerCase().includes(targetQuery)) {
+                return {
+                  ...t,
+                  ...(args.intervalDays ? { intervalDays: Number(args.intervalDays) } : {}),
+                  ...(args.conditionType ? { conditionType: args.conditionType } : {}),
+                  ...(args.conditionTarget !== undefined ? { conditionTarget: args.conditionTarget } : {}),
+                  ...(args.reminderTime ? { reminderTime: args.reminderTime } : {})
+                };
+              }
+              return t;
+            });
+            executedDescriptions.push(`⚡ Token actualizado.`);
+            updated = true;
           }
         }
 
@@ -566,6 +821,13 @@ Contexto actual:
           saveToSupabase(newConfig, { showToast: false, immediate: true }).catch(sbErr => 
             console.warn("Supabase background save notice:", sbErr)
           );
+          try {
+            fetch('/api/config/save-local', {
+              method: 'POST',
+              headers: { 'Content-Type': 'application/json' },
+              body: JSON.stringify(newConfig)
+            }).catch(() => {});
+          } catch (_) {}
         }
 
         // Generate follow up response explaining what was done and providing strategic analysis

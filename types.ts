@@ -149,6 +149,8 @@ export interface Note {
   createdAt?: number;
 }
 
+export type TokenConditionType = 'none' | 'workdays_only' | 'offdays_only' | 'one_day_before' | 'payday_only';
+
 export interface CalendarToken {
   id: string;
   name: string;
@@ -163,6 +165,8 @@ export interface CalendarToken {
   googleEventId?: string;
   lastCompletedDate?: string;
   snoozedUntil?: number;
+  conditionType?: TokenConditionType;
+  conditionTarget?: string;
 }
 
 export interface FinanzasCard {
@@ -312,6 +316,8 @@ export interface AppConfig {
     initialDays: number;
     resetDate: string; // MM-DD
     daysAfterReset: number;
+    totalDays?: number;
+    availableDays?: number;
   };
   credenciales: Credencial[];
   credencialesSecurity?: {
