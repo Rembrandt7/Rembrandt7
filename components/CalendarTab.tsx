@@ -413,10 +413,13 @@ const CalendarTab: React.FC = () => {
 
     const assignedVacationEvents = events.filter(e => isVacationEvent(e));
 
-    const usedDays = assignedVacationEvents.filter(e => {
+    // Count unique vacation dates in the current period (multiple activities on the same day count as 1 vacation day)
+    const inPeriodVacationEvents = assignedVacationEvents.filter(e => {
       const eventDate = new Date(e.date + 'T00:00:00');
       return eventDate >= periodStart && eventDate <= periodEnd;
-    }).length;
+    });
+    const uniqueVacationDates = new Set(inPeriodVacationEvents.map(e => e.date));
+    const usedDays = uniqueVacationDates.size;
 
     // Direct configuration of total days or available days
     if (typeof vacConfig?.totalDays === 'number' && vacConfig.totalDays > 0) {

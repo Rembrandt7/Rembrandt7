@@ -114,6 +114,40 @@ function normalizeDate(rawDate: string): string {
   return trimmed;
 }
 
+function getInPeriodVacationDays(eventsList: CalendarEvent[], resetDateStr: string = '07-21'): number {
+  const now = new Date();
+  const currentYear = now.getFullYear();
+  let resetMonth = 6;
+  let resetDay = 21;
+  if (resetDateStr) {
+    const parts = resetDateStr.split('-');
+    if (parts.length === 2) {
+      resetMonth = parseInt(parts[0], 10) - 1;
+      resetDay = parseInt(parts[1], 10);
+    }
+  }
+  const resetDateThisYear = new Date(currentYear, resetMonth, resetDay);
+  const periodStart = now < resetDateThisYear 
+    ? new Date(currentYear - 1, resetMonth, resetDay) 
+    : new Date(currentYear, resetMonth, resetDay);
+  const periodEnd = now < resetDateThisYear 
+    ? new Date(currentYear, resetMonth, resetDay - 1, 23, 59, 59) 
+    : new Date(currentYear + 1, resetMonth, resetDay - 1, 23, 59, 59);
+
+  const dates = new Set(
+    eventsList.filter(e => {
+      if (!e) return false;
+      const t = (e.title || '').toLowerCase();
+      const d = (e.description || '').toLowerCase();
+      if (t.includes('solicitar') || d.includes('solicitar')) return false;
+      if (e.type !== 'vacation' && !t.includes('vacacion') && !d.includes('vacacion')) return false;
+      const eventDate = new Date(e.date + 'T00:00:00');
+      return eventDate >= periodStart && eventDate <= periodEnd;
+    }).map(e => e.date)
+  );
+  return dates.size;
+}
+
 const REFERENCE_OFF_SATURDAY = new Date('2026-03-07T00:00:00');
 
 function getDayStatus(date: Date, eventsList: CalendarEvent[]): 'work' | 'off' | 'vacation' | 'off-custom' {
@@ -762,8 +796,7 @@ REGLAS DE RESPUESTA:
             if (newVacEvents.length > 0) {
               const updatedEvents = [...currentEvents, ...newVacEvents];
               const vacConf = config.vacationConfig || { initialDays: 26, daysAfterReset: 26, resetDate: '07-21' };
-              const currentUsed = currentEvents.filter(e => e.type === 'vacation' || (e.title || '').toLowerCase().includes('vacacion')).length;
-              const currentTotal = vacConf.totalDays || (typeof vacConf.availableDays === 'number' ? vacConf.availableDays + currentUsed : (vacConf.initialDays || 26));
+              const currentTotal = vacConf.totalDays || 26;
               const updatedVacation = {
                 ...vacConf,
                 totalDays: currentTotal,
@@ -809,8 +842,7 @@ REGLAS DE RESPUESTA:
             let updatedVacation = config.vacationConfig;
             if (isVac) {
               const vacConf = config.vacationConfig || { initialDays: 26, daysAfterReset: 26, resetDate: '07-21' };
-              const currentUsed = (config.calendarEvents || []).filter(e => e.type === 'vacation' || (e.title || '').toLowerCase().includes('vacacion')).length;
-              const currentTotal = vacConf.totalDays || (typeof vacConf.availableDays === 'number' ? vacConf.availableDays + currentUsed : (vacConf.initialDays || 26));
+              const currentTotal = vacConf.totalDays || 26;
               updatedVacation = {
                 ...vacConf,
                 totalDays: currentTotal,
@@ -952,15 +984,11 @@ REGLAS DE RESPUESTA:
           else if (call.name === 'set_vacation_days') {
             const availableDays = Number(args.availableDays) || 0;
             const currentEvents = config.calendarEvents || [];
-            const usedDays = currentEvents.filter(e => {
-              const t = (e.title || '').toLowerCase();
-              const d = (e.description || '').toLowerCase();
-              if (t.includes('solicitar') || d.includes('solicitar')) return false;
-              return e.type === 'vacation' || t.includes('vacacion');
-            }).length;
-            const totalDays = args.totalDays ? Number(args.totalDays) : (availableDays + usedDays);
+            const vacConf = config.vacationConfig || { initialDays: 26, daysAfterReset: 26, resetDate: '07-21' };
+            const usedDays = getInPeriodVacationDays(currentEvents, vacConf.resetDate);
+            const totalDays = args.totalDays ? Number(args.totalDays) : (vacConf.totalDays || (availableDays + usedDays));
             const updatedVacation = {
-              ...(config.vacationConfig || { initialDays: 11, daysAfterReset: 26, resetDate: '07-21' }),
+              ...vacConf,
               availableDays: availableDays,
               totalDays: totalDays,
               initialDays: totalDays,
