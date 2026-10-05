@@ -418,13 +418,13 @@ const CalendarTab: React.FC = () => {
       return eventDate >= periodStart && eventDate <= periodEnd;
     }).length;
 
-    // Direct configuration of available days or total days
-    if (typeof vacConfig?.availableDays === 'number') {
-      allowance = vacConfig.availableDays + usedDays;
-    } else if (typeof vacConfig?.totalDays === 'number' && vacConfig.totalDays > 0) {
+    // Direct configuration of total days or available days
+    if (typeof vacConfig?.totalDays === 'number' && vacConfig.totalDays > 0) {
       allowance = vacConfig.totalDays;
+    } else if (typeof vacConfig?.availableDays === 'number') {
+      allowance = vacConfig.availableDays + usedDays;
     } else if (now < resetDateThisYear) {
-      allowance = vacConfig?.initialDays ?? (currentYear === 2026 ? 26 : 26);
+      allowance = vacConfig?.initialDays ?? 26;
     } else {
       allowance = vacConfig?.daysAfterReset ?? 26;
     }

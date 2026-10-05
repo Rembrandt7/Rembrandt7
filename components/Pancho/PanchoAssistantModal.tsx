@@ -50,25 +50,48 @@ export interface ChatMessage {
 }
 
 function normalizeDate(rawDate: string): string {
-  if (!rawDate) return new Date().toISOString().split('T')[0];
-  const trimmed = rawDate.trim();
-  if (/^\d{4}-\d{2}-\d{2}$/.test(trimmed)) return trimmed;
+  const today = new Date();
+  const currentYear = today.getFullYear();
+  const todayStr = today.toISOString().split('T')[0];
+  if (!rawDate) return todayStr;
 
-  const currentYear = new Date().getFullYear();
+  const trimmed = rawDate.trim();
+
   const monthsMap: Record<string, string> = {
     enero: '01', febrero: '02', marzo: '03', abril: '04',
     mayo: '05', junio: '06', julio: '07', agosto: '08',
     septiembre: '09', setiembre: '09', octubre: '10', noviembre: '11', diciembre: '12'
   };
 
+  const isoMatch = trimmed.match(/^(\d{4})-(\d{2})-(\d{2})$/);
+  if (isoMatch) {
+    let year = parseInt(isoMatch[1], 10);
+    const month = isoMatch[2];
+    const day = isoMatch[3];
+    if (year < currentYear) {
+      year = currentYear;
+      const testDate = `${year}-${month}-${day}`;
+      if (testDate < todayStr) {
+        year = currentYear + 1;
+      }
+    }
+    return `${year}-${month}-${day}`;
+  }
+
   const match = trimmed.toLowerCase().match(/(\d{1,2})\s*(?:de\s*)?([a-zñ]+)(?:\s*(?:de\s*)?(\d{4}))?/i);
   if (match) {
     const day = match[1].padStart(2, '0');
     const monthName = match[2].toLowerCase();
-    const year = match[3] || currentYear.toString();
+    let year = match[3] ? parseInt(match[3], 10) : currentYear;
+    if (year < currentYear) year = currentYear;
     const month = monthsMap[monthName];
     if (month) {
-      return `${year}-${month}-${day}`;
+      let testDate = `${year}-${month}-${day}`;
+      if (!match[3] && testDate < todayStr) {
+        year = currentYear + 1;
+        testDate = `${year}-${month}-${day}`;
+      }
+      return testDate;
     }
   }
 
@@ -78,7 +101,14 @@ function normalizeDate(rawDate: string): string {
     const month = slashMatch[2].padStart(2, '0');
     let year = slashMatch[3];
     if (year.length === 2) year = `20${year}`;
-    return `${year}-${month}-${day}`;
+    let parsedYear = parseInt(year, 10);
+    if (parsedYear < currentYear) parsedYear = currentYear;
+    let testDate = `${parsedYear}-${month}-${day}`;
+    if (testDate < todayStr) {
+      parsedYear = currentYear + 1;
+      testDate = `${parsedYear}-${month}-${day}`;
+    }
+    return testDate;
   }
 
   return trimmed;
@@ -395,14 +425,24 @@ INFORMACIÓN DE REMBRANDT:
 
 ${adnData ? `ADN de Personalidad:\n${typeof adnData === 'string' ? adnData : JSON.stringify(adnData, null, 2)}\n` : ''}
 
+FECHA ACTUAL Y REGLAS TEMPORALES DEL SISTEMA:
+- Fecha de hoy: ${new Date().toLocaleDateString('es-MX', { weekday: 'long', year: 'numeric', month: 'long', day: 'numeric' })} (Formato ISO: ${new Date().toISOString().split('T')[0]})
+- AÑO ACTUAL: ${new Date().getFullYear()}
+⚠️ REGLAS TEMPORALES ESTRICTAS:
+1. ESTAMOS EN EL AÑO ${new Date().getFullYear()}. ¡NUNCA agendes ni menciones fechas en años pasados (como 2023, 2024, 2025)!
+2. ¡NUNCA agendes eventos o vacaciones en el PASADO! Todas las fechas que programes DEBEN ser hoy (${new Date().toISOString().split('T')[0]}) o en el futuro.
+3. Si Rembrandt pide agendar algo para un día o mes sin año (ej: "el 12 de noviembre"), asume el año ${new Date().getFullYear()} (o ${new Date().getFullYear() + 1} si el mes ya pasó este año).
+
 CONTEXTO Y CAPACIDADES POR PESTAÑA:
 1. CALENDARIO ("calendar"):
    - Eres el Estratega. Analizas eventos, fechas de pago y trabajos sin terminar.
    - Si Rembrandt te pide agendar un evento, usa 'add_event' con fecha en formato YYYY-MM-DD.
    - Si te pide agregar una nota o producto a la lista de compras o notas de trabajo, usa 'add_note'.
    - Protege su descanso y sus horas de tráfico.
-   - DÍAS DE VACACIONES: Rembrandt tiene actualmente 22 días de vacaciones disponibles (de un total de 26).
-     * Si te pide editar o consultar sus días disponibles, usa 'set_vacation_days'. Si programa vacaciones en el calendario, se van restando automáticamente del saldo disponible.
+   - DÍAS DE VACACIONES:
+     * Para AGENDAR o PROGRAMAR días de vacaciones en el calendario, USA OBLIGATORIAMENTE 'add_vacation' (o 'add_event' con type: 'vacation'). Puedes agendar un solo día o un rango (ej. startDate: '2026-11-10', endDate: '2026-11-14').
+     * Cada vez que se programa o usa una vacación en el calendario, se descuenta automáticamente del saldo disponible.
+     * Si te pide editar o consultar sus días disponibles, usa 'set_vacation_days'.
      * Puedes mover días de vacaciones usando 'move_vacation'.
    - TOKENS DEL CALENDARIO Y CONDICIONANTES:
      * Puedes agregar tokens con 'add_token', moverlos con 'move_token', modificarlos con 'update_token' o marcarlos completados con 'complete_token'.
@@ -498,6 +538,20 @@ REGLAS DE RESPUESTA:
                   type: Type.OBJECT,
                   properties: { id: { type: Type.STRING } },
                   required: ["id"]
+                }
+              },
+              {
+                name: "add_vacation",
+                description: "Programa y agenda uno o varios días de vacaciones en el calendario de Rembrandt, descontándolos de su saldo disponible de vacaciones.",
+                parameters: {
+                  type: Type.OBJECT,
+                  properties: {
+                    startDate: { type: Type.STRING, description: "Fecha de inicio o día único en formato YYYY-MM-DD" },
+                    endDate: { type: Type.STRING, description: "Fecha de fin en formato YYYY-MM-DD (opcional si es solo un día)" },
+                    title: { type: Type.STRING, description: "Título de la vacación (opcional, por defecto 'Vacaciones')" },
+                    description: { type: Type.STRING, description: "Notas o detalles de las vacaciones (opcional)" }
+                  },
+                  required: ["startDate"]
                 }
               },
               {
@@ -677,26 +731,101 @@ REGLAS DE RESPUESTA:
         for (const call of toolCalls) {
           const args = (call.args || {}) as any;
 
-          if (call.name === 'add_event') {
+          if (call.name === 'add_vacation') {
+            const startDate = normalizeDate(args.startDate);
+            const endDate = args.endDate ? normalizeDate(args.endDate) : startDate;
+            const title = args.title || 'Vacaciones';
+            const description = args.description || '';
+
+            const d = new Date(startDate + 'T00:00:00');
+            const endD = new Date(endDate + 'T00:00:00');
+            const currentEvents = config.calendarEvents || [];
+            const newVacEvents: CalendarEvent[] = [];
+
+            while (d <= endD) {
+              const curStr = d.toISOString().split('T')[0];
+              const exists = currentEvents.some(e => e.date === curStr && (e.type === 'vacation' || (e.title || '').toLowerCase().includes('vacacion')));
+              if (!exists) {
+                newVacEvents.push({
+                  id: Date.now().toString() + Math.random().toString(36).substr(2, 5),
+                  title: title,
+                  date: curStr,
+                  type: 'vacation',
+                  color: '#10b981',
+                  description: description,
+                  recurrence: 'none'
+                });
+              }
+              d.setDate(d.getDate() + 1);
+            }
+
+            if (newVacEvents.length > 0) {
+              const updatedEvents = [...currentEvents, ...newVacEvents];
+              const vacConf = config.vacationConfig || { initialDays: 26, daysAfterReset: 26, resetDate: '07-21' };
+              const currentUsed = currentEvents.filter(e => e.type === 'vacation' || (e.title || '').toLowerCase().includes('vacacion')).length;
+              const currentTotal = vacConf.totalDays || (typeof vacConf.availableDays === 'number' ? vacConf.availableDays + currentUsed : (vacConf.initialDays || 26));
+              const updatedVacation = {
+                ...vacConf,
+                totalDays: currentTotal,
+                initialDays: currentTotal,
+                daysAfterReset: currentTotal
+              };
+              const updatedConfig = { ...config, calendarEvents: updatedEvents, vacationConfig: updatedVacation };
+              updateConfig(updatedConfig);
+              saveToSupabase(updatedConfig, { showToast: false, immediate: true });
+              fetch('/api/config/save-local', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify(updatedConfig)
+              }).catch(() => {});
+
+              finalCardType = 'event';
+              finalCardData = { title: `🌴 ${newVacEvents.length} día(s) de vacaciones agendado(s)` };
+              toast.success(`🌴 ${newVacEvents.length} día(s) de vacaciones agendado(s) (${startDate}${endDate !== startDate ? ' al ' + endDate : ''})`);
+            } else {
+              toast.info(`⚠️ Los días indicados ya estaban agendados como vacaciones.`);
+            }
+          }
+
+          else if (call.name === 'add_event') {
             const dateStr = normalizeDate(args.date);
+            const isVac = args.type === 'vacation' || (args.title || '').toLowerCase().includes('vacacion');
             const newEv: CalendarEvent = {
               id: Date.now().toString() + Math.random().toString(36).substr(2, 5),
               title: args.title,
               date: dateStr,
               time: args.time || '',
               description: args.description || '',
-              type: args.type || 'event',
+              type: isVac ? 'vacation' : (args.type || 'event'),
               recurrence: args.recurrence || 'none',
               isPaid: args.isPaid || false,
               amount: args.amount || '',
               isVariable: args.isVariable || false,
               jobCategory: args.jobCategory || 'trabajos mios',
-              color: args.type === 'birthday' ? '#f59e0b' : args.type === 'payment' ? '#10b981' : '#3b82f6'
+              color: isVac ? '#10b981' : args.type === 'birthday' ? '#f59e0b' : args.type === 'payment' ? '#10b981' : '#3b82f6'
             };
 
             const updatedEvents = [...(config.calendarEvents || []), newEv];
-            updateConfig({ ...config, calendarEvents: updatedEvents });
-            saveToSupabase({ ...config, calendarEvents: updatedEvents }, { showToast: false, immediate: true });
+            let updatedVacation = config.vacationConfig;
+            if (isVac) {
+              const vacConf = config.vacationConfig || { initialDays: 26, daysAfterReset: 26, resetDate: '07-21' };
+              const currentUsed = (config.calendarEvents || []).filter(e => e.type === 'vacation' || (e.title || '').toLowerCase().includes('vacacion')).length;
+              const currentTotal = vacConf.totalDays || (typeof vacConf.availableDays === 'number' ? vacConf.availableDays + currentUsed : (vacConf.initialDays || 26));
+              updatedVacation = {
+                ...vacConf,
+                totalDays: currentTotal,
+                initialDays: currentTotal,
+                daysAfterReset: currentTotal
+              };
+            }
+            const updatedConfig = { ...config, calendarEvents: updatedEvents, ...(isVac ? { vacationConfig: updatedVacation } : {}) };
+            updateConfig(updatedConfig);
+            saveToSupabase(updatedConfig, { showToast: false, immediate: true });
+            fetch('/api/config/save-local', {
+              method: 'POST',
+              headers: { 'Content-Type': 'application/json' },
+              body: JSON.stringify(updatedConfig)
+            }).catch(() => {});
 
             finalCardType = 'event';
             finalCardData = newEv;
