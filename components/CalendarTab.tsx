@@ -2228,7 +2228,9 @@ const CalendarTab: React.FC = () => {
                           <div className="flex flex-col">
                             <h4 className="font-bold text-white pr-8 flex items-center gap-1.5">
                               {event.reminderMinutes && event.reminderMinutes > 0 && (
-                                <Bell size={13} className="text-amber-400 fill-amber-400/50 shrink-0" title={`Recordatorio: ${event.reminderMinutes} min antes`} />
+                                <span title={`Recordatorio: ${event.reminderMinutes} min antes`}>
+                                  <Bell size={13} className="text-amber-400 fill-amber-400/50 shrink-0" />
+                                </span>
                               )}
                               <span>{event.title}</span>
                             </h4>
@@ -2886,6 +2888,8 @@ const CalendarTab: React.FC = () => {
                       className="w-full bg-gray-900 border border-gray-700 rounded-lg px-4 py-2 text-white focus:ring-2 focus:ring-amber-500 outline-none"
                     />
                   </div>
+                </div>
+
                 {/* Condicionante de Fecha */}
                 <div className="space-y-1.5 bg-gray-900/60 p-3 rounded-xl border border-gray-700/60">
                   <label className="block text-xs font-bold text-amber-400 uppercase">
