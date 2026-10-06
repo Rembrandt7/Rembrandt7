@@ -114,6 +114,8 @@ function normalizeDate(rawDate: string): string {
   return trimmed;
 }
 
+const REFERENCE_OFF_SATURDAY = new Date('2026-03-07T00:00:00');
+
 function getInPeriodVacationDays(eventsList: CalendarEvent[], resetDateStr: string = '07-21'): number {
   const now = new Date();
   const currentYear = now.getFullYear();
@@ -135,20 +137,27 @@ function getInPeriodVacationDays(eventsList: CalendarEvent[], resetDateStr: stri
     : new Date(currentYear + 1, resetMonth, resetDay - 1, 23, 59, 59);
 
   const dates = new Set(
-    eventsList.filter(e => {
+    (eventsList || []).filter(e => {
       if (!e) return false;
       const t = (e.title || '').toLowerCase();
       const d = (e.description || '').toLowerCase();
       if (t.includes('solicitar') || d.includes('solicitar')) return false;
       if (e.type !== 'vacation' && !t.includes('vacacion') && !d.includes('vacacion')) return false;
       const eventDate = new Date(e.date + 'T00:00:00');
+      // Sunday is non-working day
+      if (eventDate.getDay() === 0) return false;
+      // Alternating off-Saturday
+      if (eventDate.getDay() === 6) {
+        const diffTime = eventDate.getTime() - REFERENCE_OFF_SATURDAY.getTime();
+        const diffDays = Math.round(diffTime / (1000 * 60 * 60 * 24));
+        const diffWeeks = Math.round(diffDays / 7);
+        if (diffWeeks % 2 === 0) return false;
+      }
       return eventDate >= periodStart && eventDate <= periodEnd;
     }).map(e => e.date)
   );
   return dates.size;
 }
-
-const REFERENCE_OFF_SATURDAY = new Date('2026-03-07T00:00:00');
 
 function getDayStatus(date: Date, eventsList: CalendarEvent[]): 'work' | 'off' | 'vacation' | 'off-custom' {
   const y = date.getFullYear();
@@ -412,6 +421,47 @@ export const PanchoAssistantModal: React.FC<PanchoAssistantModalProps> = ({
     toast.success('Conversación reiniciada.');
   };
 
+  const syncWithGoogleCalendar = async (updatedEvents?: CalendarEvent[]) => {
+    try {
+      const tokens = config.googleCalendarTokens;
+      if (!tokens) return;
+      const response = await fetch('/api/calendar/sync', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'x-client-id': googleApiConfig?.clientId || '',
+          'x-client-secret': googleApiConfig?.clientSecret || '',
+          'x-redirect-uri': `${window.location.origin}/api/auth/callback`
+        },
+        body: JSON.stringify({
+          tokens,
+          localEvents: updatedEvents || config.calendarEvents || [],
+          localTokens: config.calendarTokens || [],
+          timeZone: Intl.DateTimeFormat().resolvedOptions().timeZone
+        })
+      });
+      if (response.ok) {
+        const data = await response.json();
+        if (data.events) {
+          const synced = data.events;
+          const currentConf = config;
+          const finalConf = {
+            ...currentConf,
+            calendarEvents: synced,
+            ...(data.tokens ? { calendarTokens: data.tokens } : {}),
+            ...(data.googleCalendarTokens ? { googleCalendarTokens: data.googleCalendarTokens } : {})
+          };
+          updateConfig(finalConf);
+          await saveToSupabase(finalConf, { immediate: true, showToast: false });
+        }
+      }
+    } catch (e) {
+      console.error("[PANCHO] Error syncing with Google Calendar:", e);
+    } finally {
+      window.dispatchEvent(new CustomEvent('reload-calendar'));
+    }
+  };
+
   const performAiRequest = async (userMessage: string) => {
     const userMsgObj: ChatMessage = {
       id: `usr-${Date.now()}`,
@@ -438,6 +488,13 @@ export const PanchoAssistantModal: React.FC<PanchoAssistantModalProps> = ({
       const finanzasCards = config.finanzasCards || [];
       const nutritionProfile = nutritionData?.profile || {};
       const todayLogs = (nutritionData?.logs || []).filter(l => l.date === new Date().toISOString().split('T')[0]);
+
+      const vacConfig = config.vacationConfig || { initialDays: 26, daysAfterReset: 26, resetDate: '07-21', totalDays: 26, availableDays: 22 };
+      const totalVacDays = vacConfig.totalDays || 26;
+      const usedVacDays = getInPeriodVacationDays(events, vacConfig.resetDate);
+      const availVacDays = typeof vacConfig.availableDays === 'number' 
+        ? vacConfig.availableDays 
+        : Math.max(0, totalVacDays - usedVacDays);
 
       const systemInstruction = `
 Eres "Pancho" 🐶🤖, el perrito robot y asistente personal de Rembrandt. Eres leal, inteligente, entusiasta, ágil y de alto rendimiento.
@@ -471,12 +528,17 @@ CONTEXTO Y CAPACIDADES POR PESTAÑA:
 1. CALENDARIO ("calendar"):
    - Eres el Estratega. Analizas eventos, fechas de pago y trabajos sin terminar.
    - Si Rembrandt te pide agendar un evento, usa 'add_event' con fecha en formato YYYY-MM-DD.
+   - Si te pide eliminar un evento, usa 'delete_event' pasando el id o título del evento.
    - Si te pide agregar una nota o producto a la lista de compras o notas de trabajo, usa 'add_note'.
    - Protege su descanso y sus horas de tráfico.
-   - DÍAS DE VACACIONES:
-     * Para AGENDAR o PROGRAMAR días de vacaciones en el calendario, USA OBLIGATORIAMENTE 'add_vacation' (o 'add_event' con type: 'vacation'). Puedes agendar un solo día o un rango (ej. startDate: '2026-11-10', endDate: '2026-11-14').
-     * Cada vez que se programa o usa una vacación en el calendario, se descuenta automáticamente del saldo disponible.
-     * Si te pide editar o consultar sus días disponibles, usa 'set_vacation_days'.
+   - SALDO EXACTO Y REGLAS DE VACACIONES DE REMBRANDT:
+     * TOTAL DE DÍAS POR LEY / PERIODO: ${totalVacDays} días (¡El total legal de Rembrandt es ${totalVacDays}! NUNCA cambies este total a ${availVacDays}. 26 es su derecho total anual, no lo reduzcas ni confundas con los días disponibles).
+     * DÍAS DISFRUTADOS/GASTADOS: ${usedVacDays} días en el periodo actual.
+     * DÍAS DISPONIBLES RESTANTES: ${availVacDays} días de vacaciones disponibles para usar.
+     * CUMPLEAÑOS Y EVENTOS PERSONALES: Cumpleaños (ej. el de su esposa el 03 de noviembre) u otros aniversarios NO son vacaciones; se registran con 'add_event' con type: 'birthday' o 'event', ¡NUNCA como 'vacation'!
+     * AGENDAR VACACIONES: Para AGENDAR o PROGRAMAR días de vacaciones en el calendario, USA OBLIGATORIAMENTE 'add_vacation' (o 'add_event' con type: 'vacation'). Puedes agendar un solo día o un rango (ej. startDate: '2026-11-10', endDate: '2026-11-14').
+     * Cada día laboral agendado descuenta automáticamente 1 día del saldo disponible. Domingos y sábados inhábiles no descuentan.
+     * Si Rembrandt te dice "me quedan 22 días" o "tengo 22 días", se refiere a sus días DISPONIBLES restantes de sus 26 totales. NUNCA uses 'set_vacation_days' modificando el total de 26 a 22.
      * Puedes mover días de vacaciones usando 'move_vacation'.
    - TOKENS DEL CALENDARIO Y CONDICIONANTES:
      * Puedes agregar tokens con 'add_token', moverlos con 'move_token', modificarlos con 'update_token' o marcarlos completados con 'complete_token'.
@@ -831,20 +893,25 @@ REGLAS DE RESPUESTA:
               const updatedEvents = [...currentEvents, ...newVacEvents];
               const vacConf = config.vacationConfig || { initialDays: 26, daysAfterReset: 26, resetDate: '07-21' };
               const currentTotal = vacConf.totalDays || 26;
+              const usedDays = getInPeriodVacationDays(updatedEvents, vacConf.resetDate);
+              const remainingAvailable = Math.max(0, currentTotal - usedDays);
               const updatedVacation = {
                 ...vacConf,
                 totalDays: currentTotal,
                 initialDays: currentTotal,
-                daysAfterReset: currentTotal
+                daysAfterReset: currentTotal,
+                availableDays: remainingAvailable
               };
               const updatedConfig = { ...config, calendarEvents: updatedEvents, vacationConfig: updatedVacation };
               updateConfig(updatedConfig);
-              saveToSupabase(updatedConfig, { showToast: false, immediate: true });
+              await saveToSupabase(updatedConfig, { showToast: false, immediate: true });
               fetch('/api/config/save-local', {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
                 body: JSON.stringify(updatedConfig)
               }).catch(() => {});
+
+              await syncWithGoogleCalendar(updatedEvents);
 
               finalCardType = 'event';
               finalCardData = { title: `🌴 ${newVacEvents.length} día(s) de vacaciones agendado(s)` };
@@ -877,25 +944,66 @@ REGLAS DE RESPUESTA:
             if (isVac) {
               const vacConf = config.vacationConfig || { initialDays: 26, daysAfterReset: 26, resetDate: '07-21' };
               const currentTotal = vacConf.totalDays || 26;
+              const usedDays = getInPeriodVacationDays(updatedEvents, vacConf.resetDate);
+              const remainingAvailable = Math.max(0, currentTotal - usedDays);
               updatedVacation = {
                 ...vacConf,
                 totalDays: currentTotal,
                 initialDays: currentTotal,
-                daysAfterReset: currentTotal
+                daysAfterReset: currentTotal,
+                availableDays: remainingAvailable
               };
             }
             const updatedConfig = { ...config, calendarEvents: updatedEvents, ...(isVac ? { vacationConfig: updatedVacation } : {}) };
             updateConfig(updatedConfig);
-            saveToSupabase(updatedConfig, { showToast: false, immediate: true });
+            await saveToSupabase(updatedConfig, { showToast: false, immediate: true });
             fetch('/api/config/save-local', {
               method: 'POST',
               headers: { 'Content-Type': 'application/json' },
               body: JSON.stringify(updatedConfig)
             }).catch(() => {});
 
+            await syncWithGoogleCalendar(updatedEvents);
+
             finalCardType = 'event';
             finalCardData = newEv;
             toast.success(`📅 Evento "${newEv.title}" agendado para el ${newEv.date}`);
+          }
+
+          else if (call.name === 'delete_event') {
+            const targetIdOrTitle = (args.id || args.title || '').toLowerCase().trim();
+            const currentEvents = config.calendarEvents || [];
+            const remainingEvents = currentEvents.filter(e => 
+              e.id !== args.id && 
+              (e.title || '').toLowerCase() !== targetIdOrTitle
+            );
+            const deletedCount = currentEvents.length - remainingEvents.length;
+            if (deletedCount > 0) {
+              const vacConf = config.vacationConfig || { initialDays: 26, daysAfterReset: 26, resetDate: '07-21' };
+              const currentTotal = vacConf.totalDays || 26;
+              const usedDays = getInPeriodVacationDays(remainingEvents, vacConf.resetDate);
+              const remainingAvailable = Math.max(0, currentTotal - usedDays);
+              const updatedVacation = {
+                ...vacConf,
+                totalDays: currentTotal,
+                initialDays: currentTotal,
+                daysAfterReset: currentTotal,
+                availableDays: remainingAvailable
+              };
+              const updatedConfig = { ...config, calendarEvents: remainingEvents, vacationConfig: updatedVacation };
+              updateConfig(updatedConfig);
+              await saveToSupabase(updatedConfig, { showToast: false, immediate: true });
+              fetch('/api/config/save-local', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify(updatedConfig)
+              }).catch(() => {});
+
+              await syncWithGoogleCalendar(remainingEvents);
+              toast.success(`🗑️ Evento eliminado del calendario.`);
+            } else {
+              toast.info(`No se encontró el evento para eliminar.`);
+            }
           }
 
           else if (call.name === 'add_note') {
@@ -1019,8 +1127,9 @@ REGLAS DE RESPUESTA:
             const availableDays = Number(args.availableDays) || 0;
             const currentEvents = config.calendarEvents || [];
             const vacConf = config.vacationConfig || { initialDays: 26, daysAfterReset: 26, resetDate: '07-21' };
-            const usedDays = getInPeriodVacationDays(currentEvents, vacConf.resetDate);
-            const totalDays = args.totalDays ? Number(args.totalDays) : (vacConf.totalDays || (availableDays + usedDays));
+            const requestedTotal = args.totalDays ? Number(args.totalDays) : undefined;
+            // Proteger total legal: 26 días mínimos a menos que explícitamente se especifique >= 26
+            const totalDays = (requestedTotal && requestedTotal >= 26) ? requestedTotal : (vacConf.totalDays || 26);
             const updatedVacation = {
               ...vacConf,
               availableDays: availableDays,
@@ -1030,16 +1139,17 @@ REGLAS DE RESPUESTA:
             };
             const updatedConfig = { ...config, vacationConfig: updatedVacation };
             updateConfig(updatedConfig);
-            saveToSupabase(updatedConfig, { showToast: false, immediate: true });
+            await saveToSupabase(updatedConfig, { showToast: false, immediate: true });
             fetch('/api/config/save-local', {
               method: 'POST',
               headers: { 'Content-Type': 'application/json' },
               body: JSON.stringify(updatedConfig)
             }).catch(() => {});
+            window.dispatchEvent(new CustomEvent('reload-calendar'));
 
             finalCardType = 'event';
             finalCardData = { title: `🌴 Vacaciones: ${availableDays} días disponibles (${totalDays} totales)` };
-            toast.success(`🌴 Días de vacaciones actualizados a ${availableDays} disponibles.`);
+            toast.success(`🌴 Días de vacaciones actualizados a ${availableDays} disponibles (${totalDays} totales).`);
           }
 
           else if (call.name === 'move_vacation') {
@@ -1058,12 +1168,13 @@ REGLAS DE RESPUESTA:
             if (moved) {
               const updatedConfig = { ...config, calendarEvents: updatedEvents };
               updateConfig(updatedConfig);
-              saveToSupabase(updatedConfig, { showToast: false, immediate: true });
+              await saveToSupabase(updatedConfig, { showToast: false, immediate: true });
               fetch('/api/config/save-local', {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
                 body: JSON.stringify(updatedConfig)
               }).catch(() => {});
+              await syncWithGoogleCalendar(updatedEvents);
               finalCardType = 'event';
               finalCardData = { title: `🌴 Vacación movida a ${toDate}` };
               toast.success(`🌴 Vacación movida de ${fromDate} a ${toDate}`);

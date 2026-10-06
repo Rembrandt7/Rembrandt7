@@ -31,13 +31,14 @@ import {
   Bell,
   Sliders,
   Check,
-  FileText
+  FileText,
+  RotateCcw
 } from 'lucide-react';
 import WeatherForecast from './WeatherForecast';
 import { toast } from 'sonner';
 
 const CalendarTab: React.FC = () => {
-  const { config, updateConfig, saveToSupabase, isEditing, googleApiConfig, updateNotifications } = useLinks();
+  const { config, updateConfig, saveToSupabase, isEditing, googleApiConfig, updateNotifications, fetchConfigFromSupabaseManual } = useLinks();
 
   const configRef = React.useRef(config);
   useEffect(() => {
@@ -764,6 +765,39 @@ const CalendarTab: React.FC = () => {
     }
   };
 
+  const [isReloading, setIsReloading] = useState(false);
+
+  const handleReloadCalendar = async (silent = false) => {
+    setIsReloading(true);
+    try {
+      if (fetchConfigFromSupabaseManual) {
+        await fetchConfigFromSupabaseManual();
+      }
+      if (configRef.current?.googleCalendarTokens) {
+        await handleSyncGoogleCalendar({ silent: true });
+      }
+      if (!silent) {
+        toast.success('¡Calendario actualizado desde la nube y sincronizado!');
+      }
+    } catch (err: any) {
+      console.error('Error al recargar calendario:', err);
+      if (!silent) {
+        toast.error(`Error al actualizar calendario: ${err?.message || 'Error desconocido'}`);
+      }
+    } finally {
+      setIsReloading(false);
+    }
+  };
+
+  // Auto-sync & reload listener from external actions (like Pancho or other tabs)
+  useEffect(() => {
+    const handleGlobalReload = () => {
+      handleReloadCalendar(true);
+    };
+    window.addEventListener('reload-calendar', handleGlobalReload);
+    return () => window.removeEventListener('reload-calendar', handleGlobalReload);
+  }, []);
+
   // Auto-sync 1: On component mount if tokens exist
   useEffect(() => {
     if (config.googleCalendarTokens) {
@@ -1425,20 +1459,31 @@ const CalendarTab: React.FC = () => {
           <h2 className="text-3xl font-bold text-white capitalize leading-none">
             {monthName} <span className="text-gray-500">{year}</span>
           </h2>
-          <div className="flex gap-2 mt-1">
+          <div className="flex gap-2 mt-1 items-center">
             <button 
               onClick={handlePrevMonth} 
-              className="p-1.5 bg-gray-900/50 hover:bg-gray-700 rounded-md text-gray-400 hover:text-white transition-all border border-gray-700"
+              className="p-1.5 bg-gray-900/50 hover:bg-gray-700 rounded-md text-gray-400 hover:text-white transition-all border border-gray-700 cursor-pointer"
               title="Mes anterior"
             >
               <ChevronLeft size={16} />
             </button>
             <button 
               onClick={handleNextMonth} 
-              className="p-1.5 bg-gray-900/50 hover:bg-gray-700 rounded-md text-gray-400 hover:text-white transition-all border border-gray-700"
+              className="p-1.5 bg-gray-900/50 hover:bg-gray-700 rounded-md text-gray-400 hover:text-white transition-all border border-gray-700 cursor-pointer"
               title="Mes siguiente"
             >
               <ChevronRight size={16} />
+            </button>
+
+            {/* Botón de Actualizar / Recargar Calendario */}
+            <button
+              onClick={() => handleReloadCalendar(false)}
+              disabled={isReloading}
+              className="flex items-center gap-1.5 px-3 py-1.5 bg-cyan-950/50 hover:bg-cyan-900/70 text-cyan-300 hover:text-cyan-100 border border-cyan-500/40 rounded-md transition-all shadow-md text-xs font-black uppercase tracking-wider disabled:opacity-50 ml-1 cursor-pointer"
+              title="Volver a cargar y sincronizar el calendario desde la nube sin tener que recargar toda la página"
+            >
+              <RotateCcw size={12} className={isReloading ? 'animate-spin text-cyan-300' : ''} />
+              <span>{isReloading ? 'Cargando...' : 'Actualizar'}</span>
             </button>
           </div>
         </div>
