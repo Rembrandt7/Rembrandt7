@@ -30,7 +30,8 @@ import {
   Sun,
   Bell,
   Sliders,
-  Check
+  Check,
+  FileText
 } from 'lucide-react';
 import WeatherForecast from './WeatherForecast';
 import { toast } from 'sonner';
@@ -257,13 +258,20 @@ const CalendarTab: React.FC = () => {
 
   const REFERENCE_OFF_SATURDAY = new Date('2026-03-07T00:00:00');
 
+  const isVacationRequestEvent = (e: CalendarEvent): boolean => {
+    if (!e) return false;
+    const title = (e.title || '').toLowerCase();
+    const desc = (e.description || '').toLowerCase();
+    return title.includes('solicitar') || desc.includes('solicitar') || title.includes('pedir vacacion') || desc.includes('pedir vacacion');
+  };
+
   const isVacationEvent = (e: CalendarEvent): boolean => {
     if (!e) return false;
+    // Reminders to solicit vacations are not vacation days themselves
+    if (isVacationRequestEvent(e)) return false;
     if (e.type === 'vacation') return true;
     const title = (e.title || '').toLowerCase();
     const desc = (e.description || '').toLowerCase();
-    // Exclude reminders to solicit vacations
-    if (title.includes('solicitar') || desc.includes('solicitar')) return false;
     return title.includes('vacacion') || desc.includes('vacacion');
   };
 
@@ -412,10 +420,21 @@ const CalendarTab: React.FC = () => {
     }
 
     const assignedVacationEvents = events.filter(e => isVacationEvent(e));
+    const requestEvents = events.filter(e => isVacationRequestEvent(e));
 
     // Count unique vacation dates in the current period (multiple activities on the same day count as 1 vacation day)
+    // Non-working days (Sundays and alternating off-Saturdays) do not consume vacation allowance
     const inPeriodVacationEvents = assignedVacationEvents.filter(e => {
       const eventDate = new Date(e.date + 'T00:00:00');
+      // Sunday is non-working day
+      if (eventDate.getDay() === 0) return false;
+      // Alternating off-Saturday
+      if (eventDate.getDay() === 6) {
+        const diffTime = eventDate.getTime() - REFERENCE_OFF_SATURDAY.getTime();
+        const diffDays = Math.round(diffTime / (1000 * 60 * 60 * 24));
+        const diffWeeks = Math.round(diffDays / 7);
+        if (diffWeeks % 2 === 0) return false;
+      }
       return eventDate >= periodStart && eventDate <= periodEnd;
     });
     const uniqueVacationDates = new Set(inPeriodVacationEvents.map(e => e.date));
@@ -451,7 +470,8 @@ const CalendarTab: React.FC = () => {
       used: usedDays,
       resetDate: periodEnd,
       workingDaysRemaining,
-      assignedEvents: assignedVacationEvents.sort((a, b) => a.date.localeCompare(b.date))
+      assignedEvents: assignedVacationEvents.sort((a, b) => a.date.localeCompare(b.date)),
+      requestEvents: requestEvents.sort((a, b) => a.date.localeCompare(b.date))
     };
   }, [events, config.vacationConfig]);
 
@@ -1364,12 +1384,16 @@ const CalendarTab: React.FC = () => {
     return selectedDayEvents.filter(e => e.type === 'trabajo');
   }, [selectedDayEvents]);
 
+  const vacationRequestEvents = useMemo(() => {
+    return selectedDayEvents.filter(e => isVacationRequestEvent(e));
+  }, [selectedDayEvents]);
+
   const vacationEvents = useMemo(() => {
     return selectedDayEvents.filter(e => isVacationEvent(e));
   }, [selectedDayEvents]);
 
   const otherEvents = useMemo(() => {
-    return selectedDayEvents.filter(e => e.type !== 'payment' && e.type !== 'trabajo' && !isVacationEvent(e));
+    return selectedDayEvents.filter(e => e.type !== 'payment' && e.type !== 'trabajo' && !isVacationEvent(e) && !isVacationRequestEvent(e));
   }, [selectedDayEvents]);
 
   const selectedDayTokens = useMemo(() => {
@@ -1714,6 +1738,7 @@ const CalendarTab: React.FC = () => {
                     const dayTokens = (config.calendarTokens || []).filter((t: any) => isTokenOnDate(t, date));
                     const activeTokens = dayTokens.filter((t: any) => t.currentActiveDate === dateStr || (isToday && t.currentActiveDate < dateStr));
 
+                    const hasVacationRequest = dayEvents.some(e => isVacationRequestEvent(e));
                     const reminderEvents = dayEvents.filter(e => (e.reminderMinutes && e.reminderMinutes > 0) || (e.type === 'payment' && !e.isPaid) || (e.type === 'trabajo' && !e.isFinished));
                     const hasReminder = reminderEvents.length > 0 || activeTokens.some((t: any) => t.reminderMinutes && t.reminderMinutes > 0);
                     const reminderCount = reminderEvents.length + activeTokens.filter((t: any) => t.reminderMinutes && t.reminderMinutes > 0).length;
@@ -1742,7 +1767,9 @@ const CalendarTab: React.FC = () => {
                     let borderClass = '';
                     let borderStyle: React.CSSProperties = {};
 
-                    if (hasBirthday) {
+                    if (hasVacationRequest) {
+                      borderClass = 'border-amber-400 border-2 shadow-[0_0_12px_rgba(245,158,11,0.35)]';
+                    } else if (hasBirthday) {
                       borderClass = 'animate-rainbow-border';
                     } else if (hasMedical) {
                       borderClass = 'border-sky-400 border-2';
@@ -1775,6 +1802,11 @@ const CalendarTab: React.FC = () => {
                             <Palmtree size={isPastWeek ? 24 : 56} />
                           </div>
                         )}
+                        {hasVacationRequest && (
+                          <div className="absolute inset-0 flex items-center justify-center opacity-25 pointer-events-none text-amber-400">
+                            <FileText size={isPastWeek ? 24 : 56} />
+                          </div>
+                        )}
                         {hasBirthday && (
                           <div className="absolute inset-0 flex items-center justify-center opacity-20 pointer-events-none animate-pulse">
                             <Cake size={isPastWeek ? 24 : 64} />
@@ -1786,10 +1818,21 @@ const CalendarTab: React.FC = () => {
                           </div>
                         )}
 
+                        {/* Solicitar Vacaciones Badge */}
+                        {hasVacationRequest && (
+                          <div 
+                            className="absolute top-1 left-1 flex items-center gap-0.5 px-1.5 py-0.5 rounded-full bg-amber-500/35 border border-amber-400 text-amber-200 shadow-[0_0_8px_rgba(245,158,11,0.5)] z-30 animate-pulse font-black"
+                            title="¡Fecha para tramitar / solicitar vacaciones!"
+                          >
+                            <FileText size={9} className="text-amber-300 shrink-0" />
+                            <span className="text-[7.5px] font-black uppercase tracking-wider leading-none">Pedir Vac</span>
+                          </div>
+                        )}
+
                         {/* Recordatorio Symbol / Badge */}
                         {hasReminder && (
                           <div 
-                            className="absolute top-1 left-1 flex items-center gap-0.5 px-1 py-0.5 rounded-full bg-amber-500/25 border border-amber-400/50 text-amber-300 shadow-[0_0_8px_rgba(245,158,11,0.4)] z-30 animate-pulse"
+                            className={`absolute top-1 ${hasVacationRequest ? 'left-16' : 'left-1'} flex items-center gap-0.5 px-1 py-0.5 rounded-full bg-amber-500/25 border border-amber-400/50 text-amber-300 shadow-[0_0_8px_rgba(245,158,11,0.4)] z-30 animate-pulse`}
                             title={`Recordatorio: ${reminderEvents.map(e => e.title).join(', ') || 'Pendiente activo'}`}
                           >
                             <Bell size={10} className="fill-amber-400 text-amber-300 shrink-0" />
@@ -1826,12 +1869,14 @@ const CalendarTab: React.FC = () => {
                         {/* Event Titles */}
                         <div className={`flex-grow overflow-hidden flex flex-col gap-1 z-10 w-full ${isPastWeek ? 'group-hover/week:opacity-100 opacity-0' : ''}`}>
                           {(() => {
+                            const vacationRequests = dayEvents.filter(e => isVacationRequestEvent(e));
                             const vacations = dayEvents.filter(e => isVacationEvent(e));
-                            const payments = dayEvents.filter(e => e.type === 'payment' && !isVacationEvent(e));
-                            const others = dayEvents.filter(e => e.type !== 'payment' && !isVacationEvent(e));
+                            const payments = dayEvents.filter(e => e.type === 'payment' && !isVacationEvent(e) && !isVacationRequestEvent(e));
+                            const others = dayEvents.filter(e => e.type !== 'payment' && !isVacationEvent(e) && !isVacationRequestEvent(e));
                             
                             const displayItems = [];
-                            // 1. Vacations first so they are never hidden or pushed out
+                            // 1. Vacation requests and vacations first so they are never hidden or pushed out
+                            displayItems.push(...vacationRequests);
                             displayItems.push(...vacations);
 
                             // 2. Payments
@@ -1854,6 +1899,7 @@ const CalendarTab: React.FC = () => {
                             displayItems.push(...others);
                             
                             return displayItems.slice(0, isPastWeek ? 1 : 3).map(e => {
+                              const isVacReq = isVacationRequestEvent(e as any);
                               const isVacation = isVacationEvent(e as any);
                               return (
                               <div 
@@ -1865,16 +1911,28 @@ const CalendarTab: React.FC = () => {
                                   if (!(e as any).isStack) openEditModal(e as any);
                                 }}
                                 className={`text-[10px] font-black leading-tight truncate px-1.5 py-0.5 rounded-md text-left w-full transition-all flex items-center gap-1 cursor-pointer ${
-                                  isVacation 
-                                    ? 'bg-emerald-500/25 text-emerald-300 border border-emerald-500/40 hover:bg-emerald-500/35 shadow-sm'
-                                    : (e as any).isStack 
-                                      ? 'bg-green-500/30 border border-green-500/40' 
-                                      : 'bg-black/40 hover:bg-black/60'
+                                  isVacReq
+                                    ? 'bg-amber-500/30 text-amber-200 border border-amber-400/80 hover:bg-amber-500/45 shadow-[0_0_8px_rgba(245,158,11,0.35)]'
+                                    : isVacation 
+                                      ? 'bg-emerald-500/25 text-emerald-300 border border-emerald-500/40 hover:bg-emerald-500/35 shadow-sm'
+                                      : (e as any).isStack 
+                                        ? 'bg-green-500/30 border border-green-500/40' 
+                                        : 'bg-black/40 hover:bg-black/60'
                                 } ${e.isPaid || e.isFinished ? 'opacity-40 grayscale' : ''}`}
-                                style={{ color: isVacation ? '#6ee7b7' : getJobColor(e as any) }}
-                                title={(e as any).isStack ? 'Múltiples obligaciones financieras' : `${e.title}${e.recurrence && e.recurrence !== 'none' ? ` (Repite: ${e.recurrence})` : ''}${e.time ? ' - ' + e.time : ''}${e.description ? '\n' + e.description : ''}`}
+                                style={{ color: isVacReq ? '#fef08a' : isVacation ? '#6ee7b7' : getJobColor(e as any) }}
+                                title={
+                                  (e as any).isStack 
+                                    ? 'Múltiples obligaciones financieras' 
+                                    : isVacReq
+                                      ? `📋 ${e.title} - Solicitar en RH con anticipación${e.description ? '\n' + e.description : ''}`
+                                      : isVacation
+                                        ? `🌴 ${e.title} (Vacaciones)${e.description ? '\n' + e.description : ''}`
+                                        : `${e.title}${e.recurrence && e.recurrence !== 'none' ? ` (Repite: ${e.recurrence})` : ''}${e.time ? ' - ' + e.time : ''}${e.description ? '\n' + e.description : ''}`
+                                }
                               >
-                                {isVacation ? (
+                                {isVacReq ? (
+                                  <FileText size={9} className="text-amber-300 shrink-0" />
+                                ) : isVacation ? (
                                   <Palmtree size={9} className="text-emerald-400 shrink-0" />
                                 ) : (
                                   <>
@@ -2243,9 +2301,64 @@ const CalendarTab: React.FC = () => {
                   </div>
                 )}
 
-                {vacationEvents.length > 0 && (
+                {vacationRequestEvents.length > 0 && (
                   <div className="space-y-3">
                     {(financialObligations.length > 0 || jobEvents.length > 0) && <div className="h-[1px] bg-gray-800 my-4" />}
+                    <h4 className="text-xs font-black text-amber-400 uppercase tracking-widest flex items-center gap-2 mb-2">
+                      <FileText size={14} className="text-amber-400" />
+                      Trámite / Solicitud de Vacaciones
+                    </h4>
+                    {vacationRequestEvents.map(event => (
+                      <div 
+                        key={event.id} 
+                        className="bg-amber-950/30 rounded-lg p-4 border border-amber-500/50 border-l-4 border-l-amber-400 group relative hover:bg-amber-950/50 transition-all shadow-md shadow-amber-950/20"
+                      >
+                        <div className="flex justify-between items-start mb-1">
+                          <div className="flex flex-col">
+                            <h4 className="font-bold text-amber-200 pr-8 flex items-center gap-2">
+                              <FileText size={15} className="text-amber-400 shrink-0" />
+                              <span>{event.title}</span>
+                            </h4>
+                            <span className="text-[10px] text-amber-400 font-black uppercase tracking-wider mt-0.5 flex items-center gap-1">
+                              ⚡ Fecha clave para solicitar vacaciones en RH
+                            </span>
+                          </div>
+                          <div className="flex gap-1 opacity-0 group-hover:opacity-100 transition-opacity absolute top-2 right-2">
+                            <button 
+                              onClick={(e) => {
+                                e.stopPropagation();
+                                handleDeleteEvent(event.id, e);
+                              }} 
+                              className="p-1 text-gray-400 hover:text-red-400 transition-colors"
+                              title="Eliminar recordatorio"
+                            >
+                              <Trash2 size={14} />
+                            </button>
+                          </div>
+                        </div>
+                        {event.time && (
+                          <div className="flex items-center gap-1 text-xs text-amber-300/80 mb-2">
+                            <Clock size={12} />
+                            {event.time}
+                          </div>
+                        )}
+                        {event.description && (
+                          <p className="text-sm text-amber-200/80 line-clamp-3 mt-1 italic">{event.description}</p>
+                        )}
+                        <button 
+                          onClick={() => openEditModal(event)}
+                          className="mt-2 text-xs text-amber-400 hover:text-amber-300 font-bold"
+                        >
+                          Editar recordatorio
+                        </button>
+                      </div>
+                    ))}
+                  </div>
+                )}
+
+                {vacationEvents.length > 0 && (
+                  <div className="space-y-3">
+                    {(financialObligations.length > 0 || jobEvents.length > 0 || vacationRequestEvents.length > 0) && <div className="h-[1px] bg-gray-800 my-4" />}
                     <h4 className="text-xs font-black text-emerald-400 uppercase tracking-widest flex items-center gap-2 mb-2">
                       <Palmtree size={14} className="text-emerald-400" />
                       Días de Vacaciones
@@ -2287,6 +2400,10 @@ const CalendarTab: React.FC = () => {
                         {event.description && (
                           <p className="text-sm text-emerald-200/70 line-clamp-2 mt-1">{event.description}</p>
                         )}
+                        <div className="flex items-center gap-1.5 text-[10px] text-amber-300/90 bg-amber-500/10 px-2 py-1 rounded border border-amber-500/20 mt-2">
+                          <FileText size={11} className="shrink-0 text-amber-400" />
+                          <span>Recordatorio: Tramitar en RH con al menos 5 días de anticipación</span>
+                        </div>
                         <button 
                           onClick={() => openEditModal(event)}
                           className="mt-2 text-xs text-emerald-400 hover:text-emerald-300 font-semibold"
@@ -2478,6 +2595,38 @@ const CalendarTab: React.FC = () => {
                   <Pencil size={12} />
                   Editar Días Disponibles
                 </button>
+              </div>
+            )}
+
+            {/* Recordatorios de Trámite / Solicitud */}
+            {vacationStats.requestEvents && vacationStats.requestEvents.length > 0 && (
+              <div className="bg-amber-950/20 border border-amber-500/30 rounded-xl p-3.5 my-3">
+                <h3 className="text-xs font-black text-amber-300 uppercase tracking-wider flex items-center gap-1.5 mb-2">
+                  <FileText size={14} className="text-amber-400" />
+                  Fechas Clave para Solicitar Vacaciones
+                </h3>
+                <div className="space-y-1.5 max-h-36 overflow-y-auto custom-scrollbar pr-1">
+                  {vacationStats.requestEvents.map(rEvent => (
+                    <div 
+                      key={rEvent.id} 
+                      className="flex items-center justify-between text-xs bg-gray-900/60 p-2 rounded-lg border border-amber-500/20"
+                    >
+                      <div className="truncate mr-2">
+                        <span className="font-bold text-amber-200">{rEvent.title}</span>
+                        <span className="text-[10px] text-gray-400 block">{rEvent.date} {rEvent.description ? `• ${rEvent.description}` : ''}</span>
+                      </div>
+                      <button
+                        onClick={() => {
+                          setIsVacationListOpen(false);
+                          openEditModal(rEvent);
+                        }}
+                        className="text-[10px] font-bold text-amber-400 hover:text-amber-300 bg-amber-500/10 hover:bg-amber-500/20 px-2 py-1 rounded shrink-0 border border-amber-500/30"
+                      >
+                        Ver
+                      </button>
+                    </div>
+                  ))}
+                </div>
               </div>
             )}
 

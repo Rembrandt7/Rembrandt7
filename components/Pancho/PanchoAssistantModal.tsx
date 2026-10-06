@@ -777,8 +777,12 @@ REGLAS DE RESPUESTA:
             const newVacEvents: CalendarEvent[] = [];
 
             while (d <= endD) {
-              const curStr = d.toISOString().split('T')[0];
-              const exists = currentEvents.some(e => e.date === curStr && (e.type === 'vacation' || (e.title || '').toLowerCase().includes('vacacion')));
+              const y = d.getFullYear();
+              const m = String(d.getMonth() + 1).padStart(2, '0');
+              const dayNum = String(d.getDate()).padStart(2, '0');
+              const curStr = `${y}-${m}-${dayNum}`;
+
+              const exists = currentEvents.some(e => e.date === curStr && (e.type === 'vacation' || (e.title || '').toLowerCase().includes('vacacion')) && !(e.title || '').toLowerCase().includes('solicitar'));
               if (!exists) {
                 newVacEvents.push({
                   id: Date.now().toString() + Math.random().toString(36).substr(2, 5),
@@ -791,6 +795,36 @@ REGLAS DE RESPUESTA:
                 });
               }
               d.setDate(d.getDate() + 1);
+            }
+
+            // Also ensure there is a reminder event to request these vacations in advance
+            if (newVacEvents.length > 0) {
+              const remDate = new Date(startDate + 'T00:00:00');
+              remDate.setDate(remDate.getDate() - 5);
+              if (remDate.getDay() === 0) remDate.setDate(remDate.getDate() - 2);
+              if (remDate.getDay() === 6) remDate.setDate(remDate.getDate() - 1);
+              const ry = remDate.getFullYear();
+              const rm = String(remDate.getMonth() + 1).padStart(2, '0');
+              const rd = String(remDate.getDate()).padStart(2, '0');
+              const remStr = `${ry}-${rm}-${rd}`;
+
+              const alreadyHasReq = currentEvents.some(e => 
+                (e.title || '').toLowerCase().includes('solicitar') && 
+                (e.date === remStr || (e.description || '').includes(startDate))
+              );
+
+              if (!alreadyHasReq) {
+                newVacEvents.push({
+                  id: Date.now().toString() + 'req' + Math.random().toString(36).substr(2, 4),
+                  title: `SOLICITAR VACACIONES (Bloque ${startDate.substring(5)}${endDate !== startDate ? ' al ' + endDate.substring(5) : ''})`,
+                  date: remStr,
+                  time: '09:00',
+                  type: 'vacation',
+                  color: '#f59e0b',
+                  description: `Recordatorio: Tramitar y solicitar vacaciones del ${startDate} al ${endDate} en RH con anticipación.`,
+                  recurrence: 'none'
+                });
+              }
             }
 
             if (newVacEvents.length > 0) {
