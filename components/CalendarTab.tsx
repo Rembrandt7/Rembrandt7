@@ -1364,8 +1364,12 @@ const CalendarTab: React.FC = () => {
     return selectedDayEvents.filter(e => e.type === 'trabajo');
   }, [selectedDayEvents]);
 
+  const vacationEvents = useMemo(() => {
+    return selectedDayEvents.filter(e => isVacationEvent(e));
+  }, [selectedDayEvents]);
+
   const otherEvents = useMemo(() => {
-    return selectedDayEvents.filter(e => e.type !== 'payment' && e.type !== 'trabajo');
+    return selectedDayEvents.filter(e => e.type !== 'payment' && e.type !== 'trabajo' && !isVacationEvent(e));
   }, [selectedDayEvents]);
 
   const selectedDayTokens = useMemo(() => {
@@ -1722,7 +1726,7 @@ const CalendarTab: React.FC = () => {
                     
                     let statusClasses = '';
                     if (status === 'vacation') {
-                      statusClasses = 'bg-emerald-950/40 border-emerald-500/50 text-emerald-200/90 shadow-sm shadow-emerald-900/20';
+                      statusClasses = 'bg-emerald-950/60 border-emerald-500/70 text-emerald-200 shadow-md shadow-emerald-950/40';
                     } else if (status === 'work') {
                       statusClasses = 'bg-orange-500/10 border-orange-500/20 text-orange-200/60';
                     } else if (status === 'off' || status === 'off-custom') {
@@ -1767,7 +1771,7 @@ const CalendarTab: React.FC = () => {
                         style={borderStyle}
                       >
                         {status === 'vacation' && (
-                          <div className="absolute inset-0 flex items-center justify-center opacity-25 pointer-events-none text-emerald-400">
+                          <div className="absolute inset-0 flex items-center justify-center opacity-40 pointer-events-none text-emerald-400">
                             <Palmtree size={isPastWeek ? 24 : 56} />
                           </div>
                         )}
@@ -1799,7 +1803,7 @@ const CalendarTab: React.FC = () => {
                         <div className="absolute top-1 right-1 flex flex-col gap-1 z-30">
                           {activeTokens.map((token: any) => (
                             <div 
-                              key={token.id}
+                              key={token.id} 
                               className="w-5 h-5 rounded-full flex items-center justify-center shadow-lg border border-white/20 animate-pulse"
                               style={{ backgroundColor: token.color || '#f59e0b' }}
                               title={token.name}
@@ -1809,7 +1813,7 @@ const CalendarTab: React.FC = () => {
                           ))}
                           {dayTokens.filter((t: any) => t.currentActiveDate !== dateStr).map((token: any) => (
                             <div 
-                              key={token.id}
+                              key={token.id} 
                               className="w-4 h-4 rounded-full flex items-center justify-center shadow-lg border border-white/10 opacity-40"
                               style={{ backgroundColor: token.color || '#f59e0b' }}
                               title={`${token.name} (Próximo)`}
@@ -1822,10 +1826,15 @@ const CalendarTab: React.FC = () => {
                         {/* Event Titles */}
                         <div className={`flex-grow overflow-hidden flex flex-col gap-1 z-10 w-full ${isPastWeek ? 'group-hover/week:opacity-100 opacity-0' : ''}`}>
                           {(() => {
-                            const payments = dayEvents.filter(e => e.type === 'payment');
-                            const others = dayEvents.filter(e => e.type !== 'payment');
+                            const vacations = dayEvents.filter(e => isVacationEvent(e));
+                            const payments = dayEvents.filter(e => e.type === 'payment' && !isVacationEvent(e));
+                            const others = dayEvents.filter(e => e.type !== 'payment' && !isVacationEvent(e));
                             
                             const displayItems = [];
+                            // 1. Vacations first so they are never hidden or pushed out
+                            displayItems.push(...vacations);
+
+                            // 2. Payments
                             if (payments.length > 0) {
                               if (payments.length === 1) {
                                 displayItems.push(payments[0]);
@@ -1841,9 +1850,12 @@ const CalendarTab: React.FC = () => {
                                 });
                               }
                             }
+                            // 3. Other events
                             displayItems.push(...others);
                             
-                            return displayItems.slice(0, isPastWeek ? 1 : 3).map(e => (
+                            return displayItems.slice(0, isPastWeek ? 1 : 3).map(e => {
+                              const isVacation = isVacationEvent(e as any);
+                              return (
                               <div 
                                 key={e.id} 
                                 draggable={!(e as any).isStack}
@@ -1853,19 +1865,30 @@ const CalendarTab: React.FC = () => {
                                   if (!(e as any).isStack) openEditModal(e as any);
                                 }}
                                 className={`text-[10px] font-black leading-tight truncate px-1.5 py-0.5 rounded-md text-left w-full transition-all flex items-center gap-1 cursor-pointer ${
-                                  (e as any).isStack ? 'bg-green-500/30 border border-green-500/40' : 'bg-black/40 hover:bg-black/60'
+                                  isVacation 
+                                    ? 'bg-emerald-500/25 text-emerald-300 border border-emerald-500/40 hover:bg-emerald-500/35 shadow-sm'
+                                    : (e as any).isStack 
+                                      ? 'bg-green-500/30 border border-green-500/40' 
+                                      : 'bg-black/40 hover:bg-black/60'
                                 } ${e.isPaid || e.isFinished ? 'opacity-40 grayscale' : ''}`}
-                                style={{ color: getJobColor(e as any) }}
+                                style={{ color: isVacation ? '#6ee7b7' : getJobColor(e as any) }}
                                 title={(e as any).isStack ? 'Múltiples obligaciones financieras' : `${e.title}${e.recurrence && e.recurrence !== 'none' ? ` (Repite: ${e.recurrence})` : ''}${e.time ? ' - ' + e.time : ''}${e.description ? '\n' + e.description : ''}`}
                               >
-                                {e.type === 'payment' && <DollarSign size={8} className="shrink-0" />}
-                                {e.type === 'trabajo' && <Brain size={8} className="shrink-0" />}
-                                {((e as any).reminderMinutes && (e as any).reminderMinutes > 0) && (
-                                  <Bell size={8} className="text-amber-400 shrink-0 fill-amber-400/60" />
+                                {isVacation ? (
+                                  <Palmtree size={9} className="text-emerald-400 shrink-0" />
+                                ) : (
+                                  <>
+                                    {e.type === 'payment' && <DollarSign size={8} className="shrink-0" />}
+                                    {e.type === 'trabajo' && <Brain size={8} className="shrink-0" />}
+                                    {((e as any).reminderMinutes && (e as any).reminderMinutes > 0) && (
+                                      <Bell size={8} className="text-amber-400 shrink-0 fill-amber-400/60" />
+                                    )}
+                                  </>
                                 )}
                                 <span className="truncate uppercase">{e.title}</span>
                               </div>
-                            ));
+                              );
+                            });
                           })()}
                         </div>
 
@@ -1883,7 +1906,7 @@ const CalendarTab: React.FC = () => {
               );
             })}
           </div>
-          <div className="mt-6 flex gap-4 text-xs font-medium">
+          <div className="mt-6 flex flex-wrap gap-4 text-xs font-medium">
             <div className="flex items-center gap-2">
               <div className="w-3 h-3 rounded bg-orange-500/20 border border-orange-500/40" />
               <span className="text-gray-400">Día Laboral</span>
@@ -1891,6 +1914,12 @@ const CalendarTab: React.FC = () => {
             <div className="flex items-center gap-2">
               <div className="w-3 h-3 rounded bg-green-500/20 border border-green-500/40" />
               <span className="text-gray-400">Día Libre / Feriado</span>
+            </div>
+            <div className="flex items-center gap-2">
+              <div className="w-3 h-3 rounded bg-emerald-500/30 border border-emerald-500/60 flex items-center justify-center">
+                <Palmtree size={8} className="text-emerald-400" />
+              </div>
+              <span className="text-emerald-300 font-semibold">Vacaciones</span>
             </div>
           </div>
         </div>
@@ -2214,9 +2243,64 @@ const CalendarTab: React.FC = () => {
                   </div>
                 )}
 
+                {vacationEvents.length > 0 && (
+                  <div className="space-y-3">
+                    {(financialObligations.length > 0 || jobEvents.length > 0) && <div className="h-[1px] bg-gray-800 my-4" />}
+                    <h4 className="text-xs font-black text-emerald-400 uppercase tracking-widest flex items-center gap-2 mb-2">
+                      <Palmtree size={14} className="text-emerald-400" />
+                      Días de Vacaciones
+                    </h4>
+                    {vacationEvents.map(event => (
+                      <div 
+                        key={event.id} 
+                        className="bg-emerald-950/40 rounded-lg p-4 border border-emerald-500/40 border-l-4 border-l-emerald-400 group relative hover:bg-emerald-950/60 transition-all shadow-md shadow-emerald-950/20"
+                      >
+                        <div className="flex justify-between items-start mb-1">
+                          <div className="flex flex-col">
+                            <h4 className="font-bold text-emerald-200 pr-8 flex items-center gap-2">
+                              <Palmtree size={15} className="text-emerald-400 shrink-0" />
+                              <span>{event.title || 'Día de Vacaciones'}</span>
+                            </h4>
+                            <span className="text-[10px] text-emerald-400/90 font-bold uppercase tracking-wider mt-0.5">
+                              Asignado en Calendario
+                            </span>
+                          </div>
+                          <div className="flex gap-1 opacity-0 group-hover:opacity-100 transition-opacity absolute top-2 right-2">
+                            <button 
+                              onClick={(e) => {
+                                e.stopPropagation();
+                                handleDeleteEvent(event.id, e);
+                              }} 
+                              className="p-1 text-gray-400 hover:text-red-400 transition-colors"
+                              title="Eliminar día de vacaciones"
+                            >
+                              <Trash2 size={14} />
+                            </button>
+                          </div>
+                        </div>
+                        {event.time && (
+                          <div className="flex items-center gap-1 text-xs text-emerald-300/80 mb-2">
+                            <Clock size={12} />
+                            {event.time}
+                          </div>
+                        )}
+                        {event.description && (
+                          <p className="text-sm text-emerald-200/70 line-clamp-2 mt-1">{event.description}</p>
+                        )}
+                        <button 
+                          onClick={() => openEditModal(event)}
+                          className="mt-2 text-xs text-emerald-400 hover:text-emerald-300 font-semibold"
+                        >
+                          Editar detalles
+                        </button>
+                      </div>
+                    ))}
+                  </div>
+                )}
+
                 {otherEvents.length > 0 && (
                   <div className="space-y-3">
-                    {financialObligations.length > 0 && <div className="h-[1px] bg-gray-800 my-4" />}
+                    {(financialObligations.length > 0 || jobEvents.length > 0 || vacationEvents.length > 0) && <div className="h-[1px] bg-gray-800 my-4" />}
                     <h4 className="text-xs font-black text-blue-500 uppercase tracking-widest flex items-center gap-2 mb-2">
                       <Calendar size={14} />
                       Otros Eventos
