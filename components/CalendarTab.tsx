@@ -38,7 +38,7 @@ import WeatherForecast from './WeatherForecast';
 import { toast } from 'sonner';
 
 const CalendarTab: React.FC = () => {
-  const { config, updateConfig, saveToSupabase, isEditing, googleApiConfig, updateNotifications, fetchConfigFromSupabaseManual } = useLinks();
+  const { config, updateConfig, saveToSupabase, isEditing, googleApiConfig, updateNotifications } = useLinks();
 
   const configRef = React.useRef(config);
   useEffect(() => {
@@ -487,7 +487,8 @@ const CalendarTab: React.FC = () => {
       vacationConfig: updatedVacConfig
     };
     updateConfig(updatedConfig);
-    await saveToSupabase(updatedConfig, { immediate: true, showToast: false });
+    localStorage.setItem('appLinksConfig', JSON.stringify(updatedConfig));
+    localStorage.setItem('calendarEvents_backup', JSON.stringify(updatedConfig.calendarEvents || []));
     try {
       fetch('/api/config/save-local', {
         method: 'POST',
@@ -533,8 +534,8 @@ const CalendarTab: React.FC = () => {
       console.log("[CALENDAR] Auto-normalizing past car tokens to present/future...");
       const updatedConfig = { ...config, calendarTokens: normalizedTokens };
       updateConfig(updatedConfig);
-      saveToSupabase(updatedConfig, { immediate: true, showToast: false });
       try {
+        localStorage.setItem('appLinksConfig', JSON.stringify(updatedConfig));
         fetch('/api/config/save-local', {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
@@ -680,7 +681,14 @@ const CalendarTab: React.FC = () => {
         // Save tokens
         const updatedConfigWithTokens = { ...config, googleCalendarTokens: tokens };
         updateConfig(updatedConfigWithTokens);
-        await saveToSupabase(updatedConfigWithTokens);
+        try {
+          localStorage.setItem('appLinksConfig', JSON.stringify(updatedConfigWithTokens));
+          fetch('/api/config/save-local', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify(updatedConfigWithTokens)
+          }).catch(() => {});
+        } catch (_) {}
       }
 
       // Sync with server
@@ -706,7 +714,14 @@ const CalendarTab: React.FC = () => {
           console.warn("[CALENDAR] Token expired or invalid. Resetting googleCalendarTokens.");
           const updatedConfig = { ...config, googleCalendarTokens: null };
           updateConfig(updatedConfig);
-          await saveToSupabase(updatedConfig);
+          try {
+            localStorage.setItem('appLinksConfig', JSON.stringify(updatedConfig));
+            fetch('/api/config/save-local', {
+              method: 'POST',
+              headers: { 'Content-Type': 'application/json' },
+              body: JSON.stringify(updatedConfig)
+            }).catch(() => {});
+          } catch (_) {}
           
           if (!silent) {
             toast.error('Tu sesión de Google Calendar ha caducado. Vuelve a hacer clic para reconectar tu cuenta.', {
@@ -739,7 +754,15 @@ const CalendarTab: React.FC = () => {
         ...(updatedGoogleTokens ? { googleCalendarTokens: updatedGoogleTokens } : {})
       };
       updateConfig(finalConfig);
-      await saveToSupabase(finalConfig, { immediate: true, showToast: false });
+      try {
+        localStorage.setItem('appLinksConfig', JSON.stringify(finalConfig));
+        localStorage.setItem('calendarEvents_backup', JSON.stringify(normalizedSyncedEvents));
+        fetch('/api/config/save-local', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify(finalConfig)
+        }).catch(() => {});
+      } catch (_) {}
 
       const nowTime = new Date().toLocaleTimeString('es-MX', { hour: '2-digit', minute: '2-digit' });
       setLastSyncTime(nowTime);
@@ -765,22 +788,47 @@ const CalendarTab: React.FC = () => {
   const handleReloadCalendar = async (silent = false) => {
     setIsReloading(true);
     try {
-      if (fetchConfigFromSupabaseManual) {
-        await fetchConfigFromSupabaseManual();
-      }
       if (configRef.current?.googleCalendarTokens) {
-        await handleSyncGoogleCalendar({ silent: true });
-      }
-      if (!silent) {
-        toast.success('¡Calendario actualizado desde la nube y sincronizado!');
+        await handleSyncGoogleCalendar({ silent });
+      } else {
+        if (!silent) {
+          toast.info('Google Calendar no está conectado. Haz clic en "Conectar" para sincronizar tus eventos.');
+        }
       }
     } catch (err: any) {
-      console.error('Error al recargar calendario:', err);
+      console.error('Error al sincronizar con Google Calendar:', err);
       if (!silent) {
-        toast.error(`Error al actualizar calendario: ${err?.message || 'Error desconocido'}`);
+        toast.error(`Error al sincronizar con Google Calendar: ${err?.message || 'Error desconocido'}`);
       }
     } finally {
       setIsReloading(false);
+    }
+  };
+
+  const handleSaveCalendarManual = async () => {
+    try {
+      localStorage.setItem('appLinksConfig', JSON.stringify(config));
+      localStorage.setItem('calendarEvents_backup', JSON.stringify(events));
+      fetch('/api/config/save-local', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(config)
+      }).catch(() => {});
+
+      if (config.googleCalendarTokens) {
+        toast.loading('Sincronizando con Google Calendar...', { id: 'manual-cal-sync' });
+        const ok = await handleSyncGoogleCalendar({ silent: true });
+        toast.dismiss('manual-cal-sync');
+        if (ok) {
+          toast.success('¡Calendario guardado y sincronizado con Google!');
+        } else {
+          toast.success('¡Calendario guardado localmente!');
+        }
+      } else {
+        toast.success('¡Calendario guardado localmente!');
+      }
+    } catch (e: any) {
+      toast.error('Error al guardar el calendario');
     }
   };
 
@@ -904,6 +952,15 @@ const CalendarTab: React.FC = () => {
     }
 
     updateConfig(newConfig);
+    localStorage.setItem('appLinksConfig', JSON.stringify(newConfig));
+    localStorage.setItem('calendarEvents_backup', JSON.stringify(updatedEvents));
+    try {
+      fetch('/api/config/save-local', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(newConfig)
+      }).catch(() => {});
+    } catch (_) {}
 
     setIsModalOpen(false);
     setEditingEvent(null);
@@ -920,14 +977,11 @@ const CalendarTab: React.FC = () => {
       isVariable: false
     });
     
-    // Explicitly save to database
-    setTimeout(() => saveToSupabase(), 100);
-
     // Auto-sync with Google Calendar in background if connected
     if (config.googleCalendarTokens) {
       setTimeout(() => {
         handleSyncGoogleCalendar({ silent: true, customEvents: updatedEvents });
-      }, 300);
+      }, 100);
     }
   };
 
@@ -974,8 +1028,8 @@ const CalendarTab: React.FC = () => {
       conditionTarget: ''
     });
 
-    await saveToSupabase(updatedConfig, { immediate: true, showToast: false });
     try {
+      localStorage.setItem('appLinksConfig', JSON.stringify(updatedConfig));
       fetch('/api/config/save-local', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
@@ -1121,8 +1175,8 @@ const CalendarTab: React.FC = () => {
     };
 
     updateConfig(updatedConfig);
-    await saveToSupabase(updatedConfig, { immediate: true, showToast: false });
     try {
+      localStorage.setItem('appLinksConfig', JSON.stringify(updatedConfig));
       fetch('/api/config/save-local', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
@@ -1212,7 +1266,14 @@ const CalendarTab: React.FC = () => {
       calendarTokens: updatedTokens
     };
     updateConfig(updatedConfig);
-    saveToSupabase(updatedConfig, { immediate: true, showToast: false });
+    try {
+      localStorage.setItem('appLinksConfig', JSON.stringify(updatedConfig));
+      fetch('/api/config/save-local', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(updatedConfig)
+      }).catch(() => {});
+    } catch (_) {}
 
     // Auto-sync with Google Calendar in background if connected
     if (currentConfig.googleCalendarTokens) {
@@ -1224,11 +1285,24 @@ const CalendarTab: React.FC = () => {
 
   const handleDeleteToken = (id: string) => {
     const updatedTokens = (config.calendarTokens || []).filter((t: any) => t.id !== id);
-    updateConfig({
+    const updatedConfig = {
       ...config,
       calendarTokens: updatedTokens
-    });
-    setTimeout(() => saveToSupabase(), 100);
+    };
+    updateConfig(updatedConfig);
+    try {
+      localStorage.setItem('appLinksConfig', JSON.stringify(updatedConfig));
+      fetch('/api/config/save-local', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(updatedConfig)
+      }).catch(() => {});
+    } catch (_) {}
+    if (config.googleCalendarTokens) {
+      setTimeout(() => {
+        handleSyncGoogleCalendar({ silent: true, customTokens: updatedTokens });
+      }, 300);
+    }
   };
 
   const handleTogglePaid = (id: string) => {
@@ -1260,11 +1334,25 @@ const CalendarTab: React.FC = () => {
       return e.id === id ? { ...e, isPaid: !e.isPaid } : e;
     });
 
-    updateConfig({
+    const updatedConfig = {
       ...config,
       calendarEvents: updatedEvents
-    });
-    setTimeout(() => saveToSupabase(), 100);
+    };
+    updateConfig(updatedConfig);
+    try {
+      localStorage.setItem('appLinksConfig', JSON.stringify(updatedConfig));
+      localStorage.setItem('calendarEvents_backup', JSON.stringify(updatedEvents));
+      fetch('/api/config/save-local', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(updatedConfig)
+      }).catch(() => {});
+    } catch (_) {}
+    if (config.googleCalendarTokens) {
+      setTimeout(() => {
+        handleSyncGoogleCalendar({ silent: true, customEvents: updatedEvents });
+      }, 300);
+    }
   };
 
   const handleToggleFinished = (id: string) => {
@@ -1283,11 +1371,25 @@ const CalendarTab: React.FC = () => {
       return e;
     });
 
-    updateConfig({
+    const updatedConfig = {
       ...config,
       calendarEvents: updatedEvents
-    });
-    setTimeout(() => saveToSupabase(), 100);
+    };
+    updateConfig(updatedConfig);
+    try {
+      localStorage.setItem('appLinksConfig', JSON.stringify(updatedConfig));
+      localStorage.setItem('calendarEvents_backup', JSON.stringify(updatedEvents));
+      fetch('/api/config/save-local', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(updatedConfig)
+      }).catch(() => {});
+    } catch (_) {}
+    if (config.googleCalendarTokens) {
+      setTimeout(() => {
+        handleSyncGoogleCalendar({ silent: true, customEvents: updatedEvents });
+      }, 300);
+    }
   };
 
   const handleDragStart = (e: React.DragEvent, eventId: string) => {
@@ -1335,11 +1437,25 @@ const CalendarTab: React.FC = () => {
         );
       }
 
-      updateConfig({
+      const updatedConfig = {
         ...config,
         calendarEvents: updatedEvents
-      });
-      setTimeout(() => saveToSupabase(), 100);
+      };
+      updateConfig(updatedConfig);
+      try {
+        localStorage.setItem('appLinksConfig', JSON.stringify(updatedConfig));
+        localStorage.setItem('calendarEvents_backup', JSON.stringify(updatedEvents));
+        fetch('/api/config/save-local', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify(updatedConfig)
+        }).catch(() => {});
+      } catch (_) {}
+      if (config.googleCalendarTokens) {
+        setTimeout(() => {
+          handleSyncGoogleCalendar({ silent: true, customEvents: updatedEvents });
+        }, 300);
+      }
     } else if (type === 'day') {
       const sourceDate = e.dataTransfer.getData('sourceDate');
       if (!sourceDate || sourceDate === targetDate) return;
@@ -1348,11 +1464,25 @@ const CalendarTab: React.FC = () => {
         ev.date === sourceDate ? { ...ev, date: targetDate } : ev
       );
 
-      updateConfig({
+      const updatedConfig = {
         ...config,
         calendarEvents: updatedEvents
-      });
-      setTimeout(() => saveToSupabase(), 100);
+      };
+      updateConfig(updatedConfig);
+      try {
+        localStorage.setItem('appLinksConfig', JSON.stringify(updatedConfig));
+        localStorage.setItem('calendarEvents_backup', JSON.stringify(updatedEvents));
+        fetch('/api/config/save-local', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify(updatedConfig)
+        }).catch(() => {});
+      } catch (_) {}
+      if (config.googleCalendarTokens) {
+        setTimeout(() => {
+          handleSyncGoogleCalendar({ silent: true, customEvents: updatedEvents });
+        }, 300);
+      }
     }
   };
 
@@ -1360,19 +1490,26 @@ const CalendarTab: React.FC = () => {
     if (e) e.stopPropagation();
     
     const updatedEvents = events.filter(ev => ev.id !== id);
-    updateConfig({
+    const updatedConfig = {
       ...config,
       calendarEvents: updatedEvents
-    });
-    
-    // Explicitly save to database
-    setTimeout(() => saveToSupabase(), 100);
+    };
+    updateConfig(updatedConfig);
+    localStorage.setItem('appLinksConfig', JSON.stringify(updatedConfig));
+    localStorage.setItem('calendarEvents_backup', JSON.stringify(updatedEvents));
+    try {
+      fetch('/api/config/save-local', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(updatedConfig)
+      }).catch(() => {});
+    } catch (_) {}
 
     // Auto-sync with Google Calendar in background if connected
     if (config.googleCalendarTokens) {
       setTimeout(() => {
         handleSyncGoogleCalendar({ silent: true, customEvents: updatedEvents });
-      }, 300);
+      }, 100);
     }
   };
 
@@ -1638,7 +1775,7 @@ const CalendarTab: React.FC = () => {
           <div className="flex flex-col gap-1">
             <div className="relative group/btn">
               <button
-                onClick={() => saveToSupabase()}
+                onClick={handleSaveCalendarManual}
                 className={`relative flex flex-col items-center justify-center p-2 text-white rounded-lg transition-all shadow-lg h-[64px] w-[88px] overflow-hidden ${config.calendarSettings?.saveButton?.color || 'bg-blue-600 hover:bg-blue-700'}`}
                 title={config.calendarSettings?.saveButton?.label || "Guardar Cambios"}
               >

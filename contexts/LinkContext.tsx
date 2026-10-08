@@ -625,6 +625,30 @@ export const LinkProvider: React.FC<{ children: React.ReactNode }> = ({ children
           }
         }
 
+        // CRITICAL PROTECTION FOR CALENDAR EVENTS AND VACATIONS:
+        // Supabase must NEVER wipe out or drop local calendar events or vacation days
+        if (localParsed?.calendarEvents && Array.isArray(localParsed.calendarEvents) && localParsed.calendarEvents.length > 0) {
+          const localEvents = localParsed.calendarEvents;
+          const remoteEvents = finalConfig.calendarEvents || [];
+          const mergedEventsMap = new Map();
+          for (const re of remoteEvents) {
+            mergedEventsMap.set(re.id, re);
+          }
+          for (const le of localEvents) {
+            mergedEventsMap.set(le.id, le);
+          }
+          finalConfig.calendarEvents = Array.from(mergedEventsMap.values());
+        }
+
+        if (localParsed?.vacationConfig) {
+          finalConfig.vacationConfig = {
+            ...localParsed.vacationConfig,
+            totalDays: 26,
+            initialDays: 26,
+            daysAfterReset: 26
+          };
+        }
+
         // Migration logic (same as localStorage)
         if (!finalConfig.usefulTools || !Array.isArray(finalConfig.usefulTools)) {
           finalConfig.usefulTools = INITIAL_CONFIG.usefulTools;
@@ -1090,10 +1114,32 @@ export const LinkProvider: React.FC<{ children: React.ReactNode }> = ({ children
             parsed.commands = [];
           }
 
-          // Ensure calendarEvents exist
+          // Ensure calendarEvents exist and restore from backup if empty/missing
           if (!parsed.calendarEvents || !Array.isArray(parsed.calendarEvents)) {
             parsed.calendarEvents = [];
           }
+          try {
+            const backupEvts = localStorage.getItem('calendarEvents_backup');
+            if (backupEvts) {
+              const parsedBackup = JSON.parse(backupEvts);
+              if (Array.isArray(parsedBackup) && parsedBackup.length > 0) {
+                const map = new Map();
+                for (const ev of parsed.calendarEvents) map.set(ev.id, ev);
+                for (const ev of parsedBackup) {
+                  if (!map.has(ev.id)) map.set(ev.id, ev);
+                }
+                parsed.calendarEvents = Array.from(map.values());
+              }
+            }
+          } catch (_) {}
+
+          // Ensure vacationConfig has 26 total days
+          parsed.vacationConfig = {
+            ...(parsed.vacationConfig || {}),
+            totalDays: 26,
+            initialDays: 26,
+            daysAfterReset: 26
+          };
 
           // Ensure calendarTokens exist
           if (!parsed.calendarTokens || !Array.isArray(parsed.calendarTokens)) {
@@ -1952,9 +1998,10 @@ export const LinkProvider: React.FC<{ children: React.ReactNode }> = ({ children
         json.commands = [];
       }
 
-      // Ensure calendarEvents exist
+      // Ensure calendarEvents exist and preserve all current local events
+      const currentEvents = configRef.current.calendarEvents || [];
       if (!json.calendarEvents || !Array.isArray(json.calendarEvents)) {
-        json.calendarEvents = [];
+        json.calendarEvents = currentEvents;
       } else {
         // Cleanup: remove AI database entries that might have been accidentally added as work events
         json.calendarEvents = json.calendarEvents.filter((e: any) => {
@@ -1966,6 +2013,18 @@ export const LinkProvider: React.FC<{ children: React.ReactNode }> = ({ children
           }
           return true;
         });
+
+        // Merge: keep all current local events (especially vacations)
+        if (currentEvents.length > 0) {
+          const mergedEventsMap = new Map();
+          for (const re of json.calendarEvents) {
+            mergedEventsMap.set(re.id, re);
+          }
+          for (const le of currentEvents) {
+            mergedEventsMap.set(le.id, le);
+          }
+          json.calendarEvents = Array.from(mergedEventsMap.values());
+        }
       }
 
       // Ensure notes exist and deduplicate

@@ -284,27 +284,8 @@ async function startServer() {
             googleEventId: existing.googleEventId || li.googleEventId 
           });
         } else {
-          // Si el evento local tiene un googleEventId, significa que alguna vez estuvo sincronizado.
-          // Si ya no está en mergedItemsMap (que se llenó con importedEvents de Google), indica que 
-          // probablemente fue eliminado en Google Calendar. Así que lo omitimos (borrado local).
-          if (!li.googleEventId) {
-            mergedItemsMap.set(li.id, li);
-          } else {
-             // Pero cuidado: Google Calendar API solo nos devolvió eventos del último año (timeMin).
-             // Si el evento es más antiguo de un año, no está borrado, simplemente no se devolvió. Lo conservamos.
-             if (li.date) {
-               const eventDate = new Date(li.date);
-               const oneYearAgo = new Date();
-               oneYearAgo.setFullYear(oneYearAgo.getFullYear() - 1);
-               if (eventDate < oneYearAgo) {
-                 mergedItemsMap.set(li.id, li);
-               }
-               // Si es del último año y no está, se asume borrado en Google Calendar (lo omitimos).
-             } else {
-               // Si no tiene fecha, lo conservamos por seguridad
-               mergedItemsMap.set(li.id, li);
-             }
-          }
+          // Conservar SIEMPRE el evento local (nunca borrar eventos locales ni vacaciones)
+          mergedItemsMap.set(li.id, li);
         }
       }
 

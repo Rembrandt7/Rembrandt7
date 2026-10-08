@@ -227,17 +227,34 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
           }
           syncedItems.push(item);
         } else {
-          // Remote event not found. Was it deleted in Google Calendar, or is it just older than 1 year?
-          const eventDate = new Date(`${item.date}T00:00:00`);
-          const isOlderThanOneYear = eventDate < oneYearAgo;
-
-          if (isOlderThanOneYear) {
-            // Keep it locally (don't delete historical events outside search window)
-            syncedItems.push(item);
-          } else {
-            // Deleted in Google -> Drop it locally
-            console.log(`Event ${item.id} / ${item.title} was deleted on Google Calendar. Removing locally.`);
+          // Remote event not found in Google list.
+          // CRITICAL: NEVER delete local events, especially vacation events!
+          // Try to re-create into Google Calendar so they stay synchronized.
+          try {
+            const { start, end } = getEventDateTime(item.date, item.time);
+            const reminderMinutes = item.reminderMinutes !== undefined ? item.reminderMinutes : 0;
+            const reCreated = await calendar.events.insert({
+              calendarId: "primary",
+              requestBody: {
+                summary: item.title,
+                description: item.description || "",
+                extendedProperties: { private: { localId: item.id } },
+                start,
+                end,
+                reminders: {
+                  useDefault: false,
+                  overrides: [
+                    { method: 'popup', minutes: reminderMinutes }
+                  ]
+                }
+              }
+            });
+            item.googleEventId = reCreated.data.id || undefined;
+          } catch (reErr) {
+            console.warn(`Could not re-insert event ${item.id} to Google Calendar:`, reErr);
           }
+          // Always keep local item!
+          syncedItems.push(item);
         }
       }
     }
