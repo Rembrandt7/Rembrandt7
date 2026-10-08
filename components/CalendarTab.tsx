@@ -441,16 +441,11 @@ const CalendarTab: React.FC = () => {
     const uniqueVacationDates = new Set(inPeriodVacationEvents.map(e => e.date));
     const usedDays = uniqueVacationDates.size;
 
-    // Direct configuration of total days or available days
-    if (typeof vacConfig?.totalDays === 'number' && vacConfig.totalDays > 0) {
-      allowance = vacConfig.totalDays;
-    } else if (typeof vacConfig?.availableDays === 'number') {
-      allowance = vacConfig.availableDays + usedDays;
-    } else if (now < resetDateThisYear) {
-      allowance = vacConfig?.initialDays ?? 26;
-    } else {
-      allowance = vacConfig?.daysAfterReset ?? 26;
-    }
+    // Direct configuration of total days or available days (fixed to at least 26)
+    const configuredTotal = (typeof vacConfig?.totalDays === 'number' && vacConfig.totalDays > 0)
+      ? vacConfig.totalDays
+      : (typeof vacConfig?.daysAfterReset === 'number' && vacConfig.daysAfterReset > 0 ? vacConfig.daysAfterReset : 26);
+    allowance = Math.max(26, configuredTotal);
 
     // Calculate working days remaining until resetDate
     let workingDaysRemaining = 0;
@@ -478,9 +473,9 @@ const CalendarTab: React.FC = () => {
 
   const handleSaveVacationDays = async (availDays: number, totDays?: number, rDate?: string) => {
     const used = vacationStats.used;
-    const calcTotal = totDays !== undefined && totDays > 0 ? totDays : (availDays + used);
+    const calcTotal = Math.max(26, totDays !== undefined && totDays > 0 ? totDays : (availDays + used));
     const updatedVacConfig = {
-      ...(config.vacationConfig || { initialDays: 11, daysAfterReset: 26, resetDate: '07-21' }),
+      ...(config.vacationConfig || { initialDays: 26, daysAfterReset: 26, resetDate: '07-21' }),
       availableDays: availDays,
       totalDays: calcTotal,
       initialDays: calcTotal,
@@ -1784,9 +1779,16 @@ const CalendarTab: React.FC = () => {
                     const activeTokens = dayTokens.filter((t: any) => t.currentActiveDate === dateStr || (isToday && t.currentActiveDate < dateStr));
 
                     const hasVacationRequest = dayEvents.some(e => isVacationRequestEvent(e));
+                    const isVacationDay = status === 'vacation' || 
+                      dayEvents.some(e => isVacationEvent(e)) || 
+                      events.some(e => e.date === dateStr && isVacationEvent(e));
                     const reminderEvents = dayEvents.filter(e => (e.reminderMinutes && e.reminderMinutes > 0) || (e.type === 'payment' && !e.isPaid) || (e.type === 'trabajo' && !e.isFinished));
                     const hasReminder = reminderEvents.length > 0 || activeTokens.some((t: any) => t.reminderMinutes && t.reminderMinutes > 0);
                     const reminderCount = reminderEvents.length + activeTokens.filter((t: any) => t.reminderMinutes && t.reminderMinutes > 0).length;
+
+                    const reminderOffset = (isVacationDay && hasVacationRequest) 
+                      ? 'left-36' 
+                      : (isVacationDay ? 'left-20' : (hasVacationRequest ? 'left-16' : 'left-1'));
 
                     const hasUnpaidPastPayment = dayEvents.some(e => {
                       if (e.type !== 'payment' || e.isPaid) return false;
@@ -1795,8 +1797,8 @@ const CalendarTab: React.FC = () => {
                     });
                     
                     let statusClasses = '';
-                    if (status === 'vacation') {
-                      statusClasses = 'bg-emerald-950/60 border-emerald-500/70 text-emerald-200 shadow-md shadow-emerald-950/40';
+                    if (isVacationDay) {
+                      statusClasses = 'bg-emerald-950/70 border-emerald-500/80 text-emerald-200 shadow-md shadow-emerald-950/40';
                     } else if (status === 'work') {
                       statusClasses = 'bg-orange-500/10 border-orange-500/20 text-orange-200/60';
                     } else if (status === 'off' || status === 'off-custom') {
@@ -1805,14 +1807,16 @@ const CalendarTab: React.FC = () => {
                       statusClasses = 'bg-gray-900/50 border-gray-700 text-gray-300';
                     }
 
-                    if (isPast && !isSelected && !isToday && status !== 'vacation') {
+                    if (isPast && !isSelected && !isToday && !isVacationDay) {
                       statusClasses = 'bg-gray-900/30 border-gray-800 text-gray-600 opacity-60';
                     }
 
                     let borderClass = '';
                     let borderStyle: React.CSSProperties = {};
 
-                    if (hasVacationRequest) {
+                    if (isVacationDay) {
+                      borderClass = 'border-emerald-400 border-2 shadow-[0_0_12px_rgba(16,185,129,0.45)] ring-1 ring-emerald-500/40';
+                    } else if (hasVacationRequest) {
                       borderClass = 'border-amber-400 border-2 shadow-[0_0_12px_rgba(245,158,11,0.35)]';
                     } else if (hasBirthday) {
                       borderClass = 'animate-rainbow-border';
@@ -1842,8 +1846,8 @@ const CalendarTab: React.FC = () => {
                         }`}
                         style={borderStyle}
                       >
-                        {status === 'vacation' && (
-                          <div className="absolute inset-0 flex items-center justify-center opacity-40 pointer-events-none text-emerald-400">
+                        {isVacationDay && (
+                          <div className="absolute inset-0 flex items-center justify-center opacity-30 pointer-events-none text-emerald-400">
                             <Palmtree size={isPastWeek ? 24 : 56} />
                           </div>
                         )}
@@ -1863,10 +1867,21 @@ const CalendarTab: React.FC = () => {
                           </div>
                         )}
 
+                        {/* Vacaciones Palmerita Badge en el recuadro */}
+                        {isVacationDay && (
+                          <div 
+                            className="absolute top-1 left-1 flex items-center gap-1 px-1.5 py-0.5 rounded-full bg-emerald-500/40 border border-emerald-400 text-emerald-100 shadow-[0_0_10px_rgba(16,185,129,0.6)] z-30 font-black animate-pulse"
+                            title="🌴 Día de Vacaciones"
+                          >
+                            <Palmtree size={10} className="text-emerald-300 shrink-0" />
+                            <span className="text-[7.5px] font-black uppercase tracking-wider leading-none">Vacaciones</span>
+                          </div>
+                        )}
+
                         {/* Solicitar Vacaciones Badge */}
                         {hasVacationRequest && (
                           <div 
-                            className="absolute top-1 left-1 flex items-center gap-0.5 px-1.5 py-0.5 rounded-full bg-amber-500/35 border border-amber-400 text-amber-200 shadow-[0_0_8px_rgba(245,158,11,0.5)] z-30 animate-pulse font-black"
+                            className={`absolute top-1 ${isVacationDay ? 'left-20' : 'left-1'} flex items-center gap-0.5 px-1.5 py-0.5 rounded-full bg-amber-500/35 border border-amber-400 text-amber-200 shadow-[0_0_8px_rgba(245,158,11,0.5)] z-30 animate-pulse font-black`}
                             title="¡Fecha para tramitar / solicitar vacaciones!"
                           >
                             <FileText size={9} className="text-amber-300 shrink-0" />
@@ -1877,7 +1892,7 @@ const CalendarTab: React.FC = () => {
                         {/* Recordatorio Symbol / Badge */}
                         {hasReminder && (
                           <div 
-                            className={`absolute top-1 ${hasVacationRequest ? 'left-16' : 'left-1'} flex items-center gap-0.5 px-1 py-0.5 rounded-full bg-amber-500/25 border border-amber-400/50 text-amber-300 shadow-[0_0_8px_rgba(245,158,11,0.4)] z-30 animate-pulse`}
+                            className={`absolute top-1 ${reminderOffset} flex items-center gap-0.5 px-1 py-0.5 rounded-full bg-amber-500/25 border border-amber-400/50 text-amber-300 shadow-[0_0_8px_rgba(245,158,11,0.4)] z-30 animate-pulse`}
                             title={`Recordatorio: ${reminderEvents.map(e => e.title).join(', ') || 'Pendiente activo'}`}
                           >
                             <Bell size={10} className="fill-amber-400 text-amber-300 shrink-0" />
@@ -1923,6 +1938,16 @@ const CalendarTab: React.FC = () => {
                             // 1. Vacation requests and vacations first so they are never hidden or pushed out
                             displayItems.push(...vacationRequests);
                             displayItems.push(...vacations);
+
+                            // If this day is a vacation day but has no explicit vacation events in list
+                            if (isVacationDay && vacations.length === 0) {
+                              displayItems.unshift({
+                                id: `vac-indicator-${dateStr}`,
+                                title: 'Vacaciones',
+                                type: 'vacation',
+                                color: '#10b981'
+                              });
+                            }
 
                             // 2. Payments
                             if (payments.length > 0) {
@@ -1995,13 +2020,22 @@ const CalendarTab: React.FC = () => {
                           })()}
                         </div>
 
-                        <span 
-                          className={`text-xl font-black z-20 absolute bottom-0.5 right-1.5 transition-all ${
-                            isSelected ? 'opacity-100' : isPastWeek ? 'opacity-50' : 'opacity-30'
-                          }`}
-                        >
-                          {date.getDate()}
-                        </span>
+                        <div className="flex items-center gap-1 z-20 absolute bottom-0.5 right-1.5">
+                          {isVacationDay && (
+                            <Palmtree 
+                              size={isPastWeek ? 12 : 16} 
+                              className="text-emerald-400 drop-shadow-[0_0_8px_rgba(16,185,129,0.9)] animate-pulse shrink-0" 
+                              title="🌴 Día de Vacaciones"
+                            />
+                          )}
+                          <span 
+                            className={`text-xl font-black transition-all ${
+                              isSelected ? 'opacity-100 text-white' : isPastWeek ? 'opacity-50' : 'opacity-30'
+                            } ${isVacationDay ? '!opacity-100 text-emerald-300 font-black' : ''}`}
+                          >
+                            {date.getDate()}
+                          </span>
+                        </div>
                       </div>
                     );
                   })}

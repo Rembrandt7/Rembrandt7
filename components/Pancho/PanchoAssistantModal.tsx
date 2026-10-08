@@ -490,11 +490,9 @@ export const PanchoAssistantModal: React.FC<PanchoAssistantModalProps> = ({
       const todayLogs = (nutritionData?.logs || []).filter(l => l.date === new Date().toISOString().split('T')[0]);
 
       const vacConfig = config.vacationConfig || { initialDays: 26, daysAfterReset: 26, resetDate: '07-21', totalDays: 26, availableDays: 22 };
-      const totalVacDays = vacConfig.totalDays || 26;
+      const totalVacDays = 26;
       const usedVacDays = getInPeriodVacationDays(events, vacConfig.resetDate);
-      const availVacDays = typeof vacConfig.availableDays === 'number' 
-        ? vacConfig.availableDays 
-        : Math.max(0, totalVacDays - usedVacDays);
+      const availVacDays = Math.max(0, totalVacDays - usedVacDays);
 
       const systemInstruction = `
 Eres "Pancho" 🐶🤖, el perrito robot y asistente personal de Rembrandt. Eres leal, inteligente, entusiasta, ágil y de alto rendimiento.
@@ -531,14 +529,15 @@ CONTEXTO Y CAPACIDADES POR PESTAÑA:
    - Si te pide eliminar un evento, usa 'delete_event' pasando el id o título del evento.
    - Si te pide agregar una nota o producto a la lista de compras o notas de trabajo, usa 'add_note'.
    - Protege su descanso y sus horas de tráfico.
-   - SALDO EXACTO Y REGLAS DE VACACIONES DE REMBRANDT:
-     * TOTAL DE DÍAS POR LEY / PERIODO: ${totalVacDays} días (¡El total legal de Rembrandt es ${totalVacDays}! NUNCA cambies este total a ${availVacDays}. 26 es su derecho total anual, no lo reduzcas ni confundas con los días disponibles).
-     * DÍAS DISFRUTADOS/GASTADOS: ${usedVacDays} días en el periodo actual.
-     * DÍAS DISPONIBLES RESTANTES: ${availVacDays} días de vacaciones disponibles para usar.
+   - 🚨 REGLAS ESTRICTAS DE VACACIONES DE REMBRANDT:
+     * TOTAL DE DÍAS POR LEY / PERIODO: 26 días (¡ESTE TOTAL DE 26 DÍAS ES ESTRICTAMENTE INMUTABLE Y SAGRADO! TÚ, PANCHO, TIENES ESTRICTAMENTE PROHIBIDO MOVER O CAMBIAR EL TOTAL DE 26 DÍAS).
+     * DÍAS OCUPADOS/TOMADOS: ${usedVacDays} días en el periodo actual (en septiembre: 9, 10, 11 y 12 de septiembre).
+     * DÍAS DISPONIBLES RESTANTES: ${availVacDays} días de vacaciones disponibles para usar (exactamente 22 días restantes).
+     * TÚ NUNCA PUEDES MOVER LOS 26 DÍAS TOTALES. Los 26 días son un derecho inamovible de Rembrandt.
+     * Si Rembrandt te dice "me quedan 22 días", "tengo 22 días" o pregunta por su saldo, confirma que le quedan 22 días disponibles de sus 26 totales.
      * CUMPLEAÑOS Y EVENTOS PERSONALES: Cumpleaños (ej. el de su esposa el 03 de noviembre) u otros aniversarios NO son vacaciones; se registran con 'add_event' con type: 'birthday' o 'event', ¡NUNCA como 'vacation'!
      * AGENDAR VACACIONES: Para AGENDAR o PROGRAMAR días de vacaciones en el calendario, USA OBLIGATORIAMENTE 'add_vacation' (o 'add_event' con type: 'vacation'). Puedes agendar un solo día o un rango (ej. startDate: '2026-11-10', endDate: '2026-11-14').
      * Cada día laboral agendado descuenta automáticamente 1 día del saldo disponible. Domingos y sábados inhábiles no descuentan.
-     * Si Rembrandt te dice "me quedan 22 días" o "tengo 22 días", se refiere a sus días DISPONIBLES restantes de sus 26 totales. NUNCA uses 'set_vacation_days' modificando el total de 26 a 22.
      * Puedes mover días de vacaciones usando 'move_vacation'.
    - TOKENS DEL CALENDARIO Y CONDICIONANTES:
      * Puedes agregar tokens con 'add_token', moverlos con 'move_token', modificarlos con 'update_token' o marcarlos completados con 'complete_token'.
@@ -652,12 +651,11 @@ REGLAS DE RESPUESTA:
               },
               {
                 name: "set_vacation_days",
-                description: "Actualiza los días disponibles de vacaciones restantes de Rembrandt (ej. 22 días disponibles).",
+                description: "Actualiza los días disponibles de vacaciones restantes de Rembrandt (ej. 22 días disponibles). NOTA: El total de 26 días está bloqueado y es inamovible.",
                 parameters: {
                   type: Type.OBJECT,
                   properties: {
-                    availableDays: { type: Type.NUMBER, description: "Número de días disponibles restantes" },
-                    totalDays: { type: Type.NUMBER, description: "Total de días del periodo (opcional)" }
+                    availableDays: { type: Type.NUMBER, description: "Número de días disponibles restantes" }
                   },
                   required: ["availableDays"]
                 }
@@ -1127,15 +1125,13 @@ REGLAS DE RESPUESTA:
             const availableDays = Number(args.availableDays) || 0;
             const currentEvents = config.calendarEvents || [];
             const vacConf = config.vacationConfig || { initialDays: 26, daysAfterReset: 26, resetDate: '07-21' };
-            const requestedTotal = args.totalDays ? Number(args.totalDays) : undefined;
-            // Proteger total legal: 26 días mínimos a menos que explícitamente se especifique >= 26
-            const totalDays = (requestedTotal && requestedTotal >= 26) ? requestedTotal : (vacConf.totalDays || 26);
+            const totalDays = 26; // Total inmutable: Pancho NO puede mover los 26 del total
             const updatedVacation = {
               ...vacConf,
               availableDays: availableDays,
-              totalDays: totalDays,
-              initialDays: totalDays,
-              daysAfterReset: totalDays
+              totalDays: 26,
+              initialDays: 26,
+              daysAfterReset: 26
             };
             const updatedConfig = { ...config, vacationConfig: updatedVacation };
             updateConfig(updatedConfig);
@@ -1148,8 +1144,8 @@ REGLAS DE RESPUESTA:
             window.dispatchEvent(new CustomEvent('reload-calendar'));
 
             finalCardType = 'event';
-            finalCardData = { title: `🌴 Vacaciones: ${availableDays} días disponibles (${totalDays} totales)` };
-            toast.success(`🌴 Días de vacaciones actualizados a ${availableDays} disponibles (${totalDays} totales).`);
+            finalCardData = { title: `🌴 Vacaciones: ${availableDays} días disponibles (26 totales inmutables)` };
+            toast.success(`🌴 Saldo de vacaciones: ${availableDays} días disponibles (26 totales).`);
           }
 
           else if (call.name === 'move_vacation') {

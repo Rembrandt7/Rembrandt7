@@ -31,9 +31,11 @@ const INITIAL_CONFIG: AppConfig = {
   notifications: [],
   lastNotificationCheck: '',
   vacationConfig: {
-    initialDays: 11,
+    initialDays: 26,
     resetDate: '07-21',
-    daysAfterReset: 26
+    daysAfterReset: 26,
+    totalDays: 26,
+    availableDays: 22
   },
   credenciales: [],
   estudios: [],
@@ -1840,9 +1842,19 @@ export const LinkProvider: React.FC<{ children: React.ReactNode }> = ({ children
           json.calendarTokens = [];
         }
 
-        // Ensure vacationConfig exists
+        // Ensure vacationConfig exists and total is at least 26
         if (!json.vacationConfig) {
           json.vacationConfig = INITIAL_CONFIG.vacationConfig;
+        } else {
+          if (!json.vacationConfig.totalDays || json.vacationConfig.totalDays < 26) {
+            json.vacationConfig.totalDays = 26;
+          }
+          if (!json.vacationConfig.initialDays || json.vacationConfig.initialDays < 26) {
+            json.vacationConfig.initialDays = 26;
+          }
+          if (!json.vacationConfig.daysAfterReset || json.vacationConfig.daysAfterReset < 26) {
+            json.vacationConfig.daysAfterReset = 26;
+          }
         }
 
         // Ensure credenciales and estudios exist
@@ -1964,9 +1976,19 @@ export const LinkProvider: React.FC<{ children: React.ReactNode }> = ({ children
         json.calendarTokens = [];
       }
 
-      // Ensure vacationConfig exists
+      // Ensure vacationConfig exists and total is at least 26
       if (!json.vacationConfig) {
         json.vacationConfig = INITIAL_CONFIG.vacationConfig;
+      } else {
+        if (!json.vacationConfig.totalDays || json.vacationConfig.totalDays < 26) {
+          json.vacationConfig.totalDays = 26;
+        }
+        if (!json.vacationConfig.initialDays || json.vacationConfig.initialDays < 26) {
+          json.vacationConfig.initialDays = 26;
+        }
+        if (!json.vacationConfig.daysAfterReset || json.vacationConfig.daysAfterReset < 26) {
+          json.vacationConfig.daysAfterReset = 26;
+        }
       }
 
       // Ensure credenciales and estudios exist

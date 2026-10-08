@@ -812,16 +812,15 @@ Contexto actual:
             const availableDays = Number(args.availableDays) || 0;
             const currentEvents = newConfig.calendarEvents || [];
             const vacConf = newConfig.vacationConfig || { initialDays: 26, daysAfterReset: 26, resetDate: '07-21' };
-            const usedDays = getInPeriodVacationDays(currentEvents, vacConf.resetDate);
-            const totalDays = args.totalDays ? Number(args.totalDays) : (vacConf.totalDays || (availableDays + usedDays));
+            const totalDays = 26; // Fijo e inmutable en 26
             newConfig.vacationConfig = {
               ...vacConf,
               availableDays: availableDays,
-              totalDays: totalDays,
-              initialDays: totalDays,
-              daysAfterReset: totalDays
+              totalDays: 26,
+              initialDays: 26,
+              daysAfterReset: 26
             };
-            executedDescriptions.push(`🌴 Días de vacaciones actualizados: ${availableDays} días disponibles (${totalDays} totales). Se irán restando cuando programes vacaciones.`);
+            executedDescriptions.push(`🌴 Días de vacaciones actualizados: ${availableDays} días disponibles (26 totales inmutables).`);
             updated = true;
           } else if (call.name === 'move_vacation') {
             const args = call.args as any;
