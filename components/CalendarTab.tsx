@@ -67,7 +67,19 @@ const CalendarTab: React.FC = () => {
   const [isNotesOpen, setIsNotesOpen] = useState(false);
   const [isTokenModalOpen, setIsTokenModalOpen] = useState(false);
   const [editingToken, setEditingToken] = useState<any | null>(null);
-  const [dismissedOverdueTokenIds, setDismissedOverdueTokenIds] = useState<string[]>([]);
+  const [dismissedOverdueTokenIds, setDismissedOverdueTokenIds] = useState<string[]>(() => {
+    try {
+      const today = new Date().toISOString().split('T')[0];
+      const saved = localStorage.getItem('dismissed_token_prompts_today');
+      if (saved) {
+        const parsed = JSON.parse(saved);
+        if (parsed.date === today && Array.isArray(parsed.ids)) {
+          return parsed.ids;
+        }
+      }
+    } catch (_) {}
+    return [];
+  });
   const [editingHeaderBtn, setEditingHeaderBtn] = useState<'save' | 'notes' | 'ai' | null>(null);
   const [isVacationListOpen, setIsVacationListOpen] = useState(false);
   const [isEditingVacationConfig, setIsEditingVacationConfig] = useState(false);
@@ -1152,14 +1164,32 @@ const CalendarTab: React.FC = () => {
     });
 
     if (alreadyCompleted) {
-      setDismissedOverdueTokenIds(prev => [...new Set([...prev, id])]);
+      setDismissedOverdueTokenIds(prev => {
+        const nextIds = [...new Set([...prev, id])];
+        try {
+          localStorage.setItem('dismissed_token_prompts_today', JSON.stringify({
+            date: currentTodayStr,
+            ids: nextIds
+          }));
+        } catch (_) {}
+        return nextIds;
+      });
       try {
         localStorage.setItem(`token_completed_${id}`, currentTodayStr);
         localStorage.removeItem(`token_snoozed_${id}`);
       } catch (e) {}
     } else {
-      // If snoozed, remove from dismissed IDs so that once snooze expires it prompts again!
-      setDismissedOverdueTokenIds(prev => prev.filter(tid => tid !== id));
+      // If snoozed, dismiss from active prompt for today/until snooze expires
+      setDismissedOverdueTokenIds(prev => {
+        const nextIds = [...new Set([...prev, id])];
+        try {
+          localStorage.setItem('dismissed_token_prompts_today', JSON.stringify({
+            date: currentTodayStr,
+            ids: nextIds
+          }));
+        } catch (_) {}
+        return nextIds;
+      });
       const targetToken = updatedTokens.find(t => t.id === id);
       if (targetToken?.snoozedUntil) {
         try {
@@ -3395,8 +3425,29 @@ const CalendarTab: React.FC = () => {
               initial={{ opacity: 0, scale: 0.9, y: 20 }}
               animate={{ opacity: 1, scale: 1, y: 0 }}
               exit={{ opacity: 0, scale: 0.9, y: 20 }}
-              className="bg-gray-850 bg-gradient-to-b from-gray-800 to-gray-900 rounded-2xl p-6 sm:p-8 w-full max-w-lg border border-amber-500/40 shadow-[0_0_50px_rgba(245,158,11,0.2)]"
+              className="relative bg-gray-850 bg-gradient-to-b from-gray-800 to-gray-900 rounded-2xl p-6 sm:p-8 w-full max-w-lg border border-amber-500/40 shadow-[0_0_50px_rgba(245,158,11,0.2)]"
             >
+              {/* Botón cerrar X para descartar por hoy */}
+              <button 
+                onClick={() => {
+                  const todayStr = new Date().toISOString().split('T')[0];
+                  setDismissedOverdueTokenIds(prev => {
+                    const nextIds = [...new Set([...prev, currentOverdueToken.id])];
+                    try {
+                      localStorage.setItem('dismissed_token_prompts_today', JSON.stringify({
+                        date: todayStr,
+                        ids: nextIds
+                      }));
+                    } catch (_) {}
+                    return nextIds;
+                  });
+                }}
+                className="absolute top-4 right-4 p-1.5 text-gray-400 hover:text-white rounded-lg hover:bg-gray-700/50 transition-colors"
+                title="Cerrar y no preguntar hoy"
+              >
+                <X size={18} />
+              </button>
+
               <div className="flex items-center gap-4 mb-4">
                 <div 
                   className="w-12 h-12 rounded-xl flex items-center justify-center shadow-lg shrink-0 animate-bounce"
@@ -3408,7 +3459,7 @@ const CalendarTab: React.FC = () => {
                   <span className="text-[10px] uppercase font-black tracking-widest text-amber-400 bg-amber-500/10 px-2.5 py-0.5 rounded-full border border-amber-500/20">
                     Recordatorio de Pendiente
                   </span>
-                  <h3 className="text-xl sm:text-2xl font-black text-white mt-1">
+                  <h3 className="text-xl sm:text-2xl font-black text-white mt-1 pr-6">
                     {currentOverdueToken.name.toLowerCase().includes('carro') 
                       ? '¿Ya cargaste el carro?' 
                       : `¿Realizaste "${currentOverdueToken.name}"?`}
@@ -3434,10 +3485,31 @@ const CalendarTab: React.FC = () => {
               {/* Botón Aún no: Preguntarme en la tarde y alerta 8 PM al cel */}
               <button
                 onClick={() => handleResolveOverdueToken(currentOverdueToken.id, false, 0)}
-                className="w-full flex items-center justify-center gap-2 py-3 px-4 bg-amber-600/25 hover:bg-amber-600/40 border border-amber-500/40 text-amber-200 hover:text-white rounded-xl font-bold transition-all text-xs sm:text-sm shadow-md"
+                className="w-full mb-2 flex items-center justify-center gap-2 py-3 px-4 bg-amber-600/25 hover:bg-amber-600/40 border border-amber-500/40 text-amber-200 hover:text-white rounded-xl font-bold transition-all text-xs sm:text-sm shadow-md"
               >
                 <Clock size={16} />
                 <span>Aún no (Preguntarme en la tarde y alerta 8:00 PM al cel)</span>
+              </button>
+
+              {/* Botón Recordar mañana / No volver a preguntar hoy */}
+              <button
+                onClick={() => {
+                  const todayStr = new Date().toISOString().split('T')[0];
+                  setDismissedOverdueTokenIds(prev => {
+                    const nextIds = [...new Set([...prev, currentOverdueToken.id])];
+                    try {
+                      localStorage.setItem('dismissed_token_prompts_today', JSON.stringify({
+                        date: todayStr,
+                        ids: nextIds
+                      }));
+                    } catch (_) {}
+                    return nextIds;
+                  });
+                  toast.info('Entendido. No te volveremos a preguntar hoy.');
+                }}
+                className="w-full flex items-center justify-center gap-2 py-2 px-3 text-gray-400 hover:text-gray-200 hover:bg-gray-800/80 rounded-lg text-xs transition-colors"
+              >
+                <span>No volver a preguntar hoy</span>
               </button>
             </motion.div>
           </div>

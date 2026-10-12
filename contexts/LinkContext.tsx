@@ -641,6 +641,28 @@ export const LinkProvider: React.FC<{ children: React.ReactNode }> = ({ children
           finalConfig.calendarEvents = Array.from(mergedEventsMap.values());
         }
 
+        // CRITICAL PROTECTION FOR QUICK ACCESS COUNTERS:
+        // Ensure click counts and usage frequencies are never wiped out when loading remote config
+        if (localParsed?.aiSidebar?.quickAccess && Array.isArray(localParsed.aiSidebar.quickAccess) && finalConfig?.aiSidebar?.quickAccess) {
+          const localQaMap = new Map<string, any>();
+          for (const item of localParsed.aiSidebar.quickAccess) {
+            if (item.id) localQaMap.set(item.id, item);
+          }
+          finalConfig.aiSidebar.quickAccess = finalConfig.aiSidebar.quickAccess.map((remoteItem: any) => {
+            const localItem = localQaMap.get(remoteItem.id);
+            if (localItem && typeof localItem.clickCount === 'number') {
+              const localClicks = localItem.clickCount || 0;
+              const remoteClicks = remoteItem.clickCount || 0;
+              return {
+                ...remoteItem,
+                clickCount: Math.max(localClicks, remoteClicks),
+                lastClicked: Math.max(localItem.lastClicked || 0, remoteItem.lastClicked || 0) || remoteItem.lastClicked || localItem.lastClicked
+              };
+            }
+            return remoteItem;
+          });
+        }
+
         if (localParsed?.vacationConfig) {
           finalConfig.vacationConfig = {
             ...localParsed.vacationConfig,
