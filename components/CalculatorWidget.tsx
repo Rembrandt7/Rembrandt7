@@ -51,6 +51,20 @@ const CalculatorWidget: React.FC = () => {
     return () => window.removeEventListener('resize', handleResize);
   }, []);
 
+  // Listen for external trigger to open calculator (e.g. entering 3D Printing area)
+  useEffect(() => {
+    const handleOpenCalculator = (e: any) => {
+      setIsOpen(true);
+      if (e?.detail?.mode) {
+        setMode(e.detail.mode);
+      } else {
+        setMode('3d');
+      }
+    };
+    window.addEventListener('open-calculator-widget', handleOpenCalculator);
+    return () => window.removeEventListener('open-calculator-widget', handleOpenCalculator);
+  }, []);
+
   // Auto-scroll history
   useEffect(() => {
     if (historyEndRef.current) {

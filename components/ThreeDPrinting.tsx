@@ -1,4 +1,4 @@
-import React, { useState, useMemo } from 'react';
+import React, { useState, useMemo, useEffect } from 'react';
 import { Box, Wrench, Layout, Sparkles, Move, Star, Shield, Zap, Package, Key, Sword, Globe, ChevronRight, Settings, Database, ExternalLink, Cloud, Search, X, Calculator, TrendingUp, FolderArchive, Layers, Scissors, Eye } from 'lucide-react';
 import { motion } from 'motion/react';
 
@@ -394,6 +394,11 @@ type SubTab = 'taller' | 'ventas' | 'catalogo' | 'visualizador' | 'todo';
 const ThreeDPrinting: React.FC = () => {
   const [activeTab, setActiveTab] = useState<SubTab>('visualizador');
   const [searchQuery, setSearchQuery] = useState('');
+
+  // Abre en automático la calculadora flotante del lado derecho al entrar a Impresión 3D
+  useEffect(() => {
+    window.dispatchEvent(new CustomEvent('open-calculator-widget', { detail: { mode: '3d' } }));
+  }, []);
 
   const cleanQuery = searchQuery.trim().toLowerCase();
 

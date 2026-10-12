@@ -863,11 +863,19 @@
 
     <!-- Rotate Model on Bed -->
     <div class="panel-section">
-      <span class="control-label">Rotar Pieza en la Cama (90°)</span>
-      <div class="btn-grid" style="grid-template-columns: repeat(3, 1fr);">
+      <span class="control-label">Orientación & Posición en Cama</span>
+      <div class="btn-grid" style="grid-template-columns: repeat(3, 1fr); margin-bottom: 6px;">
         <button class="btn-compact" onclick="rotateModel('x', 90)" title="Voltear en eje X">🔄 X (90°)</button>
         <button class="btn-compact" onclick="rotateModel('y', 90)" title="Girar en eje Y">🔄 Y (90°)</button>
         <button class="btn-compact" onclick="rotateModel('z', 90)" title="Girar en eje Z">🔄 Z (90°)</button>
+      </div>
+      <div style="display: flex; gap: 6px;">
+        <button class="btn-compact" style="flex: 1; font-size: 11px; background: rgba(56, 189, 248, 0.15); border-color: rgba(56, 189, 248, 0.4); color: #38bdf8;" onclick="orientModelToBed(); showToast('Modelo orientado al eje vertical Z y centrado.');">
+          ⬆️ Orientar Eje Z
+        </button>
+        <button class="btn-compact" style="flex: 1; font-size: 11px;" onclick="alignModelToBed(); showToast('Modelo asentado y centrado en la cama.');">
+          ⚓ Centrar en Cama
+        </button>
       </div>
     </div>
 
@@ -1337,8 +1345,8 @@
         applyMaterialToModel(getModelMaterial(currentMode, currentColor));
       }
 
-      // Place base of model onto print bed (Y=0 in Three.js)
-      alignModelToBed();
+      // Place base of model onto print bed (Y=0 in Three.js) and ensure it's not on its side
+      orientModelToBed();
 
       // CRITICAL: Add the model to the Three.js scene so it renders!
       scene.add(currentModel);
@@ -1427,16 +1435,41 @@
       }
     }
 
-    // Align base of current model to Bed (Y=0) and center on X, Z
+    // Detect if model's height is smaller than depth/width or oriented on side, and orient to Z-up/bed
+    function orientModelToBed() {
+      if (!currentModel) return;
+      currentModel.updateMatrixWorld(true);
+
+      // Check current bounding box
+      let box = new THREE.Box3().setFromObject(currentModel);
+      let size = box.getSize(new THREE.Vector3());
+
+      // If STL was exported with Z as vertical (common in CAD/3D printers where Z is height),
+      // in Three.js Y is UP and Z is depth.
+      // If size.z is significantly larger than size.y, or if the model lies flat along Z instead of standing on Y,
+      // rotating -90 deg on X aligns CAD Z to Three.js Y!
+      // To provide the cleanest view, we ensure the model stands upright on bed:
+      if (size.z > size.y * 1.5 && size.z > size.x) {
+        currentModel.rotateX(-Math.PI / 2);
+        currentModel.updateMatrixWorld(true);
+      }
+
+      alignModelToBed();
+    }
+
+    // Align base of current model perfectly to Bed (Y=0) and center on X, Z (NO floating, NO submerged)
     function alignModelToBed() {
       if (!currentModel) return;
       currentModel.updateMatrixWorld(true);
+
       const box = new THREE.Box3().setFromObject(currentModel);
       const center = box.getCenter(new THREE.Vector3());
 
-      // Move center of bounding box to (0, 0) on X and Z, and place min.y at 0
+      // Center exactly at (0, 0) on the print bed plane (X and Z)
       currentModel.position.x -= center.x;
       currentModel.position.z -= center.z;
+
+      // Place the lowest vertex/face EXACTLY on the bed surface (Y = 0)
       currentModel.position.y -= box.min.y;
       currentModel.updateMatrixWorld(true);
 
