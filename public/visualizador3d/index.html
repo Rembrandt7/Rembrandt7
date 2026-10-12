@@ -931,6 +931,7 @@
   <script src="libs/three.min.js"></script>
   <script src="libs/OrbitControls.js"></script>
   <script src="libs/STLLoader.js"></script>
+  <script src="libs/fflate.min.js"></script>
   <script src="libs/jszip.min.js"></script>
   <script src="libs/3MFLoader.js"></script>
 
@@ -1359,7 +1360,7 @@
       showLoading(true, 'Extrayendo y procesando archivo 3MF...');
       setTimeout(() => {
         try {
-          const loader = new THREE.3MFLoader();
+          const loader = new (THREE.ThreeMFLoader || THREE['3MFLoader'])();
           const object = loader.parse(buffer);
 
           if (!object) {
@@ -1428,8 +1429,9 @@
       return Math.abs(totalVolume) / 1000; // cm³
     }
 
+    const _crossVec = new THREE.Vector3();
     function signedVolumeOfTriangle(p1, p2, p3) {
-      return p1.dot(p2.cross(p3)) / 6.0;
+      return p1.dot(_crossVec.crossVectors(p2, p3)) / 6.0;
     }
 
     function updateDimensionsDisplay(dimensions) {
@@ -1661,6 +1663,21 @@
       input.addEventListener('change', (e) => {
         if (e.target.files && e.target.files.length > 0) {
           handleFile(e.target.files[0]);
+          input.value = '';
+        }
+      });
+
+      // Listen for files passed from parent window / iframe wrapper
+      window.addEventListener('message', (event) => {
+        if (event.data && event.data.type === 'LOAD_MODEL') {
+          const { name, size, buffer } = event.data;
+          if (!buffer || !name) return;
+          const ext = name.trim().split('.').pop().toLowerCase();
+          if (ext === '3mf') {
+            load3MFBuffer(buffer, name, size || buffer.byteLength);
+          } else if (ext === 'stl') {
+            loadSTLBuffer(buffer, name, size || buffer.byteLength);
+          }
         }
       });
     }

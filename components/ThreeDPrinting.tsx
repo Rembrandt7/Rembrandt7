@@ -392,7 +392,7 @@ const GroupCard = ({ group, className, itemsOverride }: { group: typeof groups[0
 type SubTab = 'taller' | 'ventas' | 'catalogo' | 'visualizador' | 'todo';
 
 const ThreeDPrinting: React.FC = () => {
-  const [activeTab, setActiveTab] = useState<SubTab>('taller');
+  const [activeTab, setActiveTab] = useState<SubTab>('visualizador');
   const [searchQuery, setSearchQuery] = useState('');
 
   const cleanQuery = searchQuery.trim().toLowerCase();
@@ -510,18 +510,6 @@ const ThreeDPrinting: React.FC = () => {
       <div className="flex flex-col md:flex-row items-center justify-between gap-3 bg-slate-900/70 backdrop-blur-xl p-2.5 rounded-2xl border border-white/10 shadow-xl">
         <div className="flex items-center gap-1.5 p-1 bg-white/5 rounded-xl border border-white/5 w-full md:w-auto overflow-x-auto scrollbar-none">
           <button
-            onClick={() => setActiveTab('taller')}
-            className={`flex items-center gap-2 px-3.5 py-2 rounded-lg text-xs font-black uppercase tracking-wider transition-all shrink-0 ${
-              activeTab === 'taller'
-                ? 'bg-gradient-to-r from-blue-600 to-indigo-600 text-white shadow-md'
-                : 'text-gray-400 hover:text-white hover:bg-white/5'
-            }`}
-          >
-            <Calculator size={15} />
-            <span>Taller & Cotizador</span>
-          </button>
-
-          <button
             onClick={() => setActiveTab('visualizador')}
             className={`flex items-center gap-2 px-3.5 py-2 rounded-lg text-xs font-black uppercase tracking-wider transition-all shrink-0 ${
               activeTab === 'visualizador'
@@ -531,6 +519,18 @@ const ThreeDPrinting: React.FC = () => {
           >
             <Eye size={15} />
             <span>Visualizador 3D (STL/3MF)</span>
+          </button>
+
+          <button
+            onClick={() => setActiveTab('taller')}
+            className={`flex items-center gap-2 px-3.5 py-2 rounded-lg text-xs font-black uppercase tracking-wider transition-all shrink-0 ${
+              activeTab === 'taller'
+                ? 'bg-gradient-to-r from-blue-600 to-indigo-600 text-white shadow-md'
+                : 'text-gray-400 hover:text-white hover:bg-white/5'
+            }`}
+          >
+            <Calculator size={15} />
+            <span>Taller & Cotizador</span>
           </button>
 
           <button

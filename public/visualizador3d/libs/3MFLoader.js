@@ -1332,5 +1332,6 @@
 	}
 
 	THREE.ThreeMFLoader = ThreeMFLoader;
+	THREE['3MFLoader'] = ThreeMFLoader;
 
 } )();
