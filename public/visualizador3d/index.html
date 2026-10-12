@@ -600,6 +600,49 @@
       to { transform: rotate(360deg); }
     }
 
+    /* Multi-Plate / Multi-Part Selector */
+    .plate-selector-box {
+      margin-top: 10px;
+      padding: 10px;
+      background: rgba(15, 23, 42, 0.7);
+      border: 1px solid rgba(56, 189, 248, 0.3);
+      border-radius: 8px;
+    }
+
+    .plate-btn-group {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 6px;
+      margin-top: 8px;
+      max-height: 120px;
+      overflow-y: auto;
+    }
+
+    .plate-btn {
+      padding: 4px 10px;
+      background: rgba(255, 255, 255, 0.08);
+      border: 1px solid rgba(255, 255, 255, 0.15);
+      border-radius: 6px;
+      font-size: 11px;
+      font-weight: 600;
+      color: #94a3b8;
+      cursor: pointer;
+      transition: all 0.2s ease;
+    }
+
+    .plate-btn:hover {
+      background: rgba(56, 189, 248, 0.2);
+      border-color: rgba(56, 189, 248, 0.4);
+      color: #fff;
+    }
+
+    .plate-btn.active {
+      background: #0284c7;
+      border-color: #38bdf8;
+      color: #fff;
+      box-shadow: 0 0 10px rgba(56, 189, 248, 0.4);
+    }
+
     /* Print bed alert */
     .alert-overflow {
       margin-top: 8px;
@@ -647,8 +690,8 @@
     </div>
 
     <div class="header-actions">
-      <!-- File input supporting both STL and 3MF -->
-      <input type="file" id="file-input" accept=".stl,.3mf">
+      <!-- File input supporting both STL and 3MF, multiple files supported -->
+      <input type="file" id="file-input" accept=".stl,.3mf" multiple>
       <button class="btn btn-primary" onclick="document.getElementById('file-input').click()">
         <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
           <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4M17 8l-5-5-5 5M12 3v12"/>
@@ -693,6 +736,18 @@
       <div class="info-row">
         <span class="info-label">Vértices:</span>
         <span class="info-value" id="info-vertices">-</span>
+      </div>
+    </div>
+
+    <!-- Multi-Plate / Multi-Part Selector Section -->
+    <div id="plates-container" class="panel-section" style="display: none;">
+      <div class="panel-title" style="margin-bottom: 4px;">
+        <span style="color: #38bdf8;">Placas / Objetos</span>
+        <span id="plates-count-badge" style="font-size: 10px; color: #93c5fd;"></span>
+      </div>
+      <div class="plate-selector-box">
+        <div style="font-size: 11px; color: #94a3b8; margin-bottom: 4px;">Selecciona la placa o parte a visualizar:</div>
+        <div id="plate-buttons" class="plate-btn-group"></div>
       </div>
     </div>
 
@@ -980,6 +1035,8 @@
     let modelVolumeCm3 = 0;
     let boundingBox = null;
     let showCage = true;
+    let loadedPlates = []; // [{ id: number|string, name: string, mesh: THREE.Object3D }]
+    let activePlateIndex = -1; // -1 means show all
 
     function init() {
       const container = document.getElementById('canvas-container');
@@ -1201,7 +1258,7 @@
     }
 
     // Unified Model Setup (Supports both STL Geometry and 3MF Groups)
-    function setupLoadedModel(rootObject, fileName, fileSize, fileType) {
+    function setupLoadedModel(rootObject, fileName, fileSize, fileType, customPlates = null) {
       if (currentModel) {
         scene.remove(currentModel);
         disposeHierarchy(currentModel);
@@ -1210,11 +1267,36 @@
       currentModel = rootObject;
       currentModelType = fileType;
       originalMaterials = [];
+      loadedPlates = [];
+      activePlateIndex = -1;
 
       let totalTriangles = 0;
       let totalVertices = 0;
       let totalVolume = 0;
       let hasCustomMaterials = false;
+
+      // Detect sub-meshes or plates (especially in 3MF files or multi-file load)
+      if (customPlates && customPlates.length > 0) {
+        loadedPlates = customPlates;
+      } else {
+        // Collect direct children or meshes as plates/parts if multiple exist
+        const meshCandidates = [];
+        currentModel.children.forEach((child, idx) => {
+          let hasGeometry = false;
+          child.traverse(c => { if (c.isMesh) hasGeometry = true; });
+          if (hasGeometry) {
+            meshCandidates.push({
+              id: idx,
+              name: child.name ? child.name : `Placa / Parte ${meshCandidates.length + 1}`,
+              object: child
+            });
+          }
+        });
+
+        if (meshCandidates.length > 1) {
+          loadedPlates = meshCandidates;
+        }
+      }
 
       // Ensure shadows, normals, and count vertices/faces
       currentModel.traverse((child) => {
@@ -1258,6 +1340,12 @@
       // Place base of model onto print bed (Y=0 in Three.js)
       alignModelToBed();
 
+      // CRITICAL: Add the model to the Three.js scene so it renders!
+      scene.add(currentModel);
+
+      // Render plates UI buttons if multiple plates / parts detected
+      setupPlatesUI(fileName);
+
       // Update UI panels
       document.getElementById('initial-empty-state').style.display = 'none';
       document.getElementById('info-panel').style.display = 'block';
@@ -1271,6 +1359,72 @@
 
       showLoading(false);
       showToast(`¡Modelo ${fileType.toUpperCase()} "${fileName}" cargado exitosamente!`);
+    }
+
+    // Multi-Plate & Multi-Part UI Handler
+    function setupPlatesUI(fileName) {
+      const container = document.getElementById('plates-container');
+      const buttonsDiv = document.getElementById('plate-buttons');
+      const badge = document.getElementById('plates-count-badge');
+      buttonsDiv.innerHTML = '';
+
+      if (!loadedPlates || loadedPlates.length <= 1) {
+        container.style.display = 'none';
+        return;
+      }
+
+      container.style.display = 'block';
+      badge.textContent = `${loadedPlates.length} detectadas`;
+
+      // "Todas" button
+      const allBtn = document.createElement('button');
+      allBtn.className = 'plate-btn active';
+      allBtn.textContent = '👀 Ver Todas';
+      allBtn.onclick = () => selectPlate(-1);
+      buttonsDiv.appendChild(allBtn);
+
+      loadedPlates.forEach((plate, idx) => {
+        const btn = document.createElement('button');
+        btn.className = 'plate-btn';
+        btn.textContent = plate.name || `Placa ${idx + 1}`;
+        btn.title = `Aislar y enfocar: ${plate.name}`;
+        btn.onclick = () => selectPlate(idx);
+        buttonsDiv.appendChild(btn);
+      });
+    }
+
+    function selectPlate(index) {
+      activePlateIndex = index;
+      const buttons = document.querySelectorAll('.plate-btn');
+      buttons.forEach((btn, idx) => {
+        btn.classList.toggle('active', (index === -1 && idx === 0) || (idx === index + 1));
+      });
+
+      if (index === -1) {
+        // Show all
+        loadedPlates.forEach(p => { p.object.visible = true; });
+        alignModelToBed();
+        const bbox = new THREE.Box3().setFromObject(currentModel);
+        boundingBox = bbox;
+        const size = bbox.getSize(new THREE.Vector3());
+        updateDimensionsDisplay(size);
+        checkAllPrintersCompatibility();
+        fitCameraToObject(currentModel);
+        showToast('Mostrando todas las placas.');
+      } else {
+        // Show only selected plate
+        loadedPlates.forEach((p, idx) => {
+          p.object.visible = (idx === index);
+        });
+        const activeObj = loadedPlates[index].object;
+        const plateBox = new THREE.Box3().setFromObject(activeObj);
+        boundingBox = plateBox;
+        const size = plateBox.getSize(new THREE.Vector3());
+        updateDimensionsDisplay(size);
+        checkAllPrintersCompatibility();
+        fitCameraToObject(activeObj);
+        showToast(`Placa seleccionada: ${loadedPlates[index].name}`);
+      }
     }
 
     // Align base of current model to Bed (Y=0) and center on X, Z
@@ -1344,6 +1498,7 @@
           const material = getModelMaterial(currentMode, currentColor);
           const mesh = new THREE.Mesh(geometry, material);
           const group = new THREE.Group();
+          group.name = fileName;
           group.add(mesh);
 
           setupLoadedModel(group, fileName, fileSize, 'stl');
@@ -1392,12 +1547,12 @@
 
       const maxDim = Math.max(size.x, size.y, size.z, 30);
       const fov = camera.fov * (Math.PI / 180);
-      let cameraDistance = Math.abs(maxDim / Math.sin(fov / 2)) * 0.95;
+      let cameraDistance = Math.abs(maxDim / Math.sin(fov / 2)) * 1.05;
 
-      cameraDistance = Math.max(cameraDistance, 70);
+      cameraDistance = Math.max(cameraDistance, 80);
 
-      camera.position.set(center.x + cameraDistance * 0.8, center.y + cameraDistance * 0.7, center.z + cameraDistance * 0.9);
-      controls.target.set(center.x, center.y * 0.8, center.z);
+      camera.position.set(center.x + cameraDistance * 0.75, center.y + cameraDistance * 0.65, center.z + cameraDistance * 0.85);
+      controls.target.copy(center);
       controls.update();
     }
 
@@ -1653,7 +1808,7 @@
         dropOverlay.classList.remove('active');
 
         if (e.dataTransfer && e.dataTransfer.files && e.dataTransfer.files.length > 0) {
-          handleFile(e.dataTransfer.files[0]);
+          handleFiles(Array.from(e.dataTransfer.files));
         }
       });
     }
@@ -1662,7 +1817,7 @@
       const input = document.getElementById('file-input');
       input.addEventListener('change', (e) => {
         if (e.target.files && e.target.files.length > 0) {
-          handleFile(e.target.files[0]);
+          handleFiles(Array.from(e.target.files));
           input.value = '';
         }
       });
@@ -1679,6 +1834,87 @@
             loadSTLBuffer(buffer, name, size || buffer.byteLength);
           }
         }
+      });
+    }
+
+    function handleFiles(files) {
+      const validFiles = files.filter(f => {
+        const ext = f.name.split('.').pop().toLowerCase();
+        return ext === 'stl' || ext === '3mf';
+      });
+
+      if (validFiles.length === 0) {
+        showToast('Por favor selecciona archivos con extensión .STL o .3MF', true);
+        return;
+      }
+
+      if (validFiles.length === 1) {
+        handleFile(validFiles[0]);
+        return;
+      }
+
+      // Multiple files loaded simultaneously: load each and assemble into multi-plate group
+      showLoading(true, `Cargando ${validFiles.length} modelos 3D...`);
+      const masterGroup = new THREE.Group();
+      masterGroup.name = `Conjunto de ${validFiles.length} placas/archivos`;
+      const platesList = [];
+      let totalSize = 0;
+      let loadedCount = 0;
+
+      validFiles.forEach((file, index) => {
+        totalSize += file.size;
+        const ext = file.name.split('.').pop().toLowerCase();
+        const reader = new FileReader();
+
+        reader.onload = function(event) {
+          try {
+            const buffer = event.target.result;
+            if (ext === 'stl') {
+              const loader = new THREE.STLLoader();
+              const geo = loader.parse(buffer);
+              geo.computeVertexNormals();
+              geo.center();
+              const mat = getModelMaterial(currentMode, currentColor);
+              const mesh = new THREE.Mesh(geo, mat);
+              const partGroup = new THREE.Group();
+              partGroup.name = file.name;
+              partGroup.add(mesh);
+
+              // Space them out along X axis initially
+              partGroup.position.x = (index - (validFiles.length - 1) / 2) * 60;
+              masterGroup.add(partGroup);
+              platesList.push({ id: index, name: file.name, object: partGroup });
+            } else {
+              const loader = new (THREE.ThreeMFLoader || THREE['3MFLoader'])();
+              const obj = loader.parse(buffer);
+              obj.name = file.name;
+              obj.position.x = (index - (validFiles.length - 1) / 2) * 60;
+              masterGroup.add(obj);
+              platesList.push({ id: index, name: file.name, object: obj });
+            }
+          } catch (err) {
+            console.error('Error loading file item', file.name, err);
+          } finally {
+            loadedCount++;
+            if (loadedCount === validFiles.length) {
+              if (masterGroup.children.length > 0) {
+                setupLoadedModel(masterGroup, `${validFiles.length} Archivos (${validFiles[0].name}...)`, totalSize, 'stl', platesList);
+              } else {
+                showLoading(false);
+                showToast('No se pudieron procesar los archivos.', true);
+              }
+            }
+          }
+        };
+
+        reader.onerror = function() {
+          loadedCount++;
+          if (loadedCount === validFiles.length && masterGroup.children.length > 0) {
+            setupLoadedModel(masterGroup, `${validFiles.length} Archivos`, totalSize, 'stl', platesList);
+          }
+        };
+
+        reader.readAsArrayBuffer(file);
       });
     }
 

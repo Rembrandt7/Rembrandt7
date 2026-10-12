@@ -1301,16 +1301,23 @@
 					const buildItem = buildData[ i ];
 					const object3D = objects[ buildItem[ 'objectId' ] ]; // apply transform
 
-					const transform = buildItem[ 'transform' ];
-
-					if ( transform ) {
-
-						object3D.applyMatrix4( transform );
-
+					if ( object3D ) {
+						const transform = buildItem[ 'transform' ];
+						if ( transform ) {
+							object3D.applyMatrix4( transform );
+						}
+						group.add( object3D );
 					}
 
-					group.add( object3D );
+				}
 
+				// If buildData had no objects or added nothing, fallback to adding all parsed objects
+				if ( group.children.length === 0 ) {
+					for ( const id in objects ) {
+						if ( objects[ id ] ) {
+							group.add( objects[ id ] );
+						}
+					}
 				}
 
 				return group;
