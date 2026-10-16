@@ -169,16 +169,16 @@ export const PanchoRobotAvatar: React.FC<PanchoRobotAvatarProps> = ({
   const headTransition = () => {
     switch (state) {
       case 'working':
-        return { repeat: Infinity, duration: 1.5, ease: 'easeInOut' };
+        return { repeat: Infinity, duration: 1.5, ease: 'easeInOut' as const };
       case 'success':
-        return { repeat: 3, duration: 0.6, ease: 'easeInOut' };
+        return { repeat: 3, duration: 0.6, ease: 'easeInOut' as const };
       case 'error':
         return { duration: 0.5 };
       case 'attention':
-        return { repeat: Infinity, duration: 2, ease: 'easeInOut' };
+        return { repeat: Infinity, duration: 2, ease: 'easeInOut' as const };
       case 'idle':
       default:
-        return { repeat: Infinity, duration: 3, ease: 'easeInOut' };
+        return { repeat: Infinity, duration: 3, ease: 'easeInOut' as const };
     }
   };
 

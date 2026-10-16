@@ -19,6 +19,35 @@ export default defineConfig(({ mode }) => {
         alias: {
           '@': path.resolve(__dirname, '.'),
         }
+      },
+      build: {
+        chunkSizeWarningLimit: 800,
+        rollupOptions: {
+          output: {
+            manualChunks(id) {
+              if (id.includes('node_modules')) {
+                if (id.includes('react-dom') || id.includes('react/')) {
+                  return 'vendor-react';
+                }
+                if (id.includes('motion') || id.includes('framer-motion')) {
+                  return 'vendor-motion';
+                }
+                if (id.includes('@supabase')) {
+                  return 'vendor-supabase';
+                }
+                if (id.includes('@google/genai')) {
+                  return 'vendor-genai';
+                }
+                if (id.includes('@dnd-kit')) {
+                  return 'vendor-dnd';
+                }
+                if (id.includes('lucide-react')) {
+                  return 'vendor-icons';
+                }
+              }
+            }
+          }
+        }
       }
     };
 });

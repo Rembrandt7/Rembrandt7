@@ -208,7 +208,7 @@ class ErrorBoundary extends Component<Props, State> {
 
               <button
                 onClick={this.handleCleanCacheAndReload}
-                disabled={this.cleaningCache}
+                disabled={this.state.cleaningCache}
                 style={{
                   padding: '12px 20px',
                   background: 'rgba(168, 85, 247, 0.2)',
@@ -224,7 +224,7 @@ class ErrorBoundary extends Component<Props, State> {
                   transition: 'all 0.2s'
                 }}
               >
-                {this.cleaningCache ? '🧹 Limpiando y recargando...' : '🧹 Limpiar Caché y Forzar Recarga'}
+                {this.state.cleaningCache ? '🧹 Limpiando y recargando...' : '🧹 Limpiar Caché y Forzar Recarga'}
               </button>
 
               <button 

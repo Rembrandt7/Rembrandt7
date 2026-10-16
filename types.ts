@@ -341,6 +341,7 @@ export interface AppConfig {
   lastNotificationCheck?: string; // YYYY-MM-DD
   updatedAt?: number; // Timestamp
   googleApiConfig?: GoogleApiConfig;
+  customQuickPresets?: any[];
 }
 
 export interface GoogleApiConfig {

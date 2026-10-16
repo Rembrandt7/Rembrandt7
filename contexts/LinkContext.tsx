@@ -182,7 +182,7 @@ const INITIAL_CONFIG: AppConfig = {
         { id: 'qa-8', name: 'Convertio', href: 'https://convertio.co/es/download/e6b1e34a2e937c3a18305b732b341a602788c1/', colorClass: 'hover:text-red-400', iconSvg: '<svg class="w-full h-full" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M8 3v12" /><path d="M12 7L8 3L4 7" /><path d="M16 21V9" /><path d="M12 17l4 4l4-4" /></svg>' },
         { id: 'qa-9', name: 'Vectorizar', href: 'https://aistudio.google.com/apps/drive/1MqPBVGYa3rBl2lGs5-8DhKUIltCigjmI?showAssistant=true&showPreview=true&resourceKey=', colorClass: 'hover:text-pink-500', iconSvg: '<svg class="w-full h-full" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M12 19l7-7 3 3-7 7-3-3z" /><path d="M18 13l-1.5-7.5L2 2l3.5 14.5L13 18l5-5z" /><path d="M2 2l7.586 7.586" /><circle cx="11" cy="11" r="2" /></svg>' },
         { id: 'qa-10', name: 'Reve', href: 'https://app.reve.com/home', colorClass: 'hover:text-rose-500', iconSvg: '<svg class="w-full h-full" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"></path><path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"></path></svg>' },
-        { id: 'qa-11', name: 'Sherwin Williams', href: 'https://aistudio.google.com/apps/drive/1us6w9OBHDw-PWZrgIjW1G5ER1QdLTnCD?showAssistant=true&resourceKey=&showPreview=true', colorClass: 'hover:text-blue-500', iconSvg: '<svg class="w-full h-full" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M12 22a7 7 0 0 0 7-7c0-2-1-3.9-3-5.5s-3.5-4-4-6.5c-.5 2.5-2 4.9-4 6.5C6 11.1 5 13 5 15a7 7 0 0 0 7 7z" /></svg>' }
+        { id: 'qa-11', name: 'Sherwin Williams', href: 'https://sherrywilliams.vercel.app', colorClass: 'hover:text-blue-500', iconSvg: '<svg class="w-full h-full" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M12 22a7 7 0 0 0 7-7c0-2-1-3.9-3-5.5s-3.5-4-4-6.5c-.5 2.5-2 4.9-4 6.5C6 11.1 5 13 5 15a7 7 0 0 0 7 7z" /></svg>' }
     ]
   },
   rightSidebar: [
@@ -489,6 +489,58 @@ const salvageMalformedNotes = (text: string, defaultCategory: string): { notes: 
     console.error('Failed to salvage JSON:', e);
     return null;
   }
+};
+
+const SHERWIN_WILLIAMS_URL = 'https://sherrywilliams.vercel.app';
+
+const ensureSherwinWilliamsLinkUpdated = (cfg: any): boolean => {
+  if (!cfg || typeof cfg !== 'object') return false;
+  let updated = false;
+
+  const isSherwinItem = (item: any) => {
+    if (!item || typeof item !== 'object') return false;
+    const name = (item.name || '').toLowerCase();
+    const href = (item.href || '').toLowerCase();
+    return (
+      item.id === 'qa-11' ||
+      name.includes('sherwin') ||
+      name.includes('sherry') ||
+      href.includes('1us6w9obhdw-pwzrgijw1g5er1qdltnCD'.toLowerCase())
+    );
+  };
+
+  const updateArray = (arr?: any[]) => {
+    if (!Array.isArray(arr)) return;
+    arr.forEach(item => {
+      if (isSherwinItem(item) && item.href !== SHERWIN_WILLIAMS_URL) {
+        item.href = SHERWIN_WILLIAMS_URL;
+        updated = true;
+      }
+    });
+  };
+
+  if (cfg.aiSidebar?.quickAccess && Array.isArray(cfg.aiSidebar.quickAccess)) {
+    updateArray(cfg.aiSidebar.quickAccess);
+    const hasSherwin = cfg.aiSidebar.quickAccess.some(isSherwinItem);
+    if (!hasSherwin) {
+      const defaultSherwin = INITIAL_CONFIG.aiSidebar.quickAccess.find(l => l.id === 'qa-11');
+      if (defaultSherwin) {
+        cfg.aiSidebar.quickAccess.push({ ...defaultSherwin, href: SHERWIN_WILLIAMS_URL });
+        updated = true;
+      }
+    }
+  }
+
+  updateArray(cfg.linksBar);
+  updateArray(cfg.googleDock);
+  if (Array.isArray(cfg.rightSidebar)) {
+    cfg.rightSidebar.forEach((sec: any) => updateArray(sec?.items));
+  }
+  if (Array.isArray(cfg.usefulTools)) {
+    cfg.usefulTools.forEach((sec: any) => updateArray(sec?.items));
+  }
+
+  return updated;
 };
 
 export const LinkProvider: React.FC<{ children: React.ReactNode }> = ({ children }) => {
@@ -933,6 +985,8 @@ export const LinkProvider: React.FC<{ children: React.ReactNode }> = ({ children
           finalConfig.aiSidebar.quickAccess = sortQuickAccessByUsage(finalConfig.aiSidebar.quickAccess);
         }
 
+        const sherwinUpdatedRemote = ensureSherwinWilliamsLinkUpdated(finalConfig);
+
         // Migration for notes into config
         console.log('Checking for notes in separate files...');
         try {
@@ -943,7 +997,7 @@ export const LinkProvider: React.FC<{ children: React.ReactNode }> = ({ children
           ]);
 
           let currentNotes: Note[] = finalConfig.notes || [];
-          let needsUpdate = false;
+          let needsUpdate = sherwinUpdatedRemote;
 
           // Merge local googleApiConfig into Supabase config if missing
           let localGoogleApiConfig: GoogleApiConfig | null = null;
@@ -1317,6 +1371,8 @@ export const LinkProvider: React.FC<{ children: React.ReactNode }> = ({ children
             }
             parsed.aiSidebar.quickAccess = sortQuickAccessByUsage(parsed.aiSidebar.quickAccess);
           }
+
+          ensureSherwinWilliamsLinkUpdated(parsed);
 
           setConfig(parsed);
           setIsLoaded(true);
@@ -1956,6 +2012,7 @@ export const LinkProvider: React.FC<{ children: React.ReactNode }> = ({ children
         }
 
         json.version = INITIAL_CONFIG.version;
+        ensureSherwinWilliamsLinkUpdated(json);
 
         setConfig(json);
         localStorage.setItem('appLinksConfig', JSON.stringify(json));
@@ -2121,6 +2178,10 @@ export const LinkProvider: React.FC<{ children: React.ReactNode }> = ({ children
           json.linksBar = [...json.linksBar, ...missingLinks];
         }
         json.linksBar = normalizeAndDeduplicateLinksBar(json.linksBar);
+      }
+
+      if (ensureSherwinWilliamsLinkUpdated(json)) {
+        saveToSupabase(json, { showToast: false, immediate: true }).catch(() => {});
       }
 
       setConfig(json);

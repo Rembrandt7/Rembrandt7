@@ -49,7 +49,8 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
         access_type: "offline",
         scope: [
           "https://www.googleapis.com/auth/calendar",
-          "https://www.googleapis.com/auth/gmail.readonly"
+          "https://www.googleapis.com/auth/gmail.readonly",
+          "https://www.googleapis.com/auth/gmail.send"
         ],
         prompt: "consent"
       });

@@ -2189,11 +2189,12 @@ const CalendarTab: React.FC = () => {
 
                         <div className="flex items-center gap-1 z-20 absolute bottom-0.5 right-1.5">
                           {isVacationDay && (
-                            <Palmtree 
-                              size={isPastWeek ? 12 : 16} 
-                              className="text-emerald-400 drop-shadow-[0_0_8px_rgba(16,185,129,0.9)] animate-pulse shrink-0" 
-                              title="🌴 Día de Vacaciones"
-                            />
+                            <span title="🌴 Día de Vacaciones" className="inline-flex">
+                              <Palmtree 
+                                size={isPastWeek ? 12 : 16} 
+                                className="text-emerald-400 drop-shadow-[0_0_8px_rgba(16,185,129,0.9)] animate-pulse shrink-0" 
+                              />
+                            </span>
                           )}
                           <span 
                             className={`text-xl font-black transition-all ${

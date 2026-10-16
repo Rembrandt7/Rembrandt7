@@ -12,8 +12,8 @@ async function startServer() {
   const app = express();
   const PORT = process.env.PORT ? parseInt(process.env.PORT, 10) : 3000;
 
-  app.use(express.json({ limit: '10mb' }));
-  app.use(express.urlencoded({ limit: '10mb', extended: true }));
+  app.use(express.json({ limit: '25mb' }));
+  app.use(express.urlencoded({ limit: '25mb', extended: true }));
   app.use(cookieParser());
 
   app.get("/api/health", (req, res) => {
@@ -52,7 +52,8 @@ async function startServer() {
         access_type: "offline",
         scope: [
           "https://www.googleapis.com/auth/calendar",
-          "https://www.googleapis.com/auth/gmail.readonly"
+          "https://www.googleapis.com/auth/gmail.readonly",
+          "https://www.googleapis.com/auth/gmail.send"
         ],
         prompt: "consent" // Force to get refresh token
       });
@@ -74,7 +75,8 @@ async function startServer() {
       return res.status(400).send("Missing code");
     }
 
-    // Send code back to the client via postMessage, client will exchange it
+    // Safely serialize code and restrict postMessage origin
+    const safeCodeJson = JSON.stringify(code);
     res.send(`
       <html>
         <body>
@@ -82,8 +84,8 @@ async function startServer() {
             if (window.opener) {
               window.opener.postMessage({ 
                 type: 'OAUTH_CODE_SUCCESS', 
-                code: '${code}' 
-              }, '*');
+                code: ${safeCodeJson} 
+              }, window.location.origin);
               window.close();
             } else {
               window.location.href = '/';
@@ -444,6 +446,73 @@ async function startServer() {
     } catch (error: any) {
       console.error("Error trashing Gmail message:", error);
       res.status(500).json({ error: "Failed to delete email", details: error.message });
+    }
+  });
+
+  // 5b. Send Email with Attachments via Gmail API
+  app.post(["/api/gmail/send", "/api/gmail/send/"], async (req, res) => {
+    const { tokens, to, cc, subject, body: emailBody, attachments } = req.body;
+    if (!tokens || !to) {
+      return res.status(400).json({ error: "Faltan tokens o destinatario (Para:)" });
+    }
+    try {
+      const oauth2Client = getOAuth2Client(req);
+      oauth2Client.setCredentials(tokens);
+      const gmail = google.gmail({ version: "v1", auth: oauth2Client });
+
+      const boundary = `rembrandt_mime_${Date.now()}_${Math.random().toString(36).slice(2)}`;
+      const encodedSubject = `=?UTF-8?B?${Buffer.from(subject || 'Sin asunto', 'utf-8').toString('base64')}?=`;
+
+      const headers = [
+        `To: ${to}`,
+        ...(cc ? [`Cc: ${cc}`] : []),
+        `Subject: ${encodedSubject}`,
+        `MIME-Version: 1.0`,
+        `Content-Type: multipart/mixed; boundary="${boundary}"`,
+        ``,
+        `--${boundary}`,
+        `Content-Type: text/plain; charset="UTF-8"`,
+        `Content-Transfer-Encoding: base64`,
+        ``,
+        Buffer.from(emailBody || '', 'utf-8').toString('base64')
+      ];
+
+      if (Array.isArray(attachments) && attachments.length > 0) {
+        for (const att of attachments) {
+          if (!att || !att.base64 || !att.name) continue;
+          const cleanBase64 = String(att.base64).includes(',')
+            ? String(att.base64).split(',')[1]
+            : String(att.base64);
+          const safeFilename = String(att.name).replace(/["\r\n]/g, '_');
+          const mimeType = att.mimeType || 'application/octet-stream';
+          headers.push(
+            `--${boundary}`,
+            `Content-Type: ${mimeType}; name="${safeFilename}"`,
+            `Content-Disposition: attachment; filename="${safeFilename}"`,
+            `Content-Transfer-Encoding: base64`,
+            ``,
+            cleanBase64
+          );
+        }
+      }
+
+      headers.push(`--${boundary}--`, ``);
+      const rawMessage = headers.join('\r\n');
+      const encodedRaw = Buffer.from(rawMessage, 'utf-8')
+        .toString('base64')
+        .replace(/\+/g, '-')
+        .replace(/\//g, '_')
+        .replace(/=+$/, '');
+
+      const sendRes = await gmail.users.messages.send({
+        userId: 'me',
+        requestBody: { raw: encodedRaw }
+      });
+
+      res.json({ success: true, id: sendRes.data.id });
+    } catch (error: any) {
+      console.error("Error sending Gmail:", error);
+      res.status(500).json({ error: error.message || "Error al enviar correo" });
     }
   });
 

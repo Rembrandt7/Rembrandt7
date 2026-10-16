@@ -1,8 +1,9 @@
 import React, { useState, useMemo, useEffect } from 'react';
-import { Box, Wrench, Layout, Sparkles, Move, Star, Shield, Zap, Package, Key, Sword, Globe, ChevronRight, Settings, Database, ExternalLink, Cloud, Search, X, Calculator, TrendingUp, FolderArchive, Layers, Scissors, Eye } from 'lucide-react';
+import { Box, Wrench, Layout, Sparkles, Move, Star, Shield, Zap, Package, Key, Sword, Globe, ChevronRight, Settings, Database, ExternalLink, Cloud, Search, X, Calculator, TrendingUp, FolderArchive, Layers, Scissors, Eye, Flame } from 'lucide-react';
 import { motion } from 'motion/react';
 
 import ThreeDCalculator from './ThreeDCalculator';
+import ThreeDSuggestions from './ThreeDSuggestions';
 
 /* ─────────────────────────────────────────────────────────────────
    DATA - Audit and Corrected from PDF (stl_pack.pdf)
@@ -11,18 +12,21 @@ const libraries = [
   { 
     name: 'MakerWorld', 
     href: 'https://makerworld.com/es', 
+    description: 'Biblioteca oficial de Bambu Lab con perfiles 3MF listos para imprimir en 1 clic y modelos multicolor AMS.',
     icon: <img src="/makerworld_premium.png" alt="MakerWorld" className="w-5 h-5 rounded object-contain" />, 
     color: 'from-teal-500/20 to-transparent' 
   },
   { 
     name: 'Creality', 
     href: 'https://www.crealitycloud.com/es', 
+    description: 'Repositorio de Creality Cloud con miles de modelos STL/G-code, figuras y accesorios para impresoras FDM.',
     icon: <Cloud size={20} className="text-cyan-400" />, 
     color: 'from-cyan-500/20 to-transparent' 
   },
   { 
     name: 'Anycubic', 
     href: 'https://www.makeronline.com/en/', 
+    description: 'MakerOnline (Anycubic): comunidad de modelos 3D gratuitos optimizados para serie Kobra y resina.',
     icon: (
       <svg className="w-5 h-5 text-emerald-400" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round">
         <path d="M12 2L2 7l10 5 10-5-10-5zM2 17l10 5 10-5M2 12l10 5 10-5"/>
@@ -33,6 +37,7 @@ const libraries = [
   { 
     name: 'Snapmaker', 
     href: 'https://space.snapmaker.com/en', 
+    description: 'Comunidad Snapmaker con proyectos de impresión 3D, grabado láser y diseño funcional.',
     icon: (
       <svg className="w-5 h-5 text-blue-500" viewBox="0 0 36 36" fill="currentColor">
         <path d="M23.2899 9.13976C21.7574 8.82421 20.5055 9.02036 19.5311 9.72254C18.5567 10.4247 17.8864 11.6016 17.5232 13.2505L16.3835 18.396H16.3864L15.3677 22.9928C15.1758 23.8627 14.8864 24.4711 14.5026 24.8207C14.1187 25.1704 13.5842 25.2727 12.9022 25.1334C12.4593 25.0425 11.9868 24.8776 11.4789 24.6388L10.9238 27.1291C11.414 27.3792 12.0104 27.5754 12.7132 27.7175C14.2457 28.0331 15.4976 27.8369 16.472 27.1348C17.4464 26.4326 18.1167 25.2557 18.4799 23.6068L19.6197 18.4613H19.6167L20.6354 13.8645C20.8273 12.9946 21.1167 12.3863 21.5006 12.0366C21.8844 11.6869 22.4189 11.5846 23.1009 11.7239C23.5439 11.8148 24.0163 11.9797 24.5242 12.2185L25.0763 9.72538C24.5891 9.4809 23.9927 9.28475 23.2899 9.13976Z" />
@@ -43,6 +48,7 @@ const libraries = [
   { 
     name: 'Cults3D', 
     href: 'https://cults3d.com/es', 
+    description: 'Mercado líder de diseñadores independientes: figuras articuladas flexi, cultura pop, anime y coleccionables exclusivos.',
     icon: (
       <svg className="w-5 h-5 text-purple-400" viewBox="0 0 24 24" fill="currentColor">
         <path d="M12 2L4.5 20.29l.71.71L12 18l6.79 3 .71-.71L12 2z"/>
@@ -53,12 +59,14 @@ const libraries = [
   { 
     name: 'Printables', 
     href: 'https://www.printables.com/?lang=es', 
+    description: 'Repositorio de Prusa Research con modelos verificados de altísima calidad, concursos y piezas funcionales.',
     icon: <Globe size={20} className="text-orange-500" />, 
     color: 'from-orange-600/20 to-transparent' 
   },
   { 
     name: 'Thingiverse', 
     href: 'https://www.thingiverse.com/', 
+    description: 'El repositorio gratuito más grande del mundo con millones de archivos STL para todo tipo de proyectos.',
     icon: (
       <svg className="w-5 h-5 text-blue-400" viewBox="0 0 24 24" fill="currentColor">
         <path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm0 18c-4.41 0-8-3.59-8-8s3.59-8 8-8 8 3.59 8 8-3.59 8-8 8zm-1-13h2v6h-2zm0 8h2v2h-2z"/>
@@ -69,6 +77,7 @@ const libraries = [
   { 
     name: 'MyMiniFactory', 
     href: 'https://www.myminifactory.com/', 
+    description: 'Especializado en miniaturas de juegos de rol (D&D/Warhammer), bustos, escultura artística y cosplay.',
     icon: (
       <svg className="w-5 h-5 text-green-400" viewBox="0 0 24 24" fill="currentColor">
         <path d="M12 2L2 19h20L12 2zm0 4.83L18.17 17H5.83L12 6.83z"/>
@@ -79,12 +88,27 @@ const libraries = [
   { 
     name: 'Thangs', 
     href: 'https://thangs.com/', 
+    description: 'Buscador geométrico 3D que indexa millones de modelos en toda la web y detecta piezas similares.',
     icon: (
       <svg className="w-5 h-5 text-orange-400" viewBox="0 0 24 24" fill="currentColor">
         <path d="M12 2L2 7v10l10 5 10-5V7l-10-5zm0 2.18L19.82 8 12 11.82 4.18 8 12 4.18zM4 15.18l7 3.5v-7.18l-7-3.5v7.18zm16 0l-7 3.5v-7.18l7-3.5v7.18z"/>
       </svg>
     ), 
     color: 'from-orange-500/20 to-transparent' 
+  },
+  { 
+    name: 'Yeggi', 
+    href: 'https://www.yeggi.com/', 
+    description: 'El "Google" de los archivos STL: busca simultáneamente en Printables, Cults3D, Thingiverse y MakerWorld.',
+    icon: <Search size={20} className="text-yellow-400" />, 
+    color: 'from-yellow-500/20 to-transparent' 
+  },
+  { 
+    name: 'GrabCAD', 
+    href: 'https://grabcad.com/library', 
+    description: 'Biblioteca profesional de ingeniería CAD: engranes, soportes mecánicos, refacciones automotrices y piezas exactas.',
+    icon: <Settings size={20} className="text-rose-400" />, 
+    color: 'from-rose-500/20 to-transparent' 
   },
 ];
 
@@ -93,6 +117,7 @@ const tools3D = [
     name: 'Visualizador 3D', 
     href: '/visualizador3d/index.html', 
     isInternal: true,
+    description: 'Visor interno de archivos .STL y .3MF: revisa dimensiones, volumen, gramos estimados y si cabe en tus impresoras.',
     icon: (
       <svg className="w-5 h-5 text-cyan-400" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round">
         <path d="M12 2L2 7l10 5 10-5-10-5zM2 17l10 5 10-5M2 12l10 5 10-5"/>
@@ -101,8 +126,58 @@ const tools3D = [
     color: 'from-cyan-500/20 to-transparent' 
   },
   { 
+    name: 'MakerLab', 
+    href: 'https://makerworld.com/es/makerlab', 
+    description: 'Suite gratuita de Bambu Lab para crear llaveros desde logos/imágenes, cajas de luz LED, jarrones y letreros en minutos.',
+    icon: <Sparkles size={20} className="text-emerald-400" />, 
+    color: 'from-emerald-500/20 to-transparent' 
+  },
+  { 
+    name: 'ItsLitho', 
+    href: 'https://tool.itslitho.com/', 
+    description: 'Convierte cualquier fotografía familiar o de mascotas en una litofanía 3D (lámpara, cilindro, esfera o llavero a contraluz).',
+    icon: <Star size={20} className="text-amber-300" />, 
+    color: 'from-amber-500/20 to-transparent' 
+  },
+  { 
+    name: 'LithophaneMkr', 
+    href: 'https://lithophanemaker.com/', 
+    description: 'Generador de lámparas nocturnas, esferas lunares con fotos y marcos iluminados listos para imprimir sin soportes.',
+    icon: <Zap size={20} className="text-yellow-300" />, 
+    color: 'from-yellow-500/20 to-transparent' 
+  },
+  { 
+    name: 'Tinkercad', 
+    href: 'https://www.tinkercad.com/dashboard', 
+    description: 'Editor CAD gratuito en el navegador: ideal para poner nombres a piezas, agregar argolla de llavero o perforar hueco de clicker.',
+    icon: <Box size={20} className="text-red-400" />, 
+    color: 'from-red-500/20 to-transparent' 
+  },
+  { 
+    name: 'ImageToSTL', 
+    href: 'https://imagetostl.com/es', 
+    description: 'Convierte logos, escudos o imágenes PNG/JPG/SVG directamente a modelos 3D con relieve (.STL) para llaveros y letreros.',
+    icon: <Layers size={20} className="text-sky-400" />, 
+    color: 'from-sky-500/20 to-transparent' 
+  },
+  { 
+    name: 'TouchTerrain', 
+    href: 'https://touchterrain.geol.iastate.edu/', 
+    description: 'Genera maquetas y cuadros topográficos 3D en relieve de cualquier montaña, volcán o ciudad del mundo en archivo STL.',
+    icon: <Globe size={20} className="text-lime-400" />, 
+    color: 'from-lime-500/20 to-transparent' 
+  },
+  { 
+    name: 'Boxes.py', 
+    href: 'https://boxes.hackerspace-bamberg.de/', 
+    description: 'Generador paramétrico de cajas organizadoras, estuches con bisagra y gavetas a la medida exacta que necesites.',
+    icon: <Package size={20} className="text-amber-400" />, 
+    color: 'from-amber-600/20 to-transparent' 
+  },
+  { 
     name: 'Meshy (IA)', 
     href: 'https://www.meshy.ai/workspace', 
+    description: 'Generador 3D con Inteligencia Artificial: escribe un texto o sube una foto y crea un modelo 3D completo para descargar.',
     icon: (
       <img 
         src="data:image/jpeg;base64,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" 
@@ -115,6 +190,7 @@ const tools3D = [
   { 
     name: 'Hitem3D', 
     href: 'https://www.hitem3d.ai/create', 
+    description: 'Generador IA de modelos 3D estilizados y personajes a partir de imágenes o descripciones de texto.',
     icon: (
       <svg className="w-5 h-5 text-blue-400" viewBox="0 0 24 24" fill="currentColor">
         <path d="M12 2L2 7l10 5 10-5-10-5zm0 9l-8-4 8-4 8 4-8 4zm-8 3l8 4 8-4v3l-8 4-8-4v-3z"/>
@@ -125,12 +201,14 @@ const tools3D = [
   { 
     name: 'STLBuddy', 
     href: 'https://stlbuddy.com/model-splitter', 
+    description: 'Cortador de archivos STL: divide modelos grandes en varias partes con conectores para que quepan en tu impresora.',
     icon: <Scissors size={20} className="text-cyan-400" />, 
     color: 'from-cyan-500/20 to-transparent' 
   },
   { 
     name: 'Tripo', 
     href: 'https://studio.tripo3d.ai/', 
+    description: 'Estudio de IA rápido para convertir cualquier boceto, foto o texto en una malla 3D lista para esculpir o imprimir.',
     icon: (
       <svg className="w-5 h-5 text-yellow-400" viewBox="0 0 24 24" fill="currentColor">
         <path d="M12 2L1 21h22L12 2zm0 4.5l6.5 11.5h-13L12 6.5z"/>
@@ -141,24 +219,28 @@ const tools3D = [
   { 
     name: 'Dora', 
     href: 'https://www.3dkoneko.com/dora', 
+    description: 'Herramienta creativa para exploración y generación de figuras 3D estilo anime/chibi.',
     icon: <Sparkles size={20} className="text-rose-400" />, 
     color: 'from-rose-500/20 to-transparent' 
   },
   { 
     name: 'Gridfinity', 
     href: 'https://gridfinitygenerator.com/es/editor', 
+    description: 'Generador online de charolas, bloques y bases modulares Gridfinity para organizar cajones de herramientas y escritorio.',
     icon: <Database size={20} className="text-orange-400" />, 
     color: 'from-orange-500/20 to-transparent' 
   },
   { 
     name: 'Multibuild', 
     href: 'https://multibuild.io/parts', 
+    description: 'Catálogo de paneles de pared modulares, ganchos y soportes de taller tipo Multiboard para organizar tu espacio.',
     icon: <Settings size={20} className="text-indigo-400" />, 
     color: 'from-indigo-500/20 to-transparent' 
   },
   { 
     name: 'Fusion', 
     href: 'https://fusion.online.autodesk.com/', 
+    description: 'Acceso directo a Autodesk Fusion 360 Online para modelado mecánico y paramétrico de alta precisión.',
     icon: (
       <svg viewBox="0 0 24 24" className="w-5 h-5">
         <rect width="24" height="24" rx="5" fill="#FF5100"/>
@@ -170,12 +252,14 @@ const tools3D = [
   { 
     name: 'Bumpmesh', 
     href: 'https://bumpmesh.com/', 
+    description: 'Aplica texturas en relieve 3D (madera, ladrillo, piel, patrones geométricos) sobre cualquier imagen o superficie STL.',
     icon: <Zap size={20} className="text-amber-400" />, 
     color: 'from-amber-500/20 to-transparent' 
   },
   { 
     name: 'Letras', 
     href: 'https://proled3d.com/?lang=es', 
+    description: 'Diseñador de letras corpóreas 3D y letreros luminosos con canal para tiras LED (muy rentable para negocios y eventos).',
     icon: (
       <svg className="w-5 h-5 text-pink-400" viewBox="0 0 24 24" fill="currentColor">
         <path d="M9.93 13.5h4.14L12 7.98 9.93 13.5zM20 2H4c-1.1 0-2 .9-2 2v16c0 1.1.9 2 2 2h16c1.1 0 2-.9 2-2V4c0-1.1-.9-2-2-2zm-4.05 16.5l-1.14-3H9.17l-1.12 3H5.96l5.11-13h1.86l5.11 13h-2.09z"/>
@@ -186,6 +270,7 @@ const tools3D = [
   { 
     name: 'Guilloche', 
     href: 'https://guillochegenerator.com/', 
+    description: 'Generador de patrones geométricos hipnóticos tipo espirográfico para posavasos, tapas decorativas y arte en relieve.',
     icon: (
       <svg className="w-5 h-5 text-teal-300" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round">
         <circle cx="12" cy="12" r="9" />
@@ -389,11 +474,13 @@ const GroupCard = ({ group, className, itemsOverride }: { group: typeof groups[0
   );
 };
 
-type SubTab = 'taller' | 'ventas' | 'catalogo' | 'visualizador' | 'todo';
+type SubTab = 'sugerencias' | 'taller' | 'ventas' | 'catalogo' | 'visualizador' | 'todo';
 
 const ThreeDPrinting: React.FC = () => {
-  const [activeTab, setActiveTab] = useState<SubTab>('visualizador');
+  const [activeTab, setActiveTab] = useState<SubTab>('sugerencias');
   const [searchQuery, setSearchQuery] = useState('');
+  const [hoveredLib, setHoveredLib] = useState<{ name: string; description: string } | null>(null);
+  const [hoveredTool, setHoveredTool] = useState<{ name: string; description: string } | null>(null);
 
   // Abre en automático la calculadora flotante del lado derecho al entrar a Impresión 3D
   useEffect(() => {
@@ -417,12 +504,18 @@ const ThreeDPrinting: React.FC = () => {
 
   const filteredLibraries = useMemo(() => {
     if (!cleanQuery) return libraries;
-    return libraries.filter(l => l.name.toLowerCase().includes(cleanQuery));
+    return libraries.filter(l =>
+      l.name.toLowerCase().includes(cleanQuery) ||
+      (l.description && l.description.toLowerCase().includes(cleanQuery))
+    );
   }, [cleanQuery]);
 
   const filteredTools = useMemo(() => {
     if (!cleanQuery) return tools3D;
-    return tools3D.filter(t => t.name.toLowerCase().includes(cleanQuery));
+    return tools3D.filter(t =>
+      t.name.toLowerCase().includes(cleanQuery) ||
+      (t.description && t.description.toLowerCase().includes(cleanQuery))
+    );
   }, [cleanQuery]);
 
   const totalMatches = useMemo(() => {
@@ -434,24 +527,33 @@ const ThreeDPrinting: React.FC = () => {
     <div className="p-4 space-y-5 animate-in fade-in slide-in-from-bottom-4 duration-500 max-w-[1600px] mx-auto pb-20">
       {/* Librerías (Siempre visible arriba) */}
       <div className="flex flex-col xl:flex-row xl:items-center justify-between gap-4 bg-blue-600/10 p-4 sm:p-5 rounded-2xl border border-blue-500/20 shadow-lg">
-        <div className="flex items-center gap-3 shrink-0">
+        <div className="flex items-center gap-3 shrink-0 xl:w-[230px]">
           <div className="p-2.5 bg-blue-600/20 rounded-xl border border-blue-500/30 shrink-0">
             <Globe size={22} className="text-blue-400" />
           </div>
-          <div>
+          <div className="min-w-0">
             <h2 className="text-base sm:text-lg font-bold text-white leading-tight">Librerías</h2>
-            <p className="text-xs text-gray-400">Plataformas y repositorios de modelos 3D.</p>
+            {hoveredLib ? (
+              <p className="text-[11px] text-blue-200 font-medium leading-snug mt-0.5 animate-in fade-in duration-150">
+                <span className="font-black text-blue-400">{hoveredLib.name}:</span> {hoveredLib.description}
+              </p>
+            ) : (
+              <p className="text-xs text-gray-400">Pasa el mouse sobre un icono para ver qué hace.</p>
+            )}
           </div>
         </div>
         
-        <div className="grid grid-cols-3 sm:grid-cols-5 lg:grid-cols-9 gap-2.5 flex-1 xl:max-w-[80%]">
+        <div className="grid grid-cols-3 sm:grid-cols-6 lg:grid-cols-11 gap-2.5 flex-1">
           {filteredLibraries.map((tool, idx) => (
             <a
               key={idx}
               href={tool.href}
               target="_blank"
               rel="noopener noreferrer"
-              className={`flex flex-col items-center justify-center p-2 bg-gradient-to-b ${tool.color} border border-white/10 rounded-2xl transition-all hover:scale-105 hover:border-white/30 group min-w-[65px] h-[78px] shadow-sm`}
+              title={`${tool.name}: ${tool.description}`}
+              onMouseEnter={() => setHoveredLib({ name: tool.name, description: tool.description })}
+              onMouseLeave={() => setHoveredLib(null)}
+              className={`relative flex flex-col items-center justify-center p-2 bg-gradient-to-b ${tool.color} border border-white/10 rounded-2xl transition-all hover:scale-105 hover:border-blue-400/50 hover:z-30 group min-w-[65px] h-[78px] shadow-sm`}
             >
               <div className="mb-1.5 p-1 bg-gray-900/60 rounded-xl group-hover:scale-110 transition-transform flex items-center justify-center w-8 h-8 shrink-0">
                 {tool.icon}
@@ -459,6 +561,16 @@ const ThreeDPrinting: React.FC = () => {
               <span className="text-[9px] font-bold text-gray-300 group-hover:text-white uppercase tracking-wider text-center line-clamp-1 w-full px-0.5">
                 {tool.name}
               </span>
+              {/* Tooltip flotante instantáneo al pasar el mouse */}
+              <div className="pointer-events-none opacity-0 group-hover:opacity-100 transition-all duration-150 absolute left-1/2 -translate-x-1/2 top-full mt-2 w-56 p-2.5 bg-slate-950/95 backdrop-blur-md border border-blue-500/40 rounded-xl shadow-2xl z-50 text-left">
+                <div className="text-[10px] font-black text-blue-400 uppercase tracking-wider mb-0.5 flex items-center justify-between">
+                  <span>{tool.name}</span>
+                  <ExternalLink size={10} className="text-blue-400/70" />
+                </div>
+                <p className="text-[11px] text-slate-200 leading-snug font-normal">
+                  {tool.description}
+                </p>
+              </div>
             </a>
           ))}
         </div>
@@ -466,23 +578,32 @@ const ThreeDPrinting: React.FC = () => {
 
       {/* Herramientas 3D (Siempre visible arriba) */}
       <div className="flex flex-col xl:flex-row xl:items-center justify-between gap-4 bg-purple-600/10 p-4 sm:p-5 rounded-2xl border border-purple-500/20 shadow-lg">
-        <div className="flex items-center gap-3 shrink-0">
+        <div className="flex items-center gap-3 shrink-0 xl:w-[230px]">
           <div className="p-2.5 bg-purple-600/20 rounded-xl border border-purple-500/30 shrink-0">
             <Wrench size={22} className="text-purple-400" />
           </div>
-          <div>
+          <div className="min-w-0">
             <h2 className="text-base sm:text-lg font-bold text-white leading-tight">Herramientas 3D</h2>
-            <p className="text-xs text-gray-400">Generadores con IA y editores de modelos.</p>
+            {hoveredTool ? (
+              <p className="text-[11px] text-purple-200 font-medium leading-snug mt-0.5 animate-in fade-in duration-150">
+                <span className="font-black text-purple-400">{hoveredTool.name}:</span> {hoveredTool.description}
+              </p>
+            ) : (
+              <p className="text-xs text-gray-400">Pasa el mouse sobre cada herramienta para saber qué hace.</p>
+            )}
           </div>
         </div>
         
-        <div className="grid grid-cols-4 sm:grid-cols-6 lg:grid-cols-12 gap-2 flex-1">
+        <div className="grid grid-cols-4 sm:grid-cols-6 lg:grid-cols-9 gap-2 flex-1">
           {filteredTools.map((tool, idx) => (
             (tool as any).isInternal ? (
               <button
                 key={idx}
                 onClick={() => setActiveTab('visualizador')}
-                className={`flex flex-col items-center justify-center p-2 bg-gradient-to-b ${tool.color} border border-cyan-500/30 rounded-2xl transition-all hover:scale-105 hover:border-cyan-400 group min-w-[58px] h-[78px] shadow-sm text-center`}
+                title={`${tool.name}: ${tool.description}`}
+                onMouseEnter={() => setHoveredTool({ name: tool.name, description: tool.description })}
+                onMouseLeave={() => setHoveredTool(null)}
+                className={`relative flex flex-col items-center justify-center p-2 bg-gradient-to-b ${tool.color} border border-cyan-500/30 rounded-2xl transition-all hover:scale-105 hover:border-cyan-400 hover:z-30 group min-w-[58px] h-[78px] shadow-sm text-center`}
               >
                 <div className="mb-1.5 p-1 bg-gray-900/60 rounded-xl group-hover:scale-110 transition-transform flex items-center justify-center w-8 h-8 shrink-0">
                   {tool.icon}
@@ -490,6 +611,15 @@ const ThreeDPrinting: React.FC = () => {
                 <span className="text-[9px] font-bold text-cyan-300 group-hover:text-white uppercase tracking-wider text-center line-clamp-1 w-full px-0.5">
                   {tool.name}
                 </span>
+                {/* Tooltip flotante instantáneo */}
+                <div className="pointer-events-none opacity-0 group-hover:opacity-100 transition-all duration-150 absolute left-1/2 -translate-x-1/2 top-full mt-2 w-56 p-2.5 bg-slate-950/95 backdrop-blur-md border border-cyan-500/40 rounded-xl shadow-2xl z-50 text-left">
+                  <div className="text-[10px] font-black text-cyan-400 uppercase tracking-wider mb-0.5">
+                    {tool.name} (Integrado)
+                  </div>
+                  <p className="text-[11px] text-slate-200 leading-snug font-normal">
+                    {tool.description}
+                  </p>
+                </div>
               </button>
             ) : (
               <a
@@ -497,7 +627,10 @@ const ThreeDPrinting: React.FC = () => {
                 href={tool.href}
                 target="_blank"
                 rel="noopener noreferrer"
-                className={`flex flex-col items-center justify-center p-2 bg-gradient-to-b ${tool.color} border border-white/10 rounded-2xl transition-all hover:scale-105 hover:border-white/30 group min-w-[58px] h-[78px] shadow-sm`}
+                title={`${tool.name}: ${tool.description}`}
+                onMouseEnter={() => setHoveredTool({ name: tool.name, description: tool.description })}
+                onMouseLeave={() => setHoveredTool(null)}
+                className={`relative flex flex-col items-center justify-center p-2 bg-gradient-to-b ${tool.color} border border-white/10 rounded-2xl transition-all hover:scale-105 hover:border-purple-400/50 hover:z-30 group min-w-[58px] h-[78px] shadow-sm`}
               >
                 <div className="mb-1.5 p-1 bg-gray-900/60 rounded-xl group-hover:scale-110 transition-transform flex items-center justify-center w-8 h-8 shrink-0">
                   {tool.icon}
@@ -505,6 +638,16 @@ const ThreeDPrinting: React.FC = () => {
                 <span className="text-[9px] font-bold text-gray-300 group-hover:text-white uppercase tracking-wider text-center line-clamp-1 w-full px-0.5">
                   {tool.name}
                 </span>
+                {/* Tooltip flotante instantáneo al pasar el mouse */}
+                <div className="pointer-events-none opacity-0 group-hover:opacity-100 transition-all duration-150 absolute left-1/2 -translate-x-1/2 top-full mt-2 w-56 p-2.5 bg-slate-950/95 backdrop-blur-md border border-purple-500/40 rounded-xl shadow-2xl z-50 text-left">
+                  <div className="text-[10px] font-black text-purple-400 uppercase tracking-wider mb-0.5 flex items-center justify-between">
+                    <span>{tool.name}</span>
+                    <ExternalLink size={10} className="text-purple-400/70" />
+                  </div>
+                  <p className="text-[11px] text-slate-200 leading-snug font-normal">
+                    {tool.description}
+                  </p>
+                </div>
               </a>
             )
           ))}
@@ -514,6 +657,18 @@ const ThreeDPrinting: React.FC = () => {
       {/* Barra de Sub-Pestañas */}
       <div className="flex flex-col md:flex-row items-center justify-between gap-3 bg-slate-900/70 backdrop-blur-xl p-2.5 rounded-2xl border border-white/10 shadow-xl">
         <div className="flex items-center gap-1.5 p-1 bg-white/5 rounded-xl border border-white/5 w-full md:w-auto overflow-x-auto scrollbar-none">
+          <button
+            onClick={() => setActiveTab('sugerencias')}
+            className={`flex items-center gap-2 px-3.5 py-2 rounded-lg text-xs font-black uppercase tracking-wider transition-all shrink-0 ${
+              activeTab === 'sugerencias'
+                ? 'bg-gradient-to-r from-amber-500 to-rose-500 text-slate-950 shadow-md'
+                : 'text-amber-300 hover:text-white hover:bg-white/5'
+            }`}
+          >
+            <Flame size={15} />
+            <span>Sugerencias (4 del Día)</span>
+          </button>
+
           <button
             onClick={() => setActiveTab('visualizador')}
             className={`flex items-center gap-2 px-3.5 py-2 rounded-lg text-xs font-black uppercase tracking-wider transition-all shrink-0 ${
@@ -602,6 +757,13 @@ const ThreeDPrinting: React.FC = () => {
           )}
         </div>
       </div>
+
+      {/* RENDER SUGERENCIAS DEL DÍA (SUGERENCIAS / TODO) */}
+      {(activeTab === 'sugerencias' || activeTab === 'todo') && (
+        <ThreeDSuggestions
+          onSendToCalculator={() => setActiveTab('taller')}
+        />
+      )}
 
       {/* RENDER CALCULADORA (TALLER / VENTAS / TODO) */}
       {(activeTab === 'taller' || activeTab === 'ventas' || activeTab === 'todo') && (

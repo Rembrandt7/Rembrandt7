@@ -3,13 +3,15 @@ import { GoogleGenAI, Type } from '@google/genai';
 import Spinner from './common/Spinner';
 import { ReferenceImage } from './common/ReferenceImageManager';
 import { SUPABASE_CONFIG } from '../utils/constants';
+import { supabase } from '../services/supabaseClient';
 import { useLinks } from '../contexts/LinkContext';
 import { cleanJsonResponse } from '../utils/jsonUtils';
 import { 
   Trash2, Mail, MessageSquare, Star, Sparkles, Send, 
   RefreshCw, Pencil, Save, Copy, AlertTriangle, Mic, MicOff, RotateCcw, 
   Bot, Newspaper, ExternalLink, Bookmark, Building2, CheckCircle2, Check,
-  Clock, Zap, Search, Image as ImageIcon, Users, ChevronDown, ChevronUp
+  Clock, Zap, Search, Image as ImageIcon, Users, ChevronDown, ChevronUp,
+  FileText, Printer, Reply, UserPlus, X, Paperclip, UploadCloud, Download
 } from 'lucide-react';
 import { motion, AnimatePresence } from 'motion/react';
 import { toast } from 'sonner';
@@ -17,10 +19,21 @@ import { getFriendlyAiErrorMessage, isQuotaError, isUnavailableError } from '../
 import { generateContentWithFallback, getGeminiClient, GEMINI_MODELS } from '../services/geminiService';
 import { useDeviceLayout } from '../hooks/useDeviceLayout';
 
+export interface RealAttachmentFile {
+  id: string;
+  name: string;
+  size: number;
+  mimeType: string;
+  base64: string;
+  fileObj?: File;
+  cloudUrl?: string;
+}
+
 type Tone = 'Profesional' | 'Casual';
 type MessageLength = 'Reducido' | 'Medio' | 'Detallado';
 type Gender = 'M' | 'F';
 type CopiedState = 'email' | 'whatsapp' | 'preset-email' | 'preset-wa' | null;
+type TemplateCategory = 'javer' | '3d';
 
 interface GeneratedContent {
   emailSubject: string;
@@ -37,9 +50,23 @@ export type DeliverableType =
   | 'Recorrido' 
   | 'Presentación' 
   | 'Fotomontaje' 
-  | 'Cálculo Estructural';
+  | 'Cálculo Estructural'
+  | 'Piezas impresas en PLA/PETG'
+  | 'Llaveros personalizados 3D'
+  | 'Clickers antiestrés 3D'
+  | 'Pintado y detallado a mano'
+  | 'Archivo 3D (STL / 3MF)'
+  | 'Maqueta / Prototipo 3D';
 
-export type DeliveryMethod = 'Revisión' | 'Entrega' | 'Proyecto' | 'Anteproyecto';
+export type DeliveryMethod = 
+  | 'Revisión' 
+  | 'Entrega' 
+  | 'Proyecto' 
+  | 'Anteproyecto'
+  | 'Cotización 3D'
+  | 'Confirmación y Anticipo'
+  | 'Pieza Lista para Entrega'
+  | 'Avance de Impresión';
 
 const DELIVERABLE_OPTIONS: DeliverableType[] = [
   'Planos en AutoCAD',
@@ -51,12 +78,86 @@ const DELIVERABLE_OPTIONS: DeliverableType[] = [
   'Cálculo Estructural'
 ];
 
+const DELIVERABLE_OPTIONS_3D: DeliverableType[] = [
+  'Piezas impresas en PLA/PETG',
+  'Llaveros personalizados 3D',
+  'Clickers antiestrés 3D',
+  'Pintado y detallado a mano',
+  'Archivo 3D (STL / 3MF)',
+  'Maqueta / Prototipo 3D'
+];
+
 const METHOD_OPTIONS: DeliveryMethod[] = [
   'Revisión',
   'Entrega',
   'Proyecto',
   'Anteproyecto'
 ];
+
+const METHOD_OPTIONS_3D: DeliveryMethod[] = [
+  'Cotización 3D',
+  'Confirmación y Anticipo',
+  'Pieza Lista para Entrega',
+  'Avance de Impresión'
+];
+
+const QUICK_REPLY_INTENTS = [
+  {
+    id: 'qr-ack',
+    label: '✅ Confirmar de recibido',
+    prompt: 'Confirmar de recibido el correo/información, indicar que ya lo estamos revisando y trabajando en ello, y que daremos seguimiento puntual.'
+  },
+  {
+    id: 'qr-meet',
+    label: '📅 Agendar revisión',
+    prompt: 'Agradecer el correo y proponer agendar una breve sesión o llamada de revisión para alinear detalles y comentarios.'
+  },
+  {
+    id: 'qr-missing',
+    label: '⚠️ Solicitar info faltante',
+    prompt: 'Comentar amablemente que para poder avanzar con el entregable necesitamos que nos compartan la información, planos base o definiciones pendientes.'
+  },
+  {
+    id: 'qr-fixed',
+    label: '🔄 Correcciones aplicadas',
+    prompt: 'Informar que ya se atendieron y aplicaron todas las observaciones solicitadas en el correo anterior y se adjunta/comparte la versión actualizada para visto bueno.'
+  },
+  {
+    id: 'qr-deadline',
+    label: '⏳ Actualizar fecha entrega',
+    prompt: 'Agradecer el seguimiento e informar la fecha compromiso actualizada en la que estaremos enviando los entregables completos.'
+  }
+];
+
+const getSmartDeadlines = (): { label: string; value: string }[] => {
+  const now = new Date();
+  const months = ['enero', 'febrero', 'marzo', 'abril', 'mayo', 'junio', 'julio', 'agosto', 'septiembre', 'octubre', 'noviembre', 'diciembre'];
+  
+  // Mañana
+  const tomorrow = new Date(now);
+  tomorrow.setDate(now.getDate() + 1);
+  const tomorrowStr = `mañana ${tomorrow.getDate()} de ${months[tomorrow.getMonth()]} antes de las 12:00 PM`;
+
+  // Viernes de esta semana (o próximo viernes)
+  const friday = new Date(now);
+  const day = now.getDay();
+  const diffToFriday = day <= 5 ? (5 - day === 0 ? 7 : 5 - day) : 6;
+  friday.setDate(now.getDate() + diffToFriday);
+  const fridayStr = `este viernes ${friday.getDate()} de ${months[friday.getMonth()]}`;
+
+  // En 3 días
+  const in3Days = new Date(now);
+  in3Days.setDate(now.getDate() + 3);
+  const in3DaysStr = `el ${in3Days.getDate()} de ${months[in3Days.getMonth()]}`;
+
+  return [
+    { label: '⚡ Hoy 6:00 PM', value: 'hoy antes de las 6:00 PM' },
+    { label: '🌤️ Mañana 12:00 PM', value: tomorrowStr },
+    { label: '📅 Este Viernes', value: fridayStr },
+    { label: '⏳ En 3 días', value: in3DaysStr },
+    { label: '🚨 Urgente hoy', value: 'el día de hoy a la brevedad posible' }
+  ];
+};
 
 const DEFAULT_VOCABULARY = [
   'planos', 'planos en autocad', 'planos en pdf', 'renders', 'recorrido virtual',
@@ -73,6 +174,7 @@ interface QuickPreset {
   name: string;
   deliverables: DeliverableType[];
   method: DeliveryMethod;
+  category?: TemplateCategory;
 }
 
 const QUICK_PRESETS: QuickPreset[] = [
@@ -80,43 +182,88 @@ const QUICK_PRESETS: QuickPreset[] = [
     id: 'qp-1',
     name: 'Planos AutoCAD (Revisión)',
     deliverables: ['Planos en AutoCAD'],
-    method: 'Revisión'
+    method: 'Revisión',
+    category: 'javer'
   },
   {
     id: 'qp-2',
     name: 'Planos PDF (Revisión)',
     deliverables: ['Planos en PDF'],
-    method: 'Revisión'
+    method: 'Revisión',
+    category: 'javer'
   },
   {
     id: 'qp-3',
     name: 'Planos AutoCAD + PDF (Entrega)',
     deliverables: ['Planos en AutoCAD', 'Planos en PDF'],
-    method: 'Entrega'
+    method: 'Entrega',
+    category: 'javer'
   },
   {
     id: 'qp-4',
     name: 'Renders y Fotomontaje',
     deliverables: ['Renders', 'Fotomontaje'],
-    method: 'Revisión'
+    method: 'Revisión',
+    category: 'javer'
   },
   {
     id: 'qp-5',
     name: 'Anteproyecto y Presentación',
     deliverables: ['Presentación', 'Renders'],
-    method: 'Anteproyecto'
+    method: 'Anteproyecto',
+    category: 'javer'
   },
   {
     id: 'qp-6',
     name: 'Recorrido Virtual',
     deliverables: ['Recorrido'],
-    method: 'Revisión'
+    method: 'Revisión',
+    category: 'javer'
   },
   {
     id: 'qp-7',
     name: 'Cálculo Estructural (Entrega)',
     deliverables: ['Cálculo Estructural'],
-    method: 'Entrega'
+    method: 'Entrega',
+    category: 'javer'
+  }
+];
+
+const QUICK_PRESETS_3D: QuickPreset[] = [
+  {
+    id: 'qp3d-1',
+    name: '💰 Cotización de Impresión 3D',
+    deliverables: ['Piezas impresas en PLA/PETG'],
+    method: 'Cotización 3D',
+    category: '3d'
+  },
+  {
+    id: 'qp3d-2',
+    name: '🔑 Cotización Lote Llaveros / Clickers',
+    deliverables: ['Llaveros personalizados 3D', 'Clickers antiestrés 3D'],
+    method: 'Cotización 3D',
+    category: '3d'
+  },
+  {
+    id: 'qp3d-3',
+    name: '✅ Confirmar Pedido y Anticipo (50%)',
+    deliverables: ['Piezas impresas en PLA/PETG'],
+    method: 'Confirmación y Anticipo',
+    category: '3d'
+  },
+  {
+    id: 'qp3d-4',
+    name: '🎁 Pieza Terminada y Lista para Entrega',
+    deliverables: ['Piezas impresas en PLA/PETG', 'Pintado y detallado a mano'],
+    method: 'Pieza Lista para Entrega',
+    category: '3d'
+  },
+  {
+    id: 'qp3d-5',
+    name: '📸 Muestra de Avance de Impresión',
+    deliverables: ['Piezas impresas en PLA/PETG'],
+    method: 'Avance de Impresión',
+    category: '3d'
   }
 ];
 
@@ -124,6 +271,8 @@ interface PresetOptions {
   cloudLink?: string;
   deadline?: string;
   toneStyle?: 'colaborativo' | 'formal';
+  attachedFileNames?: string[];
+  category?: TemplateCategory;
 }
 
 const buildPresetMessage = (
@@ -133,7 +282,7 @@ const buildPresetMessage = (
   projectName: string,
   options?: PresetOptions
 ) => {
-  const { cloudLink = '', deadline = '', toneStyle = 'colaborativo' } = options || {};
+  const { cloudLink = '', deadline = '', toneStyle = 'colaborativo', attachedFileNames = [], category = 'javer' } = options || {};
 
   const formatList = (items: string[]) => {
     if (items.length === 0) return '';
@@ -158,7 +307,25 @@ const buildPresetMessage = (
   let actionText = '';
   let closingText = 'Quedo a la espera de tus observaciones o visto bueno para continuar.';
 
-  if (method === 'Revisión') {
+  if (category === '3d' || method === 'Cotización 3D' || method === 'Confirmación y Anticipo' || method === 'Pieza Lista para Entrega' || method === 'Avance de Impresión') {
+    if (method === 'Cotización 3D') {
+      subject = `Cotización de Impresión 3D: ${deliverableTitle}${projSubject}`;
+      actionText = `te comparto la propuesta y cotización correspondiente a ${deliverableText}${projText}, contemplando materiales de alta calidad y acabado detallado.`;
+      closingText = 'Para iniciar la producción en fila de impresión se solicita un 50% de anticipo y el resto contra entrega. Quedo atento a tus comentarios para programar tu pedido.';
+    } else if (method === 'Confirmación y Anticipo') {
+      subject = `Confirmación de Pedido 3D: ${deliverableTitle}${projSubject}`;
+      actionText = `confirmo de recibido tu pedido y anticipo para la fabricación de ${deliverableText}${projText}. Tu proyecto ya fue ingresado a la fila de impresión 3D.`;
+      closingText = 'Te estaré compartiendo fotos del avance y te avisaré en cuanto tus piezas estén listas para entrega.';
+    } else if (method === 'Pieza Lista para Entrega') {
+      subject = `¡Pedido 3D Listo para Entrega! (${deliverableTitle})${projSubject}`;
+      actionText = `te informo con gusto que tu pedido de ${deliverableText}${projText} ya está completamente terminado, revisado y listo para entrega.`;
+      closingText = 'Quedo al pendiente para que me indiques el horario o punto de entrega que mejor te acomode para liquidar el saldo restante.';
+    } else {
+      subject = `Avance de Impresión 3D: ${deliverableTitle}${projSubject}`;
+      actionText = `te comparto el avance actual de fabricación de tu pedido de ${deliverableText}${projText}.`;
+      closingText = 'Todo marcha en tiempo y forma; te notificaré en cuanto finalice el proceso y post-procesado.';
+    }
+  } else if (method === 'Revisión') {
     subject = `Envío de ${deliverableTitle} para Revisión${projSubject}`;
     if (toneStyle === 'formal') {
       actionText = `por medio del presente correo, me permito remitir a usted los archivos correspondientes a ${deliverableText} para su debida revisión y comentarios${projText}.`;
@@ -196,6 +363,10 @@ const buildPresetMessage = (
     }
   }
 
+  const filesSection = attachedFileNames.length > 0
+    ? `\n\nArchivos incluidos en esta entrega (${attachedFileNames.length}):\n${attachedFileNames.map(f => `• ${f}`).join('\n')}`
+    : '';
+
   const cleanLink = cloudLink.trim();
   const linkSection = cleanLink 
     ? `\n\nPuedes consultar o descargar los archivos completos en el siguiente enlace:\n${cleanLink}`
@@ -203,23 +374,28 @@ const buildPresetMessage = (
 
   const cleanDeadline = deadline.trim();
   const deadlineSection = cleanDeadline
-    ? `\n\nAgradeceré contar con tus comentarios o visto bueno a más tardar el ${cleanDeadline} para dar continuidad al programa.`
+    ? (category === '3d'
+        ? `\n\nFecha estimada de entrega / compromiso: ${cleanDeadline}.`
+        : `\n\nAgradeceré contar con tus comentarios o visto bueno a más tardar el ${cleanDeadline} para dar continuidad al programa.`)
     : '';
 
-  const emailBody = `${greeting},\n\n${actionText}${linkSection}\n\n${closingText}${deadlineSection}\n\nAtte.\n\nArq. Rembrandt Blanco Arrambide`;
+  const emailBody = `${greeting},\n\n${actionText}${filesSection}${linkSection}\n\n${closingText}${deadlineSection}\n\nAtte.\n\nArq. Rembrandt Blanco Arrambide`;
   
+  const whatsappFiles = attachedFileNames.length > 0 ? ` (${attachedFileNames.length} archivo(s): ${attachedFileNames.slice(0, 3).join(', ')}${attachedFileNames.length > 3 ? '...' : ''})` : '';
   const whatsappLink = cleanLink ? ` Enlace: ${cleanLink}` : '';
-  const whatsappDeadline = cleanDeadline ? ` (Meta: ${cleanDeadline})` : '';
-  const whatsappMessage = `${greeting}, te acabo de enviar por correo ${deliverableText} (${method.toLowerCase()})${projClean ? ` de ${projClean}` : ''}.${whatsappLink}${whatsappDeadline} ${closingText} ¡Saludos!`;
+  const whatsappDeadline = cleanDeadline ? ` (Fecha: ${cleanDeadline})` : '';
+  const whatsappMessage = category === '3d'
+    ? `${greeting}, ${actionText}${whatsappFiles}${whatsappLink}${whatsappDeadline} ${closingText} ¡Saludos!`
+    : `${greeting}, te acabo de enviar por correo ${deliverableText} (${method.toLowerCase()})${projClean ? ` de ${projClean}` : ''}${whatsappFiles}.${whatsappLink}${whatsappDeadline} ${closingText} ¡Saludos!`;
 
-  const idea = `Envío de ${deliverableText} para ${method.toLowerCase()}${projText}.${cleanLink ? ` Descarga: ${cleanLink}` : ''}${cleanDeadline ? ` Plazo: ${cleanDeadline}` : ''}`;
+  const idea = `Envío de ${deliverableText} (${method.toLowerCase()})${projText}.${attachedFileNames.length > 0 ? ` Archivos: ${attachedFileNames.join(', ')}.` : ''}${cleanLink ? ` Descarga: ${cleanLink}` : ''}${cleanDeadline ? ` Plazo: ${cleanDeadline}` : ''}`;
 
   return {
     emailSubject: subject,
     emailBody,
     whatsappMessage,
     idea,
-    improvedIdea: `Envío estándar de ${deliverableText} para ${method.toLowerCase()}${projText}.`
+    improvedIdea: `Envío estándar de ${deliverableText} (${method.toLowerCase()})${projText}.`
   };
 };
 
@@ -357,21 +533,125 @@ const EmailGenerator: React.FC<EmailGeneratorProps> = ({ attachedImages, onAttac
     const [alternativeSubjects, setAlternativeSubjects] = useState<string[]>([]);
     const [copied, setCopied] = useState<CopiedState>(null);
     
-    // Opciones de entregables
+    // Opciones de entregables y nuevas mejoras
+    const [templateCategory, setTemplateCategory] = useState<TemplateCategory>('javer');
     const [selectedDeliverables, setSelectedDeliverables] = useState<DeliverableType[]>(['Planos en AutoCAD', 'Planos en PDF']);
     const [selectedMethod, setSelectedMethod] = useState<DeliveryMethod>('Revisión');
     const [activePresetId, setActivePresetId] = useState<string | null>('qp-3');
     const [cloudLink, setCloudLink] = useState('');
     const [deadline, setDeadline] = useState('');
     const [templateTone, setTemplateTone] = useState<'colaborativo' | 'formal'>('colaborativo');
+    const [attachedFileNames, setAttachedFileNames] = useState<string[]>([]);
+    const [realAttachments, setRealAttachments] = useState<RealAttachmentFile[]>([]);
+    const [isUploadingAttachments, setIsUploadingAttachments] = useState(false);
+    const [isSendingDirectEmail, setIsSendingDirectEmail] = useState(false);
+    const fileListInputRef = useRef<HTMLInputElement>(null);
+    const [ccRecipients, setCcRecipients] = useState<{ name: string; email: string }[]>([]);
+    const [showCcSelector, setShowCcSelector] = useState(false);
+    const smartDeadlines = useMemo(() => getSmartDeadlines(), []);
+
     const [customPresets, setCustomPresets] = useState<QuickPreset[]>(() => {
         try {
+            if (config.customQuickPresets && Array.isArray(config.customQuickPresets) && config.customQuickPresets.length > 0) {
+                return config.customQuickPresets;
+            }
             const saved = localStorage.getItem('custom-quick-presets');
             return saved ? JSON.parse(saved) : [];
         } catch {
             return [];
         }
     });
+
+    // Sincronizar plantillas personalizadas cuando cargue config desde Supabase
+    useEffect(() => {
+        if (config.customQuickPresets && Array.isArray(config.customQuickPresets)) {
+            setCustomPresets(prev => {
+                const mergedMap = new Map<string, QuickPreset>();
+                prev.forEach(p => mergedMap.set(p.id, p));
+                config.customQuickPresets!.forEach((p: QuickPreset) => mergedMap.set(p.id, p));
+                const merged = Array.from(mergedMap.values());
+                try { localStorage.setItem('custom-quick-presets', JSON.stringify(merged)); } catch {}
+                return merged;
+            });
+        }
+    }, [config.customQuickPresets]);
+
+    const handleSwitchCategory = useCallback((cat: TemplateCategory) => {
+        setTemplateCategory(cat);
+        if (cat === '3d') {
+            setSelectedDeliverables(['Piezas impresas en PLA/PETG']);
+            setSelectedMethod('Cotización 3D');
+            setActivePresetId('qp3d-1');
+        } else {
+            setSelectedDeliverables(['Planos en AutoCAD', 'Planos en PDF']);
+            setSelectedMethod('Revisión');
+            setActivePresetId('qp-3');
+        }
+    }, []);
+
+    const toggleCcContact = useCallback((contact: Contact) => {
+        const name = String(getDBValue(contact, ['cliente', 'nombre']) || '').trim();
+        const rawEmail = String(getDBValue(contact, 'correo') || '').trim();
+        if (!rawEmail) {
+            toast.warning(`El contacto "${name}" no tiene correo registrado`);
+            return;
+        }
+        const email = rawEmail.includes('@') ? rawEmail : `${rawEmail}@javer.com.mx`;
+        setCcRecipients(prev => {
+            const exists = prev.some(c => c.email.toLowerCase() === email.toLowerCase());
+            if (exists) {
+                return prev.filter(c => c.email.toLowerCase() !== email.toLowerCase());
+            }
+            return [...prev, { name: name || email, email }];
+        });
+    }, []);
+
+    const removeAttachedFileByName = useCallback((fileName: string) => {
+        setAttachedFileNames(prev => prev.filter(f => f !== fileName));
+        setRealAttachments(prev => prev.filter(f => f.name !== fileName));
+    }, []);
+
+    const clearAllAttachedFiles = useCallback(() => {
+        setAttachedFileNames([]);
+        setRealAttachments([]);
+    }, []);
+
+    const handleFilesSelectedForListing = useCallback((files: FileList | File[] | null) => {
+        if (!files || files.length === 0) return;
+        const fileArray = Array.from(files);
+        const newNames: string[] = [];
+
+        fileArray.forEach(f => {
+            if (f.name && !attachedFileNames.includes(f.name)) {
+                newNames.push(f.name);
+            }
+            const reader = new FileReader();
+            reader.onload = (ev) => {
+                const resultStr = String(ev.target?.result || '');
+                const base64Content = resultStr.includes(',') ? resultStr.split(',')[1] : resultStr;
+                setRealAttachments(prev => {
+                    const filtered = prev.filter(item => item.name !== f.name);
+                    return [
+                        ...filtered,
+                        {
+                            id: `${Date.now()}_${Math.random().toString(36).slice(2, 7)}`,
+                            name: f.name,
+                            size: f.size,
+                            mimeType: f.type || 'application/octet-stream',
+                            base64: base64Content,
+                            fileObj: f
+                        }
+                    ];
+                });
+            };
+            reader.readAsDataURL(f);
+        });
+
+        if (newNames.length > 0) {
+            setAttachedFileNames(prev => Array.from(new Set([...prev, ...newNames])));
+            toast.success(`📎 ${newNames.length} archivo(s) adjuntados y listados en el correo`);
+        }
+    }, [attachedFileNames]);
 
     const [isDraggingOver, setIsDraggingOver] = useState(false);
     const [useNickname, setUseNickname] = useState(true);
@@ -678,6 +958,9 @@ const EmailGenerator: React.FC<EmailGeneratorProps> = ({ attachedImages, onAttac
         setCloudLink('');
         setDeadline('');
         setTemplateTone('colaborativo');
+        setTemplateCategory('javer');
+        setAttachedFileNames([]);
+        setCcRecipients([]);
         setGeneratedContent(null);
         setOriginalContent(null);
         setAlternativeSubjects([]);
@@ -733,7 +1016,7 @@ const EmailGenerator: React.FC<EmailGeneratorProps> = ({ attachedImages, onAttac
     const autoSaveContactIfNew = useCallback(async () => {
         if (!recipientName.trim()) return;
         if (!isRecipientInDatabase) {
-            await handleSaveNewContact(true);
+            await handleSaveNewContact();
         }
     }, [recipientName, isRecipientInDatabase]);
 
@@ -806,9 +1089,11 @@ const EmailGenerator: React.FC<EmailGeneratorProps> = ({ attachedImages, onAttac
         return buildPresetMessage(selectedDeliverables, selectedMethod, greeting, project, {
             cloudLink,
             deadline,
-            toneStyle: templateTone
+            toneStyle: templateTone,
+            attachedFileNames,
+            category: templateCategory
         });
-    }, [getPresetGreeting, selectedDeliverables, selectedMethod, project, cloudLink, deadline, templateTone]);
+    }, [getPresetGreeting, selectedDeliverables, selectedMethod, project, cloudLink, deadline, templateTone, attachedFileNames, templateCategory]);
 
     // Transferir formato estándar al Redactor IA para personalizarlo
     const handleTransferToAi = useCallback(() => {
@@ -827,37 +1112,41 @@ const EmailGenerator: React.FC<EmailGeneratorProps> = ({ attachedImages, onAttac
 
     const handleSelectQuickPreset = useCallback((qp: QuickPreset) => {
         setActivePresetId(qp.id);
+        if (qp.category) setTemplateCategory(qp.category);
         setSelectedDeliverables(qp.deliverables);
         setSelectedMethod(qp.method);
         toast.success(`Plantilla "${qp.name}" aplicada`);
     }, []);
 
     const handleSaveCustomPreset = useCallback(() => {
-        const name = window.prompt("Nombre para tu nueva plantilla rápida (ej. Planos DWG + PDF a Obra):");
+        const name = window.prompt("Nombre para tu nueva plantilla rápida (se sincronizará en Supabase entre tu PC y Celular):");
         if (!name || !name.trim()) return;
         const newPreset: QuickPreset = {
             id: 'custom-' + Date.now(),
             name: name.trim(),
             deliverables: [...selectedDeliverables],
-            method: selectedMethod
+            method: selectedMethod,
+            category: templateCategory
         };
         const updated = [...customPresets, newPreset];
         setCustomPresets(updated);
         localStorage.setItem('custom-quick-presets', JSON.stringify(updated));
+        updateConfig(prev => ({ ...prev, customQuickPresets: updated }));
         setActivePresetId(newPreset.id);
-        toast.success(`Plantilla "${newPreset.name}" guardada en favoritas`);
-    }, [selectedDeliverables, selectedMethod, customPresets]);
+        toast.success(`Plantilla "${newPreset.name}" guardada y sincronizada en Supabase ☁️`);
+    }, [selectedDeliverables, selectedMethod, templateCategory, customPresets, updateConfig]);
 
     const handleDeleteCustomPreset = useCallback((e: React.MouseEvent, id: string) => {
         e.stopPropagation();
         const updated = customPresets.filter(p => p.id !== id);
         setCustomPresets(updated);
         localStorage.setItem('custom-quick-presets', JSON.stringify(updated));
+        updateConfig(prev => ({ ...prev, customQuickPresets: updated }));
         if (activePresetId === id) setActivePresetId(null);
-        toast.info("Plantilla personalizada eliminada");
-    }, [customPresets, activePresetId]);
+        toast.info("Plantilla personalizada eliminada de tus dispositivos");
+    }, [customPresets, activePresetId, updateConfig]);
 
-    // Apertura en Outlook Web
+    // Apertura en Outlook Web (con soporte para CC múltiple)
     const handleOpenOutlookWeb = useCallback((customSubject?: string, customBody?: string) => {
         let subjectText = customSubject;
         let bodyText = customBody;
@@ -875,9 +1164,10 @@ const EmailGenerator: React.FC<EmailGeneratorProps> = ({ attachedImages, onAttac
         const subject = encodeURIComponent(subjectText || '');
         const body = encodeURIComponent(stripHtml(bodyText || ''));
         const to = encodeURIComponent(fullRecipientEmail || '');
-        const url = `https://outlook.office.com/mail/deeplink/compose?to=${to}&subject=${subject}&body=${body}`;
+        const ccParam = ccRecipients.length > 0 ? `&cc=${encodeURIComponent(ccRecipients.map(c => c.email).join(';'))}` : '';
+        const url = `https://outlook.office.com/mail/deeplink/compose?to=${to}${ccParam}&subject=${subject}&body=${body}`;
         window.open(url, '_blank');
-    }, [activeMode, generatedContent, livePreview, project, idea, getPresetGreeting, fullRecipientEmail]);
+    }, [activeMode, generatedContent, livePreview, project, idea, getPresetGreeting, fullRecipientEmail, ccRecipients]);
 
     // Copiado enriquecido (HTML + texto plano)
     const handleCopyToClipboard = async (text: string, type: CopiedState) => {
@@ -910,11 +1200,11 @@ const EmailGenerator: React.FC<EmailGeneratorProps> = ({ attachedImages, onAttac
         toast.success(type?.includes('email') ? "Copiado con formato enriquecido (listo para Outlook)" : "Copiado al portapapeles");
     };
 
-    // Generador con IA (incluyendo imágenes adjuntas y micro-ajustes)
+    // Generador con IA (incluyendo imágenes adjuntas, lista de archivos y micro-ajustes)
     const handleGenerate = useCallback(async (overrideIdea?: string, adjustInstruction?: string) => {
         const targetIdea = typeof overrideIdea === 'string' ? overrideIdea : idea;
-        if (!targetIdea.trim() && !previousEmail.trim() && attachedImages.length === 0) { 
-            toast.error('Introduce una idea o adjunta una imagen de referencia.'); 
+        if (!targetIdea.trim() && !previousEmail.trim() && attachedImages.length === 0 && attachedFileNames.length === 0) { 
+            toast.error('Introduce una idea, pega un correo previo o adjunta archivos.'); 
             return; 
         }
         setIsLoading(true); setError(null);
@@ -931,7 +1221,7 @@ const EmailGenerator: React.FC<EmailGeneratorProps> = ({ attachedImages, onAttac
                 : (recipientName ? (recipientTitle ? `${recipientTitle} ${recipientName}` : recipientName) : '');
             const greeting = finalRecipient ? `${timeGreeting} ${finalRecipient}` : timeGreeting;
             
-            const systemInstruction = `Eres un experto en comunicación ejecutiva y estratégica para el sector inmobiliario y de arquitectura.
+            const systemInstruction = `Eres un experto en comunicación ejecutiva y estratégica para el sector inmobiliario, arquitectura e impresión 3D.
             Debes generar respuestas en formato JSON siguiendo estrictamente las reglas de estilo y tono del Arq. Rembrandt Blanco Arrambide.`;
             
             const userPrompt = `INSTRUCCIONES CRÍTICAS:
@@ -945,10 +1235,12 @@ const EmailGenerator: React.FC<EmailGeneratorProps> = ({ attachedImages, onAttac
                ${useNickname && effectiveNickname ? `IMPORTANTE: Modo apodo activo. Dirígete y refiérete al destinatario por su apodo o trato directo: "${effectiveNickname}" (en el saludo inicial y menciones directas en el cuerpo del mensaje) en lugar de su nombre formal.` : `IMPORTANTE: Dirígete al destinatario formalmente como "${finalRecipient}".`}
             6. CONTEXTO: Proyecto: "${project}".
             7. IDEA A DESARROLLAR: "${targetIdea}". 
-            8. CONTEXTO ANTERIOR: "${previousEmail}".
-            ${adjustInstruction ? `9. AJUSTE DE ESTILO SOLICITADO: "${adjustInstruction}".` : ''}
-            ${attachedImages.length > 0 ? `10. IMÁGENES ADJUNTAS: Se proporcionan ${attachedImages.length} imágenes (planos, renders o capturas). Analízalas e incorpora detalles relevantes en el mensaje.` : ''}
-            11. TONO: ${tone}. LONGITUD: ${messageLength}.
+            8. CONTEXTO ANTERIOR (Correo al que se responde): "${previousEmail}".
+            ${attachedFileNames.length > 0 ? `9. LISTA DE ARCHIVOS A INCLUIR EN EL CUERPO DEL CORREO (en formato de viñetas •): ${attachedFileNames.join(', ')}.` : ''}
+            ${deadline.trim() ? `10. FECHA COMPROMISO / PLAZO LÍMITE A MENCIONAR: "${deadline.trim()}".` : ''}
+            ${adjustInstruction ? `11. AJUSTE DE ESTILO SOLICITADO: "${adjustInstruction}".` : ''}
+            ${attachedImages.length > 0 ? `12. IMÁGENES ADJUNTAS: Se proporcionan ${attachedImages.length} imágenes (planos, renders o capturas). Analízalas e incorpora detalles relevantes en el mensaje.` : ''}
+            13. TONO: ${tone}. LONGITUD: ${messageLength}.
 
             Genera un objeto JSON con:
             - emailSubject: Asunto principal del correo claro y profesional
@@ -1016,7 +1308,14 @@ const EmailGenerator: React.FC<EmailGeneratorProps> = ({ attachedImages, onAttac
             setError(friendlyMsg); 
             toast.error("Error al generar: " + friendlyMsg);
         } finally { setIsLoading(false); }
-    }, [idea, previousEmail, tone, messageLength, recipientName, recipientNickname, recipientTitle, project, useNickname, googleApiConfig, updateConfig, attachedImages, recipientGender]);
+    }, [idea, previousEmail, tone, messageLength, recipientName, recipientNickname, recipientTitle, project, useNickname, googleApiConfig, updateConfig, attachedImages, attachedFileNames, deadline, recipientGender]);
+
+    // Respuesta rápida en 1 clic sobre un correo recibido
+    const handleQuickReplyIntent = useCallback((intentPrompt: string, label: string) => {
+        setIdea(intentPrompt);
+        toast.info(`Generando respuesta: ${label}...`);
+        handleGenerate(intentPrompt);
+    }, [handleGenerate]);
 
     // Micro-ajustes rápidos con IA
     const handleQuickAdjust = (type: 'shorter' | 'formal' | 'urgent' | 'reminder') => {
@@ -1100,11 +1399,315 @@ const EmailGenerator: React.FC<EmailGeneratorProps> = ({ attachedImages, onAttac
         handleGenerate(suggestedIdea);
     };
 
+    const getAllAttachmentPayloads = useCallback(() => {
+        const map = new Map<string, { name: string; mimeType: string; base64: string; fileObj?: File }>();
+        realAttachments.forEach(att => {
+            if (att.name && att.base64) {
+                map.set(att.name, {
+                    name: att.name,
+                    mimeType: att.mimeType || 'application/octet-stream',
+                    base64: att.base64,
+                    fileObj: att.fileObj
+                });
+            }
+        });
+        attachedImages.forEach(img => {
+            if (img.name && img.base64 && !map.has(img.name)) {
+                map.set(img.name, {
+                    name: img.name,
+                    mimeType: img.mimeType || 'image/png',
+                    base64: img.base64
+                });
+            }
+        });
+        return Array.from(map.values());
+    }, [realAttachments, attachedImages]);
+
+    // 1. Generar y abrir archivo .EML nativo para Outlook con archivos reales incrustados (X-Unsent: 1)
+    const handleDownloadEmlDraft = (customSubject?: string, customBody?: string) => {
+        autoSaveContactIfNew();
+        const subjectContent = customSubject ?? (generatedContent ? generatedContent.emailSubject : livePreview.emailSubject);
+        const bodyContent = stripHtml(customBody ?? (generatedContent ? generatedContent.emailBody : livePreview.emailBody));
+        const toEmail = fullRecipientEmail || '';
+        const ccList = ccRecipients.map(c => c.email).join(', ');
+        const allAttachments = getAllAttachmentPayloads();
+
+        const toBase64Utf8 = (str: string) => window.btoa(unescape(encodeURIComponent(str)));
+        const wrap76 = (b64: string) => b64.replace(/([^\r\n]{76})/g, '$1\r\n');
+
+        const boundary = `----=_NextPart_Rembrandt_${Date.now()}`;
+        const encodedSubject = `=?UTF-8?B?${toBase64Utf8(subjectContent || 'Sin asunto')}?=`;
+
+        const lines: string[] = [
+            `To: ${toEmail}`,
+            ...(ccList ? [`Cc: ${ccList}`] : []),
+            `Subject: ${encodedSubject}`,
+            `X-Unsent: 1`,
+            `MIME-Version: 1.0`,
+            `Content-Type: multipart/mixed; boundary="${boundary}"`,
+            ``,
+            `--${boundary}`,
+            `Content-Type: text/plain; charset="UTF-8"`,
+            `Content-Transfer-Encoding: base64`,
+            ``,
+            wrap76(toBase64Utf8(bodyContent || ''))
+        ];
+
+        for (const att of allAttachments) {
+            const safeName = att.name.replace(/["\r\n]/g, '_');
+            const cleanB64 = att.base64.includes(',') ? att.base64.split(',')[1] : att.base64;
+            lines.push(
+                `--${boundary}`,
+                `Content-Type: ${att.mimeType}; name="${safeName}"`,
+                `Content-Transfer-Encoding: base64`,
+                `Content-Disposition: attachment; filename="${safeName}"`,
+                ``,
+                wrap76(cleanB64)
+            );
+        }
+
+        lines.push(`--${boundary}--`, ``);
+        const emlString = lines.join('\r\n');
+        const blob = new Blob([emlString], { type: 'message/rfc822' });
+        const url = URL.createObjectURL(blob);
+        const a = document.createElement('a');
+        const safeTitle = (project || recipientName || 'Correo_Javer').replace(/[^a-zA-Z0-9_-]/g, '_');
+        a.href = url;
+        a.download = `Correo_${safeTitle}.eml`;
+        document.body.appendChild(a);
+        a.click();
+        document.body.removeChild(a);
+        URL.revokeObjectURL(url);
+
+        toast.success(
+            allAttachments.length > 0
+                ? `📎 Borrador .EML descargado con ${allAttachments.length} archivo(s) adjunto(s). Ábrelo para enviarlo desde tu Outlook.`
+                : `📎 Borrador .EML descargado listo para abrir en Outlook.`
+        );
+    };
+
+    // 2. Subir archivos adjuntos a Supabase Storage e insertar links de descarga directa en Correo y WhatsApp
+    const handleUploadAttachmentsToCloud = async () => {
+        const allAttachments = getAllAttachmentPayloads();
+        if (allAttachments.length === 0) {
+            toast.warning('Primero selecciona archivos con el botón "📎 Adjuntar Archivos"');
+            fileListInputRef.current?.click();
+            return;
+        }
+
+        setIsUploadingAttachments(true);
+        const uploadedLinks: { name: string; url: string }[] = [];
+
+        try {
+            for (const att of allAttachments) {
+                const safeFileName = att.name.replace(/[^a-zA-Z0-9._-]/g, '_');
+                const storagePath = `adjuntos_correo/${Date.now()}_${safeFileName}`;
+
+                let blobToUpload: Blob;
+                if (att.fileObj) {
+                    blobToUpload = att.fileObj;
+                } else {
+                    const byteChars = atob(att.base64.includes(',') ? att.base64.split(',')[1] : att.base64);
+                    const byteNumbers = new Array(byteChars.length);
+                    for (let i = 0; i < byteChars.length; i++) {
+                        byteNumbers[i] = byteChars.charCodeAt(i);
+                    }
+                    blobToUpload = new Blob([new Uint8Array(byteNumbers)], { type: att.mimeType });
+                }
+
+                const { error: upErr } = await supabase.storage
+                    .from('savejson')
+                    .upload(storagePath, blobToUpload, {
+                        upsert: true,
+                        contentType: att.mimeType || 'application/octet-stream'
+                    });
+
+                if (upErr) throw upErr;
+
+                const { data: signedData } = await supabase.storage
+                    .from('savejson')
+                    .createSignedUrl(storagePath, 60 * 60 * 24 * 7); // 7 días de validez
+
+                const finalUrl = signedData?.signedUrl || supabase.storage.from('savejson').getPublicUrl(storagePath).data.publicUrl;
+                if (finalUrl) {
+                    uploadedLinks.push({ name: att.name, url: finalUrl });
+                }
+            }
+
+            if (uploadedLinks.length > 0) {
+                const combinedUrlText = uploadedLinks.length === 1
+                    ? uploadedLinks[0].url
+                    : uploadedLinks.map(u => `${u.name}: ${u.url}`).join(' | ');
+
+                setCloudLink(uploadedLinks[0].url);
+
+                const linksBlock = `\n\n📎 Enlaces de descarga directa (${uploadedLinks.length} archivo${uploadedLinks.length > 1 ? 's' : ''}):\n` +
+                    uploadedLinks.map(u => `• ${u.name}: ${u.url}`).join('\n');
+
+                if (generatedContent) {
+                    setGeneratedContent(prev => prev ? ({
+                        ...prev,
+                        emailBody: prev.emailBody.includes(uploadedLinks[0].url) ? prev.emailBody : `${prev.emailBody}${linksBlock}`,
+                        whatsappMessage: prev.whatsappMessage.includes(uploadedLinks[0].url) ? prev.whatsappMessage : `${prev.whatsappMessage}${linksBlock}`
+                    }) : null);
+                }
+
+                navigator.clipboard.writeText(combinedUrlText).catch(() => {});
+                toast.success(`☁️ ${uploadedLinks.length} archivo(s) subidos a la nube y enlaces insertados en el mensaje`);
+            }
+        } catch (err: any) {
+            console.error('Error uploading attachments to Supabase:', err);
+            toast.error(`Error al subir adjuntos a la nube: ${err.message || 'Verifica tu conexión'}`);
+        } finally {
+            setIsUploadingAttachments(false);
+        }
+    };
+
+    // Helper OAuth para autorizar envío directo por Gmail API si no hay token o falta scope gmail.send
+    const authenticateGoogleForEmailSend = async (): Promise<any> => {
+        const urlResponse = await fetch('/api/auth/url', {
+            headers: {
+                'x-client-id': googleApiConfig?.clientId || '',
+                'x-client-secret': googleApiConfig?.clientSecret || '',
+                'x-redirect-uri': `${window.location.origin}/api/auth/callback`
+            }
+        });
+        if (!urlResponse.ok) {
+            throw new Error('Faltan credenciales de Google API o no se pudo iniciar OAuth');
+        }
+        const { url } = await urlResponse.json();
+        const authWindow = window.open(url, 'oauth_email_popup', 'width=600,height=700');
+        if (!authWindow) {
+            throw new Error('Permite las ventanas emergentes (popups) para vincular el envío directo.');
+        }
+
+        const code = await new Promise<string>((resolve, reject) => {
+            const handleMessage = (event: MessageEvent) => {
+                if (event.data?.type === 'OAUTH_CODE_SUCCESS') {
+                    window.removeEventListener('message', handleMessage);
+                    clearInterval(checkClosed);
+                    resolve(event.data.code);
+                }
+            };
+            window.addEventListener('message', handleMessage);
+            const checkClosed = setInterval(() => {
+                if (authWindow.closed) {
+                    window.removeEventListener('message', handleMessage);
+                    clearInterval(checkClosed);
+                    reject(new Error('Autenticación cancelada'));
+                }
+            }, 1000);
+        });
+
+        const exchangeResponse = await fetch('/api/auth/exchange', {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json',
+                'x-client-id': googleApiConfig?.clientId || '',
+                'x-client-secret': googleApiConfig?.clientSecret || '',
+                'x-redirect-uri': `${window.location.origin}/api/auth/callback`
+            },
+            body: JSON.stringify({ code })
+        });
+        if (!exchangeResponse.ok) {
+            throw new Error('No se pudo obtener el token de autorización');
+        }
+        const exchangeData = await exchangeResponse.json();
+        const newTokens = exchangeData.tokens || exchangeData;
+        updateConfig(prev => ({ ...prev, googleCalendarTokens: newTokens }));
+        return newTokens;
+    };
+
+    // 3. Envío directo desde Rembrandt7 vía /api/gmail/send con archivos adjuntos reales
+    const handleSendDirectApi = async (customSubject?: string, customBody?: string) => {
+        autoSaveContactIfNew();
+        if (!fullRecipientEmail) {
+            toast.error('Selecciona o escribe un correo destinatario (Para:) antes de enviar');
+            return;
+        }
+
+        const subjectContent = customSubject ?? (generatedContent ? generatedContent.emailSubject : livePreview.emailSubject);
+        const bodyContent = stripHtml(customBody ?? (generatedContent ? generatedContent.emailBody : livePreview.emailBody));
+        const ccString = ccRecipients.map(c => c.email).join(', ');
+        const allAttachments = getAllAttachmentPayloads().map(a => ({
+            name: a.name,
+            mimeType: a.mimeType,
+            base64: a.base64
+        }));
+
+        setIsSendingDirectEmail(true);
+        try {
+            let tokens = config.googleCalendarTokens;
+            if (!tokens) {
+                toast.info('Vincula tu cuenta de Google en la ventana emergente para activar el envío directo...');
+                tokens = await authenticateGoogleForEmailSend();
+            }
+
+            const sendReq = async (activeTokens: any) => {
+                return fetch('/api/gmail/send', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                        'x-client-id': googleApiConfig?.clientId || '',
+                        'x-client-secret': googleApiConfig?.clientSecret || ''
+                    },
+                    body: JSON.stringify({
+                        action: 'send',
+                        tokens: activeTokens,
+                        to: fullRecipientEmail,
+                        cc: ccString || undefined,
+                        subject: subjectContent,
+                        body: bodyContent,
+                        attachments: allAttachments
+                    })
+                });
+            };
+
+            let res = await sendReq(tokens);
+            if (res.status === 401 || res.status === 403 || res.status === 500) {
+                const errJson = await res.json().catch(() => ({}));
+                const errMsg = String(errJson.error || '');
+                if (
+                    res.status === 401 ||
+                    res.status === 403 ||
+                    errMsg.toLowerCase().includes('insufficient') ||
+                    errMsg.toLowerCase().includes('scope') ||
+                    errMsg.toLowerCase().includes('invalid_grant') ||
+                    errMsg.toLowerCase().includes('credentials')
+                ) {
+                    toast.info('Autorizando permiso de envío de correo con adjuntos...');
+                    tokens = await authenticateGoogleForEmailSend();
+                    res = await sendReq(tokens);
+                } else {
+                    throw new Error(errMsg || 'Error al enviar el correo');
+                }
+            }
+
+            if (!res.ok) {
+                const errData = await res.json().catch(() => ({}));
+                throw new Error(errData.error || 'No se pudo enviar el correo');
+            }
+
+            toast.success(
+                allAttachments.length > 0
+                    ? `🚀 ¡Correo enviado directamente a ${fullRecipientEmail} con ${allAttachments.length} archivo(s) adjunto(s)!`
+                    : `🚀 ¡Correo enviado directamente a ${fullRecipientEmail}!`
+            );
+        } catch (err: any) {
+            console.error('Direct email send error:', err);
+            toast.error(`No se pudo enviar por API (${err.message}). Abriendo borrador .EML con tus adjuntos listos para Outlook...`);
+            handleDownloadEmlDraft(subjectContent, bodyContent);
+        } finally {
+            setIsSendingDirectEmail(false);
+        }
+    };
+
     const handleSendEmail = () => {
         autoSaveContactIfNew();
         const bodyContent = generatedContent ? generatedContent.emailBody : livePreview.emailBody;
         const subjectContent = generatedContent ? generatedContent.emailSubject : livePreview.emailSubject;
-        window.location.href = `mailto:${fullRecipientEmail}?subject=${encodeURIComponent(subjectContent)}&body=${encodeURIComponent(stripHtml(bodyContent))}`;
+        const ccParam = ccRecipients.length > 0 ? `&cc=${encodeURIComponent(ccRecipients.map(c => c.email).join(';'))}` : '';
+        window.location.href = `mailto:${fullRecipientEmail}?subject=${encodeURIComponent(subjectContent)}${ccParam}&body=${encodeURIComponent(stripHtml(bodyContent))}`;
     };
 
     const handleSendWhatsApp = (customMsg?: string) => {
@@ -1120,19 +1723,30 @@ const EmailGenerator: React.FC<EmailGeneratorProps> = ({ attachedImages, onAttac
 
     const handleDrop = (e: React.DragEvent) => {
         e.preventDefault(); setIsDraggingOver(false);
-        const file = e.dataTransfer.files[0];
-        if (file?.type.startsWith('image/')) {
-            const reader = new FileReader();
-            reader.onload = (ev) => {
-                onAttachmentsChange([...attachedImages, { 
-                    name: file.name, 
-                    base64: (ev.target?.result as string).split(',')[1], 
-                    mimeType: file.type, 
-                    preview: ev.target?.result as string 
-                }]);
-                toast.success(`Imagen "${file.name}" adjuntada para análisis con IA`);
-            };
-            reader.readAsDataURL(file);
+        const files = Array.from(e.dataTransfer.files || []) as File[];
+        if (files.length === 0) return;
+
+        const nonImages: File[] = [];
+        files.forEach(file => {
+            if (file.type.startsWith('image/')) {
+                const reader = new FileReader();
+                reader.onload = (ev) => {
+                    onAttachmentsChange([...attachedImages, { 
+                        name: file.name, 
+                        base64: (ev.target?.result as string).split(',')[1], 
+                        mimeType: file.type, 
+                        preview: ev.target?.result as string 
+                    }]);
+                    toast.success(`Imagen "${file.name}" adjuntada para IA y correo`);
+                };
+                reader.readAsDataURL(file);
+            } else if (file.name) {
+                nonImages.push(file);
+            }
+        });
+
+        if (nonImages.length > 0) {
+            handleFilesSelectedForListing(nonImages);
         }
     };
 
@@ -1353,7 +1967,17 @@ const EmailGenerator: React.FC<EmailGeneratorProps> = ({ attachedImages, onAttac
     };
 
     return (
-        <div onDrop={handleDrop} onDragOver={(e) => { e.preventDefault(); setIsDraggingOver(true); }} className={`p-4 transition-all ${isDraggingOver ? 'bg-purple-500/10' : ''}`}>
+        <div onDrop={handleDrop} onDragOver={(e) => { e.preventDefault(); setIsDraggingOver(true); }} onDragLeave={() => setIsDraggingOver(false)} className={`p-4 transition-all ${isDraggingOver ? 'bg-purple-500/10 ring-2 ring-purple-500/40 rounded-2xl' : ''}`}>
+            <input
+                ref={fileListInputRef}
+                type="file"
+                multiple
+                className="hidden"
+                onChange={(e) => {
+                    handleFilesSelectedForListing(e.target.files);
+                    e.target.value = '';
+                }}
+            />
             
             {/* ENCABEZADO SUPERIOR (EN ESCRITORIO) */}
             {isDesktopMode && (
@@ -1894,16 +2518,60 @@ const EmailGenerator: React.FC<EmailGeneratorProps> = ({ attachedImages, onAttac
                                         </p>
                                     </div>
 
-                                    {/* Botón de Outlook Web */}
-                                    <button
-                                        type="button"
-                                        onClick={() => handleOpenOutlookWeb(generatedContent.emailSubject, generatedContent.emailBody)}
-                                        className="w-full py-2.5 bg-gradient-to-r from-blue-600 to-indigo-600 hover:from-blue-500 hover:to-indigo-500 text-white rounded-xl text-xs font-black uppercase flex items-center justify-center gap-2 shadow-md cursor-pointer border border-blue-400/30"
-                                        title="Abrir en Outlook Web Javer 365"
-                                    >
-                                        <ExternalLink size={13} />
-                                        <span>Abrir en Outlook Web (Javer 365)</span>
-                                    </button>
+                                    {/* Botones de Adjuntos y Envío en Plegado */}
+                                    <div className="space-y-2 pt-1">
+                                        <div className="flex items-center justify-between gap-2">
+                                            <button
+                                                type="button"
+                                                onClick={() => fileListInputRef.current?.click()}
+                                                className="flex-1 py-2 px-2.5 bg-purple-600/20 hover:bg-purple-600/35 border border-purple-500/40 text-purple-200 rounded-xl text-[10.5px] font-black uppercase flex items-center justify-center gap-1.5 cursor-pointer"
+                                            >
+                                                <Paperclip size={12} />
+                                                <span>📎 Adjuntar ({realAttachments.length + attachedImages.length})</span>
+                                            </button>
+                                            {realAttachments.length > 0 && (
+                                                <button
+                                                    type="button"
+                                                    onClick={handleUploadAttachmentsToCloud}
+                                                    disabled={isUploadingAttachments}
+                                                    className="py-2 px-2.5 bg-cyan-600/25 hover:bg-cyan-600/40 border border-cyan-500/40 text-cyan-200 rounded-xl text-[10.5px] font-black uppercase flex items-center justify-center gap-1 cursor-pointer disabled:opacity-50"
+                                                >
+                                                    {isUploadingAttachments ? <RefreshCw size={12} className="animate-spin" /> : <UploadCloud size={12} />}
+                                                    <span>☁️ Nube</span>
+                                                </button>
+                                            )}
+                                        </div>
+                                        <div className="grid grid-cols-2 gap-1.5">
+                                            <button
+                                                type="button"
+                                                onClick={() => handleDownloadEmlDraft(generatedContent.emailSubject, generatedContent.emailBody)}
+                                                className="py-2 px-2 bg-gradient-to-r from-indigo-600 to-purple-600 text-white rounded-xl text-[10px] font-black uppercase flex items-center justify-center gap-1 shadow-md cursor-pointer border border-indigo-400/30"
+                                                title="Descargar borrador .EML para Outlook con adjuntos incrustados"
+                                            >
+                                                <Paperclip size={11} />
+                                                <span>📎 Outlook (.EML)</span>
+                                            </button>
+                                            <button
+                                                type="button"
+                                                onClick={() => handleSendDirectApi(generatedContent.emailSubject, generatedContent.emailBody)}
+                                                disabled={isSendingDirectEmail}
+                                                className="py-2 px-2 bg-gradient-to-r from-emerald-600 to-teal-600 text-white rounded-xl text-[10px] font-black uppercase flex items-center justify-center gap-1 shadow-md cursor-pointer border border-emerald-400/30 disabled:opacity-50"
+                                                title="Enviar correo con adjuntos directamente desde aquí"
+                                            >
+                                                {isSendingDirectEmail ? <RefreshCw size={11} className="animate-spin" /> : <Send size={11} />}
+                                                <span>🚀 Enviar Aquí</span>
+                                            </button>
+                                        </div>
+                                        <button
+                                            type="button"
+                                            onClick={() => handleOpenOutlookWeb(generatedContent.emailSubject, generatedContent.emailBody)}
+                                            className="w-full py-2.5 bg-gradient-to-r from-blue-600 to-indigo-600 hover:from-blue-500 hover:to-indigo-500 text-white rounded-xl text-xs font-black uppercase flex items-center justify-center gap-2 shadow-md cursor-pointer border border-blue-400/30"
+                                            title="Abrir en Outlook Web Javer 365"
+                                        >
+                                            <ExternalLink size={13} />
+                                            <span>Abrir en Outlook Web (Javer 365)</span>
+                                        </button>
+                                    </div>
                                 </div>
                             )}
                         </div>
@@ -1913,16 +2581,38 @@ const EmailGenerator: React.FC<EmailGeneratorProps> = ({ attachedImages, onAttac
                     {activeMode === 'quick' && (
                         <div className="space-y-3">
                             <div className="bg-gray-900/90 rounded-2xl border border-amber-500/30 p-3.5 shadow-xl space-y-3">
-                                <div className="flex items-center gap-2 pb-2 border-b border-gray-800">
-                                    <Zap size={15} className="text-amber-400" />
-                                    <span className="text-xs font-black uppercase text-white">Plantilla de Entrega Inmediata</span>
+                                <div className="flex items-center justify-between gap-2 pb-2 border-b border-gray-800">
+                                    <div className="flex items-center gap-2">
+                                        <Zap size={15} className="text-amber-400" />
+                                        <span className="text-xs font-black uppercase text-white">Entrega Inmediata</span>
+                                    </div>
+                                    <div className="flex bg-slate-950 rounded-lg p-0.5 border border-gray-800 text-[10px]">
+                                        <button
+                                            type="button"
+                                            onClick={() => handleSwitchCategory('javer')}
+                                            className={`px-2 py-0.5 rounded font-black cursor-pointer ${
+                                                templateCategory === 'javer' ? 'bg-amber-500 text-slate-950' : 'text-gray-400'
+                                            }`}
+                                        >
+                                            🏗️ Javer
+                                        </button>
+                                        <button
+                                            type="button"
+                                            onClick={() => handleSwitchCategory('3d')}
+                                            className={`px-2 py-0.5 rounded font-black cursor-pointer ${
+                                                templateCategory === '3d' ? 'bg-purple-600 text-white' : 'text-gray-400'
+                                            }`}
+                                        >
+                                            🖨️ 3D
+                                        </button>
+                                    </div>
                                 </div>
 
                                 {/* Plantillas Rápidas */}
                                 <div className="space-y-1.5">
                                     <span className="text-[9.5px] font-black uppercase text-amber-300 block">Plantillas:</span>
                                     <div className="flex flex-wrap gap-1.5">
-                                        {QUICK_PRESETS.map(qp => (
+                                        {(templateCategory === '3d' ? QUICK_PRESETS_3D : QUICK_PRESETS).map(qp => (
                                             <button
                                                 key={qp.id}
                                                 type="button"
@@ -1943,7 +2633,7 @@ const EmailGenerator: React.FC<EmailGeneratorProps> = ({ attachedImages, onAttac
                                 <div className="space-y-1.5 pt-1">
                                     <span className="text-[9.5px] font-black uppercase text-purple-300 block">Entregables incluidos:</span>
                                     <div className="flex flex-wrap gap-1.5">
-                                        {DELIVERABLE_OPTIONS.map(d => {
+                                        {(templateCategory === '3d' ? DELIVERABLE_OPTIONS_3D : DELIVERABLE_OPTIONS).map(d => {
                                             const isSelected = selectedDeliverables.includes(d);
                                             return (
                                                 <button
@@ -1967,7 +2657,7 @@ const EmailGenerator: React.FC<EmailGeneratorProps> = ({ attachedImages, onAttac
                                 <div className="space-y-1.5 pt-1">
                                     <span className="text-[9.5px] font-black uppercase text-purple-300 block">Método de entrega:</span>
                                     <div className="grid grid-cols-2 gap-1.5">
-                                        {METHOD_OPTIONS.map(m => (
+                                        {(templateCategory === '3d' ? METHOD_OPTIONS_3D : METHOD_OPTIONS).map(m => (
                                             <button
                                                 key={m}
                                                 type="button"
@@ -2019,7 +2709,7 @@ const EmailGenerator: React.FC<EmailGeneratorProps> = ({ attachedImages, onAttac
 
                             {/* Resultados de Entrega si hay contenido */}
                             {generatedContent && (
-                                <div className="bg-slate-900/95 border-2 border-emerald-500/40 rounded-3xl p-4 shadow-2xl space-y-3">
+                                <div className="bg-slate-900/95 border-2 border-emerald-500/40 rounded-3xl p-4 shadow-2xl space-y-2.5">
                                     <button
                                         type="button"
                                         onClick={() => handleSendWhatsApp(generatedContent.whatsappMessage)}
@@ -2028,6 +2718,46 @@ const EmailGenerator: React.FC<EmailGeneratorProps> = ({ attachedImages, onAttac
                                         <MessageSquare size={16} />
                                         <span>Enviar por WhatsApp (1 Toque)</span>
                                     </button>
+                                    <div className="flex items-center gap-1.5">
+                                        <button
+                                            type="button"
+                                            onClick={() => fileListInputRef.current?.click()}
+                                            className="flex-1 py-2 px-2 bg-purple-600/20 hover:bg-purple-600/35 border border-purple-500/40 text-purple-200 rounded-xl text-[10px] font-black uppercase flex items-center justify-center gap-1 cursor-pointer"
+                                        >
+                                            <Paperclip size={11} />
+                                            <span>📎 Adjuntar ({realAttachments.length + attachedImages.length})</span>
+                                        </button>
+                                        {realAttachments.length > 0 && (
+                                            <button
+                                                type="button"
+                                                onClick={handleUploadAttachmentsToCloud}
+                                                disabled={isUploadingAttachments}
+                                                className="py-2 px-2.5 bg-cyan-600/25 hover:bg-cyan-600/40 border border-cyan-500/40 text-cyan-200 rounded-xl text-[10px] font-black uppercase flex items-center justify-center gap-1 cursor-pointer disabled:opacity-50"
+                                            >
+                                                {isUploadingAttachments ? <RefreshCw size={11} className="animate-spin" /> : <UploadCloud size={11} />}
+                                                <span>☁️ Nube</span>
+                                            </button>
+                                        )}
+                                    </div>
+                                    <div className="grid grid-cols-2 gap-1.5">
+                                        <button
+                                            type="button"
+                                            onClick={() => handleDownloadEmlDraft(generatedContent.emailSubject, generatedContent.emailBody)}
+                                            className="py-2 px-2 bg-gradient-to-r from-indigo-600 to-purple-600 text-white rounded-xl text-[10px] font-black uppercase flex items-center justify-center gap-1 shadow-md cursor-pointer"
+                                        >
+                                            <Paperclip size={11} />
+                                            <span>📎 Outlook (.EML)</span>
+                                        </button>
+                                        <button
+                                            type="button"
+                                            onClick={() => handleSendDirectApi(generatedContent.emailSubject, generatedContent.emailBody)}
+                                            disabled={isSendingDirectEmail}
+                                            className="py-2 px-2 bg-gradient-to-r from-emerald-600 to-teal-600 text-white rounded-xl text-[10px] font-black uppercase flex items-center justify-center gap-1 shadow-md cursor-pointer disabled:opacity-50"
+                                        >
+                                            {isSendingDirectEmail ? <RefreshCw size={11} className="animate-spin" /> : <Send size={11} />}
+                                            <span>🚀 Enviar Aquí</span>
+                                        </button>
+                                    </div>
                                     <button
                                         type="button"
                                         onClick={() => handleOpenOutlookWeb(generatedContent.emailSubject, generatedContent.emailBody)}
@@ -2536,14 +3266,36 @@ const EmailGenerator: React.FC<EmailGeneratorProps> = ({ attachedImages, onAttac
                             {/* Consola de Entregas Rápidas (Modo Quick) */}
                             {activeMode === 'quick' && (
                                 <div className="bg-gray-900/90 rounded-2xl border border-amber-500/30 p-3.5 shadow-xl space-y-3">
-                                    <div className="flex items-center gap-2 pb-2 border-b border-gray-800">
-                                        <Zap size={16} className="text-amber-400" />
-                                        <span className="text-xs font-black uppercase text-white">Configuración de Entrega Rápida</span>
+                                    <div className="flex items-center justify-between gap-2 pb-2 border-b border-gray-800">
+                                        <div className="flex items-center gap-2">
+                                            <Zap size={16} className="text-amber-400" />
+                                            <span className="text-xs font-black uppercase text-white">Entrega Rápida</span>
+                                        </div>
+                                        <div className="flex bg-slate-950 rounded-lg p-0.5 border border-gray-800 text-[10px]">
+                                            <button
+                                                type="button"
+                                                onClick={() => handleSwitchCategory('javer')}
+                                                className={`px-2 py-0.5 rounded font-black cursor-pointer ${
+                                                    templateCategory === 'javer' ? 'bg-amber-500 text-slate-950' : 'text-gray-400'
+                                                }`}
+                                            >
+                                                🏗️ Javer
+                                            </button>
+                                            <button
+                                                type="button"
+                                                onClick={() => handleSwitchCategory('3d')}
+                                                className={`px-2 py-0.5 rounded font-black cursor-pointer ${
+                                                    templateCategory === '3d' ? 'bg-purple-600 text-white' : 'text-gray-400'
+                                                }`}
+                                            >
+                                                🖨️ 3D
+                                            </button>
+                                        </div>
                                     </div>
                                     <div className="space-y-1.5">
                                         <span className="text-[9.5px] font-black uppercase text-amber-300 block">Plantillas:</span>
                                         <div className="flex flex-wrap gap-1.5">
-                                            {QUICK_PRESETS.map(qp => (
+                                            {(templateCategory === '3d' ? QUICK_PRESETS_3D : QUICK_PRESETS).map(qp => (
                                                 <button
                                                     key={qp.id}
                                                     type="button"
@@ -2562,7 +3314,7 @@ const EmailGenerator: React.FC<EmailGeneratorProps> = ({ attachedImages, onAttac
                                     <div className="space-y-1.5 pt-1">
                                         <span className="text-[9.5px] font-black uppercase text-purple-300 block">Entregables:</span>
                                         <div className="flex flex-wrap gap-1.5">
-                                            {DELIVERABLE_OPTIONS.map(d => {
+                                            {(templateCategory === '3d' ? DELIVERABLE_OPTIONS_3D : DELIVERABLE_OPTIONS).map(d => {
                                                 const isSelected = selectedDeliverables.includes(d);
                                                 return (
                                                     <button
@@ -2690,15 +3442,59 @@ const EmailGenerator: React.FC<EmailGeneratorProps> = ({ attachedImages, onAttac
                                             </p>
                                         </div>
 
-                                        {/* Botón Outlook Web */}
-                                        <button
-                                            type="button"
-                                            onClick={() => handleOpenOutlookWeb(generatedContent.emailSubject, generatedContent.emailBody)}
-                                            className="w-full py-3 bg-gradient-to-r from-blue-600 to-indigo-600 hover:from-blue-500 hover:to-indigo-500 text-white rounded-xl text-xs font-black uppercase flex items-center justify-center gap-2 shadow-md cursor-pointer border border-blue-400/30"
-                                        >
-                                            <ExternalLink size={14} />
-                                            <span>Abrir en Outlook Web (Javer 365)</span>
-                                        </button>
+                                        {/* Botones Adjuntos, .EML Outlook, Envío Directo y Outlook Web */}
+                                        <div className="space-y-2 pt-1">
+                                            <div className="flex items-center gap-2">
+                                                <button
+                                                    type="button"
+                                                    onClick={() => fileListInputRef.current?.click()}
+                                                    className="flex-1 py-2 px-3 bg-purple-600/20 hover:bg-purple-600/35 border border-purple-500/40 text-purple-200 rounded-xl text-[10.5px] font-black uppercase flex items-center justify-center gap-1.5 cursor-pointer"
+                                                >
+                                                    <Paperclip size={12} />
+                                                    <span>📎 Adjuntar Archivos ({realAttachments.length + attachedImages.length})</span>
+                                                </button>
+                                                {realAttachments.length > 0 && (
+                                                    <button
+                                                        type="button"
+                                                        onClick={handleUploadAttachmentsToCloud}
+                                                        disabled={isUploadingAttachments}
+                                                        className="py-2 px-3 bg-cyan-600/25 hover:bg-cyan-600/40 border border-cyan-500/40 text-cyan-200 rounded-xl text-[10.5px] font-black uppercase flex items-center justify-center gap-1.5 cursor-pointer disabled:opacity-50"
+                                                    >
+                                                        {isUploadingAttachments ? <RefreshCw size={12} className="animate-spin" /> : <UploadCloud size={12} />}
+                                                        <span>☁️ Subir Nube</span>
+                                                    </button>
+                                                )}
+                                            </div>
+                                            <div className="grid grid-cols-2 gap-2">
+                                                <button
+                                                    type="button"
+                                                    onClick={() => handleDownloadEmlDraft(generatedContent.emailSubject, generatedContent.emailBody)}
+                                                    className="py-2.5 px-2.5 bg-gradient-to-r from-indigo-600 to-purple-600 hover:from-indigo-500 hover:to-purple-500 text-white rounded-xl text-[11px] font-black uppercase flex items-center justify-center gap-1.5 shadow-md cursor-pointer border border-indigo-400/30"
+                                                    title="Descargar borrador .EML para Outlook con adjuntos incrustados"
+                                                >
+                                                    <Paperclip size={13} />
+                                                    <span>📎 Outlook + Adjuntos (.EML)</span>
+                                                </button>
+                                                <button
+                                                    type="button"
+                                                    onClick={() => handleSendDirectApi(generatedContent.emailSubject, generatedContent.emailBody)}
+                                                    disabled={isSendingDirectEmail}
+                                                    className="py-2.5 px-2.5 bg-gradient-to-r from-emerald-600 to-teal-600 hover:from-emerald-500 hover:to-teal-500 text-white rounded-xl text-[11px] font-black uppercase flex items-center justify-center gap-1.5 shadow-md cursor-pointer border border-emerald-400/30 disabled:opacity-50"
+                                                    title="Enviar correo con adjuntos directamente desde aquí"
+                                                >
+                                                    {isSendingDirectEmail ? <RefreshCw size={13} className="animate-spin" /> : <Send size={13} />}
+                                                    <span>🚀 Enviar Directo Aquí</span>
+                                                </button>
+                                            </div>
+                                            <button
+                                                type="button"
+                                                onClick={() => handleOpenOutlookWeb(generatedContent.emailSubject, generatedContent.emailBody)}
+                                                className="w-full py-2.5 bg-gradient-to-r from-blue-600 to-indigo-600 hover:from-blue-500 hover:to-indigo-500 text-white rounded-xl text-xs font-black uppercase flex items-center justify-center gap-2 shadow-md cursor-pointer border border-blue-400/30"
+                                            >
+                                                <ExternalLink size={14} />
+                                                <span>Abrir en Outlook Web (Javer 365)</span>
+                                            </button>
+                                        </div>
                                     </div>
                                 </div>
                             ) : (
@@ -3293,36 +4089,96 @@ const EmailGenerator: React.FC<EmailGeneratorProps> = ({ attachedImages, onAttac
                     )}
                 </AnimatePresence>
 
-                {/* Accesos Rápidos de Contactos Frecuentes (1 Clic) + Saludo Activo */}
-                <div className="flex items-center justify-between gap-3 pt-2 border-t border-gray-800/80 flex-wrap">
-                    {quickContacts.length > 0 && (
-                        <div className="flex items-center gap-1.5 flex-wrap">
-                            <span className="text-[10px] font-bold uppercase tracking-wider text-gray-500 mr-1">
-                                1 Clic:
-                            </span>
-                            {quickContacts.map(qc => {
-                                const isSelected = selectedContactIndex !== '' && parseInt(selectedContactIndex, 10) === qc.index;
-                                return (
-                                    <button
-                                        key={qc.name}
-                                        type="button"
-                                        onClick={() => selectContactByIndex(qc.index, sortedContacts)}
-                                        className={`px-2.5 py-1 rounded-lg text-xs font-bold transition-all cursor-pointer flex items-center gap-1.5 ${
-                                            isSelected 
-                                                ? 'bg-purple-600 text-white shadow-sm ring-1 ring-purple-400' 
-                                                : 'bg-gray-800/90 text-gray-300 hover:bg-gray-700 hover:text-white border border-gray-700/70'
-                                        }`}
-                                    >
-                                        {qc.isErik ? <span>⭐</span> : (favorites.some(f => f.trim() === qc.name.trim()) && <Star size={11} className="text-yellow-400" fill="currentColor"/>)}
-                                        <span className="truncate max-w-[130px]">{qc.name}</span>
-                                    </button>
-                                );
-                            })}
+                {/* Accesos Rápidos de Contactos Frecuentes (1 Clic) + Selector CC + Saludo Activo */}
+                <div className="space-y-2 pt-2 border-t border-gray-800/80">
+                    <div className="flex items-center justify-between gap-3 flex-wrap">
+                        {quickContacts.length > 0 && (
+                            <div className="flex items-center gap-1.5 flex-wrap">
+                                <span className="text-[10px] font-bold uppercase tracking-wider text-gray-500 mr-1">
+                                    1 Clic:
+                                </span>
+                                {quickContacts.map(qc => {
+                                    const isSelected = selectedContactIndex !== '' && parseInt(selectedContactIndex, 10) === qc.index;
+                                    return (
+                                        <button
+                                            key={qc.name}
+                                            type="button"
+                                            onClick={() => selectContactByIndex(qc.index, sortedContacts)}
+                                            className={`px-2.5 py-1 rounded-lg text-xs font-bold transition-all cursor-pointer flex items-center gap-1.5 ${
+                                                isSelected 
+                                                    ? 'bg-purple-600 text-white shadow-sm ring-1 ring-purple-400' 
+                                                    : 'bg-gray-800/90 text-gray-300 hover:bg-gray-700 hover:text-white border border-gray-700/70'
+                                            }`}
+                                        >
+                                            {qc.isErik ? <span>⭐</span> : (favorites.some(f => f.trim() === qc.name.trim()) && <Star size={11} className="text-yellow-400" fill="currentColor"/>)}
+                                            <span className="truncate max-w-[130px]">{qc.name}</span>
+                                        </button>
+                                    );
+                                })}
+                            </div>
+                        )}
+                        <div className="flex items-center gap-2 ml-auto">
+                            <button
+                                type="button"
+                                onClick={() => setShowCcSelector(!showCcSelector)}
+                                className={`px-2.5 py-1 rounded-lg text-[11px] font-bold transition-all cursor-pointer flex items-center gap-1.5 border ${
+                                    ccRecipients.length > 0
+                                        ? 'bg-blue-600/20 text-blue-300 border-blue-500/40'
+                                        : 'bg-gray-800/80 text-gray-400 hover:text-white border-gray-700/70'
+                                }`}
+                                title="Agregar destinatarios en Copia (CC) para Outlook Web y Correo"
+                            >
+                                <span>👥 + CC {ccRecipients.length > 0 ? `(${ccRecipients.length})` : ''}</span>
+                            </button>
+                            <div className="text-[11px] text-gray-400">
+                                Saludo activo: <strong className="text-purple-300 font-bold not-italic">"{getPresetGreeting()}:"</strong>
+                            </div>
+                        </div>
+                    </div>
+
+                    {/* Barra desplegable de selección de CC (Copia) en 1 Clic */}
+                    {(showCcSelector || ccRecipients.length > 0) && (
+                        <div className="p-2.5 bg-gray-950/70 rounded-xl border border-blue-500/25 flex items-center justify-between gap-2 flex-wrap">
+                            <div className="flex items-center gap-1.5 flex-wrap">
+                                <span className="text-[10px] font-black uppercase tracking-wider text-blue-400 mr-1">
+                                    En Copia (CC):
+                                </span>
+                                {sortedContacts.map((c, idx) => {
+                                    const cName = String(getDBValue(c, 'cliente') || '').trim();
+                                    const rawMail = String(getDBValue(c, 'correo') || '').trim();
+                                    if (!rawMail) return null;
+                                    const cMail = rawMail.includes('@') ? rawMail : `${rawMail}@javer.com.mx`;
+                                    if (cMail.toLowerCase() === (fullRecipientEmail || '').toLowerCase()) return null;
+                                    const isCc = ccRecipients.some(r => r.email.toLowerCase() === cMail.toLowerCase());
+                                    return (
+                                        <button
+                                            key={idx}
+                                            type="button"
+                                            onClick={() => toggleCcContact(c)}
+                                            className={`px-2 py-0.5 rounded-lg text-[10.5px] font-bold transition-all cursor-pointer flex items-center gap-1 ${
+                                                isCc
+                                                    ? 'bg-blue-600 text-white shadow-sm ring-1 ring-blue-400'
+                                                    : 'bg-gray-800/80 text-gray-400 hover:text-white border border-gray-700/60'
+                                            }`}
+                                            title={`${cName} (${cMail})`}
+                                        >
+                                            <span>{isCc ? '✓' : '+'}</span>
+                                            <span className="truncate max-w-[120px]">{cName}</span>
+                                        </button>
+                                    );
+                                })}
+                            </div>
+                            {ccRecipients.length > 0 && (
+                                <button
+                                    type="button"
+                                    onClick={() => setCcRecipients([])}
+                                    className="text-[10px] text-red-400 hover:text-red-300 font-bold cursor-pointer ml-auto"
+                                >
+                                    Limpiar CC
+                                </button>
+                            )}
                         </div>
                     )}
-                    <div className="text-[11px] text-gray-400 ml-auto">
-                        Saludo activo: <strong className="text-purple-300 font-bold not-italic">"{getPresetGreeting()}:"</strong>
-                    </div>
                 </div>
 
                 {/* Formulario editable colapsable para afinar contacto o guardar nuevo en BD */}
@@ -3651,23 +4507,154 @@ const EmailGenerator: React.FC<EmailGeneratorProps> = ({ attachedImages, onAttac
                                     </div>
                                 )}
 
-                                {/* Contexto anterior colapsable */}
-                                <div className="border border-gray-700/60 rounded-xl overflow-hidden">
+                                {/* Contexto anterior colapsable + Botones de Respuesta en 1 Clic */}
+                                <div className="border border-gray-700/60 rounded-xl overflow-hidden bg-gray-900/40">
                                     <button 
+                                        type="button"
                                         onClick={() => setShowPreviousContext(!showPreviousContext)} 
-                                        className="w-full p-2.5 bg-gray-800/60 text-xs text-left text-gray-400 hover:bg-gray-800 transition-colors flex justify-between items-center font-bold cursor-pointer"
+                                        className="w-full p-2.5 bg-gray-800/60 text-xs text-left text-gray-300 hover:bg-gray-800 transition-colors flex justify-between items-center font-bold cursor-pointer"
                                     >
-                                        <span>Contexto anterior / Correo al que respondes (opcional)</span>
+                                        <span className="flex items-center gap-1.5">
+                                            <span>💬 Contexto anterior / Correo recibido + Respuesta en 1 Clic</span>
+                                            {previousEmail.trim() && (
+                                                <span className="px-1.5 py-0.5 bg-purple-600/30 text-purple-300 rounded text-[9px] font-black uppercase">Activo</span>
+                                            )}
+                                        </span>
                                         <span>{showPreviousContext ? '▲' : '▼'}</span>
                                     </button>
                                     {showPreviousContext && (
-                                        <textarea 
-                                            value={previousEmail} 
-                                            onChange={e => setPreviousEmail(e.target.value)} 
-                                            className="w-full p-3 bg-gray-900 border-t border-gray-700/60 text-xs text-gray-300 outline-none min-h-[70px] italic resize-none" 
-                                            placeholder="Pega aquí el correo o mensaje al que estás respondiendo..."
-                                        />
+                                        <div className="p-3 bg-gray-900 border-t border-gray-700/60 space-y-2.5">
+                                            <textarea 
+                                                value={previousEmail} 
+                                                onChange={e => setPreviousEmail(e.target.value)} 
+                                                className="w-full p-2.5 bg-gray-950/80 border border-gray-800 rounded-lg text-xs text-gray-300 outline-none min-h-[68px] italic resize-none focus:border-purple-500/60" 
+                                                placeholder="Pega aquí el correo o mensaje de WhatsApp recibido para responder con 1 clic..."
+                                            />
+                                            <div className="space-y-1.5">
+                                                <span className="text-[10px] font-black uppercase tracking-wider text-purple-300 block">
+                                                    ⚡ Responder en 1 Clic con IA:
+                                                </span>
+                                                <div className="flex flex-wrap gap-1.5">
+                                                    {QUICK_REPLY_INTENTS.map(intent => (
+                                                        <button
+                                                            key={intent.id}
+                                                            type="button"
+                                                            disabled={isLoading}
+                                                            onClick={() => handleQuickReplyIntent(intent.prompt, intent.label)}
+                                                            className="px-2.5 py-1.5 bg-purple-600/15 hover:bg-purple-600 text-purple-200 hover:text-white border border-purple-500/30 rounded-lg text-[11px] font-bold transition-all cursor-pointer shadow-sm active:scale-95 disabled:opacity-50"
+                                                            title={intent.prompt}
+                                                        >
+                                                            {intent.label}
+                                                        </button>
+                                                    ))}
+                                                </div>
+                                            </div>
+                                        </div>
                                     )}
+                                </div>
+
+                                {/* Barra de Archivos Adjuntos Reales (.DWG / .PDF / .STL / .XLSX) + Links en Nube + Chips de Fecha Compromiso */}
+                                <div className="p-3 bg-gray-950/60 rounded-xl border border-gray-800 space-y-2.5">
+                                    {/* Selector y gestor de archivos adjuntos reales */}
+                                    <div className="flex items-center justify-between gap-2 flex-wrap">
+                                        <div className="flex items-center gap-2 flex-wrap">
+                                            <button
+                                                type="button"
+                                                onClick={() => fileListInputRef.current?.click()}
+                                                className="px-2.5 py-1.5 bg-indigo-600/20 hover:bg-indigo-600/40 text-indigo-300 hover:text-white rounded-lg text-[11px] font-bold border border-indigo-500/30 transition-all cursor-pointer flex items-center gap-1.5"
+                                                title="Selecciona o arrastra tus archivos (.pdf, .dwg, .stl, .xlsx, imágenes) para adjuntarlos al correo y listar sus nombres"
+                                            >
+                                                <Paperclip size={12} />
+                                                <span>📎 Adjuntar Archivos (.PDF / .DWG / .STL)</span>
+                                            </button>
+                                            {(realAttachments.length > 0 || attachedImages.length > 0) && (
+                                                <button
+                                                    type="button"
+                                                    disabled={isUploadingAttachments}
+                                                    onClick={handleUploadAttachmentsToCloud}
+                                                    className="px-2.5 py-1.5 bg-cyan-600/20 hover:bg-cyan-600/40 text-cyan-300 hover:text-white rounded-lg text-[11px] font-bold border border-cyan-500/30 transition-all cursor-pointer flex items-center gap-1.5 disabled:opacity-50"
+                                                    title="Subir archivos adjuntos a Supabase y pegar automáticamente los enlaces de descarga directa en el correo y WhatsApp"
+                                                >
+                                                    <UploadCloud size={12} />
+                                                    <span>{isUploadingAttachments ? 'Subiendo...' : '☁️ Subir y Pegar Links en Nube'}</span>
+                                                </button>
+                                            )}
+                                            <span className="text-[10px] text-gray-500 hidden sm:inline">
+                                                {realAttachments.length > 0
+                                                    ? `${realAttachments.length} archivo(s) listos para adjuntar`
+                                                    : 'Se adjuntan en .EML, Nube o Envío Directo'}
+                                            </span>
+                                        </div>
+                                        {attachedFileNames.length > 0 && (
+                                            <button
+                                                type="button"
+                                                onClick={clearAllAttachedFiles}
+                                                className="text-[10px] text-red-400 hover:text-red-300 font-bold cursor-pointer"
+                                            >
+                                                Quitar todos
+                                            </button>
+                                        )}
+                                    </div>
+
+                                    {attachedFileNames.length > 0 && (
+                                        <div className="flex flex-wrap gap-1.5 pt-0.5">
+                                            {attachedFileNames.map((fn, idx) => (
+                                                <span
+                                                    key={idx}
+                                                    className="inline-flex items-center gap-1.5 px-2 py-0.5 bg-indigo-950/70 border border-indigo-500/30 rounded-md text-[10.5px] font-mono text-indigo-200"
+                                                >
+                                                    <Paperclip size={10} className="text-indigo-400 shrink-0" />
+                                                    <span className="truncate max-w-[180px]">{fn}</span>
+                                                    <button
+                                                        type="button"
+                                                        onClick={() => removeAttachedFileByName(fn)}
+                                                        className="text-gray-400 hover:text-red-300 font-bold cursor-pointer"
+                                                    >
+                                                        ✕
+                                                    </button>
+                                                </span>
+                                            ))}
+                                        </div>
+                                    )}
+
+                                    {/* Chips Inteligentes de Fecha Compromiso */}
+                                    <div className="pt-2 border-t border-gray-800/80 space-y-1.5">
+                                        <div className="flex items-center justify-between gap-2 flex-wrap">
+                                            <span className="text-[10px] font-bold uppercase tracking-wider text-amber-400 flex items-center gap-1">
+                                                <Clock size={11} />
+                                                <span>🗓️ Fecha Compromiso (1 Clic):</span>
+                                            </span>
+                                            {deadline && (
+                                                <button
+                                                    type="button"
+                                                    onClick={() => setDeadline('')}
+                                                    className="text-[9.5px] text-red-400 hover:text-red-300 font-bold cursor-pointer"
+                                                >
+                                                    Quitar fecha ({deadline})
+                                                </button>
+                                            )}
+                                        </div>
+                                        <div className="flex flex-wrap gap-1.5">
+                                            {smartDeadlines.map(sd => {
+                                                const isSelected = deadline === sd.value;
+                                                return (
+                                                    <button
+                                                        key={sd.label}
+                                                        type="button"
+                                                        onClick={() => setDeadline(isSelected ? '' : sd.value)}
+                                                        className={`px-2 py-1 rounded-lg text-[10.5px] font-bold transition-all cursor-pointer border ${
+                                                            isSelected
+                                                                ? 'bg-amber-500 text-slate-950 border-amber-400 shadow-sm'
+                                                                : 'bg-gray-900 text-gray-300 hover:text-white border-gray-700/80 hover:bg-gray-800'
+                                                        }`}
+                                                        title={`Insertar fecha compromiso: ${sd.value}`}
+                                                    >
+                                                        {sd.label}
+                                                    </button>
+                                                );
+                                            })}
+                                        </div>
+                                    </div>
                                 </div>
 
                                 {/* Parámetros: Proyecto, Tono, Longitud */}
@@ -3730,29 +4717,34 @@ const EmailGenerator: React.FC<EmailGeneratorProps> = ({ attachedImages, onAttac
                             <div className="space-y-4">
                                 {/* TARJETA DE CORREO */}
                                 <div className="bg-gray-900/90 rounded-2xl border border-gray-800 overflow-hidden shadow-2xl">
-                                    <div className="bg-gray-800/80 px-4 py-2.5 border-b border-gray-800 flex justify-between items-center">
+                                    <div className="bg-gray-800/80 px-4 py-2.5 border-b border-gray-800 flex justify-between items-center flex-wrap gap-2">
                                         <div className="flex items-center gap-2">
                                             <div className="p-1.5 bg-purple-600/20 text-purple-400 rounded-lg border border-purple-500/30">
                                                 <Mail size={14} />
                                             </div>
                                             <span className="text-xs font-black uppercase text-purple-300">Correo Electrónico</span>
+                                            {(realAttachments.length > 0 || attachedImages.length > 0) && (
+                                                <span className="text-[10px] font-bold bg-indigo-500/20 text-indigo-300 px-2 py-0.5 rounded-full border border-indigo-500/30">
+                                                    📎 {realAttachments.length + attachedImages.length} adjunto(s)
+                                                </span>
+                                            )}
                                         </div>
-                                        <div className="flex items-center gap-2">
+                                        <div className="flex items-center gap-1.5 flex-wrap">
                                             <button 
                                                 onClick={() => handleCopyToClipboard(generatedContent.emailBody, 'email')} 
-                                                className={`px-3 py-1.5 rounded-lg text-xs font-bold border transition-all flex items-center gap-1.5 cursor-pointer ${
+                                                className={`px-2.5 py-1.5 rounded-lg text-xs font-bold border transition-all flex items-center gap-1 cursor-pointer ${
                                                     copied === 'email' ? 'bg-green-600 text-white border-green-500' : 'bg-gray-800 text-gray-300 border-gray-700 hover:bg-gray-700'
                                                 }`}
                                             >
-                                                <Copy size={13} />
+                                                <Copy size={12} />
                                                 <span>{copied === 'email' ? 'Copiado!' : 'Copiar'}</span>
                                             </button>
                                             <button 
                                                 onClick={() => handleOpenOutlookWeb(generatedContent.emailSubject, generatedContent.emailBody)} 
-                                                className="px-3.5 py-1.5 bg-gradient-to-r from-blue-600 to-indigo-600 hover:from-blue-500 hover:to-indigo-500 text-white rounded-lg text-xs font-black uppercase flex items-center gap-1.5 shadow-md hover:scale-105 active:scale-95 transition-all cursor-pointer border border-blue-400/30"
+                                                className="px-3 py-1.5 bg-gradient-to-r from-blue-600 to-indigo-600 hover:from-blue-500 hover:to-indigo-500 text-white rounded-lg text-xs font-black uppercase flex items-center gap-1 shadow-md hover:scale-105 active:scale-95 transition-all cursor-pointer border border-blue-400/30"
                                                 title="Abrir Outlook Web Javer 365 con este correo y destinatario"
                                             >
-                                                <ExternalLink size={13} />
+                                                <ExternalLink size={12} />
                                                 <span>Outlook Web</span>
                                             </button>
                                         </div>
@@ -3795,6 +4787,30 @@ const EmailGenerator: React.FC<EmailGeneratorProps> = ({ attachedImages, onAttac
                                                 onContextMenu={e => handleContextMenu(e, 'email', 'emailBody')} 
                                                 className="w-full h-48 bg-gray-800/40 border border-gray-700/80 rounded-xl p-3.5 text-xs text-gray-200 font-sans resize-none outline-none focus:border-purple-500 leading-relaxed shadow-inner" 
                                             />
+                                        </div>
+
+                                        {/* BARRA COMBO COMPLETO: ENVÍO CON ADJUNTOS (.EML OUTLOOK / NUBE / ENVÍO DIRECTO API) */}
+                                        <div className="pt-2 border-t border-gray-800/80 flex flex-wrap items-center gap-2">
+                                            <button
+                                                type="button"
+                                                onClick={() => handleDownloadEmlDraft(generatedContent.emailSubject, generatedContent.emailBody)}
+                                                className="flex-1 min-w-[160px] py-2 px-3 bg-indigo-600/25 hover:bg-indigo-600 text-indigo-200 hover:text-white rounded-xl text-xs font-black uppercase tracking-wider border border-indigo-500/40 transition-all flex items-center justify-center gap-1.5 cursor-pointer shadow-sm"
+                                                title="Descarga y abre un borrador .EML en tu Outlook de escritorio con todos los archivos adjuntos ya cargados adentro listos para dar Enviar"
+                                            >
+                                                <Download size={13} />
+                                                <span>📎 Abrir en Outlook con Adjuntos (.EML)</span>
+                                            </button>
+
+                                            <button
+                                                type="button"
+                                                disabled={isSendingDirectEmail}
+                                                onClick={() => handleSendDirectApi(generatedContent.emailSubject, generatedContent.emailBody)}
+                                                className="flex-1 min-w-[160px] py-2 px-3 bg-gradient-to-r from-emerald-600 to-teal-600 hover:from-emerald-500 hover:to-teal-500 text-white rounded-xl text-xs font-black uppercase tracking-wider border border-emerald-400/30 transition-all flex items-center justify-center gap-1.5 cursor-pointer shadow-md disabled:opacity-50"
+                                                title="Enviar correo con todos los archivos adjuntos directamente desde Rembrandt7 sin abrir otra ventana"
+                                            >
+                                                <Send size={13} />
+                                                <span>{isSendingDirectEmail ? 'Enviando...' : '🚀 Enviar Directo desde Aquí'}</span>
+                                            </button>
                                         </div>
                                     </div>
                                 </div>
@@ -3890,7 +4906,7 @@ const EmailGenerator: React.FC<EmailGeneratorProps> = ({ attachedImages, onAttac
                     {/* PANEL IZQUIERDO: CONFIGURACIÓN MODULAR (PLANTILLAS + CUADRÍCULA 2x2) */}
                     <div className="lg:col-span-6 xl:col-span-7 space-y-4">
                         <div id="section-entregas-formatos" className="bg-gray-900/60 rounded-2xl border border-amber-500/30 p-4 sm:p-5 shadow-xl space-y-4">
-                            <div className="flex items-center justify-between pb-3 border-b border-gray-800/80">
+                            <div className="flex items-center justify-between pb-3 border-b border-gray-800/80 flex-wrap gap-2">
                                 <div className="flex items-center gap-2.5">
                                     <div className="p-2 bg-gradient-to-r from-amber-600 to-indigo-600 rounded-xl text-white shadow-md">
                                         <Zap size={16} />
@@ -3900,15 +4916,43 @@ const EmailGenerator: React.FC<EmailGeneratorProps> = ({ attachedImages, onAttac
                                             <span>2. Entregas y Formatos (0s de espera)</span>
                                             <span className="text-[10px] font-bold text-amber-400 bg-amber-500/10 px-2 py-0.5 rounded-full border border-amber-500/20">Instantáneo</span>
                                         </h3>
-                                        <p className="text-[11px] text-gray-400">Planos, renders y documentos con plantilla estándar automática y enlaces</p>
+                                        <p className="text-[11px] text-gray-400">
+                                            {templateCategory === '3d' 
+                                                ? 'Cotizaciones 3D, anticipos, piezas listas y envíos STL/G-Code al instante' 
+                                                : 'Planos, renders y documentos con plantilla estándar automática y enlaces'}
+                                        </p>
                                     </div>
                                 </div>
-                                <div className="flex items-center gap-2">
+                                <div className="flex items-center gap-2 flex-wrap">
+                                    {/* Switch de Categoría: Arquitectura/Javer vs Impresión 3D */}
+                                    <div className="flex bg-gray-950 rounded-xl p-0.5 border border-gray-800 text-[11px]">
+                                        <button
+                                            type="button"
+                                            onClick={() => handleSwitchCategory('javer')}
+                                            className={`px-2.5 py-1 rounded-lg font-black transition-all cursor-pointer flex items-center gap-1 ${
+                                                templateCategory === 'javer' ? 'bg-amber-500 text-slate-950 shadow-sm' : 'text-gray-400 hover:text-white'
+                                            }`}
+                                            title="Plantillas para Arquitectura, Urbanismo y Proyectos Javer"
+                                        >
+                                            <span>🏗️ Arquitectura / Javer</span>
+                                        </button>
+                                        <button
+                                            type="button"
+                                            onClick={() => handleSwitchCategory('3d')}
+                                            className={`px-2.5 py-1 rounded-lg font-black transition-all cursor-pointer flex items-center gap-1 ${
+                                                templateCategory === '3d' ? 'bg-purple-600 text-white shadow-sm' : 'text-gray-400 hover:text-white'
+                                            }`}
+                                            title="Plantillas para Cotización, Anticipo 50% y Entrega de Impresión 3D"
+                                        >
+                                            <span>🖨️ Impresión 3D</span>
+                                        </button>
+                                    </div>
+
                                     <button
                                         type="button"
                                         onClick={handleSaveCustomPreset}
                                         className="text-[11px] font-bold text-amber-300 hover:text-white bg-amber-500/10 hover:bg-amber-500/25 border border-amber-500/30 px-2.5 py-1 rounded-lg transition-all flex items-center gap-1.5 cursor-pointer shadow-sm"
-                                        title="Guardar los entregables y método actuales como tu plantilla personalizada"
+                                        title="Guardar los entregables y método actuales como tu plantilla personalizada (Sincronizada en Supabase)"
                                     >
                                         <Star size={12} fill="currentColor" />
                                         <span>⭐ Guardar favorita</span>
@@ -3919,9 +4963,14 @@ const EmailGenerator: React.FC<EmailGeneratorProps> = ({ attachedImages, onAttac
                             <div className="space-y-4">
                                 {/* Plantillas Rápidas y Favoritas */}
                                 <div className="space-y-1.5">
-                                    <span className="text-[10px] font-black uppercase tracking-wider text-purple-300 block">
-                                        Plantillas Rápidas (1 Clic):
-                                    </span>
+                                    <div className="flex items-center justify-between">
+                                        <span className="text-[10px] font-black uppercase tracking-wider text-purple-300 block">
+                                            Plantillas Rápidas ({templateCategory === '3d' ? '🖨️ Impresión 3D' : '🏗️ Javer / Arq.'} - 1 Clic):
+                                        </span>
+                                        {customPresets.length > 0 && (
+                                            <span className="text-[9.5px] text-amber-300/80 font-bold">☁️ Favoritas sincronizadas en nube</span>
+                                        )}
+                                    </div>
                                     <div className="flex flex-wrap gap-1.5">
                                         {/* Plantillas personalizadas del usuario */}
                                         {customPresets.map(cp => {
@@ -3952,8 +5001,8 @@ const EmailGenerator: React.FC<EmailGeneratorProps> = ({ attachedImages, onAttac
                                             );
                                         })}
 
-                                        {/* Plantillas predefinidas */}
-                                        {QUICK_PRESETS.map(qp => {
+                                        {/* Plantillas predefinidas según categoría */}
+                                        {(templateCategory === '3d' ? QUICK_PRESETS_3D : QUICK_PRESETS).map(qp => {
                                             const isSelected = activePresetId === qp.id;
                                             return (
                                                 <button
@@ -3986,7 +5035,7 @@ const EmailGenerator: React.FC<EmailGeneratorProps> = ({ attachedImages, onAttac
                                             <span className="text-[9px] text-gray-500 font-bold">Múltiple</span>
                                         </div>
                                         <div className="grid grid-cols-1 gap-1 flex-grow">
-                                            {DELIVERABLE_OPTIONS.map(opt => {
+                                            {(templateCategory === '3d' ? DELIVERABLE_OPTIONS_3D : DELIVERABLE_OPTIONS).map(opt => {
                                                 const checked = selectedDeliverables.includes(opt);
                                                 return (
                                                     <button
@@ -4019,7 +5068,7 @@ const EmailGenerator: React.FC<EmailGeneratorProps> = ({ attachedImages, onAttac
                                             <span className="text-[9px] text-gray-500 font-bold">1 opción</span>
                                         </div>
                                         <div className="grid grid-cols-1 gap-1.5 flex-grow">
-                                            {METHOD_OPTIONS.map(m => {
+                                            {(templateCategory === '3d' ? METHOD_OPTIONS_3D : METHOD_OPTIONS).map(m => {
                                                 const selected = selectedMethod === m;
                                                 return (
                                                     <button
@@ -4045,7 +5094,7 @@ const EmailGenerator: React.FC<EmailGeneratorProps> = ({ attachedImages, onAttac
                                         <div className="flex items-center justify-between pb-1.5 border-b border-gray-800/60">
                                             <span className="text-[11px] font-black uppercase tracking-wider text-emerald-400 flex items-center gap-1.5">
                                                 <Building2 size={13} />
-                                                <span>3. Proyecto</span>
+                                                <span>3. Proyecto / Pieza</span>
                                             </span>
                                             <span className="text-[9px] text-emerald-300/80 bg-emerald-500/10 px-1.5 py-0.2 rounded font-bold">Opcional</span>
                                         </div>
@@ -4079,7 +5128,7 @@ const EmailGenerator: React.FC<EmailGeneratorProps> = ({ attachedImages, onAttac
                                                 <input
                                                     value={project}
                                                     onChange={e => setProject(e.target.value)}
-                                                    placeholder="Ej. Bosques..."
+                                                    placeholder={templateCategory === '3d' ? 'Ej. Llavero Logo / Maqueta...' : 'Ej. Bosques...'}
                                                     className="w-full p-2 bg-gray-900 border border-gray-700 rounded-lg text-xs font-bold text-white outline-none focus:border-emerald-500 placeholder-gray-500"
                                                 />
                                             </div>
@@ -4103,12 +5152,12 @@ const EmailGenerator: React.FC<EmailGeneratorProps> = ({ attachedImages, onAttac
                                         </div>
                                     </div>
 
-                                    {/* Bloque 4: Opciones Adicionales de Entrega */}
+                                    {/* Bloque 4: Opciones Adicionales de Entrega (Archivos, Enlace y Fecha Compromiso) */}
                                     <div className="bg-gray-950/60 p-3 rounded-xl border border-gray-800 flex flex-col space-y-2">
                                         <div className="flex items-center justify-between pb-1.5 border-b border-gray-800/60">
                                             <span className="text-[11px] font-black uppercase tracking-wider text-purple-400 flex items-center gap-1.5">
                                                 <span className="w-4 h-4 rounded-full bg-purple-600/20 border border-purple-500/30 flex items-center justify-center text-[9px] font-bold">4</span>
-                                                <span>Opciones</span>
+                                                <span>Opciones y Archivos</span>
                                             </span>
                                             <div className="flex bg-gray-900 rounded p-0.5 border border-gray-800 text-[10px]">
                                                 <button
@@ -4135,6 +5184,43 @@ const EmailGenerator: React.FC<EmailGeneratorProps> = ({ attachedImages, onAttac
                                         </div>
 
                                         <div className="flex flex-col gap-2 flex-grow justify-between">
+                                            {/* Selector de archivos adjuntos reales + Subir a Nube */}
+                                            <div className="space-y-1">
+                                                <div className="flex items-center gap-1.5">
+                                                    <button
+                                                        type="button"
+                                                        onClick={() => fileListInputRef.current?.click()}
+                                                        className="flex-1 py-1.5 px-2 bg-indigo-600/20 hover:bg-indigo-600/35 text-indigo-300 hover:text-white rounded-lg text-[10.5px] font-bold border border-indigo-500/30 transition-all cursor-pointer flex items-center justify-center gap-1"
+                                                        title="Selecciona tus archivos (.dwg, .pdf, .stl, .xlsx) para adjuntarlos al correo y listar sus nombres"
+                                                    >
+                                                        <Paperclip size={11} />
+                                                        <span>📎 Adjuntar ({attachedFileNames.length})</span>
+                                                    </button>
+                                                    {(realAttachments.length > 0 || attachedImages.length > 0) && (
+                                                        <button
+                                                            type="button"
+                                                            disabled={isUploadingAttachments}
+                                                            onClick={handleUploadAttachmentsToCloud}
+                                                            className="py-1.5 px-2 bg-cyan-600/20 hover:bg-cyan-600/35 text-cyan-300 hover:text-white rounded-lg text-[10px] font-bold border border-cyan-500/30 transition-all cursor-pointer flex items-center gap-1 shrink-0 disabled:opacity-50"
+                                                            title="Subir archivos adjuntos a Supabase e insertar link de descarga"
+                                                        >
+                                                            <UploadCloud size={11} />
+                                                            <span>{isUploadingAttachments ? '...' : '☁️ Link'}</span>
+                                                        </button>
+                                                    )}
+                                                </div>
+                                                {attachedFileNames.length > 0 && (
+                                                    <div className="flex flex-wrap gap-1 max-h-14 overflow-y-auto pt-0.5">
+                                                        {attachedFileNames.map((fn, idx) => (
+                                                            <span key={idx} className="inline-flex items-center gap-1 px-1.5 py-0.5 bg-indigo-950/80 border border-indigo-500/30 rounded text-[9.5px] font-mono text-indigo-200">
+                                                                <span className="truncate max-w-[125px]">{fn}</span>
+                                                                <button type="button" onClick={() => removeAttachedFileByName(fn)} className="text-gray-400 hover:text-red-300 font-bold cursor-pointer">✕</button>
+                                                            </span>
+                                                        ))}
+                                                    </div>
+                                                )}
+                                            </div>
+
                                             <div className="space-y-1">
                                                 <label className="text-[10px] font-bold text-gray-300 flex items-center gap-1">
                                                     <ExternalLink size={11} className="text-blue-400" />
@@ -4153,20 +5239,34 @@ const EmailGenerator: React.FC<EmailGeneratorProps> = ({ attachedImages, onAttac
                                                 <div className="flex items-center justify-between">
                                                     <label className="text-[10px] font-bold text-gray-300 flex items-center gap-1">
                                                         <Clock size={11} className="text-amber-400" />
-                                                        <span>Plazo límite:</span>
+                                                        <span>Fecha compromiso (1 Clic):</span>
                                                     </label>
-                                                    <div className="flex items-center gap-1">
-                                                        {['este viernes', '3 días'].map(d => (
-                                                            <button
-                                                                key={d}
-                                                                type="button"
-                                                                onClick={() => setDeadline(d)}
-                                                                className="text-[8px] px-1 py-0.2 rounded bg-gray-800 hover:bg-gray-700 text-gray-300 font-bold cursor-pointer"
-                                                            >
-                                                                {d}
-                                                            </button>
-                                                        ))}
-                                                    </div>
+                                                    {deadline && (
+                                                        <button
+                                                            type="button"
+                                                            onClick={() => setDeadline('')}
+                                                            className="text-[9px] text-red-400 hover:text-red-300 font-bold cursor-pointer"
+                                                        >
+                                                            Limpiar
+                                                        </button>
+                                                    )}
+                                                </div>
+                                                <div className="flex flex-wrap gap-1 pb-0.5">
+                                                    {smartDeadlines.map(sd => (
+                                                        <button
+                                                            key={sd.label}
+                                                            type="button"
+                                                            onClick={() => setDeadline(deadline === sd.value ? '' : sd.value)}
+                                                            className={`text-[9px] px-1.5 py-0.5 rounded font-bold cursor-pointer transition-colors ${
+                                                                deadline === sd.value
+                                                                    ? 'bg-amber-500 text-slate-950'
+                                                                    : 'bg-gray-800 hover:bg-gray-700 text-gray-300'
+                                                            }`}
+                                                            title={sd.value}
+                                                        >
+                                                            {sd.label}
+                                                        </button>
+                                                    ))}
                                                 </div>
                                                 <input
                                                     type="text"
@@ -4175,10 +5275,6 @@ const EmailGenerator: React.FC<EmailGeneratorProps> = ({ attachedImages, onAttac
                                                     placeholder="Ej. este viernes antes de las 2 PM..."
                                                     className="w-full p-2 bg-gray-900 border border-gray-700 rounded-lg text-xs font-medium text-white outline-none focus:border-purple-500 placeholder-gray-500"
                                                 />
-                                            </div>
-
-                                            <div className="p-1.5 bg-purple-950/20 rounded-lg border border-purple-500/20 text-[10px] text-purple-300/80 leading-tight">
-                                                {cloudLink ? '✓ Enlace incluido' : 'Sin enlace adjunto'}
                                             </div>
                                         </div>
                                     </div>
@@ -4194,6 +5290,11 @@ const EmailGenerator: React.FC<EmailGeneratorProps> = ({ attachedImages, onAttac
                                 <div className="flex items-center gap-2">
                                     <Mail size={14} className="text-purple-400" />
                                     <span className="font-bold text-gray-200">Vista Previa Inmediata (0s)</span>
+                                    {(realAttachments.length > 0 || attachedImages.length > 0) && (
+                                        <span className="text-[10px] font-bold bg-indigo-500/20 text-indigo-300 px-2 py-0.5 rounded-full border border-indigo-500/30">
+                                            📎 {realAttachments.length + attachedImages.length}
+                                        </span>
+                                    )}
                                 </div>
                                 <span className="text-[11px] font-medium text-gray-400 truncate max-w-[180px]">
                                     Para: <strong className="text-white">{fullRecipientEmail || recipientName || 'Destinatario'}</strong>
@@ -4214,44 +5315,69 @@ const EmailGenerator: React.FC<EmailGeneratorProps> = ({ attachedImages, onAttac
                                 </div>
                             </div>
 
-                            {/* Barra de acciones de entrega inmediata */}
-                            <div className="bg-gray-900/70 px-4 py-3 border-t border-gray-800 flex flex-col sm:flex-row items-center justify-between gap-3">
-                                <button
-                                    type="button"
-                                    onClick={handleTransferToAi}
-                                    className="w-full sm:w-auto px-3.5 py-2 bg-purple-600/20 hover:bg-purple-600/40 text-purple-300 hover:text-white rounded-xl text-xs font-bold border border-purple-500/40 transition-all flex items-center justify-center gap-1.5 cursor-pointer"
-                                    title="Pasar este texto al redactor libre de IA para expandirlo o pedirle cambios"
-                                >
-                                    <Sparkles size={13} />
-                                    <span>🪄 Afinar con IA</span>
-                                </button>
+                            {/* Barra de acciones de entrega inmediata + Combo Completo de Adjuntos */}
+                            <div className="bg-gray-900/70 px-4 py-3 border-t border-gray-800 space-y-2.5">
+                                <div className="flex flex-col sm:flex-row items-center justify-between gap-2">
+                                    <button
+                                        type="button"
+                                        onClick={handleTransferToAi}
+                                        className="w-full sm:w-auto px-3 py-1.5 bg-purple-600/20 hover:bg-purple-600/40 text-purple-300 hover:text-white rounded-xl text-xs font-bold border border-purple-500/40 transition-all flex items-center justify-center gap-1.5 cursor-pointer"
+                                        title="Pasar este texto al redactor libre de IA para expandirlo o pedirle cambios"
+                                    >
+                                        <Sparkles size={13} />
+                                        <span>🪄 Afinar con IA</span>
+                                    </button>
 
-                                <div className="flex items-center gap-2 w-full sm:w-auto flex-wrap sm:flex-nowrap">
+                                    <div className="flex items-center gap-1.5 w-full sm:w-auto flex-wrap sm:flex-nowrap">
+                                        <button
+                                            type="button"
+                                            onClick={() => handleCopyToClipboard(livePreview.emailBody, 'preset-email')}
+                                            className={`px-2.5 py-1.5 rounded-xl text-xs font-bold border transition-all flex items-center justify-center gap-1 cursor-pointer ${
+                                                copied === 'preset-email' ? 'bg-green-600 text-white border-green-500' : 'bg-gray-800 text-gray-300 border-gray-700 hover:bg-gray-700'
+                                            }`}
+                                        >
+                                            <Copy size={12} />
+                                            <span>{copied === 'preset-email' ? 'Copiado!' : 'Copiar'}</span>
+                                        </button>
+                                        <button
+                                            type="button"
+                                            onClick={() => handleSendWhatsApp(livePreview.whatsappMessage)}
+                                            className="px-2.5 py-1.5 bg-green-600/20 hover:bg-green-600 text-green-300 hover:text-white rounded-xl text-xs font-bold border border-green-500/40 transition-all flex items-center justify-center gap-1 cursor-pointer"
+                                        >
+                                            <MessageSquare size={12} />
+                                            <span>WhatsApp</span>
+                                        </button>
+                                        <button
+                                            type="button"
+                                            onClick={() => handleOpenOutlookWeb(livePreview.emailSubject, livePreview.emailBody)}
+                                            className="flex-1 sm:flex-initial px-3 py-1.5 bg-gradient-to-r from-blue-600 to-indigo-600 hover:from-blue-500 hover:to-indigo-500 text-white rounded-xl font-black text-xs uppercase tracking-wider shadow-lg flex items-center justify-center gap-1 transition-all hover:scale-[1.02] active:scale-[0.98] cursor-pointer border border-blue-400/30"
+                                        >
+                                            <ExternalLink size={12} />
+                                            <span>Outlook Web</span>
+                                        </button>
+                                    </div>
+                                </div>
+
+                                {/* Botones Combo Completo: .EML con Adjuntos para Outlook + Envío Directo API */}
+                                <div className="grid grid-cols-1 sm:grid-cols-2 gap-2 pt-2 border-t border-gray-800/80">
                                     <button
                                         type="button"
-                                        onClick={() => handleCopyToClipboard(livePreview.emailBody, 'preset-email')}
-                                        className={`px-3 py-2 rounded-xl text-xs font-bold border transition-all flex items-center justify-center gap-1.5 cursor-pointer ${
-                                            copied === 'preset-email' ? 'bg-green-600 text-white border-green-500' : 'bg-gray-800 text-gray-300 border-gray-700 hover:bg-gray-700'
-                                        }`}
+                                        onClick={() => handleDownloadEmlDraft(livePreview.emailSubject, livePreview.emailBody)}
+                                        className="py-2 px-3 bg-indigo-600/25 hover:bg-indigo-600 text-indigo-200 hover:text-white rounded-xl text-[11px] font-black uppercase tracking-wider border border-indigo-500/40 transition-all flex items-center justify-center gap-1.5 cursor-pointer shadow-sm"
+                                        title="Descargar y abrir borrador .EML en Outlook con los archivos adjuntos ya cargados adentro"
                                     >
-                                        <Copy size={13} />
-                                        <span>{copied === 'preset-email' ? 'Copiado!' : 'Copiar'}</span>
+                                        <Download size={13} />
+                                        <span>📎 Outlook + Adjuntos (.EML)</span>
                                     </button>
                                     <button
                                         type="button"
-                                        onClick={() => handleSendWhatsApp(livePreview.whatsappMessage)}
-                                        className="px-3 py-2 bg-green-600/20 hover:bg-green-600 text-green-300 hover:text-white rounded-xl text-xs font-bold border border-green-500/40 transition-all flex items-center justify-center gap-1.5 cursor-pointer"
+                                        disabled={isSendingDirectEmail}
+                                        onClick={() => handleSendDirectApi(livePreview.emailSubject, livePreview.emailBody)}
+                                        className="py-2 px-3 bg-gradient-to-r from-emerald-600 to-teal-600 hover:from-emerald-500 hover:to-teal-500 text-white rounded-xl text-[11px] font-black uppercase tracking-wider border border-emerald-400/30 transition-all flex items-center justify-center gap-1.5 cursor-pointer shadow-md disabled:opacity-50"
+                                        title="Enviar correo con adjuntos directamente desde Rembrandt7 sin abrir otra ventana"
                                     >
-                                        <MessageSquare size={13} />
-                                        <span>WhatsApp</span>
-                                    </button>
-                                    <button
-                                        type="button"
-                                        onClick={() => handleOpenOutlookWeb(livePreview.emailSubject, livePreview.emailBody)}
-                                        className="flex-1 sm:flex-initial px-4 py-2 bg-gradient-to-r from-blue-600 to-indigo-600 hover:from-blue-500 hover:to-indigo-500 text-white rounded-xl font-black text-xs uppercase tracking-wider shadow-lg flex items-center justify-center gap-1.5 transition-all hover:scale-[1.02] active:scale-[0.98] cursor-pointer border border-blue-400/30"
-                                    >
-                                        <ExternalLink size={13} />
-                                        <span>Outlook Web</span>
+                                        <Send size={13} />
+                                        <span>{isSendingDirectEmail ? 'Enviando...' : '🚀 Enviar Directo Aquí'}</span>
                                     </button>
                                 </div>
                             </div>

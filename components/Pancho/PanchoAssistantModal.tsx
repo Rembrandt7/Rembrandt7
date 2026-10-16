@@ -1082,6 +1082,7 @@ REGLAS DE RESPUESTA:
             const newLog = {
               id: `food-${Date.now()}`,
               date: today,
+              meals: `${args.mealType || 'comida'}: ${args.foodName || ''}`,
               mealType: args.mealType || 'comida',
               foodName: args.foodName,
               calories: Number(args.calories) || 0,
@@ -1092,7 +1093,7 @@ REGLAS DE RESPUESTA:
 
             const updatedLogs = [...(nutritionData?.logs || []), newLog];
             updateNutritionData({ ...nutritionData, logs: updatedLogs });
-            saveNutritionDataToSupabase({ ...nutritionData, logs: updatedLogs });
+            saveNutritionDataToSupabase(false);
 
             finalCardType = 'nutrition';
             finalCardData = newLog;

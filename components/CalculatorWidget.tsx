@@ -77,6 +77,66 @@ const CalculatorWidget: React.FC = () => {
     localStorage.setItem('rembrandt_calc_mode', newMode);
   };
 
+  // --- Safe Math Expression Evaluator (replaces eval) ---
+  const safeEvaluateMath = (expr: string): number => {
+    const sanitized = expr.replace(/×/g, '*').replace(/÷/g, '/').replace(/[^0-9+\-*/.%()\s]/g, '').trim();
+    if (!sanitized) return 0;
+
+    // Tokenize numbers and operators
+    const tokens = sanitized.match(/(\d+\.?\d*|\.\d+|[+\-*/%()])/g);
+    if (!tokens) throw new Error('Invalid expression');
+
+    let pos = 0;
+
+    const parseExpression = (): number => {
+      let left = parseTerm();
+      while (pos < tokens.length && (tokens[pos] === '+' || tokens[pos] === '-')) {
+        const op = tokens[pos++];
+        const right = parseTerm();
+        left = op === '+' ? left + right : left - right;
+      }
+      return left;
+    };
+
+    const parseTerm = (): number => {
+      let left = parseFactor();
+      while (pos < tokens.length && (tokens[pos] === '*' || tokens[pos] === '/' || tokens[pos] === '%')) {
+        const op = tokens[pos++];
+        const right = parseFactor();
+        if (op === '*') left *= right;
+        else if (op === '/') {
+          if (right === 0) throw new Error('Division by zero');
+          left /= right;
+        } else left %= right;
+      }
+      return left;
+    };
+
+    const parseFactor = (): number => {
+      if (tokens[pos] === '+') {
+        pos++;
+        return parseFactor();
+      }
+      if (tokens[pos] === '-') {
+        pos++;
+        return -parseFactor();
+      }
+      if (tokens[pos] === '(') {
+        pos++;
+        const val = parseExpression();
+        if (tokens[pos] === ')') pos++;
+        return val;
+      }
+      const num = parseFloat(tokens[pos++]);
+      if (isNaN(num)) throw new Error('Invalid number');
+      return num;
+    };
+
+    const res = parseExpression();
+    if (!isFinite(res) || isNaN(res)) throw new Error('Invalid math result');
+    return res;
+  };
+
   // --- Standard Calculator Logic ---
   const handleNumber = (num: string) => {
     if (isNewNumber) {
@@ -97,9 +157,7 @@ const CalculatorWidget: React.FC = () => {
     if (expression && !isNewNumber && !expression.includes('Repetir')) {
       try {
         const fullExpression = expression + display;
-        const evalExpression = fullExpression.replace(/×/g, '*').replace(/÷/g, '/');
-        // eslint-disable-next-line no-eval
-        const result = eval(evalExpression);
+        const result = safeEvaluateMath(fullExpression);
         const formattedResult = Number.isInteger(result) ? result.toString() : parseFloat(result.toFixed(8)).toString();
         
         setHistory(prev => [...prev, { expression: fullExpression, result: formattedResult }]);
@@ -174,9 +232,7 @@ const CalculatorWidget: React.FC = () => {
       const fullExpression = expression + display;
       if (!fullExpression || fullExpression.trim() === '') return;
 
-      const evalExpression = fullExpression.replace(/×/g, '*').replace(/÷/g, '/');
-      // eslint-disable-next-line no-eval
-      const result = eval(evalExpression);
+      const result = safeEvaluateMath(fullExpression);
       
       const formattedResult = Number.isInteger(result) ? result.toString() : parseFloat(result.toFixed(8)).toString();
       

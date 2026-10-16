@@ -25,11 +25,16 @@ interface CalculationResults {
   energyCost: number;
   laborCost: number;
   maintenanceCost: number;
+  extrasCost: number;
   baseCost: number;
   friendPrice: number;
   commercialPrice: number;
   profit: number;
   tarifaSugerida: number;
+  totalFriendBatch: number;
+  totalCommercialBatch: number;
+  totalSugeridaBatch: number;
+  batchDiscountPct: number;
 }
 
 interface SalesEntry {
@@ -131,6 +136,36 @@ const ThreeDCalculator: React.FC<ThreeDCalculatorProps> = ({ viewMode = 'all', o
   const [markup, setMarkup] = useState(30);
   const [copiedType, setCopiedType] = useState<string | null>(null);
 
+  // Nuevos campos: Cantidad de piezas, Llavero, Clicker, Pintado a Mano y Multicolor AMS
+  const [pieceQuantity, setPieceQuantity] = useState<number>(1);
+  const [hasKeychain, setHasKeychain] = useState<boolean>(false);
+  const [keychainQtyPerPiece, setKeychainQtyPerPiece] = useState<number>(1);
+  const [keychainUnitCost, setKeychainUnitCost] = useState<number>(5);
+
+  const [hasClicker, setHasClicker] = useState<boolean>(false);
+  const [clickerQtyPerPiece, setClickerQtyPerPiece] = useState<number>(1);
+  const [clickerUnitCost, setClickerUnitCost] = useState<number>(12);
+
+  const [isHandPainted, setIsHandPainted] = useState<boolean>(false);
+  const [paintingLevel, setPaintingLevel] = useState<'Básico' | 'Completo' | 'Premium'>('Básico');
+  const [paintingCostPerPiece, setPaintingCostPerPiece] = useState<number>(50);
+
+  const [isMulticolorAms, setIsMulticolorAms] = useState<boolean>(false);
+  const [amsPurgePct, setAmsPurgePct] = useState<number>(25);
+
+  const [hardwareStock, setHardwareStock] = useState<{
+    keychains: number;
+    clickers: number;
+    magnets: number;
+    ledBases: number;
+  }>(() => {
+    try {
+      const saved = localStorage.getItem('rembrandt_3d_hardware_stock');
+      if (saved) return JSON.parse(saved);
+    } catch {}
+    return { keychains: 50, clickers: 30, magnets: 40, ledBases: 10 };
+  });
+
   const [printQueue, setPrintQueue] = useState<PrintItem[]>([]);
   const [myFilaments, setMyFilaments] = useState<FilamentInventory[]>([]);
   const [isStockOpen, setIsStockOpen] = useState(false);
@@ -164,20 +199,34 @@ const ThreeDCalculator: React.FC<ThreeDCalculatorProps> = ({ viewMode = 'all', o
     energyCost: 0,
     laborCost: 0,
     maintenanceCost: 0,
+    extrasCost: 0,
     baseCost: 0,
     friendPrice: 0,
     commercialPrice: 0,
     profit: 0,
     tarifaSugerida: 0,
+    totalFriendBatch: 0,
+    totalCommercialBatch: 0,
+    totalSugeridaBatch: 0,
+    batchDiscountPct: 0,
   });
 
   const calculateResults = useCallback(() => {
+    const qty = Math.max(1, pieceQuantity || 1);
     const totalHours = printHours + (printMinutes / 60);
-    const fCost = (filamentPrice / 1000) * weightUsed;
+    const effectiveWeight = isMulticolorAms ? weightUsed * (1 + Math.max(0, amsPurgePct) / 100) : weightUsed;
+    const fCost = (filamentPrice / 1000) * effectiveWeight;
     const power = MATERIAL_POWER[material];
     const eCost = (power / 1000) * totalHours * 2.5;
     const mCost = totalHours * 5;
-    const totalProductionCost = fCost + eCost + mCost + laborCostManual;
+
+    // Costo de herrajes (llavero / clicker) y pintado a mano por pieza
+    const keychainCost = hasKeychain ? Math.max(1, keychainQtyPerPiece) * Math.max(0, keychainUnitCost) : 0;
+    const clickerCost = hasClicker ? Math.max(1, clickerQtyPerPiece) * Math.max(0, clickerUnitCost) : 0;
+    const paintCost = isHandPainted ? Math.max(0, paintingCostPerPiece) : 0;
+    const extrasCost = keychainCost + clickerCost + paintCost;
+
+    const totalProductionCost = fCost + eCost + mCost + laborCostManual + extrasCost;
     // Todos los precios redondeados hacia arriba a múltiplos de 5 sin decimales (terminan en 0 o 5, ej. 104.58 -> 105, 118.22 -> 120)
     const rawFriendPrice = totalProductionCost * 1.15; 
     const friendPrice = Math.max(Math.ceil(rawFriendPrice / 5) * 5, 5);
@@ -186,35 +235,113 @@ const ThreeDCalculator: React.FC<ThreeDCalculatorProps> = ({ viewMode = 'all', o
     const commercialPrice = Math.max(Math.ceil(rawCommercialPrice / 5) * 5, 10);
     const profit = commercialPrice - totalProductionCost;
 
-    // Tarifa Sugerida (Estudio de mercado: Merma 8%, Setup $20, Riesgo 10% si >8h, Piso $45)
-    const filamentoSugerido = (filamentPrice / 1000) * (weightUsed * 1.08);
-    let costoSugeridoBase = filamentoSugerido + eCost + mCost + laborCostManual;
+    // Tarifa Sugerida (Estudio de mercado: Merma 8%, Setup $20, Riesgo 10% si >8h, Piso $45 + extras con margen artesanal)
+    const filamentoSugerido = (filamentPrice / 1000) * (effectiveWeight * 1.08);
+    let costoSugeridoBase = filamentoSugerido + eCost + mCost + laborCostManual + (keychainCost + clickerCost);
     if (totalHours >= 8) costoSugeridoBase *= 1.10;
-    const setupFee = 20;
-    const sugeridoCalculado = (costoSugeridoBase * 1.45) + setupFee;
-    // Redondeo hacia arriba al múltiplo de 5 más cercano sin decimales (termina en 0 o 5, ej. 104.58 -> 105, 118.22 -> 120)
+    const setupFee = qty > 1 ? Math.max(8, 20 / Math.min(qty, 5)) : 20;
+    // El pintado a mano aporta valor artístico directo
+    const paintSuggestedValue = isHandPainted ? paintCost * 1.25 : 0;
+    const sugeridoCalculado = (costoSugeridoBase * 1.45) + setupFee + paintSuggestedValue;
     const tarifaSugerida = Math.max(Math.ceil(sugeridoCalculado / 5) * 5, 45);
+
+    // Descuento por volumen en propuestas de lote (5+ pzs: 5%, 10+ pzs: 10%, 25+ pzs: 15%)
+    let batchDiscountPct = 0;
+    if (qty >= 25) batchDiscountPct = 15;
+    else if (qty >= 10) batchDiscountPct = 10;
+    else if (qty >= 5) batchDiscountPct = 5;
+
+    const discountMultiplier = 1 - (batchDiscountPct / 100);
+    const totalFriendBatch = Math.ceil((friendPrice * qty) / 5) * 5;
+    const totalCommercialBatch = Math.max(
+      Math.ceil((commercialPrice * qty * discountMultiplier) / 5) * 5,
+      Math.ceil((totalProductionCost * qty * 1.15) / 5) * 5
+    );
+    const totalSugeridaBatch = Math.max(
+      Math.ceil((tarifaSugerida * qty * discountMultiplier) / 5) * 5,
+      Math.ceil((totalProductionCost * qty * 1.25) / 5) * 5
+    );
 
     setResults({
       filamentCost: fCost,
       energyCost: eCost,
       laborCost: laborCostManual,
       maintenanceCost: mCost,
-      baseCost: fCost + eCost,
+      extrasCost,
+      baseCost: fCost + eCost + extrasCost,
       friendPrice,
       commercialPrice,
       profit,
       tarifaSugerida,
+      totalFriendBatch,
+      totalCommercialBatch,
+      totalSugeridaBatch,
+      batchDiscountPct,
     });
-  }, [filamentPrice, weightUsed, printHours, printMinutes, material, laborCostManual, markup]);
+  }, [
+    filamentPrice,
+    weightUsed,
+    printHours,
+    printMinutes,
+    material,
+    laborCostManual,
+    markup,
+    pieceQuantity,
+    hasKeychain,
+    keychainQtyPerPiece,
+    keychainUnitCost,
+    hasClicker,
+    clickerQtyPerPiece,
+    clickerUnitCost,
+    isHandPainted,
+    paintingCostPerPiece,
+    isMulticolorAms,
+    amsPurgePct,
+  ]);
 
   useEffect(() => { calculateResults(); }, [calculateResults]);
 
-  const syncData = async (q = printQueue, f = myFilaments) => {
+  useEffect(() => {
+    const applyQuotePayload = (payload: any) => {
+      if (!payload) return;
+      if (payload.name) setPieceName(payload.name);
+      if (typeof payload.grams === 'number' && payload.grams > 0) setWeightUsed(payload.grams);
+      if (typeof payload.hours === 'number' && payload.hours >= 0) {
+        const wholeHours = Math.floor(payload.hours);
+        const mins = Math.round((payload.hours - wholeHours) * 60);
+        setPrintHours(wholeHours);
+        setPrintMinutes(mins);
+      }
+      if (payload.material && (payload.material === 'PLA' || payload.material === 'PETG' || payload.material === 'TPU')) {
+        setMaterial(payload.material);
+      }
+      toast.success(`Cotizando sugerencia: ${payload.name}`);
+    };
+
+    const pendingRaw = sessionStorage.getItem('rembrandt_3d_pending_quote');
+    if (pendingRaw) {
+      sessionStorage.removeItem('rembrandt_3d_pending_quote');
+      try {
+        applyQuotePayload(JSON.parse(pendingRaw));
+      } catch {}
+    }
+
+    const handleQuoteEvent = (e: Event) => {
+      const custom = e as CustomEvent;
+      applyQuotePayload(custom.detail);
+    };
+    window.addEventListener('load-3d-suggestion-quote', handleQuoteEvent);
+    return () => window.removeEventListener('load-3d-suggestion-quote', handleQuoteEvent);
+  }, []);
+
+  const syncData = async (q = printQueue, f = myFilaments, hw = hardwareStock) => {
     setIsSaving(true);
     try {
+      localStorage.setItem('rembrandt_3d_hardware_stock', JSON.stringify(hw));
+    } catch {}
+    try {
       const fileName = 'impresion3d.json';
-      const dataToSave = { printQueue: q, myFilaments: f };
+      const dataToSave = { printQueue: q, myFilaments: f, hardwareStock: hw };
       const { error } = await supabase.storage.from('savejson').upload(fileName, JSON.stringify(dataToSave), { upsert: true, contentType: 'application/json' });
       if (error) throw error;
       toast.success('Sincronizado');
@@ -222,6 +349,17 @@ const ThreeDCalculator: React.FC<ThreeDCalculatorProps> = ({ viewMode = 'all', o
       console.error(err);
       toast.error('Error sync');
     } finally { setIsSaving(false); }
+  };
+
+  const updateHardwareStock = (field: keyof typeof hardwareStock, delta: number) => {
+    const next = {
+      ...hardwareStock,
+      [field]: Math.max(0, (hardwareStock[field] || 0) + delta),
+    };
+    setHardwareStock(next);
+    try {
+      localStorage.setItem('rembrandt_3d_hardware_stock', JSON.stringify(next));
+    } catch {}
   };
 
   const proposedName = useMemo(() => {
@@ -236,8 +374,15 @@ const ThreeDCalculator: React.FC<ThreeDCalculatorProps> = ({ viewMode = 'all', o
     
     const matShort = material;
     const cleanName = pieceName.trim() || 'Pieza';
-    return `${timeStr} ${matShort} ${cleanName}`;
-  }, [printHours, printMinutes, material, pieceName]);
+    const extrasTags: string[] = [];
+    if (isMulticolorAms) extrasTags.push(`AMS+${amsPurgePct}%`);
+    if (hasKeychain) extrasTags.push('Llavero');
+    if (hasClicker) extrasTags.push(`Clicker${clickerQtyPerPiece > 1 ? `x${clickerQtyPerPiece}` : ''}`);
+    if (isHandPainted) extrasTags.push(`Pintado(${paintingLevel})`);
+    if (pieceQuantity > 1) extrasTags.push(`x${pieceQuantity}pzs`);
+    const suffix = extrasTags.length > 0 ? ` [${extrasTags.join(' + ')}]` : '';
+    return `${timeStr} ${matShort} ${cleanName}${suffix}`;
+  }, [printHours, printMinutes, material, pieceName, isMulticolorAms, amsPurgePct, hasKeychain, hasClicker, clickerQtyPerPiece, isHandPainted, paintingLevel, pieceQuantity]);
 
   const copyProposedName = () => {
     navigator.clipboard.writeText(proposedName);
@@ -267,6 +412,12 @@ const ThreeDCalculator: React.FC<ThreeDCalculatorProps> = ({ viewMode = 'all', o
         const json = JSON.parse(text);
         setPrintQueue(json.printQueue || []);
         setMyFilaments(json.myFilaments || []);
+        if (json.hardwareStock) {
+          setHardwareStock(json.hardwareStock);
+          try {
+            localStorage.setItem('rembrandt_3d_hardware_stock', JSON.stringify(json.hardwareStock));
+          } catch {}
+        }
         toast.success('Cargado');
       }
     } catch (err) { console.error(err); toast.error('Error load'); }
@@ -579,38 +730,89 @@ const ThreeDCalculator: React.FC<ThreeDCalculatorProps> = ({ viewMode = 'all', o
   };
 
   const copyQuoteForWhatsApp = (type: 'comercial' | 'amigo' | 'sugerida' = 'comercial') => {
-    let price = results.commercialPrice;
-    let label = 'Total';
+    const qty = Math.max(1, pieceQuantity || 1);
+    let unitPrice = results.commercialPrice;
+    let totalBatchPrice = results.totalCommercialBatch;
+    let label = 'Precio';
     let header = '📦 *Cotización de Impresión 3D*';
 
     if (type === 'amigo') {
-      price = results.friendPrice;
+      unitPrice = results.friendPrice;
+      totalBatchPrice = results.totalFriendBatch;
       label = 'Precio Amigo';
       header = '👋 *Cotización Especial Amigo (Impresión 3D)*';
     } else if (type === 'sugerida') {
-      price = results.tarifaSugerida;
+      unitPrice = results.tarifaSugerida;
+      totalBatchPrice = results.totalSugeridaBatch;
       label = 'Tarifa Sugerida';
       header = '⭐ *Cotización Profesional (Impresión 3D)*';
     }
 
     const timeFormatted = `${printHours > 0 ? `${printHours}h ` : ''}${printMinutes > 0 ? `${printMinutes}m` : (printHours === 0 ? '0m' : '')}`;
+    const extrasLines: string[] = [];
+    if (isMulticolorAms) {
+      extrasLines.push(`🌈 *Impresión:* Multicolor AMS (+${amsPurgePct}% purga de cambio de color)`);
+    }
+    if (hasKeychain) {
+      extrasLines.push(`🔑 *Herraje Llavero:* Incluido (${keychainQtyPerPiece} por pza)`);
+    }
+    if (hasClicker) {
+      extrasLines.push(`🔘 *Switch Clicker Mecánico:* Incluido (${clickerQtyPerPiece} switch${clickerQtyPerPiece > 1 ? 'es' : ''} por pza)`);
+    }
+    if (isHandPainted) {
+      extrasLines.push(`🎨 *Acabado:* Pintado y detallado a mano (Nivel ${paintingLevel})`);
+    }
+
+    const extrasBlock = extrasLines.length > 0 ? extrasLines.join('\n') + '\n' : '';
+    const quantityBlock =
+      qty > 1
+        ? `🔹 *Cantidad solicitada:* ${qty} piezas\n` +
+          `🔹 *${label} Unitario:* ${formatCurrency(unitPrice)} c/u\n` +
+          `✨ *Propuesta Total por ${qty} pzs${results.batchDiscountPct > 0 && type !== 'amigo' ? ` (-${results.batchDiscountPct}% Mayoreo)` : ''}:* ${formatCurrency(totalBatchPrice)} (${formatCurrency(Math.round(totalBatchPrice / qty))} c/u)\n\n`
+        : `🔹 *${label}:* ${formatCurrency(unitPrice)}\n\n`;
+
     const quoteText = `${header}\n\n` +
       `🔹 *Pieza:* ${pieceName.trim() || 'Modelo 3D'}\n` +
       `🔹 *Material:* ${material} ${selectedFilamentId ? `(En Stock)` : ''}\n` +
-      `🔹 *Peso:* ${weightUsed}g\n` +
-      `🔹 *Tiempo:* ${timeFormatted || 'N/A'}\n` +
-      `🔹 *${label}:* ${formatCurrency(price)}\n\n` +
+      `🔹 *Peso:* ${weightUsed}g c/u\n` +
+      `🔹 *Tiempo de impresión:* ${timeFormatted || 'N/A'}\n` +
+      extrasBlock +
+      quantityBlock +
       `Quedo a tus órdenes y al pendiente de cualquier duda o detalle. Saludos cordiales.`;
     navigator.clipboard.writeText(quoteText);
-    toast.success(`¡Cotización (${type === 'amigo' ? 'Amigo' : type === 'sugerida' ? 'Sugerida' : 'Comercial'}) para WhatsApp copiada!`);
+    toast.success(`¡Propuesta (${type === 'amigo' ? 'Amigo' : type === 'sugerida' ? 'Sugerida' : 'Comercial'}${qty > 1 ? ` x${qty} pzs` : ''}) copiada para WhatsApp!`);
   };
 
   const handleTransferToSales = () => {
-    const finalPieceName = pieceName.trim() || 'Impresión 3D';
+    const qty = Math.max(1, pieceQuantity || 1);
+    const extrasSuffix: string[] = [];
+    if (isMulticolorAms) extrasSuffix.push(`AMS+${amsPurgePct}%`);
+    if (hasKeychain) extrasSuffix.push('Llavero');
+    if (hasClicker) extrasSuffix.push(`Clicker x${clickerQtyPerPiece}`);
+    if (isHandPainted) extrasSuffix.push(`Pintado ${paintingLevel}`);
+    const baseName = pieceName.trim() || 'Impresión 3D';
+    const finalPieceName = `${baseName}${qty > 1 ? ` (x${qty} pzs)` : ''}${extrasSuffix.length ? ` [${extrasSuffix.join(', ')}]` : ''}`;
+
+    const totalCost = Number((results.baseCost * qty).toFixed(2));
+    const totalPrice = Number((qty > 1 ? results.totalCommercialBatch : results.commercialPrice).toFixed(2));
+
+    // Descontar automáticamente del stock de herrajes si lleva llavero o clicker
+    if (hasKeychain || hasClicker) {
+      const usedKeychains = hasKeychain ? Math.max(1, keychainQtyPerPiece) * qty : 0;
+      const usedClickers = hasClicker ? Math.max(1, clickerQtyPerPiece) * qty : 0;
+      const updatedHw = {
+        ...hardwareStock,
+        keychains: Math.max(0, (hardwareStock.keychains || 0) - usedKeychains),
+        clickers: Math.max(0, (hardwareStock.clickers || 0) - usedClickers),
+      };
+      setHardwareStock(updatedHw);
+      syncData(printQueue, myFilaments, updatedHw);
+    }
+
     setSaleName(finalPieceName);
-    setSaleCost(Number(results.baseCost.toFixed(2)));
-    setSalePrice(Number(results.commercialPrice.toFixed(2)));
-    setSaleAdvance(Number(results.commercialPrice.toFixed(2)));
+    setSaleCost(totalCost);
+    setSalePrice(totalPrice);
+    setSaleAdvance(totalPrice);
     setSalePaid(true);
     setSaleDate(new Date().toISOString().split('T')[0]);
     setEditingSaleId(null);
@@ -651,7 +853,7 @@ const ThreeDCalculator: React.FC<ThreeDCalculatorProps> = ({ viewMode = 'all', o
                <button 
                   onClick={() => setIsStockOpen(!isStockOpen)} 
                   className={`flex items-center gap-1 px-2.5 py-1 rounded-lg text-[9px] font-black uppercase tracking-wider transition-all border ${isStockOpen ? 'bg-pink-600/25 text-pink-300 border-pink-500/40 shadow-sm' : 'bg-white/5 hover:bg-white/10 text-gray-400 border-white/10'}`}
-                  title="Mostrar / Ocultar panel de Stock de Filamentos"
+                  title="Mostrar / Ocultar panel de Stock de Filamentos y Herrajes"
                >
                   <Palette size={11} className={isStockOpen ? 'text-pink-400' : 'text-gray-400'} />
                   <span>Stock ({myFilaments.length})</span>
@@ -660,7 +862,7 @@ const ThreeDCalculator: React.FC<ThreeDCalculatorProps> = ({ viewMode = 'all', o
                <button onClick={addToQueueFromCalc} className={`flex items-center gap-1 px-2.5 py-1 rounded-lg text-[9px] font-black uppercase tracking-wider transition-all ${editingQueueId ? 'bg-yellow-600 hover:bg-yellow-500 text-white' : 'bg-indigo-600 hover:bg-indigo-500 text-white'}`}>
                   {editingQueueId ? <Save size={12} /> : <Plus size={12} />} {editingQueueId ? 'Guardar' : 'Lote'}
                </button>
-               <button onClick={() => { setPieceName(''); setFilamentPrice(400); setWeightUsed(100); setPrintHours(5); setPrintMinutes(0); setEditingQueueId(null); setSelectedFilamentId(''); }} className="text-gray-500 hover:text-white p-1" title="Reiniciar campos"><RefreshCw size={12} /></button>
+               <button onClick={() => { setPieceName(''); setFilamentPrice(400); setWeightUsed(100); setPrintHours(5); setPrintMinutes(0); setEditingQueueId(null); setSelectedFilamentId(''); setPieceQuantity(1); setHasKeychain(false); setHasClicker(false); setIsHandPainted(false); setIsMulticolorAms(false); }} className="text-gray-500 hover:text-white p-1" title="Reiniciar campos"><RefreshCw size={12} /></button>
             </div>
           </div>
 
@@ -730,10 +932,11 @@ const ThreeDCalculator: React.FC<ThreeDCalculatorProps> = ({ viewMode = 'all', o
                 <div className="flex items-center gap-1.5 overflow-x-auto pb-0.5 scrollbar-none">
                    <span className="text-[8px] font-black text-gray-500 uppercase tracking-widest shrink-0">Presets:</span>
                    {[
-                     { label: '🔑 Llavero', weight: 15, h: 0, m: 45 },
-                     { label: '🗿 Fig. Chica', weight: 55, h: 2, m: 30 },
-                     { label: '🎭 Estándar', weight: 120, h: 5, m: 0 },
-                     { label: '🪖 Casco/Grande', weight: 450, h: 18, m: 0 },
+                     { label: '🔑 Llavero', weight: 15, h: 0, m: 45, keychain: true, clicker: false },
+                     { label: '🔘 Clicker Fidget', weight: 22, h: 0, m: 55, keychain: true, clicker: true },
+                     { label: '🗿 Fig. Chica', weight: 55, h: 2, m: 30, keychain: false, clicker: false },
+                     { label: '🎭 Estándar', weight: 120, h: 5, m: 0, keychain: false, clicker: false },
+                     { label: '🪖 Casco/Grande', weight: 450, h: 18, m: 0, keychain: false, clicker: false },
                    ].map((p, idx) => (
                      <button
                        key={idx}
@@ -742,6 +945,8 @@ const ThreeDCalculator: React.FC<ThreeDCalculatorProps> = ({ viewMode = 'all', o
                          setWeightUsed(p.weight);
                          setPrintHours(p.h);
                          setPrintMinutes(p.m);
+                         setHasKeychain(p.keychain);
+                         setHasClicker(p.clicker);
                          toast.info(`Preset: ${p.label} (${p.weight}g, ${p.h}h ${p.m}m)`);
                        }}
                        className="px-2 py-0.5 bg-white/5 hover:bg-blue-600/20 text-gray-300 hover:text-blue-300 border border-white/10 hover:border-blue-500/30 rounded-lg text-[8px] font-black uppercase tracking-wider shrink-0 transition-all active:scale-95"
@@ -812,32 +1017,263 @@ const ThreeDCalculator: React.FC<ThreeDCalculatorProps> = ({ viewMode = 'all', o
                      </div>
                   </div>
                </div>
+
+               {/* NUEVO PANEL: HERRAJES (LLAVERO / CLICKER), CANTIDAD DE PIEZAS, PINTADO A MANO Y MULTICOLOR AMS */}
+               <div className="p-3 bg-indigo-950/25 border border-indigo-500/20 rounded-2xl space-y-2.5">
+                  {/* Cantidad del Lote / Propuesta por Volumen */}
+                  <div className="flex flex-wrap items-center justify-between gap-2 pb-2 border-b border-white/5">
+                     <div className="flex items-center gap-2">
+                        <span className="text-[9px] font-black text-indigo-300 uppercase tracking-widest">📦 Cantidad a Cotizar:</span>
+                        <div className="flex items-center bg-white/5 border border-white/10 rounded-lg overflow-hidden h-[26px] w-24">
+                           <button type="button" onClick={() => setPieceQuantity(q => Math.max(1, q - 1))} className="px-2 text-white font-black hover:bg-white/10 text-xs">-</button>
+                           <input type="number" min={1} value={pieceQuantity} onChange={e => setPieceQuantity(Math.max(1, Number(e.target.value)))} className="w-full bg-transparent text-white text-center font-black text-xs focus:outline-none" />
+                           <button type="button" onClick={() => setPieceQuantity(q => q + 1)} className="px-2 text-white font-black hover:bg-white/10 text-xs">+</button>
+                        </div>
+                     </div>
+                     <div className="flex items-center gap-1">
+                        {[1, 5, 10, 25, 50].map(qtyPreset => (
+                           <button
+                              key={qtyPreset}
+                              type="button"
+                              onClick={() => setPieceQuantity(qtyPreset)}
+                              className={`px-2 py-0.5 rounded-md text-[9px] font-black transition-all ${
+                                 pieceQuantity === qtyPreset
+                                    ? 'bg-indigo-600 text-white shadow'
+                                    : 'bg-white/5 text-gray-400 hover:text-white'
+                              }`}
+                           >
+                              {qtyPreset} {qtyPreset === 1 ? 'pza' : 'pzs'}
+                           </button>
+                        ))}
+                     </div>
+                  </div>
+
+                  {/* Toggles principales: Llavero, Clicker, Pintado a Mano, Multicolor AMS */}
+                  <div className="grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-4 gap-2">
+                     {/* 1. Argolla de Llavero */}
+                     <div className={`p-2 rounded-xl border transition-all ${hasKeychain ? 'bg-pink-500/15 border-pink-500/40' : 'bg-white/[0.02] border-white/10'}`}>
+                        <div className="flex items-center justify-between">
+                           <button
+                              type="button"
+                              onClick={() => setHasKeychain(!hasKeychain)}
+                              className="flex items-center gap-1.5 text-left w-full"
+                           >
+                              <input type="checkbox" checked={hasKeychain} onChange={() => {}} className="accent-pink-500 rounded cursor-pointer" />
+                              <span className="text-[10px] font-black text-white uppercase">🔑 Lleva Llavero</span>
+                           </button>
+                           {hasKeychain && (
+                              <span className="text-[9px] font-black text-pink-300">+${keychainQtyPerPiece * keychainUnitCost}</span>
+                           )}
+                        </div>
+                        {hasKeychain && (
+                           <div className="mt-2 pt-1.5 border-t border-white/10 flex items-center justify-between gap-1.5 text-[9px]">
+                              <div className="flex items-center gap-1">
+                                 <span className="text-gray-400 font-bold">Cant/pza:</span>
+                                 <input
+                                    type="number"
+                                    min={1}
+                                    value={keychainQtyPerPiece}
+                                    onChange={e => setKeychainQtyPerPiece(Math.max(1, Number(e.target.value)))}
+                                    className="w-10 bg-slate-900 border border-white/15 rounded px-1 py-0.5 text-center text-white font-bold"
+                                 />
+                              </div>
+                              <div className="flex items-center gap-1">
+                                 <span className="text-gray-400 font-bold">$ c/u:</span>
+                                 <input
+                                    type="number"
+                                    min={0}
+                                    value={keychainUnitCost}
+                                    onChange={e => setKeychainUnitCost(Math.max(0, Number(e.target.value)))}
+                                    className="w-12 bg-slate-900 border border-white/15 rounded px-1 py-0.5 text-center text-pink-300 font-bold"
+                                 />
+                              </div>
+                           </div>
+                        )}
+                     </div>
+
+                     {/* 2. Switch / Clicker Mecánico con Cantidad */}
+                     <div className={`p-2 rounded-xl border transition-all ${hasClicker ? 'bg-cyan-500/15 border-cyan-500/40' : 'bg-white/[0.02] border-white/10'}`}>
+                        <div className="flex items-center justify-between">
+                           <button
+                              type="button"
+                              onClick={() => setHasClicker(!hasClicker)}
+                              className="flex items-center gap-1.5 text-left w-full"
+                           >
+                              <input type="checkbox" checked={hasClicker} onChange={() => {}} className="accent-cyan-500 rounded cursor-pointer" />
+                              <span className="text-[10px] font-black text-white uppercase">🔘 Lleva Clicker</span>
+                           </button>
+                           {hasClicker && (
+                              <span className="text-[9px] font-black text-cyan-300">+${clickerQtyPerPiece * clickerUnitCost}</span>
+                           )}
+                        </div>
+                        {hasClicker && (
+                           <div className="mt-2 pt-1.5 border-t border-white/10 space-y-1.5 text-[9px]">
+                              <div className="flex items-center justify-between gap-1">
+                                 <span className="text-gray-400 font-bold">Switches/pza:</span>
+                                 <div className="flex gap-1">
+                                    {[1, 2, 4, 6].map(n => (
+                                       <button
+                                          key={n}
+                                          type="button"
+                                          onClick={() => setClickerQtyPerPiece(n)}
+                                          className={`px-1.5 py-0.5 rounded font-black ${clickerQtyPerPiece === n ? 'bg-cyan-500 text-slate-950' : 'bg-slate-900 text-gray-300'}`}
+                                       >
+                                          {n}
+                                       </button>
+                                    ))}
+                                 </div>
+                              </div>
+                              <div className="flex items-center justify-between gap-1">
+                                 <span className="text-gray-400 font-bold">Costo switch ($):</span>
+                                 <input
+                                    type="number"
+                                    min={0}
+                                    value={clickerUnitCost}
+                                    onChange={e => setClickerUnitCost(Math.max(0, Number(e.target.value)))}
+                                    className="w-14 bg-slate-900 border border-white/15 rounded px-1 py-0.5 text-center text-cyan-300 font-bold"
+                                 />
+                              </div>
+                           </div>
+                        )}
+                     </div>
+
+                     {/* 3. Pintado a Mano / Post-procesado */}
+                     <div className={`p-2 rounded-xl border transition-all ${isHandPainted ? 'bg-amber-500/15 border-amber-500/40' : 'bg-white/[0.02] border-white/10'}`}>
+                        <div className="flex items-center justify-between">
+                           <button
+                              type="button"
+                              onClick={() => setIsHandPainted(!isHandPainted)}
+                              className="flex items-center gap-1.5 text-left w-full"
+                           >
+                              <input type="checkbox" checked={isHandPainted} onChange={() => {}} className="accent-amber-500 rounded cursor-pointer" />
+                              <span className="text-[10px] font-black text-white uppercase">🎨 Pintado a Mano</span>
+                           </button>
+                           {isHandPainted && (
+                              <span className="text-[9px] font-black text-amber-300">+${paintingCostPerPiece}</span>
+                           )}
+                        </div>
+                        {isHandPainted && (
+                           <div className="mt-2 pt-1.5 border-t border-white/10 space-y-1.5 text-[9px]">
+                              <div className="grid grid-cols-3 gap-1">
+                                 {[
+                                    { level: 'Básico' as const, cost: 50 },
+                                    { level: 'Completo' as const, cost: 120 },
+                                    { level: 'Premium' as const, cost: 250 },
+                                 ].map(opt => (
+                                    <button
+                                       key={opt.level}
+                                       type="button"
+                                       onClick={() => {
+                                          setPaintingLevel(opt.level);
+                                          setPaintingCostPerPiece(opt.cost);
+                                       }}
+                                       className={`py-0.5 rounded font-black text-[8px] ${
+                                          paintingLevel === opt.level
+                                             ? 'bg-amber-500 text-slate-950'
+                                             : 'bg-slate-900 text-gray-300 hover:text-white'
+                                       }`}
+                                    >
+                                       {opt.level}
+                                    </button>
+                                 ))}
+                              </div>
+                              <div className="flex items-center justify-between gap-1">
+                                 <span className="text-gray-400 font-bold">Cargo Pintura ($):</span>
+                                 <input
+                                    type="number"
+                                    min={0}
+                                    value={paintingCostPerPiece}
+                                    onChange={e => setPaintingCostPerPiece(Math.max(0, Number(e.target.value)))}
+                                    className="w-16 bg-slate-900 border border-white/15 rounded px-1 py-0.5 text-center text-amber-300 font-bold"
+                                 />
+                              </div>
+                           </div>
+                        )}
+                     </div>
+
+                     {/* 4. Multicolor / AMS (Purga de Filamento) */}
+                     <div className={`p-2 rounded-xl border transition-all ${isMulticolorAms ? 'bg-purple-500/15 border-purple-500/40' : 'bg-white/[0.02] border-white/10'}`}>
+                        <div className="flex items-center justify-between">
+                           <button
+                              type="button"
+                              onClick={() => setIsMulticolorAms(!isMulticolorAms)}
+                              className="flex items-center gap-1.5 text-left w-full"
+                           >
+                              <input type="checkbox" checked={isMulticolorAms} onChange={() => {}} className="accent-purple-500 rounded cursor-pointer" />
+                              <span className="text-[10px] font-black text-white uppercase">🌈 Multicolor AMS</span>
+                           </button>
+                           {isMulticolorAms && (
+                              <span className="text-[9px] font-black text-purple-300">+{amsPurgePct}%g</span>
+                           )}
+                        </div>
+                        {isMulticolorAms && (
+                           <div className="mt-2 pt-1.5 border-t border-white/10 space-y-1.5 text-[9px]">
+                              <div className="grid grid-cols-3 gap-1">
+                                 {[15, 25, 45].map(pct => (
+                                    <button
+                                       key={pct}
+                                       type="button"
+                                       onClick={() => setAmsPurgePct(pct)}
+                                       className={`py-0.5 rounded font-black text-[8px] ${
+                                          amsPurgePct === pct
+                                             ? 'bg-purple-500 text-white'
+                                             : 'bg-slate-900 text-gray-300 hover:text-white'
+                                       }`}
+                                    >
+                                       +{pct}%
+                                    </button>
+                                 ))}
+                              </div>
+                              <div className="flex items-center justify-between gap-1">
+                                 <span className="text-gray-400 font-bold">Purga (%):</span>
+                                 <input
+                                    type="number"
+                                    min={0}
+                                    value={amsPurgePct}
+                                    onChange={e => setAmsPurgePct(Math.max(0, Number(e.target.value)))}
+                                    className="w-14 bg-slate-900 border border-white/15 rounded px-1 py-0.5 text-center text-purple-300 font-bold"
+                                 />
+                              </div>
+                           </div>
+                        )}
+                     </div>
+                  </div>
+               </div>
             </div>
 
             {/* Desglose de Costos Base */}
-            <div className="grid grid-cols-3 gap-2.5 border-t border-white/5 pt-3">
-               <div className="p-2.5 bg-yellow-500/5 border border-yellow-500/10 rounded-xl flex flex-col items-center justify-center">
+            <div className="grid grid-cols-4 gap-2 border-t border-white/5 pt-3">
+               <div className="p-2 bg-yellow-500/5 border border-yellow-500/10 rounded-xl flex flex-col items-center justify-center">
                   <p className="text-[8px] text-yellow-500 font-black uppercase tracking-widest mb-0.5">Energía</p>
-                  <p className="text-lg font-black text-white italic">{formatCurrency(results.energyCost)}</p>
+                  <p className="text-base font-black text-white italic">{formatCurrency(results.energyCost)}</p>
                </div>
-               <div className="p-2.5 bg-green-500/5 border border-green-500/10 rounded-xl flex flex-col items-center justify-center">
+               <div className="p-2 bg-green-500/5 border border-green-500/10 rounded-xl flex flex-col items-center justify-center">
                   <p className="text-[8px] text-green-500 font-black uppercase tracking-widest mb-0.5">Filamento</p>
-                  <p className="text-lg font-black text-white italic">{formatCurrency(results.filamentCost)}</p>
+                  <p className="text-base font-black text-white italic">{formatCurrency(results.filamentCost)}</p>
                </div>
-               <div className="p-2.5 bg-blue-500/5 border border-blue-500/10 rounded-xl flex flex-col items-center justify-center">
-                  <p className="text-[8px] text-blue-400 font-black uppercase tracking-widest mb-0.5">Costo Base</p>
-                  <p className="text-lg font-black text-white italic">{formatCurrency(results.baseCost)}</p>
+               <div className="p-2 bg-purple-500/5 border border-purple-500/10 rounded-xl flex flex-col items-center justify-center">
+                  <p className="text-[8px] text-purple-400 font-black uppercase tracking-widest mb-0.5">Extras/Pint.</p>
+                  <p className="text-base font-black text-white italic">{formatCurrency(results.extrasCost)}</p>
+               </div>
+               <div className="p-2 bg-blue-500/5 border border-blue-500/10 rounded-xl flex flex-col items-center justify-center">
+                  <p className="text-[8px] text-blue-400 font-black uppercase tracking-widest mb-0.5">Costo Unit.</p>
+                  <p className="text-base font-black text-white italic">{formatCurrency(results.baseCost)}</p>
                </div>
             </div>
 
-            {/* Precios Sugeridos y Botones de Copiado: 3 Tarifas */}
+            {/* Precios Sugeridos y Botones de Copiado: 3 Tarifas + Propuesta por Cantidad */}
             <div className="grid grid-cols-1 md:grid-cols-3 gap-2.5 pt-2 border-t border-white/5">
                {/* 1. Precio Amigo */}
                <div className="p-3 bg-white/[0.03] border border-white/5 rounded-xl flex flex-col justify-between">
                   <div className="flex justify-between items-start mb-2">
                      <div>
-                        <p className="text-[8px] font-black text-green-400 uppercase tracking-widest mb-0.5">Precio Amigo</p>
+                        <p className="text-[8px] font-black text-green-400 uppercase tracking-widest mb-0.5">Precio Amigo (c/u)</p>
                         <span className="text-xl font-black text-white">{formatCurrency(results.friendPrice)}</span>
+                        {pieceQuantity > 1 && (
+                           <p className="text-[10px] font-black text-emerald-300 mt-0.5">
+                              Lote x{pieceQuantity}: {formatCurrency(results.totalFriendBatch)}
+                           </p>
+                        )}
                      </div>
                      <span className="text-[9px] text-green-400/80 font-bold">+15%</span>
                   </div>
@@ -845,7 +1281,7 @@ const ThreeDCalculator: React.FC<ThreeDCalculatorProps> = ({ viewMode = 'all', o
                      <button onClick={() => copyQuoteForWhatsApp('amigo')} className="flex-1 py-1.5 bg-emerald-600/30 hover:bg-emerald-600/50 text-emerald-300 rounded-lg text-[9px] font-black uppercase tracking-wider flex items-center justify-center gap-1 transition-all" title="WhatsApp amigo">
                         <MessageSquare size={12} /> <span>WhatsApp</span>
                      </button>
-                     <button onClick={() => handleCopy(results.friendPrice, 'amigo')} className="p-1.5 bg-green-500/10 hover:bg-green-500/20 text-green-400 rounded-lg transition-all" title="Copiar precio amigo"><Copy size={13}/></button>
+                     <button onClick={() => handleCopy(pieceQuantity > 1 ? results.totalFriendBatch : results.friendPrice, 'amigo')} className="p-1.5 bg-green-500/10 hover:bg-green-500/20 text-green-400 rounded-lg transition-all" title="Copiar precio amigo"><Copy size={13}/></button>
                   </div>
                </div>
 
@@ -853,11 +1289,16 @@ const ThreeDCalculator: React.FC<ThreeDCalculatorProps> = ({ viewMode = 'all', o
                <div className="p-3 bg-gradient-to-r from-blue-600/20 to-indigo-600/20 border border-blue-500/30 rounded-xl flex flex-col justify-between relative overflow-hidden">
                   <div className="flex justify-between items-start mb-2">
                      <div>
-                        <p className="text-[8px] font-black text-blue-300 uppercase tracking-widest mb-0.5">Precio Comercial</p>
+                        <p className="text-[8px] font-black text-blue-300 uppercase tracking-widest mb-0.5">Precio Comercial (c/u)</p>
                         <div className="flex items-center gap-1">
                            <span className="text-xl font-black text-white">{formatCurrency(results.commercialPrice)}</span>
                            <span className="text-[10px] text-green-400 font-black">+{formatCurrency(results.profit)}</span>
                         </div>
+                        {pieceQuantity > 1 && (
+                           <p className="text-[10px] font-black text-cyan-300 mt-0.5">
+                              Propuesta x{pieceQuantity}{results.batchDiscountPct > 0 ? ` (-${results.batchDiscountPct}%)` : ''}: {formatCurrency(results.totalCommercialBatch)}
+                           </p>
+                        )}
                      </div>
                      <span className="text-[9px] text-blue-400 font-bold">+{markup}%</span>
                   </div>
@@ -872,7 +1313,7 @@ const ThreeDCalculator: React.FC<ThreeDCalculatorProps> = ({ viewMode = 'all', o
                      <button onClick={() => copyQuoteForWhatsApp('comercial')} className="flex-1 py-1.5 bg-blue-600 hover:bg-blue-500 text-white rounded-lg text-[9px] font-black uppercase tracking-wider flex items-center justify-center gap-1 shadow-md transition-all shrink-0" title="Copiar cotización para WhatsApp">
                         <MessageSquare size={12} /> <span>WhatsApp</span>
                      </button>
-                     <button onClick={() => handleCopy(results.commercialPrice, 'comercial')} className="p-1.5 bg-blue-600/40 hover:bg-blue-600/60 text-white rounded-lg transition-all shrink-0" title="Copiar precio comercial"><Copy size={13}/></button>
+                     <button onClick={() => handleCopy(pieceQuantity > 1 ? results.totalCommercialBatch : results.commercialPrice, 'comercial')} className="p-1.5 bg-blue-600/40 hover:bg-blue-600/60 text-white rounded-lg transition-all shrink-0" title="Copiar precio comercial"><Copy size={13}/></button>
                   </div>
                </div>
 
@@ -882,17 +1323,22 @@ const ThreeDCalculator: React.FC<ThreeDCalculatorProps> = ({ viewMode = 'all', o
                      <div>
                         <div className="flex items-center gap-1">
                            <Sparkles size={11} className="text-amber-400" />
-                           <p className="text-[8px] font-black text-amber-300 uppercase tracking-widest mb-0.5">Tarifa Sugerida</p>
+                           <p className="text-[8px] font-black text-amber-300 uppercase tracking-widest mb-0.5">Tarifa Sugerida (c/u)</p>
                         </div>
                         <span className="text-xl font-black text-white">{formatCurrency(results.tarifaSugerida)}</span>
+                        {pieceQuantity > 1 && (
+                           <p className="text-[10px] font-black text-amber-300 mt-0.5">
+                              Propuesta x{pieceQuantity}{results.batchDiscountPct > 0 ? ` (-${results.batchDiscountPct}%)` : ''}: {formatCurrency(results.totalSugeridaBatch)}
+                           </p>
+                        )}
                      </div>
-                     <span className="text-[8px] text-amber-400 font-bold text-right leading-tight">Merma+Setup<br/>+Riesgo</span>
+                     <span className="text-[8px] text-amber-400 font-bold text-right leading-tight">Merma+Setup<br/>+Extras</span>
                   </div>
                   <div className="flex gap-1 items-center">
                      <button onClick={() => copyQuoteForWhatsApp('sugerida')} className="flex-1 py-1.5 bg-amber-600 hover:bg-amber-500 text-white rounded-lg text-[9px] font-black uppercase tracking-wider flex items-center justify-center gap-1 shadow-md transition-all shrink-0" title="Copiar cotización sugerida para WhatsApp">
                         <MessageSquare size={12} /> <span>WhatsApp</span>
                      </button>
-                     <button onClick={() => handleCopy(results.tarifaSugerida, 'sugerida')} className="p-1.5 bg-amber-500/20 hover:bg-amber-500/30 text-amber-300 rounded-lg transition-all shrink-0" title="Copiar tarifa sugerida"><Copy size={13}/></button>
+                     <button onClick={() => handleCopy(pieceQuantity > 1 ? results.totalSugeridaBatch : results.tarifaSugerida, 'sugerida')} className="p-1.5 bg-amber-500/20 hover:bg-amber-500/30 text-amber-300 rounded-lg transition-all shrink-0" title="Copiar tarifa sugerida"><Copy size={13}/></button>
                   </div>
                </div>
             </div>
@@ -981,6 +1427,51 @@ const ThreeDCalculator: React.FC<ThreeDCalculatorProps> = ({ viewMode = 'all', o
               </div>
             </div>
             <div className="p-3 flex flex-col gap-3 flex-1 overflow-y-auto custom-scrollbar">
+               {/* Stock de Herrajes y Consumibles Extra */}
+               <div className="p-2.5 bg-indigo-950/30 border border-indigo-500/20 rounded-xl space-y-2">
+                  <div className="flex items-center justify-between">
+                     <span className="text-[9px] font-black text-indigo-300 uppercase tracking-wider">🔩 Stock de Herrajes</span>
+                     <button
+                        type="button"
+                        onClick={() => syncData(printQueue, myFilaments, hardwareStock)}
+                        className="text-[8px] font-black text-emerald-400 hover:text-emerald-300 uppercase"
+                     >
+                        Guardar
+                     </button>
+                  </div>
+                  <div className="grid grid-cols-2 gap-1.5 text-[9px]">
+                     {[
+                        { key: 'keychains' as const, label: '🔑 Argollas' },
+                        { key: 'clickers' as const, label: '🔘 Clickers' },
+                        { key: 'magnets' as const, label: '🧲 Imanes' },
+                        { key: 'ledBases' as const, label: '💡 Bases LED' },
+                     ].map(hw => (
+                        <div key={hw.key} className="p-1.5 bg-slate-950/70 border border-white/10 rounded-lg flex items-center justify-between">
+                           <span className="font-bold text-gray-300 truncate">{hw.label}</span>
+                           <div className="flex items-center gap-1">
+                              <button
+                                 type="button"
+                                 onClick={() => updateHardwareStock(hw.key, -1)}
+                                 className="w-4 h-4 rounded bg-white/5 hover:bg-white/15 text-gray-300 flex items-center justify-center font-black"
+                              >
+                                 -
+                              </button>
+                              <span className={`font-black min-w-[18px] text-center ${hardwareStock[hw.key] <= 5 ? 'text-rose-400' : 'text-white'}`}>
+                                 {hardwareStock[hw.key]}
+                              </span>
+                              <button
+                                 type="button"
+                                 onClick={() => updateHardwareStock(hw.key, 1)}
+                                 className="w-4 h-4 rounded bg-white/5 hover:bg-white/15 text-gray-300 flex items-center justify-center font-black"
+                              >
+                                 +
+                              </button>
+                           </div>
+                        </div>
+                     ))}
+                  </div>
+               </div>
+
                <div className="space-y-2 pb-3 border-b border-white/5">
                   <div className="flex gap-1.5">
                      <select value={newFilament.material} onChange={e => setNewFilament({...newFilament, material: e.target.value})} className="flex-1 bg-slate-800 border border-white/10 rounded-lg px-2 py-1 text-xs text-white focus:outline-none font-bold h-[32px]">

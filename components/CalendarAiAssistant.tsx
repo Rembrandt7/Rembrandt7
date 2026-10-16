@@ -88,6 +88,9 @@ function normalizeDate(rawDate: string): string {
     return testDate;
   }
 
+  return trimmed;
+}
+
 function getInPeriodVacationDays(eventsList: CalendarEvent[], resetDateStr: string = '07-21'): number {
   const now = new Date();
   const currentYear = now.getFullYear();
