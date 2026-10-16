@@ -24,14 +24,16 @@ import {
   Clock,
   Layers,
   FolderKanban,
-  ShieldCheck
+  ShieldCheck,
+  Music,
+  Download
 } from 'lucide-react';
 import { motion, AnimatePresence } from 'motion/react';
 import { LinkItem, Command, TabConfig } from '../types';
 import { toast } from 'sonner';
 import { getSmartLinkTarget } from '../utils/appLinkUtils';
 
-type SearchCategory = 'all' | 'tab' | 'note' | 'calendar' | 'finance' | 'command' | 'link' | 'system';
+type SearchCategory = 'all' | 'tab' | 'note' | 'calendar' | 'finance' | 'music' | 'command' | 'link' | 'system';
 
 interface SearchResult {
   id: string;
@@ -47,10 +49,12 @@ interface SearchResult {
 export const GlobalSearch: React.FC = () => {
   const { 
     config, 
+    nutritionData,
     activeTabId, 
     setActiveTabId, 
     toggleEditing, 
     saveToSupabase, 
+    saveConfigToFile,
     fetchConfigFromSupabaseManual 
   } = useLinks();
 
@@ -171,7 +175,7 @@ export const GlobalSearch: React.FC = () => {
         id: 'sys-save-cloud',
         title: 'Guardar configuración en Supabase',
         subtitle: 'Sincronizar cambios actuales en la nube',
-        keywords: 'guardar nube supabase sync respaldo backup salvar',
+        keywords: 'guardar nube supabase sync respaldo salvar',
         icon: <Save size={16} className="text-emerald-400" />,
         action: () => {
           saveToSupabase();
@@ -191,14 +195,25 @@ export const GlobalSearch: React.FC = () => {
       },
       {
         id: 'sys-db-viewer',
-        title: 'Visor de Base de Datos y APIs',
-        subtitle: 'Gestionar tablas de Supabase, tokens y Google Calendar',
-        keywords: 'base datos supabase database credenciales apis sql cloud',
+        title: 'Visor de Base de Datos y Ajustes',
+        subtitle: 'Gestionar sincronización en la nube y calendario',
+        keywords: 'base datos supabase ajustes sincronizacion nube',
         icon: <Database size={16} className="text-blue-400" />,
         action: () => {
           setActiveTabId('database');
           setIsOpen(false);
           toast.info("Abriendo visor de Base de Datos");
+        }
+      },
+      {
+        id: 'sys-export-full-backup',
+        title: 'Guardar Respaldo Local (JSON)',
+        subtitle: 'Guardar copia de seguridad de tu configuración',
+        keywords: 'exportar respaldo guardar archivo configuracion',
+        icon: <Download size={16} className="text-cyan-400" />,
+        action: () => {
+          saveConfigToFile();
+          setIsOpen(false);
         }
       }
     ];
@@ -420,8 +435,39 @@ export const GlobalSearch: React.FC = () => {
       }
     });
 
+    // 8. TELEPROMPTER SONGS / PARTITURAS
+    try {
+      const rawSongs = localStorage.getItem('rembrandt_teleprompter_songs_v3');
+      if (rawSongs) {
+        const parsedSongs = JSON.parse(rawSongs);
+        if (Array.isArray(parsedSongs)) {
+          parsedSongs.forEach((song: any, idx: number) => {
+            const titleMatch = song.title?.toLowerCase().includes(q);
+            const artistMatch = song.artist?.toLowerCase().includes(q);
+            const lyricsMatch = q.length >= 3 && song.lyrics?.toLowerCase().includes(q);
+            if (!q || titleMatch || artistMatch || lyricsMatch) {
+              items.push({
+                id: `song-${song.id || idx}`,
+                title: `${song.title || 'Canción'}${song.artist ? ` — ${song.artist}` : ''}`,
+                subtitle: `Partitura / Teleprompter${song.musicalKey ? ` · Tono: ${song.musicalKey}` : ''}${song.capo ? ` · Capo ${song.capo}` : ''}`,
+                category: 'music',
+                categoryLabel: 'Partitura',
+                categoryColor: 'bg-pink-500/20 text-pink-300 border-pink-500/30',
+                icon: <Music size={16} className="text-pink-400" />,
+                action: () => {
+                  setActiveTabId('teleprompter');
+                  setIsOpen(false);
+                  toast.info(`Abriendo Teleprompter: ${song.title}`);
+                }
+              });
+            }
+          });
+        }
+      }
+    } catch (_) {}
+
     return items;
-  }, [config, query, setActiveTabId, toggleEditing, saveToSupabase, fetchConfigFromSupabaseManual]);
+  }, [config, nutritionData, query, setActiveTabId, toggleEditing, saveToSupabase, fetchConfigFromSupabaseManual]);
 
   // Filter by active category tab if selected
   const filteredResults = useMemo(() => {
@@ -470,6 +516,7 @@ export const GlobalSearch: React.FC = () => {
     { id: 'note', label: 'Notas' },
     { id: 'calendar', label: 'Calendario' },
     { id: 'finance', label: 'Finanzas' },
+    { id: 'music', label: 'Partituras' },
     { id: 'command', label: 'Comandos' },
     { id: 'link', label: 'Enlaces' },
   ];
