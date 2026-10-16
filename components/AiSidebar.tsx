@@ -43,22 +43,22 @@ const AiSidebarItem: React.FC<{
                         onClick?.();
                     }
                 }}
-                className={`flex items-center gap-3 p-2.5 rounded-2xl transition-all duration-300 hover:bg-white/10 border border-transparent hover:border-white/10 hover:shadow-[0_0_15px_rgba(255,255,255,0.05)] group w-full ${item.colorClass || ''} ${isEditing ? 'opacity-50 cursor-default' : ''}`}
+                className={`flex items-center gap-3 px-3 py-2.5 rounded-2xl transition-all duration-200 bg-white/[0.02] hover:bg-white/[0.08] border border-white/[0.04] hover:border-white/15 hover:shadow-[0_4px_16px_rgba(0,0,0,0.35)] hover:-translate-x-0.5 group w-full ${item.colorClass || ''} ${isEditing ? 'opacity-50 cursor-default' : ''}`}
             >
                 <div 
-                    className="w-8 h-8 flex-shrink-0 flex items-center justify-center transition-transform group-hover:scale-110" 
+                    className="w-7 h-7 flex-shrink-0 flex items-center justify-center transition-transform duration-200 group-hover:scale-110" 
                     style={{
                         filter: item.outlineColor && item.outlineWidth ? `drop-shadow(0 0 ${item.outlineWidth}px ${item.outlineColor})` : undefined
                     }}
                     dangerouslySetInnerHTML={{ __html: item.iconSvg }} 
                 />
-                <span className="font-semibold text-gray-400 group-hover:text-white truncate flex-1 text-left">
+                <span className="font-semibold text-xs sm:text-sm text-gray-300 group-hover:text-white truncate flex-1 text-left tracking-tight">
                     {item.name}
                 </span>
 
                 {showClickBadge && !isEditing && typeof item.clickCount === 'number' && item.clickCount > 0 && (
                     <span 
-                        className="text-[10px] font-bold px-2 py-0.5 rounded-full bg-white/5 text-gray-400 group-hover:text-emerald-400 group-hover:bg-emerald-500/10 border border-white/5 transition-colors shrink-0 tabular-nums"
+                        className="text-[10px] font-mono font-bold px-2 py-0.5 rounded-full bg-white/[0.05] text-gray-400 group-hover:text-emerald-300 group-hover:bg-emerald-500/15 border border-white/5 transition-colors shrink-0 tabular-nums shadow-sm"
                         title={`Usado ${item.clickCount} ${item.clickCount === 1 ? 'vez' : 'veces'}`}
                     >
                         {item.clickCount}

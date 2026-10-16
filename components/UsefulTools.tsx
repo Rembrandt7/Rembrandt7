@@ -15,28 +15,28 @@ const ToolCard: React.FC<{
     count?: number;
 }> = ({ item, isEditing, onEdit, onDelete }) => {
     return (
-        <div className="relative group w-[68px] h-[68px] sm:w-[74px] sm:h-[74px] flex-shrink-0">
+        <div className="relative group w-[70px] h-[70px] sm:w-[76px] sm:h-[76px] flex-shrink-0">
             <a 
                 href={item.href} 
                 target="_blank" 
                 rel="noopener noreferrer" 
-                className={`group relative flex flex-col items-center justify-center p-1 bg-gray-800/80 hover:bg-gray-700/90 rounded-lg transition-all duration-200 border border-gray-700/70 hover:border-gray-500 hover:shadow-md hover:-translate-y-0.5 w-full h-full ${item.colorClass || ''} ${isEditing ? 'opacity-50 pointer-events-none' : ''}`}
+                className={`group relative flex flex-col items-center justify-center p-1.5 bg-gradient-to-b from-gray-800/85 via-gray-850/90 to-gray-900/95 hover:from-gray-750/95 hover:to-gray-850 rounded-2xl transition-all duration-200 border border-white/[0.08] hover:border-white/25 hover:shadow-[0_6px_20px_rgba(0,0,0,0.45)] hover:-translate-y-1 w-full h-full backdrop-blur-sm ${item.colorClass || ''} ${isEditing ? 'opacity-50 pointer-events-none' : ''}`}
             >
                 <div 
-                    className="w-6 h-6 sm:w-7 sm:h-7 mb-0.5 transform transition-transform group-hover:scale-110 duration-200 flex items-center justify-center [&>svg]:w-full [&>svg]:h-full flex-shrink-0" 
+                    className="w-6 h-6 sm:w-7 sm:h-7 mb-1 transform transition-transform group-hover:scale-110 duration-200 flex items-center justify-center [&>svg]:w-full [&>svg]:h-full flex-shrink-0" 
                     style={{
                         filter: item.outlineColor && item.outlineWidth ? `drop-shadow(0 0 ${item.outlineWidth}px ${item.outlineColor})` : undefined
                     }}
                     dangerouslySetInnerHTML={{ __html: item.iconSvg }} 
                 />
-                <h3 className="text-[9.5px] sm:text-[10.5px] font-semibold text-white text-center leading-tight truncate w-full px-0.5">{item.name}</h3>
+                <h3 className="text-[9.5px] sm:text-[10.5px] font-medium text-gray-200 group-hover:text-white text-center leading-tight truncate w-full px-0.5">{item.name}</h3>
             </a>
-            <div className="absolute top-0.5 right-0.5 flex gap-0.5 z-10 opacity-0 group-hover:opacity-100 transition-opacity">
+            <div className="absolute top-1 right-1 flex gap-0.5 z-10 opacity-0 group-hover:opacity-100 transition-opacity">
                 <button 
                     onPointerDown={(e) => e.stopPropagation()}
                     onMouseDown={(e) => e.stopPropagation()}
                     onClick={(e) => { e.preventDefault(); e.stopPropagation(); onEdit(item); }}
-                    className="p-0.5 bg-blue-600 rounded-full text-white hover:bg-blue-500 shadow-md"
+                    className="p-1 bg-blue-600 rounded-full text-white hover:bg-blue-500 shadow-md transition-all hover:scale-110"
                     title="Editar"
                 >
                     <Edit size={8} />
@@ -45,7 +45,7 @@ const ToolCard: React.FC<{
                     onPointerDown={(e) => e.stopPropagation()}
                     onMouseDown={(e) => e.stopPropagation()}
                     onClick={(e) => { e.preventDefault(); e.stopPropagation(); onDelete(item.id); }}
-                    className="p-0.5 bg-red-600 rounded-full text-white hover:bg-red-500 shadow-md"
+                    className="p-1 bg-red-600 rounded-full text-white hover:bg-red-500 shadow-md transition-all hover:scale-110"
                     title="Eliminar"
                 >
                     <Trash2 size={8} />
@@ -152,18 +152,18 @@ const ToolSectionPanel: React.FC<ToolSectionPanelProps> = ({
     };
 
     return (
-        <div className="bg-gray-900/50 border border-gray-800/80 hover:border-gray-700/80 rounded-xl p-2.5 flex flex-col shadow-md transition-all duration-200 w-full min-w-0">
+        <div className="bg-gradient-to-b from-gray-900/70 via-gray-900/50 to-gray-950/70 border border-white/[0.07] hover:border-white/15 rounded-2xl p-3 flex flex-col shadow-lg backdrop-blur-md transition-all duration-200 w-full min-w-0">
             {/* Header: Título, contador, botones de carrusel y botones de edición */}
-            <div className="flex items-center justify-between mb-1.5 pb-1.5 border-b border-gray-800/70">
-                <div className="flex items-center gap-2 overflow-hidden min-w-0">
+            <div className="flex items-center justify-between mb-2 pb-2 border-b border-white/[0.06]">
+                <div className="flex items-center gap-2.5 overflow-hidden min-w-0">
                     <span 
-                        className="text-white opacity-85 p-1 bg-gray-800/90 rounded-md flex-shrink-0 [&>svg]:w-4 [&>svg]:h-4" 
+                        className="text-white opacity-90 p-1.5 bg-white/[0.06] border border-white/10 rounded-xl flex-shrink-0 shadow-inner [&>svg]:w-4 [&>svg]:h-4" 
                         dangerouslySetInnerHTML={{ __html: section.iconSvg || '' }} 
                     />
-                    <h2 className={`text-xs sm:text-sm font-bold text-transparent bg-clip-text bg-gradient-to-r ${section.gradient} truncate`}>
+                    <h2 className={`text-xs sm:text-sm font-bold text-transparent bg-clip-text bg-gradient-to-r ${section.gradient} truncate tracking-wide`}>
                         {section.title}
                     </h2>
-                    <span className="text-[10px] text-gray-400 font-semibold px-1.5 py-0.5 rounded-full bg-gray-800/80 border border-gray-700/60 flex-shrink-0">
+                    <span className="text-[10px] text-gray-300 font-mono font-bold px-2 py-0.5 rounded-full bg-white/[0.06] border border-white/10 flex-shrink-0 shadow-sm">
                         {section.items.length}
                     </span>
                 </div>

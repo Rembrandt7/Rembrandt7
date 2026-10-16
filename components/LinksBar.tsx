@@ -74,7 +74,7 @@ const LinkIcon: React.FC<{
                 target={smartTarget} 
                 rel="noopener noreferrer" 
                 onClick={handleClick}
-                className={`flex items-center justify-center w-full h-full rounded-2xl sm:rounded-3xl transition-all duration-300 group ${item.colorClass} hover:scale-[1.10] hover:-translate-y-1 ${isEditing ? 'opacity-100 cursor-default' : ''} ${hasBg ? 'bg-white/5 hover:bg-white/10 hover:shadow-[0_8px_25px_rgba(255,255,255,0.1)] border border-white/10' : ''} [&_svg]:w-[65%] [&_svg]:h-[65%] [&_svg]:max-w-[54px] [&_svg]:max-h-[54px] [&_img]:w-[70%] [&_img]:h-[70%] [&_img]:max-w-[56px] [&_img]:max-h-[56px] [&_img]:object-contain`}
+                className={`flex items-center justify-center w-full h-full rounded-2xl sm:rounded-3xl transition-all duration-300 group ${item.colorClass} hover:scale-[1.12] hover:-translate-y-1.5 active:scale-95 ${isEditing ? 'opacity-100 cursor-default' : ''} ${hasBg ? 'bg-gradient-to-b from-white/[0.08] to-white/[0.02] hover:from-white/[0.14] hover:to-white/[0.05] hover:shadow-[0_10px_30px_rgba(0,0,0,0.5)] border border-white/10 hover:border-white/25 backdrop-blur-md' : ''} [&_svg]:w-[65%] [&_svg]:h-[65%] [&_svg]:max-w-[54px] [&_svg]:max-h-[54px] [&_img]:w-[72%] [&_img]:h-[72%] [&_img]:max-w-[56px] [&_img]:max-h-[56px] [&_img]:object-contain`}
                 title={item.name}
                 style={{
                     filter: item.outlineColor && item.outlineWidth ? `drop-shadow(0 0 ${item.outlineWidth}px ${item.outlineColor})` : undefined

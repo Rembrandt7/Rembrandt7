@@ -488,18 +488,21 @@ export const PersonalTab: React.FC<PersonalTabProps> = ({
   return (
     <div className="w-full flex flex-col space-y-4">
       {/* HEADER: SUBTAB SWITCHER + TOOLS (CHANGE PASSWORD, LOCK) */}
-      <div className="w-full flex flex-wrap items-center justify-between gap-3 px-1 sm:px-2 pt-1 pb-2 border-b border-white/10">
+      <div className="w-full flex flex-wrap items-center justify-between gap-3 px-1 sm:px-2 pt-1 pb-3 border-b border-white/10">
         {/* SEGMENTED SWITCHER: FINANZAS | NUTRICIÓN | BÓVEDA */}
-        <div className="flex items-center gap-1.5 p-1 bg-zinc-900/90 border border-white/10 rounded-2xl backdrop-blur-md shadow-lg overflow-x-auto max-w-full">
+        <div className="flex items-center gap-1.5 p-1.5 bg-gradient-to-r from-zinc-950/90 via-zinc-900/90 to-zinc-950/90 border border-white/10 rounded-2xl backdrop-blur-xl shadow-xl overflow-x-auto max-w-full">
           {/* TAB 1: FINANZAS */}
           <button
             onClick={() => handleSelectSubTab('finanzas')}
-            className={`px-3.5 py-2 rounded-xl text-xs sm:text-sm font-bold transition-all flex items-center gap-2 ${
+            className={`px-4 py-2 rounded-xl text-xs sm:text-sm font-bold transition-all flex items-center gap-2 select-none relative ${
               activeSubTab === 'finanzas'
-                ? 'bg-gradient-to-r from-emerald-600 to-teal-600 text-white shadow-md shadow-emerald-600/30'
-                : 'text-zinc-400 hover:text-white hover:bg-white/5'
+                ? 'bg-gradient-to-r from-emerald-600 to-teal-600 text-white shadow-[0_4px_16px_rgba(16,185,129,0.35)] border border-emerald-400/40'
+                : 'text-zinc-400 hover:text-white hover:bg-white/[0.06]'
             }`}
           >
+            {activeSubTab === 'finanzas' && (
+              <span className="absolute inset-x-2 -top-px h-[2px] bg-gradient-to-r from-transparent via-emerald-200 to-transparent rounded-full pointer-events-none" />
+            )}
             <TrendingUp size={16} className={activeSubTab === 'finanzas' ? 'text-white' : 'text-emerald-400'} />
             <span>Finanzas</span>
           </button>
@@ -507,12 +510,15 @@ export const PersonalTab: React.FC<PersonalTabProps> = ({
           {/* TAB 2: NUTRICIÓN */}
           <button
             onClick={() => handleSelectSubTab('nutricion')}
-            className={`px-3.5 py-2 rounded-xl text-xs sm:text-sm font-bold transition-all flex items-center gap-2 ${
+            className={`px-4 py-2 rounded-xl text-xs sm:text-sm font-bold transition-all flex items-center gap-2 select-none relative ${
               activeSubTab === 'nutricion'
-                ? 'bg-gradient-to-r from-rose-600 to-orange-600 text-white shadow-md shadow-rose-600/30'
-                : 'text-zinc-400 hover:text-white hover:bg-white/5'
+                ? 'bg-gradient-to-r from-rose-600 to-orange-600 text-white shadow-[0_4px_16px_rgba(244,63,94,0.35)] border border-rose-400/40'
+                : 'text-zinc-400 hover:text-white hover:bg-white/[0.06]'
             }`}
           >
+            {activeSubTab === 'nutricion' && (
+              <span className="absolute inset-x-2 -top-px h-[2px] bg-gradient-to-r from-transparent via-rose-200 to-transparent rounded-full pointer-events-none" />
+            )}
             <Heart size={16} className={activeSubTab === 'nutricion' ? 'text-white' : 'text-rose-400'} />
             <span>Nutrición</span>
           </button>
@@ -520,15 +526,18 @@ export const PersonalTab: React.FC<PersonalTabProps> = ({
           {/* TAB 3: BÓVEDA (CREDENCIALES & NOTAS) */}
           <button
             onClick={() => handleSelectSubTab('boveda')}
-            className={`px-3.5 py-2 rounded-xl text-xs sm:text-sm font-bold transition-all flex items-center gap-2 ${
+            className={`px-4 py-2 rounded-xl text-xs sm:text-sm font-bold transition-all flex items-center gap-2 select-none relative ${
               activeSubTab === 'boveda'
-                ? 'bg-gradient-to-r from-purple-600 to-indigo-600 text-white shadow-md shadow-purple-600/30'
-                : 'text-zinc-400 hover:text-white hover:bg-white/5'
+                ? 'bg-gradient-to-r from-purple-600 to-indigo-600 text-white shadow-[0_4px_16px_rgba(168,85,247,0.35)] border border-purple-400/40'
+                : 'text-zinc-400 hover:text-white hover:bg-white/[0.06]'
             }`}
           >
+            {activeSubTab === 'boveda' && (
+              <span className="absolute inset-x-2 -top-px h-[2px] bg-gradient-to-r from-transparent via-purple-200 to-transparent rounded-full pointer-events-none" />
+            )}
             <FolderLock size={16} className={activeSubTab === 'boveda' ? 'text-white' : 'text-purple-400'} />
             <span>Bóveda</span>
-            <span className="text-[10px] font-mono px-1.5 py-0.5 rounded-full bg-white/10 text-zinc-300">
+            <span className="text-[10px] font-mono px-2 py-0.5 rounded-full bg-white/10 text-zinc-200 font-bold border border-white/10">
               {credsCount + notesCount}
             </span>
           </button>

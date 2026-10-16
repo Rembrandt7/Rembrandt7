@@ -778,74 +778,114 @@ const MainLayout: React.FC = () => {
           <ShortcutListener />
           <div className="flex flex-col items-center p-2 sm:p-4 min-h-full pb-24"> 
               {/* DESKTOP HEADER (Large screens >= 1024px) */}
-              <header className="hidden lg:flex w-full max-w-screen-2xl mb-6 pt-4 px-6 justify-between items-center gap-2">
-                  <div className="flex items-center gap-4 min-w-0">
-                    <h1 className="text-2xl md:text-4xl lg:text-5xl font-bold text-transparent bg-clip-text bg-gradient-to-r from-purple-400 to-pink-600 truncate">
-                      Rembrandt IA Studio
-                    </h1>
-                  </div>
-                  <div className="hidden md:block flex-1 mx-8">
-                    <ReminderDisplay />
-                  </div>
-                  <div className="hidden sm:block">
-                    <Clock />
-                  </div>
-                  <div className="flex flex-row md:flex-col gap-1 ml-auto">
-                    <motion.button whileHover={{ scale: 1.1 }} whileTap={{ scale: 0.9 }} onClick={() => setLeftSidebarOpen(!leftSidebarOpen)} className={`hidden lg:block p-1.5 rounded-lg transition-colors ${leftSidebarOpen ? 'bg-purple-600 shadow-[0_0_15px_rgba(147,51,234,0.5)] text-white' : 'hover:bg-white/10'}`} title="Modo Zen (Colapsar Barras)">
-                      <LayoutDashboard size={18} />
-                    </motion.button>
-                    <motion.button whileHover={{ scale: 1.1 }} whileTap={{ scale: 0.9 }} onClick={toggleEditing} className="p-1.5 hover:bg-white/10 rounded-lg transition-colors" title="Personalizar">
-                      <Settings size={18} />
-                    </motion.button>
-                    <motion.button 
-                      whileHover={{ scale: 1.1 }} 
-                      whileTap={{ scale: 0.9 }} 
-                      onClick={handleToggleDatabaseTab} 
-                      className={`p-1.5 rounded-lg transition-all ${
-                        isDatabaseActive 
-                          ? 'bg-blue-600 shadow-[0_0_15px_rgba(37,99,235,0.6)] text-white ring-2 ring-blue-400' 
-                          : 'hover:bg-blue-500/20 text-blue-400'
-                      }`} 
-                      title={isDatabaseActive ? "Cerrar Base de Datos" : "Base de Datos & Cloud (Supabase, Google APIs, Vercel, GitHub)"}
-                    >
-                      <Database size={18} />
-                    </motion.button>
-                    <motion.button 
-                      whileHover={{ scale: 1.1 }} 
-                      whileTap={{ scale: 0.9 }} 
-                      onClick={() => saveToSupabase(undefined, { showToast: true, immediate: true })} 
-                      className="relative p-1.5 hover:bg-white/10 rounded-lg transition-colors" 
-                      title={
-                        syncStatus === 'saving' 
-                          ? 'Sincronizando con Supabase...' 
-                          : syncStatus === 'error' 
-                          ? 'Error al sincronizar. Clic para forzar guardado' 
-                          : 'Todo guardado en la nube. Clic para forzar guardado'
-                      }
-                    >
-                      <Save size={18} className={
-                        syncStatus === 'saving' 
-                          ? 'animate-pulse text-amber-400' 
-                          : syncStatus === 'error' 
-                          ? 'text-rose-400' 
-                          : 'text-gray-300'
-                      } />
-                      {syncStatus === 'saving' && (
-                        <span className="absolute top-1 right-1 flex h-2 w-2">
-                          <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-amber-400 opacity-75"></span>
-                          <span className="relative inline-flex rounded-full h-2 w-2 bg-amber-500"></span>
-                        </span>
-                      )}
-                      {syncStatus === 'synced' && (
-                        <span className="absolute top-1 right-1 flex h-1.5 w-1.5 rounded-full bg-emerald-400 shadow-[0_0_6px_rgba(52,211,153,0.8)]"></span>
-                      )}
-                      {syncStatus === 'error' && (
-                        <span className="absolute top-1 right-1 flex h-2 w-2 rounded-full bg-rose-500 shadow-[0_0_6px_rgba(244,63,94,0.8)]"></span>
-                      )}
-                    </motion.button>
-                    <motion.button whileHover={{ scale: 1.1 }} whileTap={{ scale: 0.9 }} onClick={fetchConfigFromSupabaseManual} className="p-1.5 hover:bg-white/10 rounded-lg transition-colors" title="Actualizar">
-                      <RefreshCw size={18} />
-                    </motion.button>
+              <header className="hidden lg:flex w-full max-w-screen-2xl mb-5 pt-3 px-2 justify-between items-center gap-4">
+                  {/* Floating Glass Capsule Header */}
+                  <div className="w-full flex items-center justify-between gap-4 px-6 py-3 bg-gradient-to-r from-gray-950/75 via-gray-900/65 to-gray-950/75 backdrop-blur-xl border border-white/10 rounded-3xl shadow-[0_10px_35px_rgba(0,0,0,0.45)]">
+                    {/* Brand Title with Gradient Glow */}
+                    <div className="flex items-center gap-3.5 min-w-0">
+                      <div className="w-9 h-9 rounded-2xl bg-gradient-to-tr from-purple-600 via-pink-600 to-amber-500 p-0.5 shadow-[0_0_20px_rgba(168,85,247,0.4)] flex items-center justify-center shrink-0">
+                        <div className="w-full h-full bg-gray-950/90 rounded-[14px] flex items-center justify-center">
+                          <Sparkles size={18} className="text-pink-400 animate-pulse" />
+                        </div>
+                      </div>
+                      <h1 className="text-xl md:text-2xl font-black tracking-tight text-transparent bg-clip-text bg-gradient-to-r from-white via-purple-200 to-pink-400 truncate">
+                        Rembrandt <span className="text-pink-500 font-extrabold">Studio</span>
+                      </h1>
+                    </div>
+
+                    {/* Center Reminder Display */}
+                    <div className="hidden md:flex flex-1 max-w-xl mx-4">
+                      <ReminderDisplay />
+                    </div>
+
+                    {/* Clock & Status Badge */}
+                    <div className="hidden sm:flex items-center gap-3 shrink-0">
+                      <div className="px-3.5 py-1.5 bg-white/[0.04] border border-white/10 rounded-2xl backdrop-blur-md shadow-inner flex items-center gap-2">
+                        <Clock />
+                      </div>
+                    </div>
+
+                    {/* Actions Toolbar */}
+                    <div className="flex items-center gap-1.5 pl-3 border-l border-white/10">
+                      <motion.button 
+                        whileHover={{ scale: 1.08 }} 
+                        whileTap={{ scale: 0.94 }} 
+                        onClick={() => setLeftSidebarOpen(!leftSidebarOpen)} 
+                        className={`p-2 rounded-xl transition-all ${leftSidebarOpen ? 'bg-purple-600 shadow-[0_0_15px_rgba(147,51,234,0.5)] text-white' : 'text-gray-400 hover:text-white hover:bg-white/10'}`} 
+                        title="Modo Zen (Colapsar Barras)"
+                      >
+                        <LayoutDashboard size={18} />
+                      </motion.button>
+
+                      <motion.button 
+                        whileHover={{ scale: 1.08 }} 
+                        whileTap={{ scale: 0.94 }} 
+                        onClick={toggleEditing} 
+                        className={`p-2 rounded-xl transition-all ${isEditing ? 'bg-amber-500/20 text-amber-300 border border-amber-500/40' : 'text-gray-400 hover:text-white hover:bg-white/10'}`} 
+                        title="Personalizar"
+                      >
+                        <Settings size={18} />
+                      </motion.button>
+
+                      <motion.button 
+                        whileHover={{ scale: 1.08 }} 
+                        whileTap={{ scale: 0.94 }} 
+                        onClick={handleToggleDatabaseTab} 
+                        className={`p-2 rounded-xl transition-all ${
+                          isDatabaseActive 
+                            ? 'bg-blue-600 shadow-[0_0_15px_rgba(37,99,235,0.6)] text-white ring-2 ring-blue-400' 
+                            : 'hover:bg-blue-500/20 text-blue-400'
+                        }`} 
+                        title={isDatabaseActive ? "Cerrar Base de Datos" : "Base de Datos & Cloud"}
+                      >
+                        <Database size={18} />
+                      </motion.button>
+
+                      {/* Cloud Sync with subtle badge */}
+                      <motion.button 
+                        whileHover={{ scale: 1.08 }} 
+                        whileTap={{ scale: 0.94 }} 
+                        onClick={() => saveToSupabase(undefined, { showToast: true, immediate: true })} 
+                        className="relative p-2 text-gray-400 hover:text-white hover:bg-white/10 rounded-xl transition-all" 
+                        title={
+                          syncStatus === 'saving' 
+                            ? 'Sincronizando con Supabase...' 
+                            : syncStatus === 'error' 
+                            ? 'Error al sincronizar. Clic para forzar guardado' 
+                            : 'Todo guardado en la nube. Clic para forzar guardado'
+                        }
+                      >
+                        <Save size={18} className={
+                          syncStatus === 'saving' 
+                            ? 'animate-pulse text-amber-400' 
+                            : syncStatus === 'error' 
+                            ? 'text-rose-400' 
+                            : 'text-gray-300'
+                        } />
+                        {syncStatus === 'saving' && (
+                          <span className="absolute top-1.5 right-1.5 flex h-2 w-2">
+                            <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-amber-400 opacity-75"></span>
+                            <span className="relative inline-flex rounded-full h-2 w-2 bg-amber-500"></span>
+                          </span>
+                        )}
+                        {syncStatus === 'synced' && (
+                          <span className="absolute top-1.5 right-1.5 flex h-2 w-2 rounded-full bg-emerald-400 shadow-[0_0_8px_rgba(52,211,153,0.9)]"></span>
+                        )}
+                        {syncStatus === 'error' && (
+                          <span className="absolute top-1.5 right-1.5 flex h-2 w-2 rounded-full bg-rose-500 shadow-[0_0_8px_rgba(244,63,94,0.9)]"></span>
+                        )}
+                      </motion.button>
+
+                      <motion.button 
+                        whileHover={{ scale: 1.08 }} 
+                        whileTap={{ scale: 0.94 }} 
+                        onClick={fetchConfigFromSupabaseManual} 
+                        className="p-2 text-gray-400 hover:text-white hover:bg-white/10 rounded-xl transition-all" 
+                        title="Actualizar datos desde la nube"
+                      >
+                        <RefreshCw size={18} />
+                      </motion.button>
+                    </div>
                   </div>
               </header>
 
