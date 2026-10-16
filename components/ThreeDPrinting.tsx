@@ -525,25 +525,26 @@ const ThreeDPrinting: React.FC = () => {
 
   return (
     <div className="p-4 space-y-5 animate-in fade-in slide-in-from-bottom-4 duration-500 max-w-[1600px] mx-auto pb-20">
-      {/* Librerías (Siempre visible arriba) */}
-      <div className="flex flex-col xl:flex-row xl:items-center justify-between gap-4 bg-blue-600/10 p-4 sm:p-5 rounded-2xl border border-blue-500/20 shadow-lg">
-        <div className="flex items-center gap-3 shrink-0 xl:w-[230px]">
-          <div className="p-2.5 bg-blue-600/20 rounded-xl border border-blue-500/30 shrink-0">
-            <Globe size={22} className="text-blue-400" />
-          </div>
-          <div className="min-w-0">
-            <h2 className="text-base sm:text-lg font-bold text-white leading-tight">Librerías</h2>
-            {hoveredLib ? (
-              <p className="text-[11px] text-blue-200 font-medium leading-snug mt-0.5 animate-in fade-in duration-150">
-                <span className="font-black text-blue-400">{hoveredLib.name}:</span> {hoveredLib.description}
-              </p>
-            ) : (
+      {/* Librerías (Siempre visible arriba con título arriba y ancho completo abajo) */}
+      <div className="flex flex-col gap-3 bg-blue-600/10 p-4 sm:p-5 rounded-2xl border border-blue-500/20 shadow-lg w-full">
+        <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2 w-full pb-2 border-b border-blue-500/15">
+          <div className="flex items-center gap-3 min-w-0">
+            <div className="p-2 bg-blue-600/20 rounded-xl border border-blue-500/30 shrink-0">
+              <Globe size={20} className="text-blue-400" />
+            </div>
+            <div className="min-w-0">
+              <h2 className="text-base sm:text-lg font-bold text-white leading-tight">Librerías</h2>
               <p className="text-xs text-gray-400">Pasa el mouse sobre un icono para ver qué hace.</p>
-            )}
+            </div>
           </div>
+          {hoveredLib && (
+            <p className="text-xs text-blue-200 font-medium sm:max-w-xl truncate animate-in fade-in duration-150">
+              <span className="font-black text-blue-400">{hoveredLib.name}:</span> {hoveredLib.description}
+            </p>
+          )}
         </div>
         
-        <div className="grid grid-cols-3 sm:grid-cols-6 lg:grid-cols-11 gap-2.5 flex-1">
+        <div className="grid grid-cols-3 sm:grid-cols-6 md:grid-cols-8 lg:grid-cols-11 gap-2.5 w-full">
           {filteredLibraries.map((tool, idx) => (
             <a
               key={idx}
@@ -576,25 +577,26 @@ const ThreeDPrinting: React.FC = () => {
         </div>
       </div>
 
-      {/* Herramientas 3D (Siempre visible arriba) */}
-      <div className="flex flex-col xl:flex-row xl:items-center justify-between gap-4 bg-purple-600/10 p-4 sm:p-5 rounded-2xl border border-purple-500/20 shadow-lg">
-        <div className="flex items-center gap-3 shrink-0 xl:w-[230px]">
-          <div className="p-2.5 bg-purple-600/20 rounded-xl border border-purple-500/30 shrink-0">
-            <Wrench size={22} className="text-purple-400" />
-          </div>
-          <div className="min-w-0">
-            <h2 className="text-base sm:text-lg font-bold text-white leading-tight">Herramientas 3D</h2>
-            {hoveredTool ? (
-              <p className="text-[11px] text-purple-200 font-medium leading-snug mt-0.5 animate-in fade-in duration-150">
-                <span className="font-black text-purple-400">{hoveredTool.name}:</span> {hoveredTool.description}
-              </p>
-            ) : (
+      {/* Herramientas 3D (Siempre visible arriba con título arriba y ancho completo abajo) */}
+      <div className="flex flex-col gap-3 bg-purple-600/10 p-4 sm:p-5 rounded-2xl border border-purple-500/20 shadow-lg w-full">
+        <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2 w-full pb-2 border-b border-purple-500/15">
+          <div className="flex items-center gap-3 min-w-0">
+            <div className="p-2 bg-purple-600/20 rounded-xl border border-purple-500/30 shrink-0">
+              <Wrench size={20} className="text-purple-400" />
+            </div>
+            <div className="min-w-0">
+              <h2 className="text-base sm:text-lg font-bold text-white leading-tight">Herramientas 3D</h2>
               <p className="text-xs text-gray-400">Pasa el mouse sobre cada herramienta para saber qué hace.</p>
-            )}
+            </div>
           </div>
+          {hoveredTool && (
+            <p className="text-xs text-purple-200 font-medium sm:max-w-xl truncate animate-in fade-in duration-150">
+              <span className="font-black text-purple-400">{hoveredTool.name}:</span> {hoveredTool.description}
+            </p>
+          )}
         </div>
         
-        <div className="grid grid-cols-4 sm:grid-cols-6 lg:grid-cols-9 gap-2 flex-1">
+        <div className="grid grid-cols-3 sm:grid-cols-6 md:grid-cols-8 lg:grid-cols-10 gap-2 w-full">
           {filteredTools.map((tool, idx) => (
             (tool as any).isInternal ? (
               <button
