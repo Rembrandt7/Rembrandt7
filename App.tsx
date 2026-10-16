@@ -544,19 +544,19 @@ const MainLayout: React.FC = () => {
         updateConfig({ ...config, tabs: [...config.tabs, newTab] });
       }
 
-      // Auto-add Archivos tab if missing
-      const hasArchivosTab = config.tabs.some(t => t.id === 'archivos' || t.componentKey === 'Archivos');
-      if (!hasArchivosTab) {
-        const newTab: TabConfig = { id: 'archivos', label: 'Archivos', type: 'system', componentKey: 'Archivos', isVisible: true, icon: 'Folder' };
-        updateConfig({ ...config, tabs: [...config.tabs, newTab] });
-      }
+      // Auto-remove deprecated tabs (Renders, Video, Archivos) from horizontal tabs bar
+      const isRemovedTab = (t: { id?: string; label?: string; componentKey?: string }) =>
+        isRenderTab(t) ||
+        t.id === 'video-gen' ||
+        t.componentKey === 'Generador de Video' ||
+        t.id === 'archivos' ||
+        t.componentKey === 'Archivos';
 
-      // Auto-remove any Renders / Renders Remb tab from horizontal tabs bar
-      const hasRenderTab = config.tabs.some(isRenderTab);
-      if (hasRenderTab) {
-        const newTabs = config.tabs.filter(t => !isRenderTab(t));
+      const hasRemovedTab = config.tabs.some(isRemovedTab);
+      if (hasRemovedTab) {
+        const newTabs = config.tabs.filter(t => !isRemovedTab(t));
         updateConfig({ ...config, tabs: newTabs });
-        if (isRenderTab({ id: activeTabId, label: activeTabId, componentKey: activeTabId })) {
+        if (isRemovedTab({ id: activeTabId, label: activeTabId, componentKey: activeTabId })) {
           setActiveTabId(newTabs[0]?.id || 'email-gen');
         }
       }
