@@ -37,7 +37,8 @@ import {
   Search,
   Maximize2,
   ShieldCheck,
-  Folder
+  Folder,
+  Sparkles
 } from 'lucide-react';
 import { Tab, TabConfig, LinkItem } from './types';
 import { AnimatePresence, motion } from 'motion/react';
