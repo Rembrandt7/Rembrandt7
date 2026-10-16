@@ -12,11 +12,16 @@ const INITIAL_TABS: TabConfig[] = [
     { id: 'database', label: 'Base de Datos', type: 'system', componentKey: 'Base de Datos', isVisible: false, icon: 'Database' },
     { id: 'useful-tools', label: 'Herramientas Útiles', type: 'system', componentKey: 'Herramientas Útiles', isVisible: true, icon: 'Briefcase' },
     { id: 'calendar', label: 'Calendario', type: 'system', componentKey: 'Calendario', isVisible: true, icon: 'Calendar' },
-    { id: 'video-gen', label: 'Video', type: 'system', componentKey: 'Generador de Video', isVisible: true, icon: 'Video' },
     { id: '3d-print', label: 'Impresión 3D', type: 'system', componentKey: 'Impresión 3D', isVisible: true, icon: 'Box' },
-    { id: 'archivos', label: 'Archivos', type: 'system', componentKey: 'Archivos', isVisible: true, icon: 'Folder' },
     { id: 'teleprompter', label: 'Teleprompter', type: 'system', componentKey: 'Teleprompter', isVisible: true, icon: 'Music' },
 ];
+
+const isDeprecatedTab = (t: any) =>
+    t.id === 'dashboard' ||
+    t.id === 'video-gen' ||
+    t.componentKey === 'Generador de Video' ||
+    t.id === 'archivos' ||
+    t.componentKey === 'Archivos';
 
 const INITIAL_CONFIG: AppConfig = {
   version: 2,
@@ -765,22 +770,14 @@ export const LinkProvider: React.FC<{ children: React.ReactNode }> = ({ children
         if (!finalConfig.tabs || !Array.isArray(finalConfig.tabs)) {
           finalConfig.tabs = INITIAL_TABS;
         } else {
-          // Remove Noticias tab if present
-          finalConfig.tabs = finalConfig.tabs.filter((t: any) => t.id !== 'dashboard');
+          // Remove deprecated tabs (Noticias, Video, Archivos)
+          finalConfig.tabs = finalConfig.tabs.filter((t: any) => !isDeprecatedTab(t));
           
           // Force new labels
           finalConfig.tabs = finalConfig.tabs.map((t: any) => {
             if (t.id === 'email-gen') return { ...t, label: 'Email' };
-            if (t.id === 'video-gen') return { ...t, label: 'Video' };
             return t;
           });
-
-          if (!finalConfig.tabs.find((t: any) => t.componentKey === 'Generador de Video')) {
-            const videoTab = INITIAL_TABS.find(t => t.componentKey === 'Generador de Video');
-            if (videoTab) {
-              finalConfig.tabs.push(videoTab);
-            }
-          }
 
           if (!finalConfig.tabs.find((t: any) => t.id === 'teleprompter' || t.componentKey === 'Teleprompter')) {
             const teleprompterTab = INITIAL_TABS.find(t => t.id === 'teleprompter');
@@ -1091,12 +1088,7 @@ export const LinkProvider: React.FC<{ children: React.ReactNode }> = ({ children
           if (!parsed.tabs || !Array.isArray(parsed.tabs)) {
             parsed.tabs = INITIAL_TABS;
           } else {
-            if (!parsed.tabs.find((t: any) => t.componentKey === 'Generador de Video')) {
-              const videoTab = INITIAL_TABS.find(t => t.componentKey === 'Generador de Video');
-              if (videoTab) {
-                parsed.tabs.push(videoTab);
-              }
-            }
+            parsed.tabs = parsed.tabs.filter((t: any) => !isDeprecatedTab(t));
 
             if (!parsed.tabs.find((t: any) => t.id === 'teleprompter' || t.componentKey === 'Teleprompter')) {
               const teleprompterTab = INITIAL_TABS.find(t => t.id === 'teleprompter');
@@ -2001,6 +1993,7 @@ export const LinkProvider: React.FC<{ children: React.ReactNode }> = ({ children
         
         // Migration: Tabs
         if (json.tabs && Array.isArray(json.tabs)) {
+          json.tabs = json.tabs.filter((t: any) => !isDeprecatedTab(t));
           const existingTabIds = new Set(json.tabs.map((t: any) => t.id));
           INITIAL_TABS.forEach(systemTab => {
             if (!existingTabIds.has(systemTab.id)) {
@@ -2148,13 +2141,12 @@ export const LinkProvider: React.FC<{ children: React.ReactNode }> = ({ children
       }
       
       if (json.tabs && Array.isArray(json.tabs)) {
-        // Remove Noticias tab if present
-        json.tabs = json.tabs.filter((t: any) => t.id !== 'dashboard');
+        // Remove deprecated tabs (Noticias, Video, Archivos)
+        json.tabs = json.tabs.filter((t: any) => !isDeprecatedTab(t));
         
         // Force new labels
         json.tabs = json.tabs.map((t: any) => {
           if (t.id === 'email-gen') return { ...t, label: 'Email' };
-          if (t.id === 'video-gen') return { ...t, label: 'Video' };
           return t;
         });
 
