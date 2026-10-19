@@ -41,7 +41,6 @@ export const PwaInstallPrompt: React.FC = () => {
     window.addEventListener('beforeinstallprompt', handleBeforeInstallPrompt);
 
     // iOS detection
-    const userAgent = window.navigator.userAgent.toLowerCase();
     const isIosDevice = /iphone|ipad|ipod/.test(userAgent) && !(window as any).MSStream;
     if (isIosDevice && !isStandalone) {
       setIsIos(true);
