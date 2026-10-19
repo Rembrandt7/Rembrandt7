@@ -12,6 +12,7 @@
     { "source": "/api/gmail/emails", "destination": "/api/gmail.ts" },
     { "source": "/api/gmail/delete", "destination": "/api/gmail.ts" },
     { "source": "/api/gmail/send", "destination": "/api/gmail.ts" },
+    { "source": "/api/remotion/render", "destination": "/api/remotion.ts" },
     { "source": "/api/song-import", "destination": "/api/song-import.ts" },
     { "source": "/api/print-suggestions", "destination": "/api/print-suggestions.ts" },
     { "source": "/((?!api/|.*\\.[a-zA-Z0-9]+$).*)", "destination": "/index.html" }
