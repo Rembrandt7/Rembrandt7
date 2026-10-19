@@ -89,7 +89,9 @@ const ThreeDPrinting = lazyWithRetry(() => import('./components/ThreeDPrinting')
 const PanchoAssistantModal = lazyWithRetry(() => import('./components/Pancho/PanchoAssistantModal'));
 const WorkspaceHub = lazyWithRetry(() => import('./components/WorkspaceHub'));
 const TeleprompterTab = lazyWithRetry(() => import('./components/TeleprompterTab'));
+const CotizadorTab = lazyWithRetry(() => import('./components/CotizadorTab'));
 const ListasTab = lazyWithRetry(() => import('./components/ListasTab'));
+const CompresorTab = lazyWithRetry(() => import('./components/CompresorTab'));
 const PersonalTab = lazyWithRetry(() => import('./components/PersonalTab'));
 
 import { PanchoFloatingButton } from './components/Pancho/PanchoFloatingButton';
@@ -558,14 +560,49 @@ const MainLayout: React.FC = () => {
         updateConfig({ ...config, tabs: [...config.tabs, newTab] });
       }
 
-      // Auto-add Listas tab right after Impresión 3D if missing
+      // Auto-add Cotizador tab right after Teleprompter if missing
+      const hasCotizadorTab = config.tabs.some(t => t.id === 'cotizador' || t.componentKey === 'Cotizador');
+      if (!hasCotizadorTab) {
+        const cotizadorTab: TabConfig = { id: 'cotizador', label: 'Cotizador', type: 'system', componentKey: 'Cotizador', isVisible: true, icon: 'Calculator' };
+        const nextTabs = [...config.tabs];
+        const teleIdx = nextTabs.findIndex(t => t.id === 'teleprompter' || t.componentKey === 'Teleprompter');
+        if (teleIdx !== -1) {
+          nextTabs.splice(teleIdx + 1, 0, cotizadorTab);
+        } else {
+          nextTabs.push(cotizadorTab);
+        }
+        updateConfig({ ...config, tabs: nextTabs });
+      }
+
+      // Auto-add Listas tab right after Cotizador if missing
       const hasListasTab = config.tabs.some(t => t.id === 'listas' || t.componentKey === 'Listas');
       if (!hasListasTab) {
         const listasTab: TabConfig = { id: 'listas', label: 'Listas', type: 'system', componentKey: 'Listas', isVisible: true, icon: 'CheckSquare' };
-        updateConfig({ ...config, tabs: [...config.tabs, listasTab] });
+        const nextTabs = [...config.tabs];
+        const cotIdx = nextTabs.findIndex(t => t.id === 'cotizador' || t.componentKey === 'Cotizador');
+        if (cotIdx !== -1) {
+          nextTabs.splice(cotIdx + 1, 0, listasTab);
+        } else {
+          nextTabs.push(listasTab);
+        }
+        updateConfig({ ...config, tabs: nextTabs });
       }
 
-      // Auto-remove deprecated tabs (Renders, Video, Archivos, Dashboard, Ingeniero, Cotizador, Compresor) from horizontal tabs bar
+      // Auto-add Compresor tab right after Listas if missing
+      const hasCompresorTab = config.tabs.some(t => t.id === 'compresor' || t.componentKey === 'Compresor');
+      if (!hasCompresorTab) {
+        const compresorTab: TabConfig = { id: 'compresor', label: 'Compresor', type: 'system', componentKey: 'Compresor', isVisible: true, icon: 'Minimize2' };
+        const nextTabs = [...config.tabs];
+        const listasIdx = nextTabs.findIndex(t => t.id === 'listas' || t.componentKey === 'Listas');
+        if (listasIdx !== -1) {
+          nextTabs.splice(listasIdx + 1, 0, compresorTab);
+        } else {
+          nextTabs.push(compresorTab);
+        }
+        updateConfig({ ...config, tabs: nextTabs });
+      }
+
+      // Auto-remove deprecated tabs (Renders, Video, Archivos, Dashboard, Ingeniero) from horizontal tabs bar
       const isRemovedTab = (t: { id?: string; label?: string; componentKey?: string }) =>
         isRenderTab(t) ||
         t.id === 'video-gen' ||
@@ -575,11 +612,7 @@ const MainLayout: React.FC = () => {
         t.id === 'dashboard' ||
         t.componentKey === 'Dashboard' ||
         t.id === 'engineer' ||
-        t.componentKey === 'Ingeniero' ||
-        t.id === 'cotizador' ||
-        t.componentKey === 'Cotizador' ||
-        t.id === 'compresor' ||
-        t.componentKey === 'Compresor';
+        t.componentKey === 'Ingeniero';
 
       const hasRemovedTab = config.tabs.some(isRemovedTab);
       if (hasRemovedTab) {
@@ -683,8 +716,14 @@ const MainLayout: React.FC = () => {
     if (activeTabId === 'teleprompter') {
       return <TeleprompterTab />;
     }
+    if (activeTabId === 'cotizador') {
+      return <CotizadorTab />;
+    }
     if (activeTabId === 'listas') {
       return <ListasTab />;
+    }
+    if (activeTabId === 'compresor') {
+      return <CompresorTab />;
     }
 
     const activeTab = config.tabs.find(t => t.id === activeTabId);
@@ -729,8 +768,12 @@ const MainLayout: React.FC = () => {
         return <ThreeDPrinting />;
       case 'Teleprompter':
         return <TeleprompterTab />;
+      case 'Cotizador':
+        return <CotizadorTab />;
       case 'Listas':
         return <ListasTab />;
+      case 'Compresor':
+        return <CompresorTab />;
       default:
         return (
           <div className="glass-panel p-2.5 sm:p-4 md:p-6 rounded-2xl sm:rounded-3xl shadow-2xl w-full mt-2 sm:mt-6">
@@ -763,7 +806,9 @@ const MainLayout: React.FC = () => {
     'Nutricion': <Heart />,
     'Impresión 3D': <Box />,
     'Teleprompter': <Music />,
+    'Cotizador': <Calculator />,
     'Listas': <CheckSquare />,
+    'Compresor': <Minimize2 />,
   };
 
   const handleCloseNotification = (id: string) => {
