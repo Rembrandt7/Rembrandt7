@@ -42,6 +42,7 @@ export const ListasTab: React.FC = () => {
   const [lastModified, setLastModified] = useState<{dayOfWeek: string; fullDate: string; time: string}>({ dayOfWeek: '', fullDate: '', time: '' });
 
   const [filter, setFilter] = useState<string>('all'); 
+  const [taskStatusFilter, setTaskStatusFilter] = useState<'all' | 'pending' | 'completed'>('all');
   const [isSidebarOpen, setIsSidebarOpen] = useState(false);
   const [searchQuery, setSearchQuery] = useState('');
   
@@ -186,8 +187,30 @@ export const ListasTab: React.FC = () => {
     const handleFocus = () => {
       pullFromCloud();
     };
+
+    const handleVisibility = () => {
+      if (document.visibilityState === 'visible') {
+        pullFromCloud();
+      }
+    };
+
+    const handleListasUpdated = (e: any) => {
+      if (e.detail) {
+        applyImportedObject(e.detail);
+      }
+    };
+
     window.addEventListener('focus', handleFocus);
-    return () => window.removeEventListener('focus', handleFocus);
+    document.addEventListener('visibilitychange', handleVisibility);
+    window.addEventListener('sync-listas-from-cloud', handleFocus);
+    window.addEventListener('listas-updated', handleListasUpdated);
+
+    return () => {
+      window.removeEventListener('focus', handleFocus);
+      document.removeEventListener('visibilitychange', handleVisibility);
+      window.removeEventListener('sync-listas-from-cloud', handleFocus);
+      window.removeEventListener('listas-updated', handleListasUpdated);
+    };
   }, [applyImportedObject]);
 
   // Save state to localStorage
@@ -712,6 +735,43 @@ export const ListasTab: React.FC = () => {
                 onChange={(e) => setSearchQuery(e.target.value)}
               />
             </div>
+
+            {/* Quick Status Filter Tabs */}
+            <div className="flex items-center gap-1 bg-slate-100 p-0.5 rounded-lg border border-slate-200">
+              <button
+                type="button"
+                onClick={() => setTaskStatusFilter('all')}
+                className={`px-2.5 py-1 text-xs font-semibold rounded-md transition-all ${
+                  taskStatusFilter === 'all'
+                    ? 'bg-white text-slate-800 shadow-xs'
+                    : 'text-slate-500 hover:text-slate-800'
+                }`}
+              >
+                Todas
+              </button>
+              <button
+                type="button"
+                onClick={() => setTaskStatusFilter('pending')}
+                className={`px-2.5 py-1 text-xs font-semibold rounded-md transition-all ${
+                  taskStatusFilter === 'pending'
+                    ? 'bg-blue-600 text-white shadow-xs'
+                    : 'text-slate-500 hover:text-slate-800'
+                }`}
+              >
+                Pendientes
+              </button>
+              <button
+                type="button"
+                onClick={() => setTaskStatusFilter('completed')}
+                className={`px-2.5 py-1 text-xs font-semibold rounded-md transition-all ${
+                  taskStatusFilter === 'completed'
+                    ? 'bg-emerald-600 text-white shadow-xs'
+                    : 'text-slate-500 hover:text-slate-800'
+                }`}
+              >
+                Completadas
+              </button>
+            </div>
           </div>
 
           <div className="flex items-center gap-2 text-xs text-slate-500">
@@ -789,6 +849,8 @@ export const ListasTab: React.FC = () => {
                     
                     const columnTasks = tasks.filter(t => {
                         if (t.category !== listName) return false;
+                        if (taskStatusFilter === 'pending' && t.completed) return false;
+                        if (taskStatusFilter === 'completed' && !t.completed) return false;
                         if (!t.title.toLowerCase().includes(searchQuery.toLowerCase())) return false;
                         if (filter === 'today') {
                             const d = new Date(t.dueDate);

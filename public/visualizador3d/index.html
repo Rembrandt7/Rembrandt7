@@ -3,12 +3,12 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Visualizador 3D STL & 3MF - Impresión 3D</title>
+  <title>Visualizador & Estudio 3D (STL / 3MF) - Impresión 3D</title>
   <link rel="icon" type="image/x-icon" href="icono_stl.ico">
   <style>
     :root {
       --bg-dark: #0b0f17;
-      --panel-bg: rgba(17, 24, 39, 0.9);
+      --panel-bg: rgba(15, 23, 42, 0.92);
       --panel-border: rgba(255, 255, 255, 0.1);
       --accent: #2563eb;
       --accent-hover: #1d4ed8;
@@ -45,18 +45,30 @@
       z-index: 1;
     }
 
+    /* Custom Scrollbar for Panels */
+    .floating-panel::-webkit-scrollbar {
+      width: 5px;
+    }
+    .floating-panel::-webkit-scrollbar-track {
+      background: rgba(0, 0, 0, 0.2);
+    }
+    .floating-panel::-webkit-scrollbar-thumb {
+      background: rgba(255, 255, 255, 0.2);
+      border-radius: 4px;
+    }
+
     /* Header Bar */
     header {
       position: absolute;
       top: 0;
       left: 0;
       right: 0;
-      height: 64px;
-      padding: 0 24px;
+      height: 62px;
+      padding: 0 20px;
       display: flex;
       align-items: center;
       justify-content: space-between;
-      background: linear-gradient(180deg, rgba(11, 15, 23, 0.95) 0%, rgba(11, 15, 23, 0) 100%);
+      background: linear-gradient(180deg, rgba(11, 15, 23, 0.96) 0%, rgba(11, 15, 23, 0) 100%);
       z-index: 10;
       pointer-events: none;
     }
@@ -69,8 +81,8 @@
     }
 
     .brand-icon {
-      width: 40px;
-      height: 40px;
+      width: 38px;
+      height: 38px;
       background: linear-gradient(135deg, #3b82f6, #1d4ed8);
       border-radius: 10px;
       display: flex;
@@ -80,12 +92,12 @@
     }
 
     .brand-icon img {
-      width: 28px;
-      height: 28px;
+      width: 26px;
+      height: 26px;
     }
 
     .brand-title {
-      font-size: 18px;
+      font-size: 16px;
       font-weight: 700;
       letter-spacing: -0.02em;
       color: #fff;
@@ -113,21 +125,23 @@
 
     .header-actions {
       display: flex;
-      gap: 10px;
+      gap: 8px;
       pointer-events: auto;
+      align-items: center;
+      flex-wrap: wrap;
     }
 
     .btn {
       display: inline-flex;
       align-items: center;
-      gap: 8px;
-      padding: 8px 16px;
+      gap: 6px;
+      padding: 7px 13px;
       background: var(--panel-bg);
       border: 1px solid var(--panel-border);
       border-radius: 8px;
       color: var(--text-main);
-      font-size: 13px;
-      font-weight: 500;
+      font-size: 12px;
+      font-weight: 600;
       cursor: pointer;
       backdrop-filter: blur(12px);
       transition: all 0.2s ease;
@@ -137,6 +151,11 @@
       background: rgba(255, 255, 255, 0.12);
       border-color: rgba(255, 255, 255, 0.25);
       transform: translateY(-1px);
+    }
+
+    .btn:disabled {
+      opacity: 0.45;
+      pointer-events: none;
     }
 
     .btn-primary {
@@ -150,6 +169,39 @@
       border-color: var(--accent-hover);
     }
 
+    .btn-success {
+      background: rgba(16, 185, 129, 0.2);
+      border-color: rgba(16, 185, 129, 0.5);
+      color: #34d399;
+    }
+
+    .btn-success:hover {
+      background: rgba(16, 185, 129, 0.35);
+      color: #fff;
+    }
+
+    .btn-warning {
+      background: rgba(245, 158, 11, 0.2);
+      border-color: rgba(245, 158, 11, 0.45);
+      color: #fbbf24;
+    }
+
+    .btn-warning:hover {
+      background: rgba(245, 158, 11, 0.35);
+      color: #fff;
+    }
+
+    .btn-danger {
+      background: rgba(239, 68, 68, 0.2);
+      border-color: rgba(239, 68, 68, 0.45);
+      color: #f87171;
+    }
+
+    .btn-danger:hover {
+      background: rgba(239, 68, 68, 0.35);
+      color: #fff;
+    }
+
     /* Panels Layout */
     .floating-panel {
       position: absolute;
@@ -160,45 +212,96 @@
       border: 1px solid var(--panel-border);
       border-radius: 12px;
       box-shadow: 0 16px 36px rgba(0, 0, 0, 0.45);
-      padding: 16px;
-      transition: all 0.3s cubic-bezier(0.16, 1, 0.3, 1);
+      padding: 14px;
+      transition: all 0.25s ease;
     }
 
     /* Left Info Panel */
     #info-panel {
-      top: 75px;
-      left: 20px;
-      width: 330px;
-      max-height: calc(100vh - 110px);
+      top: 68px;
+      left: 16px;
+      width: 315px;
+      max-height: calc(100vh - 125px);
       overflow-y: auto;
       display: none;
     }
 
-    /* Right Controls Panel */
+    /* Right Controls & Volume Editing Panel */
     #controls-panel {
-      top: 75px;
-      right: 20px;
-      width: 310px;
-      max-height: calc(100vh - 110px);
+      top: 68px;
+      right: 16px;
+      width: 350px;
+      max-height: calc(100vh - 125px);
       overflow-y: auto;
     }
 
+    /* Mode Switcher Tabs inside Right Panel */
+    .tool-tabs {
+      display: grid;
+      grid-template-columns: repeat(3, 1fr);
+      gap: 5px;
+      background: rgba(0, 0, 0, 0.35);
+      padding: 4px;
+      border-radius: 9px;
+      border: 1px solid rgba(255, 255, 255, 0.08);
+      margin-bottom: 12px;
+    }
+
+    .tool-tab-btn {
+      padding: 7px 4px;
+      font-size: 11px;
+      font-weight: 700;
+      border: none;
+      border-radius: 6px;
+      background: transparent;
+      color: var(--text-muted);
+      cursor: pointer;
+      transition: all 0.18s ease;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      gap: 4px;
+    }
+
+    .tool-tab-btn:hover {
+      color: #fff;
+      background: rgba(255, 255, 255, 0.06);
+    }
+
+    .tool-tab-btn.active {
+      background: var(--accent);
+      color: #fff;
+      box-shadow: 0 2px 10px var(--accent-glow);
+    }
+
+    .tool-tab-btn.active-paint {
+      background: linear-gradient(135deg, #ec4899, #8b5cf6);
+      color: #fff;
+      box-shadow: 0 2px 10px rgba(236, 72, 153, 0.35);
+    }
+
+    .tool-tab-btn.active-cut {
+      background: linear-gradient(135deg, #f59e0b, #ea580c);
+      color: #fff;
+      box-shadow: 0 2px 10px rgba(245, 158, 11, 0.35);
+    }
+
     .panel-title {
-      font-size: 12px;
+      font-size: 11px;
       font-weight: 700;
       text-transform: uppercase;
       letter-spacing: 0.05em;
       color: var(--text-muted);
-      margin-bottom: 10px;
+      margin-bottom: 8px;
       display: flex;
       align-items: center;
       justify-content: space-between;
     }
 
     .panel-section {
-      margin-bottom: 14px;
-      padding-bottom: 12px;
-      border-bottom: 1px solid rgba(255, 255, 255, 0.06);
+      margin-bottom: 12px;
+      padding-bottom: 11px;
+      border-bottom: 1px solid rgba(255, 255, 255, 0.07);
     }
 
     .panel-section:last-child {
@@ -211,7 +314,7 @@
       display: flex;
       justify-content: space-between;
       align-items: center;
-      margin-bottom: 6px;
+      margin-bottom: 5px;
       font-size: 12px;
     }
 
@@ -233,7 +336,7 @@
 
     .dim-box {
       background: rgba(0, 0, 0, 0.3);
-      padding: 6px 8px;
+      padding: 6px 6px;
       border-radius: 6px;
       text-align: center;
       border: 1px solid rgba(255, 255, 255, 0.06);
@@ -259,7 +362,7 @@
       background: rgba(0, 0, 0, 0.25);
       border: 1px solid rgba(255, 255, 255, 0.08);
       border-radius: 8px;
-      padding: 8px 10px;
+      padding: 7px 10px;
       margin-bottom: 6px;
       cursor: pointer;
       transition: all 0.2s ease;
@@ -293,9 +396,9 @@
     }
 
     .status-badge {
-      font-size: 11px;
+      font-size: 10px;
       font-weight: 700;
-      padding: 3px 8px;
+      padding: 3px 7px;
       border-radius: 12px;
       white-space: nowrap;
     }
@@ -314,7 +417,7 @@
 
     /* Controls Styling */
     .control-group {
-      margin-bottom: 10px;
+      margin-bottom: 9px;
     }
 
     .control-label {
@@ -332,13 +435,13 @@
     }
 
     .btn-compact {
-      padding: 6px 4px;
+      padding: 6px 6px;
       font-size: 11px;
       font-weight: 600;
       text-align: center;
       border-radius: 6px;
       background: rgba(255, 255, 255, 0.06);
-      border: 1px solid rgba(255, 255, 255, 0.08);
+      border: 1px solid rgba(255, 255, 255, 0.09);
       color: var(--text-main);
       cursor: pointer;
       transition: all 0.15s ease;
@@ -346,12 +449,24 @@
 
     .btn-compact:hover {
       background: rgba(255, 255, 255, 0.15);
-      border-color: rgba(255, 255, 255, 0.2);
+      border-color: rgba(255, 255, 255, 0.25);
     }
 
     .btn-compact.active {
       background: var(--accent);
       border-color: var(--accent);
+      color: white;
+    }
+
+    .btn-compact.active-orange {
+      background: #ea580c;
+      border-color: #f97316;
+      color: white;
+    }
+
+    .btn-compact.active-pink {
+      background: #db2777;
+      border-color: #ec4899;
       color: white;
     }
 
@@ -364,8 +479,8 @@
     }
 
     .color-swatch {
-      width: 28px;
-      height: 28px;
+      width: 26px;
+      height: 26px;
       border-radius: 50%;
       border: 2px solid rgba(255, 255, 255, 0.2);
       cursor: pointer;
@@ -379,8 +494,8 @@
     }
 
     .color-picker-input {
-      width: 28px;
-      height: 28px;
+      width: 26px;
+      height: 26px;
       border-radius: 50%;
       border: 2px solid rgba(255, 255, 255, 0.2);
       cursor: pointer;
@@ -390,15 +505,22 @@
     }
 
     /* Form inputs */
-    select, input[type="range"] {
+    select, input[type="range"], input[type="number"] {
       width: 100%;
-      background: rgba(0, 0, 0, 0.3);
+      background: rgba(0, 0, 0, 0.35);
       border: 1px solid rgba(255, 255, 255, 0.12);
       border-radius: 6px;
       color: var(--text-main);
-      padding: 6px 10px;
+      padding: 5px 8px;
       font-size: 12px;
       outline: none;
+    }
+
+    input[type="range"] {
+      padding: 0;
+      height: 6px;
+      accent-color: var(--accent);
+      cursor: pointer;
     }
 
     select option {
@@ -410,42 +532,43 @@
       display: flex;
       align-items: center;
       gap: 8px;
-      margin-bottom: 8px;
-      font-size: 12px;
+      margin-bottom: 6px;
+      font-size: 11.5px;
       cursor: pointer;
     }
 
     .checkbox-row input {
       accent-color: var(--accent);
-      width: 15px;
-      height: 15px;
+      width: 14px;
+      height: 14px;
       cursor: pointer;
     }
 
     /* Bottom Quick Instructions / Tooltip */
     #bottom-bar {
       position: absolute;
-      bottom: 18px;
+      bottom: 14px;
       left: 50%;
       transform: translateX(-50%);
       background: var(--panel-bg);
       backdrop-filter: blur(12px);
       border: 1px solid var(--panel-border);
       border-radius: 30px;
-      padding: 7px 22px;
+      padding: 6px 20px;
       display: flex;
       align-items: center;
-      gap: 18px;
+      gap: 16px;
       z-index: 10;
-      font-size: 12px;
+      font-size: 11.5px;
       color: var(--text-muted);
       box-shadow: 0 10px 25px rgba(0, 0, 0, 0.5);
+      white-space: nowrap;
     }
 
     .hint-item {
       display: flex;
       align-items: center;
-      gap: 6px;
+      gap: 5px;
     }
 
     .hint-item strong {
@@ -486,8 +609,8 @@
       backdrop-filter: blur(20px);
       border: 2px dashed rgba(255, 255, 255, 0.2);
       border-radius: 20px;
-      padding: 38px 46px;
-      max-width: 500px;
+      padding: 34px 40px;
+      max-width: 480px;
       cursor: pointer;
       transition: all 0.3s ease;
       box-shadow: 0 20px 50px rgba(0, 0, 0, 0.5);
@@ -500,9 +623,9 @@
     }
 
     .empty-icon {
-      width: 76px;
-      height: 76px;
-      margin: 0 auto 16px;
+      width: 70px;
+      height: 70px;
+      margin: 0 auto 14px;
       background: linear-gradient(135deg, rgba(37, 99, 235, 0.2), rgba(59, 130, 246, 0.1));
       border: 1px solid rgba(59, 130, 246, 0.3);
       border-radius: 50%;
@@ -512,21 +635,21 @@
     }
 
     .empty-icon img {
-      width: 48px;
-      height: 48px;
+      width: 44px;
+      height: 44px;
     }
 
     .empty-title {
-      font-size: 21px;
+      font-size: 20px;
       font-weight: 700;
       margin-bottom: 8px;
       color: #fff;
     }
 
     .empty-subtitle {
-      font-size: 13px;
+      font-size: 12.5px;
       color: var(--text-muted);
-      margin-bottom: 22px;
+      margin-bottom: 20px;
       line-height: 1.5;
     }
 
@@ -540,20 +663,22 @@
     /* Toast Notification */
     #toast {
       position: absolute;
-      top: 75px;
+      top: 70px;
       left: 50%;
       transform: translateX(-50%) translateY(-20px);
-      background: rgba(16, 185, 129, 0.9);
+      background: rgba(16, 185, 129, 0.94);
       color: white;
-      padding: 10px 22px;
+      padding: 9px 20px;
       border-radius: 8px;
-      font-size: 13px;
+      font-size: 12.5px;
       font-weight: 600;
       box-shadow: 0 10px 25px rgba(0, 0, 0, 0.4);
       z-index: 200;
       opacity: 0;
       pointer-events: none;
       transition: all 0.3s ease;
+      max-width: 85vw;
+      text-align: center;
     }
 
     #toast.show {
@@ -562,7 +687,7 @@
     }
 
     #toast.error {
-      background: rgba(239, 68, 68, 0.9);
+      background: rgba(239, 68, 68, 0.94);
     }
 
     /* Hidden File Input */
@@ -602,8 +727,8 @@
 
     /* Multi-Plate / Multi-Part Selector */
     .plate-selector-box {
-      margin-top: 10px;
-      padding: 10px;
+      margin-top: 8px;
+      padding: 9px;
       background: rgba(15, 23, 42, 0.7);
       border: 1px solid rgba(56, 189, 248, 0.3);
       border-radius: 8px;
@@ -612,14 +737,14 @@
     .plate-btn-group {
       display: flex;
       flex-wrap: wrap;
-      gap: 6px;
-      margin-top: 8px;
-      max-height: 120px;
+      gap: 5px;
+      margin-top: 6px;
+      max-height: 110px;
       overflow-y: auto;
     }
 
     .plate-btn {
-      padding: 4px 10px;
+      padding: 4px 9px;
       background: rgba(255, 255, 255, 0.08);
       border: 1px solid rgba(255, 255, 255, 0.15);
       border-radius: 6px;
@@ -646,7 +771,7 @@
     /* Print bed alert */
     .alert-overflow {
       margin-top: 8px;
-      padding: 8px;
+      padding: 7px;
       border-radius: 6px;
       background: rgba(239, 68, 68, 0.2);
       border: 1px solid rgba(239, 68, 68, 0.4);
@@ -658,7 +783,7 @@
 
     .alert-ok {
       margin-top: 8px;
-      padding: 8px;
+      padding: 7px;
       border-radius: 6px;
       background: rgba(16, 185, 129, 0.2);
       border: 1px solid rgba(16, 185, 129, 0.4);
@@ -666,6 +791,21 @@
       font-size: 11px;
       display: none;
       line-height: 1.4;
+    }
+
+    .sub-box {
+      background: rgba(0, 0, 0, 0.28);
+      border: 1px solid rgba(255, 255, 255, 0.08);
+      border-radius: 8px;
+      padding: 9px;
+      margin-top: 6px;
+    }
+
+    .flex-row-between {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      gap: 6px;
     }
   </style>
 </head>
@@ -682,33 +822,38 @@
       </div>
       <div>
         <div class="brand-title">
-          Visualizador 3D
-          <span class="brand-badge">STL & 3MF</span>
+          Estudio 3D
+          <span class="brand-badge">STL · 3MF · CORTE · PINTURA</span>
         </div>
-        <div class="brand-subtitle">Control & Análisis de Impresión 3D</div>
+        <div class="brand-subtitle">Visualización, Pintado 3D y Corte Avanzado de Geometría</div>
       </div>
     </div>
 
     <div class="header-actions">
-      <!-- File input supporting both STL and 3MF, multiple files supported -->
-      <input type="file" id="file-input" accept=".stl,.3mf" multiple>
+      <input type="file" id="file-input" accept=".stl,.3mf,.STL,.3MF" multiple>
       <button class="btn btn-primary" onclick="document.getElementById('file-input').click()">
-        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+        <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
           <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4M17 8l-5-5-5 5M12 3v12"/>
         </svg>
         Abrir STL o 3MF
       </button>
+      <button class="btn" id="btn-header-undo" onclick="undoModelEdit()" disabled title="Deshacer último corte o pintura">
+        ↩️ Deshacer
+      </button>
+      <button class="btn" id="btn-header-reset" onclick="restoreInitialGeometry()" disabled title="Restaurar geometría original sin cortes">
+        🔄 Original
+      </button>
+      <button class="btn btn-success" id="btn-header-export-stl" onclick="exportCurrentModelSTL()" disabled title="Descargar modelo editado en formato .STL">
+        💾 Exportar STL
+      </button>
+      <button class="btn" id="btn-header-export-3mf" onclick="exportCurrentModel3MF()" disabled title="Descargar modelo con colores y partes en formato .3MF">
+        📦 Exportar 3MF
+      </button>
       <button class="btn" onclick="takeScreenshot()" title="Capturar imagen en alta resolución">
-        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-          <path d="M23 19a2 2 0 0 1-2 2H3a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h4l2-3h6l2 3h4a2 2 0 0 1 2 2z"/>
-          <circle cx="12" cy="13" r="4"/>
-        </svg>
-        Captura
+        📸 Captura
       </button>
       <button class="btn" onclick="toggleFullscreen()" title="Pantalla completa">
-        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-          <path d="M8 3H5a2 2 0 0 0-2 2v3m18 0V5a2 2 0 0 0-2-2h-3m0 18h3a2 2 0 0 0 2-2v-3M3 16v3a2 2 0 0 0 2 2h3"/>
-        </svg>
+        ⛶
       </button>
     </div>
   </header>
@@ -742,11 +887,11 @@
     <!-- Multi-Plate / Multi-Part Selector Section -->
     <div id="plates-container" class="panel-section" style="display: none;">
       <div class="panel-title" style="margin-bottom: 4px;">
-        <span style="color: #38bdf8;">Placas / Objetos</span>
+        <span style="color: #38bdf8;">Piezas / Partes Cortadas</span>
         <span id="plates-count-badge" style="font-size: 10px; color: #93c5fd;"></span>
       </div>
       <div class="plate-selector-box">
-        <div style="font-size: 11px; color: #94a3b8; margin-bottom: 4px;">Selecciona la placa o parte a visualizar:</div>
+        <div style="font-size: 11px; color: #94a3b8; margin-bottom: 4px;">Selecciona la pieza a inspeccionar o exportar:</div>
         <div id="plate-buttons" class="plate-btn-group"></div>
       </div>
     </div>
@@ -784,7 +929,6 @@
         <span style="font-size: 10px; color: #93c5fd; text-transform: none;">Clic para cambiar</span>
       </div>
       
-      <!-- Bambu Lab A1 mini -->
       <div id="card-a1_mini" class="printer-card" onclick="selectPrinter('a1_mini')">
         <div>
           <div class="printer-name">Bambu Lab A1 mini</div>
@@ -793,7 +937,6 @@
         <span id="badge-a1_mini" class="status-badge ok">Cabe</span>
       </div>
 
-      <!-- Anycubic Kobra X -->
       <div id="card-kobra_x" class="printer-card active" onclick="selectPrinter('kobra_x')">
         <div>
           <div class="printer-name">Anycubic Kobra X</div>
@@ -802,7 +945,6 @@
         <span id="badge-kobra_x" class="status-badge ok">Cabe</span>
       </div>
 
-      <!-- Bambu Lab A2L -->
       <div id="card-a2l" class="printer-card" onclick="selectPrinter('a2l')">
         <div>
           <div class="printer-name">Bambu Lab A2L</div>
@@ -843,102 +985,438 @@
     </div>
   </div>
 
-  <!-- Right View & Appearance Panel -->
+  <!-- Right Studio Panel (View / 3D Paint / Advanced Geometry Cut) -->
   <div id="controls-panel" class="floating-panel">
-    <div class="panel-title">Visualización & Orientación</div>
-
-    <!-- Quick Views -->
-    <div class="panel-section">
-      <span class="control-label">Vistas Rápidas</span>
-      <div class="btn-grid">
-        <button class="btn-compact" onclick="setView('iso')">ISO</button>
-        <button class="btn-compact" onclick="setView('top')">Arriba</button>
-        <button class="btn-compact" onclick="setView('front')">Frente</button>
-        <button class="btn-compact" onclick="setView('side')">Lado</button>
-      </div>
-      <div style="margin-top: 6px;">
-        <button class="btn-compact" style="width: 100%;" onclick="resetCamera()">🔄 Re-centrar Cámara</button>
-      </div>
+    <!-- Mode Selector Tabs -->
+    <div class="tool-tabs">
+      <button id="tab-btn-view" class="tool-tab-btn active" onclick="switchStudioTab('view')">
+        👁️ Vista
+      </button>
+      <button id="tab-btn-paint" class="tool-tab-btn" onclick="switchStudioTab('paint')">
+        🎨 Pintar 3D
+      </button>
+      <button id="tab-btn-cut" class="tool-tab-btn" onclick="switchStudioTab('cut')">
+        ✂️ Cortar
+      </button>
     </div>
 
-    <!-- Rotate Model on Bed -->
-    <div class="panel-section">
-      <span class="control-label">Orientación & Posición en Cama</span>
-      <div class="btn-grid" style="grid-template-columns: repeat(3, 1fr); margin-bottom: 6px;">
-        <button class="btn-compact" onclick="rotateModel('x', 90)" title="Voltear en eje X">🔄 X (90°)</button>
-        <button class="btn-compact" onclick="rotateModel('y', 90)" title="Girar en eje Y">🔄 Y (90°)</button>
-        <button class="btn-compact" onclick="rotateModel('z', 90)" title="Girar en eje Z">🔄 Z (90°)</button>
-      </div>
-      <div style="display: flex; gap: 6px;">
-        <button class="btn-compact" style="flex: 1; font-size: 11px; background: rgba(56, 189, 248, 0.15); border-color: rgba(56, 189, 248, 0.4); color: #38bdf8;" onclick="orientModelToBed(); showToast('Modelo orientado al eje vertical Z y centrado.');">
-          ⬆️ Orientar Eje Z
-        </button>
-        <button class="btn-compact" style="flex: 1; font-size: 11px;" onclick="alignModelToBed(); showToast('Modelo asentado y centrado en la cama.');">
-          ⚓ Centrar en Cama
-        </button>
-      </div>
-    </div>
-
-    <!-- Render Modes -->
-    <div class="panel-section">
-      <span class="control-label">Modo de Superficie</span>
-      <div class="btn-grid" style="grid-template-columns: 1fr 1fr;">
-        <button id="mode-smooth" class="btn-compact active" onclick="setRenderMode('smooth')">Sólido</button>
-        <button id="mode-wire" class="btn-compact" onclick="setRenderMode('wireframe')">Malla (Wire)</button>
-        <button id="mode-flat" class="btn-compact" onclick="setRenderMode('flat')">Facetado</button>
-        <button id="mode-normals" class="btn-compact" onclick="setRenderMode('normals')">Normales</button>
-      </div>
-      <div class="control-group" style="margin-top: 8px;">
-        <div style="display: flex; justify-content: space-between; font-size: 11px; margin-bottom: 3px;">
-          <span class="info-label">Opacidad:</span>
-          <span id="opacity-val" style="font-weight: 600;">100%</span>
+    <!-- ==================== TAB 1: VIEW & ORIENTATION ==================== -->
+    <div id="studio-tab-view">
+      <!-- Quick Views -->
+      <div class="panel-section">
+        <span class="control-label">Vistas Rápidas de Cámara</span>
+        <div class="btn-grid">
+          <button class="btn-compact" onclick="setView('iso')">ISO</button>
+          <button class="btn-compact" onclick="setView('top')">Arriba</button>
+          <button class="btn-compact" onclick="setView('front')">Frente</button>
+          <button class="btn-compact" onclick="setView('side')">Lado</button>
         </div>
-        <input type="range" id="opacity-slider" min="15" max="100" value="100" oninput="updateOpacity(this.value)">
+        <div style="margin-top: 6px;">
+          <button class="btn-compact" style="width: 100%;" onclick="resetCamera()">🔄 Re-centrar Cámara</button>
+        </div>
+      </div>
+
+      <!-- Rotate & Scale Model on Bed -->
+      <div class="panel-section">
+        <span class="control-label">Orientación & Escala en Cama</span>
+        <div class="btn-grid" style="grid-template-columns: repeat(3, 1fr); margin-bottom: 6px;">
+          <button class="btn-compact" onclick="rotateModel('x', 90)" title="Voltear en eje X">🔄 X (90°)</button>
+          <button class="btn-compact" onclick="rotateModel('y', 90)" title="Girar en eje Y">🔄 Y (90°)</button>
+          <button class="btn-compact" onclick="rotateModel('z', 90)" title="Girar en eje Z">🔄 Z (90°)</button>
+        </div>
+        <div style="display: flex; gap: 6px; margin-bottom: 8px;">
+          <button class="btn-compact" style="flex: 1; font-size: 11px; background: rgba(56, 189, 248, 0.15); border-color: rgba(56, 189, 248, 0.4); color: #38bdf8;" onclick="orientModelToBed(); showToast('Modelo orientado al eje vertical Z y centrado.');">
+            ⬆️ Orientar Z
+          </button>
+          <button class="btn-compact" style="flex: 1; font-size: 11px;" onclick="alignModelToBed(); showToast('Modelo asentado y centrado en la cama.');">
+            ⚓ Asentar en Cama
+          </button>
+        </div>
+        <!-- Quick Uniform Scale -->
+        <div class="sub-box">
+          <div class="flex-row-between" style="font-size: 11px; margin-bottom: 4px;">
+            <span class="info-label">Escalar Volumen (%):</span>
+            <div style="display: flex; gap: 4px;">
+              <button class="btn-compact" style="padding: 2px 6px; font-size: 10px;" onclick="scaleModelUniform(0.5)">50%</button>
+              <button class="btn-compact" style="padding: 2px 6px; font-size: 10px;" onclick="scaleModelUniform(0.8)">80%</button>
+              <button class="btn-compact" style="padding: 2px 6px; font-size: 10px;" onclick="scaleModelUniform(1.25)">125%</button>
+              <button class="btn-compact" style="padding: 2px 6px; font-size: 10px;" onclick="scaleModelUniform(2.0)">200%</button>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Render Modes -->
+      <div class="panel-section">
+        <span class="control-label">Modo de Superficie</span>
+        <div class="btn-grid" style="grid-template-columns: 1fr 1fr;">
+          <button id="mode-smooth" class="btn-compact active" onclick="setRenderMode('smooth')">Sólido</button>
+          <button id="mode-wire" class="btn-compact" onclick="setRenderMode('wireframe')">Malla (Wire)</button>
+          <button id="mode-flat" class="btn-compact" onclick="setRenderMode('flat')">Facetado</button>
+          <button id="mode-normals" class="btn-compact" onclick="setRenderMode('normals')">Normales</button>
+        </div>
+        <div class="control-group" style="margin-top: 8px;">
+          <div style="display: flex; justify-content: space-between; font-size: 11px; margin-bottom: 3px;">
+            <span class="info-label">Opacidad del Modelo:</span>
+            <span id="opacity-val" style="font-weight: 600;">100%</span>
+          </div>
+          <input type="range" id="opacity-slider" min="15" max="100" value="100" oninput="updateOpacity(this.value)">
+        </div>
+      </div>
+
+      <!-- Base Color Palette -->
+      <div class="panel-section">
+        <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 6px;">
+          <span class="control-label" style="margin-bottom: 0;">Color Base del Filamento</span>
+          <button id="btn-orig-colors" class="btn-compact" style="font-size: 10px; display: none;" onclick="restoreOriginal3MFColors()">🎨 Colores 3MF</button>
+        </div>
+        <div class="color-swatches">
+          <div class="color-swatch active" style="background: #3b82f6;" onclick="setModelColor('#3b82f6', this)"></div>
+          <div class="color-swatch" style="background: #f97316;" onclick="setModelColor('#f97316', this)"></div>
+          <div class="color-swatch" style="background: #ef4444;" onclick="setModelColor('#ef4444', this)"></div>
+          <div class="color-swatch" style="background: #10b981;" onclick="setModelColor('#10b981', this)"></div>
+          <div class="color-swatch" style="background: #e2e8f0;" onclick="setModelColor('#e2e8f0', this)"></div>
+          <div class="color-swatch" style="background: #475569;" onclick="setModelColor('#475569', this)"></div>
+          <input type="color" id="custom-color-picker" class="color-picker-input" value="#3b82f6" onchange="setModelColor(this.value, null)" title="Color personalizado">
+        </div>
+      </div>
+
+      <!-- Bed & Ultra-Faint Vertical Limit Lines Options -->
+      <div class="panel-section">
+        <span class="control-label">Configuración de Cama 3D y Límites</span>
+        <label class="checkbox-row">
+          <input type="checkbox" id="check-grid" checked onchange="toggleGrid(this.checked)">
+          <span>Mostrar Cama y Cuadrícula</span>
+        </label>
+        <label class="checkbox-row">
+          <input type="checkbox" id="check-height-cage" checked onchange="toggleBuildVolumeCage(this.checked)">
+          <span>Líneas de Límite Vertical Z (Tenues)</span>
+        </label>
+        <div class="control-group" style="margin-left: 22px; margin-bottom: 8px;">
+          <div style="display: flex; justify-content: space-between; font-size: 10.5px; margin-bottom: 2px;">
+            <span class="info-label">Intensidad líneas verticales:</span>
+            <span id="cage-opacity-val" style="font-weight: 600; color: #38bdf8;">4% (Muy tenue)</span>
+          </div>
+          <input type="range" id="cage-opacity-slider" min="0" max="35" value="4" oninput="updateCageOpacity(this.value)">
+        </div>
+        <label class="checkbox-row">
+          <input type="checkbox" id="check-shadows" checked onchange="toggleShadows(this.checked)">
+          <span>Sombras en la base</span>
+        </label>
+        <label class="checkbox-row">
+          <input type="checkbox" id="check-autorotate" onchange="toggleAutoRotate(this.checked)">
+          <span>Rotación Automática (360°)</span>
+        </label>
       </div>
     </div>
 
-    <!-- Color Palettes & 3MF Color Options -->
-    <div class="panel-section">
-      <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 6px;">
-        <span class="control-label" style="margin-bottom: 0;">Color del Filamento</span>
-        <button id="btn-orig-colors" class="btn-compact" style="font-size: 10px; display: none;" onclick="restoreOriginal3MFColors()">🎨 Colores 3MF</button>
+    <!-- ==================== TAB 2: 3D PAINT STUDIO ==================== -->
+    <div id="studio-tab-paint" style="display: none;">
+      <div class="panel-section">
+        <div class="panel-title">
+          <span style="color: #f472b6;">🎨 Herramienta de Pintado 3D</span>
+          <span id="paint-status-badge" style="font-size: 10px; color: #fbcfe8;">Activa</span>
+        </div>
+        <div style="font-size: 11px; color: #94a3b8; margin-bottom: 8px; line-height: 1.35;">
+          Con el modo pintura activo, <strong>haz clic izquierdo y arrastra</strong> sobre la pieza para pintar. Usa <strong>clic derecho o Alt + clic</strong> para girar la cámara.
+        </div>
+
+        <span class="control-label">Modo de Aplicación</span>
+        <div class="btn-grid" style="grid-template-columns: 1fr 1fr; gap: 6px; margin-bottom: 10px;">
+          <button id="paint-tool-brush" class="btn-compact active-pink" onclick="setPaintTool('brush')">
+            🖌️ Pincel 3D
+          </button>
+          <button id="paint-tool-bucket" class="btn-compact" onclick="setPaintTool('bucket')">
+            🪣 Cubeta Superficie
+          </button>
+          <button id="paint-tool-layer" class="btn-compact" onclick="setPaintTool('layer')">
+            📏 Franja Capa Z
+          </button>
+          <button id="paint-tool-eraser" class="btn-compact" onclick="setPaintTool('eraser')">
+            🧽 Borrador
+          </button>
+        </div>
+
+        <!-- Brush Controls -->
+        <div id="paint-brush-controls" class="sub-box">
+          <div class="flex-row-between" style="font-size: 11px; margin-bottom: 4px;">
+            <span class="info-label">Radio del Pincel 3D:</span>
+            <span id="paint-radius-val" style="font-weight: 700; color: #f472b6;">8 mm</span>
+          </div>
+          <input type="range" id="paint-radius-slider" min="1" max="45" step="0.5" value="8" oninput="updatePaintRadius(this.value)">
+        </div>
+
+        <!-- Bucket Angle Controls -->
+        <div id="paint-bucket-controls" class="sub-box" style="display: none;">
+          <div class="flex-row-between" style="font-size: 11px; margin-bottom: 4px;">
+            <span class="info-label">Tolerancia de Ángulo (Caras):</span>
+            <span id="paint-angle-val" style="font-weight: 700; color: #f472b6;">32°</span>
+          </div>
+          <input type="range" id="paint-angle-slider" min="5" max="90" step="1" value="32" oninput="document.getElementById('paint-angle-val').textContent = this.value + '°'">
+          <div style="font-size: 10.5px; color: #94a3b8; margin-top: 5px;">
+            Haz clic sobre cualquier cara del modelo para rellenar todas las caras contiguas dentro de este ángulo.
+          </div>
+        </div>
+
+        <!-- Height Layer Range Controls -->
+        <div id="paint-layer-controls" class="sub-box" style="display: none;">
+          <div class="flex-row-between" style="font-size: 11px; margin-bottom: 3px;">
+            <span class="info-label">Desde Altura Z (Mín):</span>
+            <span id="paint-zmin-val" style="font-weight: 700; color: #38bdf8;">0.0 mm</span>
+          </div>
+          <input type="range" id="paint-zmin-slider" min="0" max="100" step="0.5" value="0" oninput="updatePaintLayerSliders()">
+          <div class="flex-row-between" style="font-size: 11px; margin-top: 6px; margin-bottom: 3px;">
+            <span class="info-label">Hasta Altura Z (Máx):</span>
+            <span id="paint-zmax-val" style="font-weight: 700; color: #38bdf8;">20.0 mm</span>
+          </div>
+          <input type="range" id="paint-zmax-slider" min="0" max="100" step="0.5" value="20" oninput="updatePaintLayerSliders()">
+          <button class="btn btn-primary" style="width: 100%; margin-top: 8px; justify-content: center; background: #db2777; border-color: #ec4899;" onclick="applyHeightLayerPaint()">
+            🎨 Pintar Franja de Altura Z
+          </button>
+        </div>
       </div>
-      <div class="color-swatches">
-        <div class="color-swatch active" style="background: #3b82f6;" onclick="setModelColor('#3b82f6', this)"></div>
-        <div class="color-swatch" style="background: #f97316;" onclick="setModelColor('#f97316', this)"></div>
-        <div class="color-swatch" style="background: #ef4444;" onclick="setModelColor('#ef4444', this)"></div>
-        <div class="color-swatch" style="background: #10b981;" onclick="setModelColor('#10b981', this)"></div>
-        <div class="color-swatch" style="background: #e2e8f0;" onclick="setModelColor('#e2e8f0', this)"></div>
-        <div class="color-swatch" style="background: #475569;" onclick="setModelColor('#475569', this)"></div>
-        <input type="color" id="custom-color-picker" class="color-picker-input" value="#3b82f6" onchange="setModelColor(this.value, null)" title="Color personalizado">
+
+      <!-- Paint Color Palette -->
+      <div class="panel-section">
+        <span class="control-label">Color de Pintura Activo (Paleta AMS)</span>
+        <div class="color-swatches" style="margin-bottom: 8px;">
+          <div class="color-swatch paint-swatch active" style="background: #ef4444;" onclick="setPaintColor('#ef4444', this)"></div>
+          <div class="color-swatch paint-swatch" style="background: #f97316;" onclick="setPaintColor('#f97316', this)"></div>
+          <div class="color-swatch paint-swatch" style="background: #eab308;" onclick="setPaintColor('#eab308', this)"></div>
+          <div class="color-swatch paint-swatch" style="background: #10b981;" onclick="setPaintColor('#10b981', this)"></div>
+          <div class="color-swatch paint-swatch" style="background: #06b6d4;" onclick="setPaintColor('#06b6d4', this)"></div>
+          <div class="color-swatch paint-swatch" style="background: #3b82f6;" onclick="setPaintColor('#3b82f6', this)"></div>
+          <div class="color-swatch paint-swatch" style="background: #8b5cf6;" onclick="setPaintColor('#8b5cf6', this)"></div>
+          <div class="color-swatch paint-swatch" style="background: #ec4899;" onclick="setPaintColor('#ec4899', this)"></div>
+          <div class="color-swatch paint-swatch" style="background: #ffffff;" onclick="setPaintColor('#ffffff', this)"></div>
+          <div class="color-swatch paint-swatch" style="background: #94a3b8;" onclick="setPaintColor('#94a3b8', this)"></div>
+          <div class="color-swatch paint-swatch" style="background: #1e293b;" onclick="setPaintColor('#1e293b', this)"></div>
+          <div class="color-swatch paint-swatch" style="background: #d97706;" onclick="setPaintColor('#d97706', this)"></div>
+          <input type="color" id="paint-custom-picker" class="color-picker-input" value="#ef4444" onchange="setPaintColor(this.value, null)" title="Color de pintura personalizado">
+        </div>
+
+        <div class="sub-box">
+          <div style="font-size: 11px; color: #cbd5e1; margin-bottom: 6px;">
+            <strong>Resolución de Malla para Pintar:</strong> Si el modelo tiene triángulos muy grandes, subdivídelo para trazos más suaves.
+          </div>
+          <button class="btn-compact" style="width: 100%; background: rgba(139, 92, 246, 0.2); border-color: rgba(139, 92, 246, 0.45); color: #ddd6fe;" onclick="subdivideModelForPainting()">
+            ✨ Subdividir Malla (Mayor Detalle de Pintura)
+          </button>
+        </div>
+      </div>
+
+      <!-- Paint Actions -->
+      <div class="panel-section">
+        <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 6px;">
+          <button class="btn-compact" onclick="undoModelEdit()">↩️ Deshacer Trazo</button>
+          <button class="btn-compact" style="color: #fca5a5;" onclick="clearModelPaint()">🗑️ Limpiar Pintura</button>
+        </div>
+        <button class="btn btn-success" style="width: 100%; margin-top: 8px; justify-content: center;" onclick="exportCurrentModel3MF()">
+          📦 Exportar Modelo Pintado (.3MF)
+        </button>
       </div>
     </div>
 
-    <!-- Bed & Scene Options -->
-    <div class="panel-section">
-      <span class="control-label">Configuración de Cama 3D</span>
-      <label class="checkbox-row">
-        <input type="checkbox" id="check-grid" checked onchange="toggleGrid(this.checked)">
-        <span>Mostrar Cama y Cuadrícula</span>
-      </label>
-      <label class="checkbox-row">
-        <input type="checkbox" id="check-height-cage" checked onchange="toggleBuildVolumeCage(this.checked)">
-        <span>Mostrar Jaula de Altura Máxima (Z)</span>
-      </label>
-      <label class="checkbox-row">
-        <input type="checkbox" id="check-shadows" checked onchange="toggleShadows(this.checked)">
-        <span>Sombras en la base</span>
-      </label>
-      <label class="checkbox-row">
-        <input type="checkbox" id="check-autorotate" onchange="toggleAutoRotate(this.checked)">
-        <span>Rotación Automática (360°)</span>
-      </label>
+    <!-- ==================== TAB 3: ADVANCED GEOMETRY CUTTING ==================== -->
+    <div id="studio-tab-cut" style="display: none;">
+      <div class="panel-section">
+        <div class="panel-title">
+          <span style="color: #fbbf24;">✂️ Corte Avanzado de Geometría</span>
+          <button class="btn-compact" style="padding: 2px 7px; font-size: 10px;" onclick="resetCutPlane()">Centrar Plano</button>
+        </div>
+
+        <!-- Cut Axis / Mode Selection -->
+        <span class="control-label">Eje / Orientación del Plano de Corte</span>
+        <div class="btn-grid" style="grid-template-columns: repeat(4, 1fr); margin-bottom: 8px;">
+          <button id="cut-axis-z" class="btn-compact active-orange" onclick="setCutAxis('z')" title="Corte horizontal por altura Z">Eje Z (Alto)</button>
+          <button id="cut-axis-x" class="btn-compact" onclick="setCutAxis('x')" title="Corte vertical Izquierda/Derecha">Eje X (Ancho)</button>
+          <button id="cut-axis-y" class="btn-compact" onclick="setCutAxis('y')" title="Corte vertical Frente/Atrás">Eje Y (Prof.)</button>
+          <button id="cut-axis-box" class="btn-compact" onclick="setCutAxis('box')" title="Recorte por Caja de 6 lados">📦 Caja 6D</button>
+        </div>
+
+        <!-- Planar Cut Controls (X, Y, Z + Custom Angles) -->
+        <div id="planar-cut-controls">
+          <div class="sub-box">
+            <div class="flex-row-between" style="font-size: 11px; margin-bottom: 4px;">
+              <span class="info-label">Posición de Corte (<span id="cut-axis-label">Altura Z</span>):</span>
+              <div style="display: flex; align-items: center; gap: 4px;">
+                <input type="number" id="cut-pos-number" step="0.5" value="10" style="width: 68px; padding: 2px 5px; text-align: right; font-weight: 700; color: #fbbf24;" onchange="onCutPositionNumberChange(this.value)">
+                <span style="font-size: 10px; color: #94a3b8;">mm</span>
+              </div>
+            </div>
+            <input type="range" id="cut-pos-slider" min="0" max="100" step="0.1" value="50" oninput="onCutPositionSliderChange(this.value)">
+            <div style="display: flex; justify-content: space-between; gap: 4px; margin-top: 6px;">
+              <button class="btn-compact" style="flex: 1; font-size: 10px; padding: 3px;" onclick="setCutPercentage(25)">25%</button>
+              <button class="btn-compact" style="flex: 1; font-size: 10px; padding: 3px;" onclick="setCutPercentage(50)">50% (Mitad)</button>
+              <button class="btn-compact" style="flex: 1; font-size: 10px; padding: 3px;" onclick="setCutPercentage(75)">75%</button>
+              <button class="btn-compact" style="flex: 1; font-size: 10px; padding: 3px;" onclick="flipCutPlaneNormal()" title="Invertir lado A y B">🔄 Invertir</button>
+            </div>
+          </div>
+
+          <!-- Custom Diagonal / Compound Angles -->
+          <div class="sub-box" style="margin-top: 7px;">
+            <div class="flex-row-between" style="font-size: 11px; margin-bottom: 3px;">
+              <span class="info-label">Inclinación Ángulo α (Eje 1):</span>
+              <span id="cut-tilt-a-val" style="font-weight: 700; color: #f87171;">0°</span>
+            </div>
+            <div style="display: flex; gap: 6px; align-items: center;">
+              <input type="range" id="cut-tilt-a-slider" min="-85" max="85" step="1" value="0" oninput="updateCutAngles()">
+              <button class="btn-compact" style="padding: 2px 6px; font-size: 10px;" onclick="document.getElementById('cut-tilt-a-slider').value=0; updateCutAngles();">0°</button>
+              <button class="btn-compact" style="padding: 2px 6px; font-size: 10px;" onclick="document.getElementById('cut-tilt-a-slider').value=45; updateCutAngles();">45°</button>
+            </div>
+
+            <div class="flex-row-between" style="font-size: 11px; margin-top: 6px; margin-bottom: 3px;">
+              <span class="info-label">Inclinación Ángulo β (Eje 2):</span>
+              <span id="cut-tilt-b-val" style="font-weight: 700; color: #4ade80;">0°</span>
+            </div>
+            <div style="display: flex; gap: 6px; align-items: center;">
+              <input type="range" id="cut-tilt-b-slider" min="-85" max="85" step="1" value="0" oninput="updateCutAngles()">
+              <button class="btn-compact" style="padding: 2px 6px; font-size: 10px;" onclick="document.getElementById('cut-tilt-b-slider').value=0; updateCutAngles();">0°</button>
+              <button class="btn-compact" style="padding: 2px 6px; font-size: 10px;" onclick="document.getElementById('cut-tilt-b-slider').value=45; updateCutAngles();">45°</button>
+            </div>
+          </div>
+
+          <!-- Real-time Clipping Preview Mode -->
+          <div class="sub-box" style="margin-top: 7px;">
+            <span class="control-label">Previsualización en Vivo del Corte</span>
+            <div class="btn-grid" style="grid-template-columns: repeat(3, 1fr);">
+              <button id="preview-cut-both" class="btn-compact active" onclick="setCutPreviewMode('both')">Completo</button>
+              <button id="preview-cut-a" class="btn-compact" onclick="setCutPreviewMode('partA')">Ver Parte A</button>
+              <button id="preview-cut-b" class="btn-compact" onclick="setCutPreviewMode('partB')">Ver Parte B</button>
+            </div>
+          </div>
+        </div>
+
+        <!-- 6-Sided Box Crop Controls -->
+        <div id="box-crop-controls" style="display: none;">
+          <div class="sub-box">
+            <div style="font-size: 11px; color: #93c5fd; margin-bottom: 6px; font-weight: 600;">
+              📦 Recorte de Caja 3D (Aislar Región X / Y / Z)
+            </div>
+            <div class="flex-row-between" style="font-size: 10.5px;">
+              <span>X Mín / Máx (%):</span>
+              <span id="crop-x-label">0% - 100%</span>
+            </div>
+            <div style="display: flex; gap: 4px; margin-bottom: 5px;">
+              <input type="range" id="crop-xmin" min="0" max="95" value="0" oninput="updateBoxCropPreview()">
+              <input type="range" id="crop-xmax" min="5" max="100" value="100" oninput="updateBoxCropPreview()">
+            </div>
+
+            <div class="flex-row-between" style="font-size: 10.5px;">
+              <span>Y Prof. Mín / Máx (%):</span>
+              <span id="crop-y-label">0% - 100%</span>
+            </div>
+            <div style="display: flex; gap: 4px; margin-bottom: 5px;">
+              <input type="range" id="crop-ymin" min="0" max="95" value="0" oninput="updateBoxCropPreview()">
+              <input type="range" id="crop-ymax" min="5" max="100" value="100" oninput="updateBoxCropPreview()">
+            </div>
+
+            <div class="flex-row-between" style="font-size: 10.5px;">
+              <span>Z Altura Mín / Máx (%):</span>
+              <span id="crop-z-label">0% - 100%</span>
+            </div>
+            <div style="display: flex; gap: 4px;">
+              <input type="range" id="crop-zmin" min="0" max="95" value="0" oninput="updateBoxCropPreview()">
+              <input type="range" id="crop-zmax" min="5" max="100" value="100" oninput="updateBoxCropPreview()">
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Cut Operation & Engineering Options -->
+      <div class="panel-section">
+        <span class="control-label">Tipo de Operación al Cortar</span>
+        <div id="planar-operation-Modes" style="display: grid; grid-template-columns: 1fr; gap: 5px; margin-bottom: 8px;">
+          <button id="cut-op-split" class="btn-compact active-orange" style="text-align: left; padding: 7px 10px;" onclick="setCutOperation('split')">
+            🔪 <strong>Dividir en 2 Piezas (Parte A + Parte B)</strong>
+          </button>
+          <button id="cut-op-keepA" class="btn-compact" style="text-align: left; padding: 7px 10px;" onclick="setCutOperation('keepA')">
+            ⬆️ <strong>Cortar y Conservar Solo Parte A</strong> (Superior / +)
+          </button>
+          <button id="cut-op-keepB" class="btn-compact" style="text-align: left; padding: 7px 10px;" onclick="setCutOperation('keepB')">
+            ⬇️ <strong>Cortar y Conservar Solo Parte B</strong> (Inferior / -)
+          </button>
+        </div>
+
+        <!-- Engineering Options: Planar Cap, Alignment Dowel Pins, Auto-lay on Bed -->
+        <div class="sub-box">
+          <label class="checkbox-row">
+            <input type="checkbox" id="check-cut-cap" checked>
+            <span><strong>Tapar cara cortada</strong> (Cerrar volumen sólido)</span>
+          </label>
+          <label class="checkbox-row">
+            <input type="checkbox" id="check-cut-layflat">
+            <span>Asentar cara cortada sobre la cama (Z = 0)</span>
+          </label>
+          <label class="checkbox-row" style="margin-bottom: 4px;">
+            <input type="checkbox" id="check-cut-pins" onchange="document.getElementById('cut-pins-config').style.display = this.checked ? 'block' : 'none'">
+            <span>🔩 <strong>Añadir Conectores / Pines de Ensamble</strong></span>
+          </label>
+
+          <div id="cut-pins-config" style="display: none; padding-top: 6px; margin-top: 4px; border-top: 1px solid rgba(255,255,255,0.08);">
+            <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 6px; margin-bottom: 6px;">
+              <div>
+                <span class="control-label" style="font-size: 10px;">Cantidad de Pines:</span>
+                <select id="cut-pin-count" style="padding: 4px; font-size: 11px;">
+                  <option value="1">1 Pin Central</option>
+                  <option value="2" selected>2 Pines Dobles</option>
+                  <option value="4">4 Pines Esquinas</option>
+                </select>
+              </div>
+              <div>
+                <span class="control-label" style="font-size: 10px;">Forma del Conector:</span>
+                <select id="cut-pin-shape" style="padding: 4px; font-size: 11px;">
+                  <option value="cylinder" selected>Cilíndrico (Redondo)</option>
+                  <option value="box">Cuadrado (Anti-giro)</option>
+                </select>
+              </div>
+            </div>
+            <div class="flex-row-between" style="font-size: 10.5px;">
+              <span>Diámetro (<span id="pin-diam-val">5.0</span> mm) · Largo (<span id="pin-len-val">8.0</span> mm)</span>
+            </div>
+            <div style="display: flex; gap: 6px; margin-top: 3px;">
+              <input type="range" id="cut-pin-diam" min="3" max="12" step="0.5" value="5" oninput="document.getElementById('pin-diam-val').textContent=parseFloat(this.value).toFixed(1)" title="Diámetro del pin (mm)">
+              <input type="range" id="cut-pin-len" min="4" max="20" step="1" value="8" oninput="document.getElementById('pin-len-val').textContent=parseFloat(this.value).toFixed(1)" title="Longitud del pin (mm)">
+            </div>
+          </div>
+        </div>
+
+        <!-- Execute Cut Button -->
+        <button class="btn btn-primary" style="width: 100%; margin-top: 10px; padding: 10px; justify-content: center; font-size: 13px; background: linear-gradient(135deg, #f59e0b, #ea580c); border-color: #f59e0b;" onclick="executeGeometryCut()">
+          ✂️ Ejecutar Corte en la Geometría
+        </button>
+
+        <!-- Post-Split Separation Slider & Lay Both on Bed -->
+        <div id="split-explosion-box" class="sub-box" style="display: none; margin-top: 8px; border-color: rgba(56, 189, 248, 0.35);">
+          <div class="flex-row-between" style="font-size: 11px; margin-bottom: 4px;">
+            <span style="color: #38bdf8; font-weight: 700;">Separar Piezas Cortadas:</span>
+            <span id="split-sep-val" style="font-weight: 700;">18 mm</span>
+          </div>
+          <input type="range" id="split-sep-slider" min="0" max="80" step="1" value="18" oninput="updateSplitSeparation(this.value)">
+          <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 5px; margin-top: 6px;">
+            <button class="btn-compact" style="font-size: 10.5px; color: #38bdf8;" onclick="laySplitPartsOnBed()">
+              ⚓ Acomodar Ambas en Cama
+            </button>
+            <button class="btn-compact" style="font-size: 10.5px; color: #34d399;" onclick="exportSplitPartsSeparately()">
+              💾 Descargar A y B (.STL)
+            </button>
+          </div>
+        </div>
+      </div>
+
+      <!-- History & Export -->
+      <div class="panel-section">
+        <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 6px;">
+          <button class="btn-compact" onclick="undoModelEdit()">↩️ Deshacer Corte</button>
+          <button class="btn-compact" onclick="restoreInitialGeometry()">🔄 Restaurar Original</button>
+        </div>
+      </div>
     </div>
   </div>
 
   <!-- Bottom Quick Controls / Mouse Instructions -->
   <div id="bottom-bar">
-    <div class="hint-item">
+    <div class="hint-item" id="hint-left-click">
       <span>🖱️ <strong>Click Izquierdo:</strong> Girar / Rotar</span>
     </div>
     <div class="hint-item">
@@ -956,7 +1434,7 @@
     </div>
     <div class="empty-title">Arrastra tu archivo STL o 3MF aquí</div>
     <div class="empty-subtitle">
-      Suelta cualquier archivo <strong>.STL</strong> o <strong>.3MF</strong> (Bambu Studio, Anycubic, Prusa) para visualizarlo en 3D, girarlo, acercarlo y comprobar el espacio en tus impresoras <strong>A1 mini</strong>, <strong>Kobra X</strong> y <strong>A2L</strong>.
+      Abre cualquier archivo <strong>.STL</strong> o <strong>.3MF</strong> (Bambu Studio, MakerWorld, OrcaSlicer, Prusa, Anycubic) para analizar dimensiones, <strong>pintar en 3D</strong> o <strong>cortar geometrías</strong> con conectores y exportar.
     </div>
     <div class="empty-actions">
       <button class="btn btn-primary" onclick="event.stopPropagation(); document.getElementById('file-input').click()">
@@ -1034,6 +1512,8 @@
     let scene, camera, renderer, controls;
     let currentModel = null;
     let currentModelType = 'stl';
+    let currentFileName = 'modelo_3d.stl';
+    let currentFileSize = 0;
     let originalMaterials = [];
     let bedGroup = null;
     let buildCage = null;
@@ -1043,8 +1523,36 @@
     let modelVolumeCm3 = 0;
     let boundingBox = null;
     let showCage = true;
-    let loadedPlates = []; // [{ id: number|string, name: string, mesh: THREE.Object3D }]
-    let activePlateIndex = -1; // -1 means show all
+    // Ultra-faint vertical limit lines by default (0.04 = 4%, barely visible)
+    let cageBaseOpacity = 0.04;
+    let loadedPlates = [];
+    let activePlateIndex = -1;
+
+    // Studio Mode & History State
+    let activeStudioTab = 'view'; // 'view' | 'paint' | 'cut'
+    let undoStack = [];
+    let initialGeometrySnapshot = null;
+
+    // 3D Paint State
+    let paintTool = 'brush'; // 'brush' | 'bucket' | 'layer' | 'eraser'
+    let paintColorHex = '#ef4444';
+    let paintRadiusMm = 8.0;
+    let isPaintingStroke = false;
+    let brushCursorMesh = null;
+    const raycaster = new THREE.Raycaster();
+    const mouseNDC = new THREE.Vector2();
+
+    // Advanced Cutting State
+    let cutAxis = 'z'; // 'z' (height Y in Three), 'x', 'y' (depth Z in Three), 'box'
+    let cutOperation = 'split'; // 'split' | 'keepA' | 'keepB'
+    let cutPreviewMode = 'both'; // 'both' | 'partA' | 'partB'
+    let cutPlaneInverted = false;
+    let cutPositionMm = 10;
+    let cutTiltADeg = 0;
+    let cutTiltBDeg = 0;
+    let cutPlaneHelperGroup = null;
+    let boxCropHelper = null;
+    const activeClippingPlane = new THREE.Plane(new THREE.Vector3(0, -1, 0), 10);
 
     function init() {
       const container = document.getElementById('canvas-container');
@@ -1057,7 +1565,7 @@
       camera = new THREE.PerspectiveCamera(45, window.innerWidth / window.innerHeight, 0.1, 5000);
       camera.position.set(240, 220, 280);
 
-      // 3. Renderer
+      // 3. Renderer (with localClippingEnabled for real-time cut preview)
       renderer = new THREE.WebGLRenderer({ antialias: true, preserveDrawingBuffer: true });
       renderer.setPixelRatio(Math.min(window.devicePixelRatio, 2));
       renderer.setSize(window.innerWidth, window.innerHeight);
@@ -1065,35 +1573,41 @@
       renderer.shadowMap.type = THREE.PCFSoftShadowMap;
       renderer.toneMapping = THREE.ACESFilmicToneMapping;
       renderer.toneMappingExposure = 1.15;
+      renderer.localClippingEnabled = true;
       container.appendChild(renderer.domElement);
 
-      // 4. Orbit Controls (Rotate, Zoom, Pan)
+      // 4. Orbit Controls
       controls = new THREE.OrbitControls(camera, renderer.domElement);
       controls.enableDamping = true;
       controls.dampingFactor = 0.06;
       controls.screenSpacePanning = true;
-      controls.maxPolarAngle = Math.PI / 2 + 0.05; // don't go below ground
+      controls.maxPolarAngle = Math.PI / 2 + 0.15;
       controls.minDistance = 5;
-      controls.maxDistance = 2000;
+      controls.maxDistance = 2200;
       controls.target.set(0, 50, 0);
 
       // 5. Lighting Setup
       setupLights();
 
-      // 6. Build Plate & Height Cage
+      // 6. Build Plate & Ultra-Faint Height Boundary Lines
       rebuildPrinterScene();
 
-      // 7. Event Listeners
+      // 7. Setup 3D Paint Brush Cursor & Cutting Plane Gizmo
+      setupBrushCursor();
+      setupCutPlaneGizmo();
+
+      // 8. Event Listeners
       window.addEventListener('resize', onWindowResize);
       setupDragAndDrop();
       setupFileInput();
+      setupCanvasPaintInteractions();
 
-      // 8. Animation Loop
+      // 9. Animation Loop
       animate();
     }
 
     function setupLights() {
-      const ambientLight = new THREE.AmbientLight(0xffffff, 0.45);
+      const ambientLight = new THREE.AmbientLight(0xffffff, 0.5);
       scene.add(ambientLight);
 
       const keyLight = new THREE.DirectionalLight(0xffffff, 0.9);
@@ -1111,7 +1625,7 @@
       keyLight.shadow.bias = -0.0005;
       scene.add(keyLight);
 
-      const fillLight = new THREE.DirectionalLight(0x93c5fd, 0.4);
+      const fillLight = new THREE.DirectionalLight(0x93c5fd, 0.42);
       fillLight.position.set(-250, 150, -180);
       scene.add(fillLight);
 
@@ -1143,7 +1657,7 @@
       plate.receiveShadow = true;
       bedGroup.add(plate);
 
-      // 2. Custom Rectangular Grid Lines (every 10mm)
+      // 2. Custom Rectangular Grid Lines on the Bed (every 10mm)
       const gridGeo = new THREE.BufferGeometry();
       const gridPoints = [];
       const halfW = w / 2;
@@ -1162,38 +1676,66 @@
       const gridMat = new THREE.LineBasicMaterial({
         color: 0x1e3a5f,
         transparent: true,
-        opacity: 0.8
+        opacity: 0.75
       });
       const gridLines = new THREE.LineSegments(gridGeo, gridMat);
       bedGroup.add(gridLines);
 
-      // 3. Center Cross
+      // 3. Subtle Center Cross on Bed
       const axesGeo = new THREE.BufferGeometry();
       const axesPoints = [
-        new THREE.Vector3(-18, 0.1, 0), new THREE.Vector3(18, 0.1, 0),
-        new THREE.Vector3(0, 0.1, -18), new THREE.Vector3(0, 0.1, 18)
+        new THREE.Vector3(-16, 0.1, 0), new THREE.Vector3(16, 0.1, 0),
+        new THREE.Vector3(0, 0.1, -16), new THREE.Vector3(0, 0.1, 16)
       ];
       axesGeo.setFromPoints(axesPoints);
-      const axesMat = new THREE.LineBasicMaterial({ color: 0x38bdf8, linewidth: 2 });
+      const axesMat = new THREE.LineBasicMaterial({ color: 0x38bdf8, transparent: true, opacity: 0.55 });
       const centerCross = new THREE.LineSegments(axesGeo, axesMat);
       bedGroup.add(centerCross);
 
       scene.add(bedGroup);
 
-      // 4. Build Volume Boundary Cage
-      const cageGeo = new THREE.BoxGeometry(w, h, d);
-      const wireGeo = new THREE.WireframeGeometry(cageGeo);
+      // 4. Clean Vertical Build Volume Boundary Lines (NO diagonal lines, ultra-faint opacity by default)
+      const cagePoints = [
+        // 4 vertical corner posts going up
+        new THREE.Vector3(-halfW, 0, -halfD), new THREE.Vector3(-halfW, h, -halfD),
+        new THREE.Vector3( halfW, 0, -halfD), new THREE.Vector3( halfW, h, -halfD),
+        new THREE.Vector3( halfW, 0,  halfD), new THREE.Vector3( halfW, h,  halfD),
+        new THREE.Vector3(-halfW, 0,  halfD), new THREE.Vector3(-halfW, h,  halfD),
+        // Top perimeter rectangle at max Z height
+        new THREE.Vector3(-halfW, h, -halfD), new THREE.Vector3( halfW, h, -halfD),
+        new THREE.Vector3( halfW, h, -halfD), new THREE.Vector3( halfW, h,  halfD),
+        new THREE.Vector3( halfW, h,  halfD), new THREE.Vector3(-halfW, h,  halfD),
+        new THREE.Vector3(-halfW, h,  halfD), new THREE.Vector3(-halfW, h, -halfD)
+      ];
+      const cageGeo = new THREE.BufferGeometry().setFromPoints(cagePoints);
       const cageMat = new THREE.LineBasicMaterial({
         color: 0x38bdf8,
         transparent: true,
-        opacity: 0.25
+        opacity: cageBaseOpacity,
+        depthWrite: false
       });
-      buildCage = new THREE.LineSegments(wireGeo, cageMat);
-      buildCage.position.set(0, h / 2, 0);
-      buildCage.visible = showCage;
+      buildCage = new THREE.LineSegments(cageGeo, cageMat);
+      buildCage.visible = showCage && cageBaseOpacity > 0;
       scene.add(buildCage);
 
       checkAllPrintersCompatibility();
+    }
+
+    function updateCageOpacity(val) {
+      const pct = parseInt(val, 10);
+      cageBaseOpacity = pct / 100;
+      const label = document.getElementById('cage-opacity-val');
+      if (pct === 0) {
+        label.textContent = '0% (Ocultas)';
+      } else if (pct <= 6) {
+        label.textContent = `${pct}% (Muy tenue)`;
+      } else {
+        label.textContent = `${pct}%`;
+      }
+      if (buildCage) {
+        buildCage.material.opacity = cageBaseOpacity;
+        buildCage.visible = showCage && cageBaseOpacity > 0;
+      }
     }
 
     function selectPrinter(printerKey) {
@@ -1214,7 +1756,7 @@
 
     function toggleBuildVolumeCage(show) {
       showCage = show;
-      if (buildCage) buildCage.visible = show;
+      if (buildCage) buildCage.visible = show && cageBaseOpacity > 0;
     }
 
     function toggleShadows(enable) {
@@ -1232,62 +1774,112 @@
       controls.autoRotateSpeed = 2.5;
     }
 
-    function getModelMaterial(mode, color) {
+    function getModelMaterial(mode, color, useVertexColors = true) {
       const opacity = parseInt(document.getElementById('opacity-slider').value, 10) / 100;
       const transparent = opacity < 1.0;
+      const clipPlanes = getActiveClippingPlanes();
 
       if (mode === 'normals') {
         return new THREE.MeshNormalMaterial({
           wireframe: false,
           transparent: transparent,
-          opacity: opacity
+          opacity: opacity,
+          side: THREE.DoubleSide,
+          clippingPlanes: clipPlanes
         });
       }
 
       if (mode === 'wireframe') {
         return new THREE.MeshBasicMaterial({
-          color: color,
+          color: useVertexColors ? 0xffffff : color,
+          vertexColors: useVertexColors,
           wireframe: true,
           transparent: transparent,
-          opacity: opacity
+          opacity: opacity,
+          clippingPlanes: clipPlanes
         });
       }
 
       return new THREE.MeshStandardMaterial({
-        color: new THREE.Color(color),
+        color: new THREE.Color(useVertexColors ? 0xffffff : color),
+        vertexColors: useVertexColors,
         roughness: 0.35,
-        metalness: 0.15,
+        metalness: 0.12,
         flatShading: (mode === 'flat'),
         wireframe: false,
         transparent: transparent,
         opacity: opacity,
-        side: THREE.DoubleSide
+        side: THREE.DoubleSide,
+        clippingPlanes: clipPlanes
       });
     }
 
+    // Ensure every mesh has non-indexed BufferGeometry and a 'color' attribute so 3D painting & cutting work seamlessly
+    function prepareMeshForStudio(mesh, fallbackHex) {
+      if (!mesh || !mesh.geometry) return;
+      let geo = mesh.geometry;
+
+      // Convert indexed geometry to non-indexed so triangles can be painted and sliced independently
+      if (geo.index) {
+        geo = geo.toNonIndexed();
+        mesh.geometry.dispose();
+        mesh.geometry = geo;
+      }
+
+      if (!geo.attributes.normal) {
+        geo.computeVertexNormals();
+      }
+
+      const posAttr = geo.attributes.position;
+      if (!posAttr) return;
+
+      // Initialize vertex color attribute if not present
+      if (!geo.attributes.color) {
+        const colArray = new Float32Array(posAttr.count * 3);
+        const baseCol = new THREE.Color(fallbackHex || currentColor);
+        if (mesh.material && mesh.material.color && !mesh.material.vertexColors) {
+          baseCol.copy(mesh.material.color);
+        }
+        for (let i = 0; i < posAttr.count; i++) {
+          colArray[i * 3] = baseCol.r;
+          colArray[i * 3 + 1] = baseCol.g;
+          colArray[i * 3 + 2] = baseCol.b;
+        }
+        geo.setAttribute('color', new THREE.BufferAttribute(colArray, 3));
+      }
+
+      mesh.material = getModelMaterial(currentMode, currentColor, true);
+      mesh.castShadow = true;
+      mesh.receiveShadow = true;
+    }
+
     // Unified Model Setup (Supports both STL Geometry and 3MF Groups)
-    function setupLoadedModel(rootObject, fileName, fileSize, fileType, customPlates = null) {
-      if (currentModel) {
+    function setupLoadedModel(rootObject, fileName, fileSize, fileType, customPlates = null, isEditUpdate = false) {
+      if (currentModel && currentModel !== rootObject) {
         scene.remove(currentModel);
         disposeHierarchy(currentModel);
       }
 
       currentModel = rootObject;
       currentModelType = fileType;
-      originalMaterials = [];
+      currentFileName = fileName || currentFileName;
+      currentFileSize = fileSize || currentFileSize;
       loadedPlates = [];
       activePlateIndex = -1;
+
+      if (!isEditUpdate) {
+        originalMaterials = [];
+        undoStack = [];
+      }
 
       let totalTriangles = 0;
       let totalVertices = 0;
       let totalVolume = 0;
       let hasCustomMaterials = false;
 
-      // Detect sub-meshes or plates (especially in 3MF files or multi-file load)
       if (customPlates && customPlates.length > 0) {
         loadedPlates = customPlates;
       } else {
-        // Collect direct children or meshes as plates/parts if multiple exist
         const meshCandidates = [];
         currentModel.children.forEach((child, idx) => {
           let hasGeometry = false;
@@ -1295,7 +1887,7 @@
           if (hasGeometry) {
             meshCandidates.push({
               id: idx,
-              name: child.name ? child.name : `Placa / Parte ${meshCandidates.length + 1}`,
+              name: child.name ? child.name : `Parte ${meshCandidates.length + 1}`,
               object: child
             });
           }
@@ -1306,55 +1898,47 @@
         }
       }
 
-      // Ensure shadows, normals, and count vertices/faces
       currentModel.traverse((child) => {
-        if (child.isMesh) {
-          child.castShadow = true;
-          child.receiveShadow = true;
-
-          if (child.geometry) {
-            if (!child.geometry.attributes.normal) {
-              child.geometry.computeVertexNormals();
-            }
-            const count = child.geometry.attributes.position ? child.geometry.attributes.position.count : 0;
-            totalVertices += count;
-            totalTriangles += (child.geometry.index ? child.geometry.index.count / 3 : count / 3);
-            totalVolume += computeMeshVolume(child.geometry, child.matrixWorld);
+        if (child.isMesh && child.geometry) {
+          if (child.geometry.attributes.color) {
+            hasCustomMaterials = true;
           }
+          prepareMeshForStudio(child, currentColor);
 
-          if (child.material) {
+          const count = child.geometry.attributes.position ? child.geometry.attributes.position.count : 0;
+          totalVertices += count;
+          totalTriangles += count / 3;
+          totalVolume += computeMeshVolume(child.geometry, child.matrixWorld);
+
+          if (!isEditUpdate) {
             originalMaterials.push({
               mesh: child,
-              material: Array.isArray(child.material) ? child.material.map(m => m.clone()) : child.material.clone()
+              colors: child.geometry.attributes.color.array.slice()
             });
-            if (fileType === '3mf') hasCustomMaterials = true;
           }
         }
       });
 
-      // Show/hide 3MF color restore button
       const btnOrigColors = document.getElementById('btn-orig-colors');
-      if (hasCustomMaterials) {
-        btnOrigColors.style.display = 'block';
+      btnOrigColors.style.display = (fileType === '3mf' || hasCustomMaterials) ? 'block' : 'none';
+
+      if (!isEditUpdate) {
+        orientModelToBed();
       } else {
-        btnOrigColors.style.display = 'none';
+        alignModelToBed();
       }
 
-      // If STL or user didn't specify 3MF materials, apply active material
-      if (fileType === 'stl' || !hasCustomMaterials) {
-        applyMaterialToModel(getModelMaterial(currentMode, currentColor));
+      if (!currentModel.parent) {
+        scene.add(currentModel);
       }
 
-      // Place base of model onto print bed (Y=0 in Three.js) and ensure it's not on its side
-      orientModelToBed();
+      if (!isEditUpdate) {
+        initialGeometrySnapshot = cloneModelState(currentModel);
+      }
 
-      // CRITICAL: Add the model to the Three.js scene so it renders!
-      scene.add(currentModel);
+      updateHeaderActionButtons();
+      setupPlatesUI(currentFileName);
 
-      // Render plates UI buttons if multiple plates / parts detected
-      setupPlatesUI(fileName);
-
-      // Update UI panels
       document.getElementById('initial-empty-state').style.display = 'none';
       document.getElementById('info-panel').style.display = 'block';
 
@@ -1362,14 +1946,1615 @@
       boundingBox = bbox;
       const size = bbox.getSize(new THREE.Vector3());
 
-      updateModelStats(fileName, fileSize, totalTriangles, totalVertices, size, totalVolume, fileType);
-      fitCameraToObject(currentModel);
+      // Recalculate accurate world volume after orientation
+      totalVolume = 0;
+      currentModel.traverse(child => {
+        if (child.isMesh && child.geometry && child.visible) {
+          totalVolume += computeMeshVolume(child.geometry, child.matrixWorld);
+        }
+      });
 
-      showLoading(false);
-      showToast(`¡Modelo ${fileType.toUpperCase()} "${fileName}" cargado exitosamente!`);
+      updateModelStats(currentFileName, currentFileSize, totalTriangles, totalVertices, size, totalVolume, currentModelType);
+      syncPaintAndCutSlidersToModel();
+
+      if (!isEditUpdate) {
+        fitCameraToObject(currentModel);
+        showLoading(false);
+        showToast(`¡Modelo ${fileType.toUpperCase()} "${fileName}" cargado exitosamente!`);
+      }
     }
 
-    // Multi-Plate & Multi-Part UI Handler
+    function cloneModelState(rootObj) {
+      if (!rootObj) return null;
+      const group = new THREE.Group();
+      group.name = rootObj.name;
+      group.position.copy(rootObj.position);
+      group.rotation.copy(rootObj.rotation);
+      group.scale.copy(rootObj.scale);
+
+      rootObj.children.forEach(child => {
+        const clonedChild = cloneObjectDeep(child);
+        if (clonedChild) group.add(clonedChild);
+      });
+      return group;
+    }
+
+    function cloneObjectDeep(obj) {
+      if (obj.isMesh) {
+        const geo = obj.geometry.clone();
+        const mat = obj.material.clone();
+        const m = new THREE.Mesh(geo, mat);
+        m.name = obj.name;
+        m.position.copy(obj.position);
+        m.rotation.copy(obj.rotation);
+        m.scale.copy(obj.scale);
+        m.userData = Object.assign({}, obj.userData);
+        return m;
+      } else if (obj.isGroup || obj.isObject3D) {
+        const g = new THREE.Group();
+        g.name = obj.name;
+        g.position.copy(obj.position);
+        g.rotation.copy(obj.rotation);
+        g.scale.copy(obj.scale);
+        g.userData = Object.assign({}, obj.userData);
+        obj.children.forEach(c => {
+          const cc = cloneObjectDeep(c);
+          if (cc) g.add(cc);
+        });
+        return g;
+      }
+      return null;
+    }
+
+    function pushUndoState() {
+      if (!currentModel) return;
+      if (undoStack.length >= 12) {
+        const oldest = undoStack.shift();
+        disposeHierarchy(oldest);
+      }
+      undoStack.push(cloneModelState(currentModel));
+      updateHeaderActionButtons();
+    }
+
+    function undoModelEdit() {
+      if (undoStack.length === 0) {
+        showToast('No hay cambios anteriores para deshacer.', true);
+        return;
+      }
+      const prev = undoStack.pop();
+      document.getElementById('split-explosion-box').style.display = 'none';
+      setupLoadedModel(prev, currentFileName, currentFileSize, currentModelType, null, true);
+      updateHeaderActionButtons();
+      showToast('Último cambio deshecho.');
+    }
+
+    function restoreInitialGeometry() {
+      if (!initialGeometrySnapshot) return;
+      pushUndoState();
+      const restored = cloneModelState(initialGeometrySnapshot);
+      document.getElementById('split-explosion-box').style.display = 'none';
+      setupLoadedModel(restored, currentFileName, currentFileSize, currentModelType, null, true);
+      fitCameraToObject(currentModel);
+      showToast('Geometría original restaurada.');
+    }
+
+    function updateHeaderActionButtons() {
+      const hasModel = !!currentModel;
+      document.getElementById('btn-header-undo').disabled = !hasModel || undoStack.length === 0;
+      document.getElementById('btn-header-reset').disabled = !hasModel;
+      document.getElementById('btn-header-export-stl').disabled = !hasModel;
+      document.getElementById('btn-header-export-3mf').disabled = !hasModel;
+    }
+
+    // Studio Tab Switcher ('view' | 'paint' | 'cut')
+    function switchStudioTab(tab) {
+      activeStudioTab = tab;
+      document.getElementById('studio-tab-view').style.display = (tab === 'view') ? 'block' : 'none';
+      document.getElementById('studio-tab-paint').style.display = (tab === 'paint') ? 'block' : 'none';
+      document.getElementById('studio-tab-cut').style.display = (tab === 'cut') ? 'block' : 'none';
+
+      const bView = document.getElementById('tab-btn-view');
+      const bPaint = document.getElementById('tab-btn-paint');
+      const bCut = document.getElementById('tab-btn-cut');
+      bView.className = 'tool-tab-btn' + (tab === 'view' ? ' active' : '');
+      bPaint.className = 'tool-tab-btn' + (tab === 'paint' ? ' active-paint' : '');
+      bCut.className = 'tool-tab-btn' + (tab === 'cut' ? ' active-cut' : '');
+
+      const hintLeft = document.getElementById('hint-left-click');
+      if (tab === 'paint') {
+        hintLeft.innerHTML = '<span>🎨 <strong>Click Izq + Arrastrar:</strong> Pintar Pieza · <strong>Alt + Click:</strong> Girar</span>';
+      } else {
+        hintLeft.innerHTML = '<span>🖱️ <strong>Click Izquierdo:</strong> Girar / Rotar</span>';
+        if (brushCursorMesh) brushCursorMesh.visible = false;
+      }
+
+      updateCutGizmoVisibility();
+      refreshModelMaterialsClipping();
+    }
+
+    // ==================== 3D PAINTING ENGINE ====================
+    function setupBrushCursor() {
+      const geo = new THREE.SphereGeometry(1, 20, 20);
+      const mat = new THREE.MeshBasicMaterial({
+        color: 0xec4899,
+        wireframe: true,
+        transparent: true,
+        opacity: 0.75,
+        depthTest: false
+      });
+      brushCursorMesh = new THREE.Mesh(geo, mat);
+      brushCursorMesh.visible = false;
+      brushCursorMesh.renderOrder = 999;
+      scene.add(brushCursorMesh);
+    }
+
+    function setPaintTool(tool) {
+      paintTool = tool;
+      ['brush', 'bucket', 'layer', 'eraser'].forEach(t => {
+        const btn = document.getElementById(`paint-tool-${t}`);
+        if (btn) btn.className = 'btn-compact' + (t === tool ? ' active-pink' : '');
+      });
+
+      document.getElementById('paint-brush-controls').style.display = (tool === 'brush' || tool === 'eraser') ? 'block' : 'none';
+      document.getElementById('paint-bucket-controls').style.display = (tool === 'bucket') ? 'block' : 'none';
+      document.getElementById('paint-layer-controls').style.display = (tool === 'layer') ? 'block' : 'none';
+    }
+
+    function updatePaintRadius(val) {
+      paintRadiusMm = parseFloat(val);
+      document.getElementById('paint-radius-val').textContent = `${paintRadiusMm.toFixed(1)} mm`;
+      if (brushCursorMesh) {
+        brushCursorMesh.scale.setScalar(paintRadiusMm);
+      }
+    }
+
+    function setPaintColor(hex, el) {
+      paintColorHex = hex;
+      document.querySelectorAll('.paint-swatch').forEach(sw => sw.classList.remove('active'));
+      if (el) {
+        el.classList.add('active');
+        document.getElementById('paint-custom-picker').value = hex;
+      }
+      if (brushCursorMesh) {
+        brushCursorMesh.material.color.set(hex);
+      }
+    }
+
+    function setupCanvasPaintInteractions() {
+      const dom = renderer.domElement;
+
+      dom.addEventListener('pointerdown', (e) => {
+        if (activeStudioTab !== 'paint' || !currentModel) return;
+        // Left click without Alt/Ctrl/Shift triggers painting
+        if (e.button === 0 && !e.altKey && !e.ctrlKey && !e.shiftKey) {
+          if (paintTool === 'layer') return; // Layer mode uses its button
+          const hit = raycastModel(e);
+          if (hit) {
+            controls.enabled = false;
+            pushUndoState();
+            isPaintingStroke = true;
+            applyPaintAtHit(hit);
+          }
+        }
+      });
+
+      dom.addEventListener('pointermove', (e) => {
+        if (activeStudioTab !== 'paint' || !currentModel) {
+          if (brushCursorMesh) brushCursorMesh.visible = false;
+          return;
+        }
+
+        const hit = raycastModel(e);
+        if (hit && (paintTool === 'brush' || paintTool === 'eraser')) {
+          brushCursorMesh.visible = true;
+          brushCursorMesh.position.copy(hit.point);
+          brushCursorMesh.scale.setScalar(paintRadiusMm);
+        } else if (brushCursorMesh) {
+          brushCursorMesh.visible = false;
+        }
+
+        if (isPaintingStroke && hit && (paintTool === 'brush' || paintTool === 'eraser')) {
+          applyPaintAtHit(hit);
+        }
+      });
+
+      window.addEventListener('pointerup', () => {
+        if (isPaintingStroke) {
+          isPaintingStroke = false;
+        }
+        if (controls && !controls.enabled) {
+          controls.enabled = true;
+        }
+      });
+    }
+
+    function raycastModel(event) {
+      if (!currentModel) return null;
+      const rect = renderer.domElement.getBoundingClientRect();
+      mouseNDC.x = ((event.clientX - rect.left) / rect.width) * 2 - 1;
+      mouseNDC.y = -((event.clientY - rect.top) / rect.height) * 2 + 1;
+
+      raycaster.setFromCamera(mouseNDC, camera);
+      const meshes = [];
+      currentModel.traverse(c => {
+        if (c.isMesh && c.visible) meshes.push(c);
+      });
+      const intersects = raycaster.intersectObjects(meshes, false);
+      return intersects.length > 0 ? intersects[0] : null;
+    }
+
+    function applyPaintAtHit(hit) {
+      const targetColor = new THREE.Color(paintTool === 'eraser' ? currentColor : paintColorHex);
+
+      if (paintTool === 'bucket') {
+        applyBucketFillAtHit(hit, targetColor);
+        return;
+      }
+
+      // Brush / Eraser: color all triangles whose centroid or vertices are within paintRadiusMm of hit.point
+      const radiusSq = paintRadiusMm * paintRadiusMm;
+      const hitPointWorld = hit.point;
+      const vA = new THREE.Vector3();
+      const vB = new THREE.Vector3();
+      const vC = new THREE.Vector3();
+      const centroid = new THREE.Vector3();
+      const invMat = new THREE.Matrix4();
+      const localHit = new THREE.Vector3();
+
+      currentModel.traverse(mesh => {
+        if (!mesh.isMesh || !mesh.visible || !mesh.geometry) return;
+        const pos = mesh.geometry.attributes.position;
+        const col = mesh.geometry.attributes.color;
+        if (!pos || !col) return;
+
+        invMat.copy(mesh.matrixWorld).invert();
+        localHit.copy(hitPointWorld).applyMatrix4(invMat);
+        // Scale local radius by inverse mesh scale
+        const scaleAvg = (mesh.scale.x + mesh.scale.y + mesh.scale.z) / 3 || 1;
+        const localRadiusSq = (paintRadiusMm / scaleAvg) * (paintRadiusMm / scaleAvg);
+
+        let modified = false;
+        for (let i = 0; i < pos.count; i += 3) {
+          vA.fromBufferAttribute(pos, i);
+          vB.fromBufferAttribute(pos, i + 1);
+          vC.fromBufferAttribute(pos, i + 2);
+          centroid.copy(vA).add(vB).add(vC).multiplyScalar(1 / 3);
+
+          if (
+            centroid.distanceToSquared(localHit) <= localRadiusSq ||
+            vA.distanceToSquared(localHit) <= localRadiusSq ||
+            vB.distanceToSquared(localHit) <= localRadiusSq ||
+            vC.distanceToSquared(localHit) <= localRadiusSq
+          ) {
+            for (let k = 0; k < 3; k++) {
+              col.setXYZ(i + k, targetColor.r, targetColor.g, targetColor.b);
+            }
+            modified = true;
+          }
+        }
+
+        // Always paint the exact hit triangle even if brush is smaller than triangle
+        if (hit.object === mesh && hit.faceIndex !== undefined && hit.faceIndex !== null) {
+          const baseIdx = hit.faceIndex * 3;
+          if (baseIdx + 2 < pos.count) {
+            for (let k = 0; k < 3; k++) {
+              col.setXYZ(baseIdx + k, targetColor.r, targetColor.g, targetColor.b);
+            }
+            modified = true;
+          }
+        }
+
+        if (modified) {
+          col.needsUpdate = true;
+        }
+      });
+    }
+
+    // Smart Bucket Fill by Connected Surface & Normal Angle Tolerance
+    function applyBucketFillAtHit(hit, targetColor) {
+      const mesh = hit.object;
+      if (!mesh || !mesh.geometry || hit.faceIndex === undefined) return;
+      const pos = mesh.geometry.attributes.position;
+      const col = mesh.geometry.attributes.color;
+      if (!pos || !col) return;
+
+      const numFaces = Math.floor(pos.count / 3);
+      const seedFace = hit.faceIndex;
+      if (seedFace < 0 || seedFace >= numFaces) return;
+
+      const angleTolDeg = parseFloat(document.getElementById('paint-angle-slider').value) || 32;
+      const cosTol = Math.cos(THREE.MathUtils.degToRad(angleTolDeg));
+
+      // Compute face normals and spatial hash of vertices to find adjacent triangles
+      const faceNormals = new Float32Array(numFaces * 3);
+      const vA = new THREE.Vector3(), vB = new THREE.Vector3(), vC = new THREE.Vector3();
+      const cb = new THREE.Vector3(), ab = new THREE.Vector3();
+
+      const vertToFaces = new Map();
+      const quant = (v) => `${Math.round(v.x * 100)},${Math.round(v.y * 100)},${Math.round(v.z * 100)}`;
+
+      for (let f = 0; f < numFaces; f++) {
+        const idx = f * 3;
+        vA.fromBufferAttribute(pos, idx);
+        vB.fromBufferAttribute(pos, idx + 1);
+        vC.fromBufferAttribute(pos, idx + 2);
+        cb.subVectors(vC, vB);
+        ab.subVectors(vA, vB);
+        cb.cross(ab).normalize();
+        faceNormals[f * 3] = cb.x;
+        faceNormals[f * 3 + 1] = cb.y;
+        faceNormals[f * 3 + 2] = cb.z;
+
+        const keys = [quant(vA), quant(vB), quant(vC)];
+        for (const k of keys) {
+          let list = vertToFaces.get(k);
+          if (!list) {
+            list = [];
+            vertToFaces.set(k, list);
+          }
+          list.push(f);
+        }
+      }
+
+      const seedNx = faceNormals[seedFace * 3];
+      const seedNy = faceNormals[seedFace * 3 + 1];
+      const seedNz = faceNormals[seedFace * 3 + 2];
+
+      const visited = new Uint8Array(numFaces);
+      const queue = [seedFace];
+      visited[seedFace] = 1;
+      let paintedFaces = 0;
+
+      while (queue.length > 0) {
+        const curr = queue.pop();
+        const baseIdx = curr * 3;
+        for (let k = 0; k < 3; k++) {
+          col.setXYZ(baseIdx + k, targetColor.r, targetColor.g, targetColor.b);
+        }
+        paintedFaces++;
+
+        const cNx = faceNormals[curr * 3];
+        const cNy = faceNormals[curr * 3 + 1];
+        const cNz = faceNormals[curr * 3 + 2];
+
+        vA.fromBufferAttribute(pos, baseIdx);
+        vB.fromBufferAttribute(pos, baseIdx + 1);
+        vC.fromBufferAttribute(pos, baseIdx + 2);
+        const keys = [quant(vA), quant(vB), quant(vC)];
+
+        for (const k of keys) {
+          const neighbors = vertToFaces.get(k);
+          if (!neighbors) continue;
+          for (let nIdx = 0; nIdx < neighbors.length; nIdx++) {
+            const nf = neighbors[nIdx];
+            if (visited[nf]) continue;
+
+            const nNx = faceNormals[nf * 3];
+            const nNy = faceNormals[nf * 3 + 1];
+            const nNz = faceNormals[nf * 3 + 2];
+
+            // Compare both against neighbor normal and seed normal
+            const dotSeed = seedNx * nNx + seedNy * nNy + seedNz * nNz;
+            const dotCurr = cNx * nNx + cNy * nNy + cNz * nNz;
+            if (dotSeed >= cosTol || dotCurr >= Math.cos(THREE.MathUtils.degToRad(Math.min(angleTolDeg * 0.6, 25)))) {
+              visited[nf] = 1;
+              queue.push(nf);
+            }
+          }
+        }
+      }
+
+      col.needsUpdate = true;
+      showToast(`Cubeta 3D: ${paintedFaces.toLocaleString()} caras pintadas.`);
+    }
+
+    function updatePaintLayerSliders() {
+      const zMin = parseFloat(document.getElementById('paint-zmin-slider').value);
+      const zMax = parseFloat(document.getElementById('paint-zmax-slider').value);
+      document.getElementById('paint-zmin-val').textContent = `${Math.min(zMin, zMax).toFixed(1)} mm`;
+      document.getElementById('paint-zmax-val').textContent = `${Math.max(zMin, zMax).toFixed(1)} mm`;
+    }
+
+    function applyHeightLayerPaint() {
+      if (!currentModel) return;
+      pushUndoState();
+      const rawMin = parseFloat(document.getElementById('paint-zmin-slider').value);
+      const rawMax = parseFloat(document.getElementById('paint-zmax-slider').value);
+      const yMin = Math.min(rawMin, rawMax);
+      const yMax = Math.max(rawMin, rawMax);
+      const targetColor = new THREE.Color(paintColorHex);
+
+      const vA = new THREE.Vector3(), vB = new THREE.Vector3(), vC = new THREE.Vector3();
+      let countPainted = 0;
+
+      currentModel.updateMatrixWorld(true);
+      currentModel.traverse(mesh => {
+        if (!mesh.isMesh || !mesh.visible || !mesh.geometry) return;
+        const pos = mesh.geometry.attributes.position;
+        const col = mesh.geometry.attributes.color;
+        if (!pos || !col) return;
+
+        let modified = false;
+        for (let i = 0; i < pos.count; i += 3) {
+          vA.fromBufferAttribute(pos, i).applyMatrix4(mesh.matrixWorld);
+          vB.fromBufferAttribute(pos, i + 1).applyMatrix4(mesh.matrixWorld);
+          vC.fromBufferAttribute(pos, i + 2).applyMatrix4(mesh.matrixWorld);
+          const avgY = (vA.y + vB.y + vC.y) / 3;
+          if (avgY >= yMin - 0.05 && avgY <= yMax + 0.05) {
+            for (let k = 0; k < 3; k++) {
+              col.setXYZ(i + k, targetColor.r, targetColor.g, targetColor.b);
+            }
+            modified = true;
+            countPainted++;
+          }
+        }
+        if (modified) col.needsUpdate = true;
+      });
+
+      showToast(`Franja Z (${yMin.toFixed(1)} - ${yMax.toFixed(1)} mm) pintada (${countPainted.toLocaleString()} caras).`);
+    }
+
+    function subdivideModelForPainting() {
+      if (!currentModel) return;
+      let totalTris = 0;
+      currentModel.traverse(m => {
+        if (m.isMesh && m.geometry && m.geometry.attributes.position) {
+          totalTris += m.geometry.attributes.position.count / 3;
+        }
+      });
+      if (totalTris > 250000) {
+        showToast('La malla ya tiene alta densidad de triángulos (' + Math.round(totalTris).toLocaleString() + ').');
+        return;
+      }
+
+      pushUndoState();
+      let newTotalTris = 0;
+      currentModel.traverse(mesh => {
+        if (!mesh.isMesh || !mesh.geometry) return;
+        const pos = mesh.geometry.attributes.position;
+        const col = mesh.geometry.attributes.color;
+        if (!pos) return;
+
+        const triCount = Math.floor(pos.count / 3);
+        const newPos = new Float32Array(triCount * 4 * 9);
+        const newCol = new Float32Array(triCount * 4 * 9);
+
+        const v0 = new THREE.Vector3(), v1 = new THREE.Vector3(), v2 = new THREE.Vector3();
+        const m01 = new THREE.Vector3(), m12 = new THREE.Vector3(), m20 = new THREE.Vector3();
+        const c0 = new THREE.Vector3(1, 1, 1), c1 = new THREE.Vector3(1, 1, 1), c2 = new THREE.Vector3(1, 1, 1);
+
+        let out = 0;
+        const pushTri = (a, b, c, ca, cb, cc) => {
+          newPos[out] = a.x; newPos[out + 1] = a.y; newPos[out + 2] = a.z;
+          newPos[out + 3] = b.x; newPos[out + 4] = b.y; newPos[out + 5] = b.z;
+          newPos[out + 6] = c.x; newPos[out + 7] = c.y; newPos[out + 8] = c.z;
+
+          newCol[out] = ca.x; newCol[out + 1] = ca.y; newCol[out + 2] = ca.z;
+          newCol[out + 3] = cb.x; newCol[out + 4] = cb.y; newCol[out + 5] = cb.z;
+          newCol[out + 6] = cc.x; newCol[out + 7] = cc.y; newCol[out + 8] = cc.z;
+          out += 9;
+        };
+
+        for (let i = 0; i < pos.count; i += 3) {
+          v0.fromBufferAttribute(pos, i);
+          v1.fromBufferAttribute(pos, i + 1);
+          v2.fromBufferAttribute(pos, i + 2);
+
+          if (col) {
+            c0.fromBufferAttribute(col, i);
+            c1.fromBufferAttribute(col, i + 1);
+            c2.fromBufferAttribute(col, i + 2);
+          }
+
+          m01.addVectors(v0, v1).multiplyScalar(0.5);
+          m12.addVectors(v1, v2).multiplyScalar(0.5);
+          m20.addVectors(v2, v0).multiplyScalar(0.5);
+
+          pushTri(v0, m01, m20, c0, c0, c0);
+          pushTri(m01, v1, m12, c1, c1, c1);
+          pushTri(m20, m12, v2, c2, c2, c2);
+          pushTri(m01, m12, m20, c0, c1, c2);
+        }
+
+        const newGeo = new THREE.BufferGeometry();
+        newGeo.setAttribute('position', new THREE.BufferAttribute(newPos, 3));
+        newGeo.setAttribute('color', new THREE.BufferAttribute(newCol, 3));
+        newGeo.computeVertexNormals();
+        mesh.geometry.dispose();
+        mesh.geometry = newGeo;
+        newTotalTris += (newPos.length / 9);
+      });
+
+      document.getElementById('info-triangles').textContent = Math.round(newTotalTris).toLocaleString();
+      document.getElementById('info-vertices').textContent = (Math.round(newTotalTris) * 3).toLocaleString();
+      showToast(`Malla subdividida a ${Math.round(newTotalTris).toLocaleString()} triángulos para pintura detallada.`);
+    }
+
+    function clearModelPaint() {
+      if (!currentModel) return;
+      pushUndoState();
+      const base = new THREE.Color(currentColor);
+      currentModel.traverse(mesh => {
+        if (mesh.isMesh && mesh.geometry && mesh.geometry.attributes.color) {
+          const col = mesh.geometry.attributes.color;
+          for (let i = 0; i < col.count; i++) {
+            col.setXYZ(i, base.r, base.g, base.b);
+          }
+          col.needsUpdate = true;
+        }
+      });
+      showToast('Pintura limpiada; color base restaurado.');
+    }
+
+    // ==================== ADVANCED GEOMETRY CUTTING ENGINE ====================
+    function setupCutPlaneGizmo() {
+      cutPlaneHelperGroup = new THREE.Group();
+      cutPlaneHelperGroup.visible = false;
+
+      // Translucent laser cutting plane
+      const planeGeo = new THREE.PlaneGeometry(280, 280, 14, 14);
+      const planeMat = new THREE.MeshBasicMaterial({
+        color: 0xf59e0b,
+        side: THREE.DoubleSide,
+        transparent: true,
+        opacity: 0.18,
+        depthWrite: false
+      });
+      const planeMesh = new THREE.Mesh(planeGeo, planeMat);
+      planeMesh.name = 'cutPlaneFill';
+      cutPlaneHelperGroup.add(planeMesh);
+
+      // Glowing border + normal arrow
+      const borderEdges = new THREE.EdgesGeometry(new THREE.PlaneGeometry(280, 280));
+      const borderMat = new THREE.LineBasicMaterial({ color: 0xfbbf24, transparent: true, opacity: 0.85 });
+      const borderLines = new THREE.LineSegments(borderEdges, borderMat);
+      borderLines.name = 'cutPlaneBorder';
+      cutPlaneHelperGroup.add(borderLines);
+
+      // Normal direction indicator arrow (points toward Parte A)
+      const arrowDir = new THREE.Vector3(0, 0, 1);
+      const arrowHelper = new THREE.ArrowHelper(arrowDir, new THREE.Vector3(0, 0, 0), 32, 0x10b981, 8, 5);
+      arrowHelper.name = 'cutPlaneArrow';
+      cutPlaneHelperGroup.add(arrowHelper);
+
+      scene.add(cutPlaneHelperGroup);
+
+      // 6-sided Box Crop Wireframe Helper
+      const boxGeo = new THREE.BoxGeometry(1, 1, 1);
+      const boxEdges = new THREE.EdgesGeometry(boxGeo);
+      const boxMat = new THREE.LineBasicMaterial({ color: 0x38bdf8, transparent: true, opacity: 0.85 });
+      boxCropHelper = new THREE.LineSegments(boxEdges, boxMat);
+      boxCropHelper.visible = false;
+      scene.add(boxCropHelper);
+    }
+
+    function syncPaintAndCutSlidersToModel() {
+      if (!boundingBox || boundingBox.isEmpty()) return;
+      const size = boundingBox.getSize(new THREE.Vector3());
+
+      // Sync Paint Layer Z sliders
+      const zMinSlider = document.getElementById('paint-zmin-slider');
+      const zMaxSlider = document.getElementById('paint-zmax-slider');
+      const maxH = Math.max(1, parseFloat(size.y.toFixed(1)));
+      zMinSlider.min = 0;
+      zMinSlider.max = maxH;
+      zMinSlider.value = 0;
+      zMaxSlider.min = 0;
+      zMaxSlider.max = maxH;
+      zMaxSlider.value = (maxH * 0.5).toFixed(1);
+      updatePaintLayerSliders();
+
+      // Sync Cut Plane slider range for current cutAxis
+      updateCutAxisBounds(true);
+    }
+
+    function setCutAxis(axis) {
+      cutAxis = axis;
+      ['z', 'x', 'y', 'box'].forEach(a => {
+        const btn = document.getElementById(`cut-axis-${a}`);
+        if (btn) btn.className = 'btn-compact' + (a === axis ? ' active-orange' : '');
+      });
+
+      const isBox = (axis === 'box');
+      document.getElementById('planar-cut-controls').style.display = isBox ? 'none' : 'block';
+      document.getElementById('planar-operation-Modes').style.display = isBox ? 'none' : 'grid';
+      document.getElementById('box-crop-controls').style.display = isBox ? 'block' : 'none';
+
+      if (!isBox) {
+        document.getElementById('cut-tilt-a-slider').value = 0;
+        document.getElementById('cut-tilt-b-slider').value = 0;
+        cutTiltADeg = 0;
+        cutTiltBDeg = 0;
+        cutPlaneInverted = false;
+        document.getElementById('cut-tilt-a-val').textContent = '0°';
+        document.getElementById('cut-tilt-b-val').textContent = '0°';
+        updateCutAxisBounds(true);
+      } else {
+        updateBoxCropPreview();
+      }
+      updateCutGizmoVisibility();
+      refreshModelMaterialsClipping();
+    }
+
+    function updateCutAxisBounds(resetToMid = false) {
+      if (!boundingBox || boundingBox.isEmpty()) return;
+      const min = boundingBox.min;
+      const max = boundingBox.max;
+      const slider = document.getElementById('cut-pos-slider');
+      const numInput = document.getElementById('cut-pos-number');
+      const axisLabel = document.getElementById('cut-axis-label');
+
+      let minVal = 0, maxVal = 100;
+      if (cutAxis === 'z') {
+        axisLabel.textContent = 'Altura Z';
+        minVal = min.y;
+        maxVal = max.y;
+      } else if (cutAxis === 'x') {
+        axisLabel.textContent = 'Posición X';
+        minVal = min.x;
+        maxVal = max.x;
+      } else if (cutAxis === 'y') {
+        axisLabel.textContent = 'Profundidad Y';
+        minVal = min.z;
+        maxVal = max.z;
+      }
+
+      slider.min = minVal.toFixed(2);
+      slider.max = maxVal.toFixed(2);
+      slider.step = Math.max(0.05, ((maxVal - minVal) / 500)).toFixed(2);
+
+      if (resetToMid || cutPositionMm < minVal || cutPositionMm > maxVal) {
+        cutPositionMm = (minVal + maxVal) / 2;
+      }
+      slider.value = cutPositionMm.toFixed(2);
+      numInput.value = cutPositionMm.toFixed(1);
+
+      updateCutPlaneTransform();
+    }
+
+    function onCutPositionSliderChange(val) {
+      cutPositionMm = parseFloat(val) || 0;
+      document.getElementById('cut-pos-number').value = cutPositionMm.toFixed(1);
+      updateCutPlaneTransform();
+    }
+
+    function onCutPositionNumberChange(val) {
+      cutPositionMm = parseFloat(val) || 0;
+      document.getElementById('cut-pos-slider').value = cutPositionMm;
+      updateCutPlaneTransform();
+    }
+
+    function setCutPercentage(pct) {
+      const slider = document.getElementById('cut-pos-slider');
+      const minVal = parseFloat(slider.min) || 0;
+      const maxVal = parseFloat(slider.max) || 100;
+      cutPositionMm = minVal + (maxVal - minVal) * (pct / 100);
+      slider.value = cutPositionMm;
+      document.getElementById('cut-pos-number').value = cutPositionMm.toFixed(1);
+      updateCutPlaneTransform();
+    }
+
+    function flipCutPlaneNormal() {
+      cutPlaneInverted = !cutPlaneInverted;
+      updateCutPlaneTransform();
+      showToast('Dirección del plano de corte invertida.');
+    }
+
+    function updateCutAngles() {
+      cutTiltADeg = parseFloat(document.getElementById('cut-tilt-a-slider').value) || 0;
+      cutTiltBDeg = parseFloat(document.getElementById('cut-tilt-b-slider').value) || 0;
+      document.getElementById('cut-tilt-a-val').textContent = `${cutTiltADeg}°`;
+      document.getElementById('cut-tilt-b-val').textContent = `${cutTiltBDeg}°`;
+      updateCutPlaneTransform();
+    }
+
+    function resetCutPlane() {
+      document.getElementById('cut-tilt-a-slider').value = 0;
+      document.getElementById('cut-tilt-b-slider').value = 0;
+      cutTiltADeg = 0;
+      cutTiltBDeg = 0;
+      cutPlaneInverted = false;
+      document.getElementById('cut-tilt-a-val').textContent = '0°';
+      document.getElementById('cut-tilt-b-val').textContent = '0°';
+      updateCutAxisBounds(true);
+    }
+
+    function getCutPlanePointAndNormal() {
+      const center = boundingBox ? boundingBox.getCenter(new THREE.Vector3()) : new THREE.Vector3(0, 20, 0);
+      const point = center.clone();
+      const normal = new THREE.Vector3(0, 1, 0);
+
+      const radA = THREE.MathUtils.degToRad(cutTiltADeg);
+      const radB = THREE.MathUtils.degToRad(cutTiltBDeg);
+
+      if (cutAxis === 'z') {
+        point.y = cutPositionMm;
+        normal.set(0, 1, 0);
+        normal.applyAxisAngle(new THREE.Vector3(1, 0, 0), radA);
+        normal.applyAxisAngle(new THREE.Vector3(0, 0, 1), radB);
+      } else if (cutAxis === 'x') {
+        point.x = cutPositionMm;
+        normal.set(1, 0, 0);
+        normal.applyAxisAngle(new THREE.Vector3(0, 0, 1), radA);
+        normal.applyAxisAngle(new THREE.Vector3(0, 1, 0), radB);
+      } else if (cutAxis === 'y') {
+        point.z = cutPositionMm;
+        normal.set(0, 0, 1);
+        normal.applyAxisAngle(new THREE.Vector3(1, 0, 0), radA);
+        normal.applyAxisAngle(new THREE.Vector3(0, 1, 0), radB);
+      }
+
+      normal.normalize();
+      if (cutPlaneInverted) normal.negate();
+      return { point, normal };
+    }
+
+    function updateCutPlaneTransform() {
+      if (!cutPlaneHelperGroup) return;
+      const { point, normal } = getCutPlanePointAndNormal();
+
+      // Scale visual plane to fit model bounding box nicely
+      if (boundingBox && !boundingBox.isEmpty()) {
+        const size = boundingBox.getSize(new THREE.Vector3());
+        const maxSpan = Math.max(size.x, size.y, size.z, 60) * 1.45;
+        const s = maxSpan / 280;
+        cutPlaneHelperGroup.scale.set(s, s, s);
+      }
+
+      cutPlaneHelperGroup.position.copy(point);
+      const quat = new THREE.Quaternion().setFromUnitVectors(new THREE.Vector3(0, 0, 1), normal);
+      cutPlaneHelperGroup.quaternion.copy(quat);
+
+      // Update activeClippingPlane for live preview
+      if (cutPreviewMode === 'partA') {
+        // Keep side where (v - point) . normal >= 0
+        activeClippingPlane.setFromNormalAndCoplanarPoint(normal, point);
+      } else if (cutPreviewMode === 'partB') {
+        // Keep side where (v - point) . normal <= 0
+        activeClippingPlane.setFromNormalAndCoplanarPoint(normal.clone().negate(), point);
+      }
+      refreshModelMaterialsClipping();
+    }
+
+    function updateBoxCropPreview() {
+      if (!boundingBox || boundingBox.isEmpty() || !boxCropHelper) return;
+      const min = boundingBox.min;
+      const max = boundingBox.max;
+
+      const x0Pct = Math.min(parseFloat(document.getElementById('crop-xmin').value), parseFloat(document.getElementById('crop-xmax').value) - 2);
+      const x1Pct = Math.max(parseFloat(document.getElementById('crop-xmax').value), x0Pct + 2);
+      const y0Pct = Math.min(parseFloat(document.getElementById('crop-ymin').value), parseFloat(document.getElementById('crop-ymax').value) - 2);
+      const y1Pct = Math.max(parseFloat(document.getElementById('crop-ymax').value), y0Pct + 2);
+      const z0Pct = Math.min(parseFloat(document.getElementById('crop-zmin').value), parseFloat(document.getElementById('crop-zmax').value) - 2);
+      const z1Pct = Math.max(parseFloat(document.getElementById('crop-zmax').value), z0Pct + 2);
+
+      document.getElementById('crop-x-label').textContent = `${x0Pct}% - ${x1Pct}%`;
+      document.getElementById('crop-y-label').textContent = `${y0Pct}% - ${y1Pct}%`;
+      document.getElementById('crop-z-label').textContent = `${z0Pct}% - ${z1Pct}%`;
+
+      const xMin = min.x + (max.x - min.x) * (x0Pct / 100);
+      const xMax = min.x + (max.x - min.x) * (x1Pct / 100);
+      const zMin = min.z + (max.z - min.z) * (y0Pct / 100);
+      const zMax = min.z + (max.z - min.z) * (y1Pct / 100);
+      const yMin = min.y + (max.y - min.y) * (z0Pct / 100);
+      const yMax = min.y + (max.y - min.y) * (z1Pct / 100);
+
+      boxCropHelper.scale.set(Math.max(1, xMax - xMin), Math.max(1, yMax - yMin), Math.max(1, zMax - zMin));
+      boxCropHelper.position.set((xMin + xMax) / 2, (yMin + yMax) / 2, (zMin + zMax) / 2);
+    }
+
+    function setCutPreviewMode(mode) {
+      cutPreviewMode = mode;
+      ['both', 'partA', 'partB'].forEach(m => {
+        const id = m === 'both' ? 'preview-cut-both' : (m === 'partA' ? 'preview-cut-a' : 'preview-cut-b');
+        const btn = document.getElementById(id);
+        if (btn) btn.className = 'btn-compact' + (m === mode ? ' active' : '');
+      });
+      updateCutPlaneTransform();
+    }
+
+    function setCutOperation(op) {
+      cutOperation = op;
+      ['split', 'keepA', 'keepB'].forEach(o => {
+        const btn = document.getElementById(`cut-op-${o}`);
+        if (btn) btn.className = 'btn-compact' + (o === op ? ' active-orange' : '');
+      });
+    }
+
+    function getActiveClippingPlanes() {
+      if (activeStudioTab === 'cut' && cutAxis !== 'box' && (cutPreviewMode === 'partA' || cutPreviewMode === 'partB')) {
+        return [activeClippingPlane];
+      }
+      return [];
+    }
+
+    function refreshModelMaterialsClipping() {
+      if (!currentModel) return;
+      const planes = getActiveClippingPlanes();
+      currentModel.traverse(child => {
+        if (child.isMesh && child.material) {
+          child.material.clippingPlanes = planes;
+          child.material.needsUpdate = true;
+        }
+      });
+    }
+
+    function updateCutGizmoVisibility() {
+      const showPlanar = (activeStudioTab === 'cut' && cutAxis !== 'box' && !!currentModel);
+      const showBox = (activeStudioTab === 'cut' && cutAxis === 'box' && !!currentModel);
+      if (cutPlaneHelperGroup) cutPlaneHelperGroup.visible = showPlanar;
+      if (boxCropHelper) {
+        boxCropHelper.visible = showBox;
+        if (showBox) updateBoxCropPreview();
+      }
+      if (showPlanar) updateCutPlaneTransform();
+    }
+
+    // Core Mathematical Plane-Mesh Slicer with Triangle Clipping, Planar Capping & Alignment Dowels
+    function sliceGeometryByPlane(worldPositions, worldColors, planePoint, planeNormal, capPlanarCut) {
+      const posA = [], colA = [];
+      const posB = [], colB = [];
+      const intersectionSegments = []; // [{ p1: Vector3, p2: Vector3, c1: Vector3, c2: Vector3 }]
+
+      const EPS = 1e-5;
+      const v = [new THREE.Vector3(), new THREE.Vector3(), new THREE.Vector3()];
+      const c = [new THREE.Vector3(), new THREE.Vector3(), new THREE.Vector3()];
+      const d = [0, 0, 0];
+
+      const pushTri = (posArr, colArr, p0, p1, p2, c0, c1, c2) => {
+        posArr.push(p0.x, p0.y, p0.z, p1.x, p1.y, p1.z, p2.x, p2.y, p2.z);
+        colArr.push(c0.x, c0.y, c0.z, c1.x, c1.y, c1.z, c2.x, c2.y, c2.z);
+      };
+
+      const intersectEdge = (p1, p2, c1, c2, d1, d2) => {
+        const denom = d1 - d2;
+        const t = Math.abs(denom) > 1e-9 ? (d1 / denom) : 0.5;
+        const pt = new THREE.Vector3().lerpVectors(p1, p2, t);
+        const ct = new THREE.Vector3().lerpVectors(c1, c2, t);
+        return { pt, ct };
+      };
+
+      const numVerts = worldPositions.length / 3;
+      for (let i = 0; i < numVerts; i += 3) {
+        for (let k = 0; k < 3; k++) {
+          const idx = (i + k) * 3;
+          v[k].set(worldPositions[idx], worldPositions[idx + 1], worldPositions[idx + 2]);
+          c[k].set(worldColors[idx], worldColors[idx + 1], worldColors[idx + 2]);
+          d[k] = (v[k].x - planePoint.x) * planeNormal.x +
+                 (v[k].y - planePoint.y) * planeNormal.y +
+                 (v[k].z - planePoint.z) * planeNormal.z;
+          if (Math.abs(d[k]) < EPS) d[k] = 0;
+        }
+
+        const posCount = (d[0] >= 0 ? 1 : 0) + (d[1] >= 0 ? 1 : 0) + (d[2] >= 0 ? 1 : 0);
+        const negCount = (d[0] <= 0 ? 1 : 0) + (d[1] <= 0 ? 1 : 0) + (d[2] <= 0 ? 1 : 0);
+
+        if (posCount === 3) {
+          pushTri(posA, colA, v[0], v[1], v[2], c[0], c[1], c[2]);
+          continue;
+        }
+        if (negCount === 3) {
+          pushTri(posB, colB, v[0], v[1], v[2], c[0], c[1], c[2]);
+          continue;
+        }
+
+        // Triangle straddles the plane: rotate indices so index 0 is the isolated vertex on one side
+        let i0 = 0, i1 = 1, i2 = 2;
+        if ((d[0] >= 0 && d[1] < 0 && d[2] < 0) || (d[0] <= 0 && d[1] > 0 && d[2] > 0)) {
+          i0 = 0; i1 = 1; i2 = 2;
+        } else if ((d[1] >= 0 && d[0] < 0 && d[2] < 0) || (d[1] <= 0 && d[0] > 0 && d[2] > 0)) {
+          i0 = 1; i1 = 2; i2 = 0;
+        } else {
+          i0 = 2; i1 = 0; i2 = 1;
+        }
+
+        const hit01 = intersectEdge(v[i0], v[i1], c[i0], c[i1], d[i0], d[i1]);
+        const hit02 = intersectEdge(v[i0], v[i2], c[i0], c[i2], d[i0], d[i2]);
+
+        if (d[i0] > 0) {
+          // v[i0] is on Positive (Part A), v[i1] and v[i2] on Negative (Part B)
+          pushTri(posA, colA, v[i0], hit01.pt, hit02.pt, c[i0], hit01.ct, hit02.ct);
+          pushTri(posB, colB, hit01.pt, v[i1], v[i2], hit01.ct, c[i1], c[i2]);
+          pushTri(posB, colB, hit01.pt, v[i2], hit02.pt, hit01.ct, c[i2], hit02.ct);
+          intersectionSegments.push({ p1: hit01.pt, p2: hit02.pt, c1: hit01.ct, c2: hit02.ct });
+        } else {
+          // v[i0] is on Negative (Part B), v[i1] and v[i2] on Positive (Part A)
+          pushTri(posB, colB, v[i0], hit01.pt, hit02.pt, c[i0], hit01.ct, hit02.ct);
+          pushTri(posA, colA, hit01.pt, v[i1], v[i2], hit01.ct, c[i1], c[i2]);
+          pushTri(posA, colA, hit01.pt, v[i2], hit02.pt, hit01.ct, c[i2], hit02.ct);
+          intersectionSegments.push({ p1: hit02.pt, p2: hit01.pt, c1: hit02.ct, c2: hit01.ct });
+        }
+      }
+
+      // Planar Capping: Stitch boundary loops on the cutting plane & triangulate
+      if (capPlanarCut && intersectionSegments.length >= 3) {
+        buildPlanarCapsFromSegments(intersectionSegments, planePoint, planeNormal, posA, colA, posB, colB);
+      }
+
+      return { posA, colA, posB, colB, intersectionSegments };
+    }
+
+    function buildPlanarCapsFromSegments(segments, planePoint, planeNormal, posA, colA, posB, colB) {
+      // Build orthonormal 2D basis (uAxis, vAxis) on the cutting plane
+      const upRef = Math.abs(planeNormal.y) < 0.9 ? new THREE.Vector3(0, 1, 0) : new THREE.Vector3(1, 0, 0);
+      const uAxis = new THREE.Vector3().crossVectors(upRef, planeNormal).normalize();
+      const vAxis = new THREE.Vector3().crossVectors(planeNormal, uAxis).normalize();
+
+      // Stitch segments into closed loops
+      const used = new Uint8Array(segments.length);
+      const tolSq = 0.08 * 0.08;
+      const loops = [];
+
+      for (let i = 0; i < segments.length; i++) {
+        if (used[i]) continue;
+        used[i] = 1;
+        const loop = [segments[i].p1.clone(), segments[i].p2.clone()];
+        const loopCols = [segments[i].c1.clone(), segments[i].c2.clone()];
+
+        let extended = true;
+        while (extended) {
+          extended = false;
+          const tail = loop[loop.length - 1];
+          for (let j = 0; j < segments.length; j++) {
+            if (used[j]) continue;
+            if (tail.distanceToSquared(segments[j].p1) <= tolSq) {
+              used[j] = 1;
+              loop.push(segments[j].p2.clone());
+              loopCols.push(segments[j].c2.clone());
+              extended = true;
+              break;
+            } else if (tail.distanceToSquared(segments[j].p2) <= tolSq) {
+              used[j] = 1;
+              loop.push(segments[j].p1.clone());
+              loopCols.push(segments[j].c1.clone());
+              extended = true;
+              break;
+            }
+          }
+        }
+
+        if (loop.length >= 3) {
+          // Remove duplicate closing vertex if very close to start
+          if (loop.length > 3 && loop[0].distanceToSquared(loop[loop.length - 1]) <= tolSq) {
+            loop.pop();
+            loopCols.pop();
+          }
+          if (loop.length >= 3) {
+            loops.push({ pts: loop, cols: loopCols });
+          }
+        }
+      }
+
+      // Triangulate each loop via 2D Ear Clipping (supports concave contours)
+      for (const loopObj of loops) {
+        const pts3D = loopObj.pts;
+        const cols3D = loopObj.cols;
+        const n = pts3D.length;
+        if (n < 3) continue;
+
+        const pts2D = pts3D.map(p => {
+          const rel = new THREE.Vector3().subVectors(p, planePoint);
+          return { u: rel.dot(uAxis), v: rel.dot(vAxis) };
+        });
+
+        // Compute signed 2D area to enforce counter-clockwise winding in (u, v)
+        let area = 0;
+        for (let i = 0; i < n; i++) {
+          const j = (i + 1) % n;
+          area += (pts2D[i].u * pts2D[j].v - pts2D[j].u * pts2D[i].v);
+        }
+        if (area < 0) {
+          pts3D.reverse();
+          cols3D.reverse();
+          pts2D.reverse();
+        }
+
+        const indices = [];
+        for (let i = 0; i < n; i++) indices.push(i);
+
+        const cross2D = (a, b, c) => (b.u - a.u) * (c.v - a.v) - (b.v - a.v) * (c.u - a.u);
+        const pointInTri2D = (p, a, b, c) => {
+          const c1 = cross2D(a, b, p);
+          const c2 = cross2D(b, c, p);
+          const c3 = cross2D(c, a, p);
+          return (c1 >= -1e-6 && c2 >= -1e-6 && c3 >= -1e-6);
+        };
+
+        let guard = n * 3;
+        while (indices.length > 3 && guard-- > 0) {
+          let earFound = false;
+          const m = indices.length;
+          for (let i = 0; i < m; i++) {
+            const iPrev = indices[(i + m - 1) % m];
+            const iCurr = indices[i];
+            const iNext = indices[(i + 1) % m];
+
+            const a = pts2D[iPrev], b = pts2D[iCurr], c = pts2D[iNext];
+            if (cross2D(a, b, c) <= 1e-6) continue; // reflex vertex
+
+            let hasInside = false;
+            for (let j = 0; j < m; j++) {
+              const idxTest = indices[j];
+              if (idxTest === iPrev || idxTest === iCurr || idxTest === iNext) continue;
+              if (pointInTri2D(pts2D[idxTest], a, b, c)) {
+                hasInside = true;
+                break;
+              }
+            }
+
+            if (!hasInside) {
+              // Emit triangle for Part B (+normal) and Part A (-normal)
+              const p0 = pts3D[iPrev], p1 = pts3D[iCurr], p2 = pts3D[iNext];
+              const c0 = cols3D[iPrev], c1 = cols3D[iCurr], c2 = cols3D[iNext];
+
+              // Part B cap faces +planeNormal
+              posB.push(p0.x, p0.y, p0.z, p1.x, p1.y, p1.z, p2.x, p2.y, p2.z);
+              colB.push(c0.x, c0.y, c0.z, c1.x, c1.y, c1.z, c2.x, c2.y, c2.z);
+
+              // Part A cap faces -planeNormal
+              posA.push(p0.x, p0.y, p0.z, p2.x, p2.y, p2.z, p1.x, p1.y, p1.z);
+              colA.push(c0.x, c0.y, c0.z, c2.x, c2.y, c2.z, c1.x, c1.y, c1.z);
+
+              indices.splice(i, 1);
+              earFound = true;
+              break;
+            }
+          }
+
+          if (!earFound) {
+            // Fallback fan triangulation for degenerate/self-intersecting polygon remainder
+            const i0 = indices[0];
+            for (let k = 1; k < indices.length - 1; k++) {
+              const p0 = pts3D[i0], p1 = pts3D[indices[k]], p2 = pts3D[indices[k + 1]];
+              const c0 = cols3D[i0], c1 = cols3D[indices[k]], c2 = cols3D[indices[k + 1]];
+              posB.push(p0.x, p0.y, p0.z, p1.x, p1.y, p1.z, p2.x, p2.y, p2.z);
+              colB.push(c0.x, c0.y, c0.z, c1.x, c1.y, c1.z, c2.x, c2.y, c2.z);
+              posA.push(p0.x, p0.y, p0.z, p2.x, p2.y, p2.z, p1.x, p1.y, p1.z);
+              colA.push(c0.x, c0.y, c0.z, c2.x, c2.y, c2.z, c1.x, c1.y, c1.z);
+            }
+            break;
+          }
+        }
+
+        if (indices.length === 3) {
+          const p0 = pts3D[indices[0]], p1 = pts3D[indices[1]], p2 = pts3D[indices[2]];
+          const c0 = cols3D[indices[0]], c1 = cols3D[indices[1]], c2 = cols3D[indices[2]];
+          posB.push(p0.x, p0.y, p0.z, p1.x, p1.y, p1.z, p2.x, p2.y, p2.z);
+          colB.push(c0.x, c0.y, c0.z, c1.x, c1.y, c1.z, c2.x, c2.y, c2.z);
+          posA.push(p0.x, p0.y, p0.z, p2.x, p2.y, p2.z, p1.x, p1.y, p1.z);
+          colA.push(c0.x, c0.y, c0.z, c2.x, c2.y, c2.z, c1.x, c1.y, c1.z);
+        }
+      }
+    }
+
+    // Generate Alignment Dowel Pins on Part B and Matching Recessed Guide Rings on Part A
+    function appendAlignmentDowels(intersectionSegments, planePoint, planeNormal, posA, colA, posB, colB) {
+      if (!intersectionSegments || intersectionSegments.length === 0) return;
+
+      const count = parseInt(document.getElementById('cut-pin-count').value, 10) || 2;
+      const shape = document.getElementById('cut-pin-shape').value || 'cylinder';
+      const diam = parseFloat(document.getElementById('cut-pin-diam').value) || 5.0;
+      const len = parseFloat(document.getElementById('cut-pin-len').value) || 8.0;
+
+      // Build 2D basis on cut plane and find cross-section bounds
+      const upRef = Math.abs(planeNormal.y) < 0.9 ? new THREE.Vector3(0, 1, 0) : new THREE.Vector3(1, 0, 0);
+      const uAxis = new THREE.Vector3().crossVectors(upRef, planeNormal).normalize();
+      const vAxis = new THREE.Vector3().crossVectors(planeNormal, uAxis).normalize();
+
+      let uMin = Infinity, uMax = -Infinity, vMin = Infinity, vMax = -Infinity;
+      const centroid3D = new THREE.Vector3();
+      for (const seg of intersectionSegments) {
+        centroid3D.add(seg.p1);
+        const rel = new THREE.Vector3().subVectors(seg.p1, planePoint);
+        const u = rel.dot(uAxis);
+        const v = rel.dot(vAxis);
+        if (u < uMin) uMin = u;
+        if (u > uMax) uMax = u;
+        if (v < vMin) vMin = v;
+        if (v > vMax) vMax = v;
+      }
+      centroid3D.divideScalar(intersectionSegments.length);
+
+      const uSpan = Math.max(0, uMax - uMin);
+      const vSpan = Math.max(0, vMax - vMin);
+      const pinCenters = [];
+
+      if (count === 1) {
+        pinCenters.push(centroid3D.clone());
+      } else if (count === 2) {
+        const offset = Math.max(diam * 0.9, Math.max(uSpan, vSpan) * 0.24);
+        const mainAxis = (uSpan >= vSpan) ? uAxis : vAxis;
+        pinCenters.push(centroid3D.clone().addScaledVector(mainAxis, -offset));
+        pinCenters.push(centroid3D.clone().addScaledVector(mainAxis, offset));
+      } else {
+        const offU = Math.max(diam * 0.85, uSpan * 0.22);
+        const offV = Math.max(diam * 0.85, vSpan * 0.22);
+        pinCenters.push(centroid3D.clone().addScaledVector(uAxis, -offU).addScaledVector(vAxis, -offV));
+        pinCenters.push(centroid3D.clone().addScaledVector(uAxis,  offU).addScaledVector(vAxis, -offV));
+        pinCenters.push(centroid3D.clone().addScaledVector(uAxis, -offU).addScaledVector(vAxis,  offV));
+        pinCenters.push(centroid3D.clone().addScaledVector(uAxis,  offU).addScaledVector(vAxis,  offV));
+      }
+
+      const quat = new THREE.Quaternion().setFromUnitVectors(new THREE.Vector3(0, 1, 0), planeNormal);
+      const pinCol = new THREE.Color(currentColor);
+
+      const appendGeoToArrays = (geo, targetPos, targetCol, colorObj) => {
+        const nonIdx = geo.index ? geo.toNonIndexed() : geo;
+        const p = nonIdx.attributes.position;
+        for (let i = 0; i < p.count; i++) {
+          targetPos.push(p.getX(i), p.getY(i), p.getZ(i));
+          targetCol.push(colorObj.r, colorObj.g, colorObj.b);
+        }
+        nonIdx.dispose();
+      };
+
+      for (const centerPt of pinCenters) {
+        // Male Pin on Part B protruding into Part A (+planeNormal)
+        let maleGeo;
+        if (shape === 'box') {
+          maleGeo = new THREE.BoxGeometry(diam, len, diam);
+        } else {
+          maleGeo = new THREE.CylinderGeometry(diam / 2, diam / 2, len, 20);
+        }
+        maleGeo.applyQuaternion(quat);
+        maleGeo.translate(
+          centerPt.x + planeNormal.x * (len * 0.45),
+          centerPt.y + planeNormal.y * (len * 0.45),
+          centerPt.z + planeNormal.z * (len * 0.45)
+        );
+        appendGeoToArrays(maleGeo, posB, colB, pinCol);
+
+        // Female Socket Collar / Recessed Sleeve on Part A (+0.25mm clearance tolerance)
+        const holeRadius = (diam + 0.3) / 2;
+        const sleeveGeo = new THREE.CylinderGeometry(holeRadius + 1.2, holeRadius + 1.2, len * 0.5, 20, 1, true);
+        sleeveGeo.applyQuaternion(quat);
+        sleeveGeo.translate(
+          centerPt.x + planeNormal.x * (len * 0.25),
+          centerPt.y + planeNormal.y * (len * 0.25),
+          centerPt.z + planeNormal.z * (len * 0.25)
+        );
+        appendGeoToArrays(sleeveGeo, posA, colA, new THREE.Color(0xfbbf24));
+      }
+    }
+
+    function buildMeshFromFlatArrays(posArr, colArr, name) {
+      if (!posArr || posArr.length < 9) return null;
+      const geo = new THREE.BufferGeometry();
+      geo.setAttribute('position', new THREE.Float32BufferAttribute(posArr, 3));
+      geo.setAttribute('color', new THREE.Float32BufferAttribute(colArr, 3));
+      geo.computeVertexNormals();
+      const mat = getModelMaterial(currentMode, currentColor, true);
+      const mesh = new THREE.Mesh(geo, mat);
+      mesh.name = name;
+      mesh.castShadow = true;
+      mesh.receiveShadow = true;
+      return mesh;
+    }
+
+    // Collect all visible triangles of currentModel in world space
+    function extractWorldTriangles(rootObj) {
+      rootObj.updateMatrixWorld(true);
+      const worldPositions = [];
+      const worldColors = [];
+      const v = new THREE.Vector3();
+      const baseCol = new THREE.Color(currentColor);
+
+      rootObj.traverse(mesh => {
+        if (!mesh.isMesh || !mesh.visible || !mesh.geometry) return;
+        const pos = mesh.geometry.attributes.position;
+        const col = mesh.geometry.attributes.color;
+        if (!pos) return;
+
+        for (let i = 0; i < pos.count; i++) {
+          v.fromBufferAttribute(pos, i).applyMatrix4(mesh.matrixWorld);
+          worldPositions.push(v.x, v.y, v.z);
+          if (col) {
+            worldColors.push(col.getX(i), col.getY(i), col.getZ(i));
+          } else {
+            worldColors.push(baseCol.r, baseCol.g, baseCol.b);
+          }
+        }
+      });
+
+      return { worldPositions, worldColors };
+    }
+
+    function executeGeometryCut() {
+      if (!currentModel) {
+        showToast('Primero abre un modelo STL o 3MF para poder cortarlo.', true);
+        return;
+      }
+
+      if (cutAxis === 'box') {
+        executeBoxCrop6D();
+        return;
+      }
+
+      pushUndoState();
+      const { point, normal } = getCutPlanePointAndNormal();
+      const capCut = document.getElementById('check-cut-cap').checked;
+      const layFlat = document.getElementById('check-cut-layflat').checked;
+      const addPins = document.getElementById('check-cut-pins').checked;
+
+      const { worldPositions, worldColors } = extractWorldTriangles(currentModel);
+      if (worldPositions.length < 9) {
+        showToast('No hay geometría visible para cortar.', true);
+        return;
+      }
+
+      const { posA, colA, posB, colB, intersectionSegments } = sliceGeometryByPlane(
+        worldPositions,
+        worldColors,
+        point,
+        normal,
+        capCut
+      );
+
+      if (posA.length === 0 || posB.length === 0) {
+        showToast('El plano de corte no atraviesa la pieza. Ajusta la posición del plano.', true);
+        return;
+      }
+
+      if (addPins && intersectionSegments.length > 0) {
+        appendAlignmentDowels(intersectionSegments, point, normal, posA, colA, posB, colB);
+      }
+
+      // Reset preview clipping mode to 'both' so the resulting cut geometry is fully visible
+      setCutPreviewMode('both');
+
+      const newRoot = new THREE.Group();
+      newRoot.name = currentFileName;
+
+      if (cutOperation === 'split') {
+        const meshA = buildMeshFromFlatArrays(posA, colA, 'Parte A (Superior / +)');
+        const meshB = buildMeshFromFlatArrays(posB, colB, 'Parte B (Inferior / -)');
+
+        const groupA = new THREE.Group();
+        groupA.name = 'Parte A (Superior)';
+        groupA.userData = { splitNormal: normal.clone(), baseOffset: 0 };
+        groupA.add(meshA);
+
+        const groupB = new THREE.Group();
+        groupB.name = 'Parte B (Inferior)';
+        groupB.userData = { splitNormal: normal.clone().negate(), baseOffset: 0 };
+        groupB.add(meshB);
+
+        newRoot.add(groupA);
+        newRoot.add(groupB);
+
+        const plates = [
+          { id: 0, name: 'Parte A (Superior)', object: groupA },
+          { id: 1, name: 'Parte B (Inferior)', object: groupB }
+        ];
+
+        setupLoadedModel(newRoot, currentFileName, currentFileSize, currentModelType, plates, true);
+
+        // Apply initial visual separation so the user immediately sees the cut!
+        document.getElementById('split-explosion-box').style.display = 'block';
+        document.getElementById('split-sep-slider').value = 16;
+        updateSplitSeparation(16);
+
+        if (layFlat) {
+          laySplitPartsOnBed();
+        } else {
+          showToast('¡Geometría dividida en Parte A y Parte B exitosamente!');
+        }
+      } else if (cutOperation === 'keepA') {
+        const meshA = buildMeshFromFlatArrays(posA, colA, 'Parte A Cortada');
+        if (layFlat) {
+          // Rotate so cut face (-normal) points down (-Y)
+          const q = new THREE.Quaternion().setFromUnitVectors(normal.clone().negate(), new THREE.Vector3(0, -1, 0));
+          meshA.applyQuaternion(q);
+          meshA.updateMatrixWorld(true);
+        }
+        newRoot.add(meshA);
+        document.getElementById('split-explosion-box').style.display = 'none';
+        setupLoadedModel(newRoot, currentFileName, currentFileSize, currentModelType, null, true);
+        updateCutAxisBounds(true);
+        showToast('Corte completado: Parte A conservada.');
+      } else if (cutOperation === 'keepB') {
+        const meshB = buildMeshFromFlatArrays(posB, colB, 'Parte B Cortada');
+        if (layFlat) {
+          // Rotate so cut face (+normal) points down (-Y)
+          const q = new THREE.Quaternion().setFromUnitVectors(normal.clone(), new THREE.Vector3(0, -1, 0));
+          meshB.applyQuaternion(q);
+          meshB.updateMatrixWorld(true);
+        }
+        newRoot.add(meshB);
+        document.getElementById('split-explosion-box').style.display = 'none';
+        setupLoadedModel(newRoot, currentFileName, currentFileSize, currentModelType, null, true);
+        updateCutAxisBounds(true);
+        showToast('Corte completado: Parte B conservada.');
+      }
+    }
+
+    // 6-Sided Box Crop Execution
+    function executeBoxCrop6D() {
+      if (!currentModel || !boundingBox) return;
+      pushUndoState();
+
+      const min = boundingBox.min.clone();
+      const max = boundingBox.max.clone();
+      const capCut = document.getElementById('check-cut-cap').checked;
+
+      const x0Pct = Math.min(parseFloat(document.getElementById('crop-xmin').value), parseFloat(document.getElementById('crop-xmax').value) - 2);
+      const x1Pct = Math.max(parseFloat(document.getElementById('crop-xmax').value), x0Pct + 2);
+      const y0Pct = Math.min(parseFloat(document.getElementById('crop-ymin').value), parseFloat(document.getElementById('crop-ymax').value) - 2);
+      const y1Pct = Math.max(parseFloat(document.getElementById('crop-ymax').value), y0Pct + 2);
+      const z0Pct = Math.min(parseFloat(document.getElementById('crop-zmin').value), parseFloat(document.getElementById('crop-zmax').value) - 2);
+      const z1Pct = Math.max(parseFloat(document.getElementById('crop-zmax').value), z0Pct + 2);
+
+      const planes = [];
+      if (x0Pct > 0.5) planes.push({ pt: new THREE.Vector3(min.x + (max.x - min.x) * (x0Pct / 100), 0, 0), n: new THREE.Vector3(1, 0, 0) });
+      if (x1Pct < 99.5) planes.push({ pt: new THREE.Vector3(min.x + (max.x - min.x) * (x1Pct / 100), 0, 0), n: new THREE.Vector3(-1, 0, 0) });
+      if (y0Pct > 0.5) planes.push({ pt: new THREE.Vector3(0, 0, min.z + (max.z - min.z) * (y0Pct / 100)), n: new THREE.Vector3(0, 0, 1) });
+      if (y1Pct < 99.5) planes.push({ pt: new THREE.Vector3(0, 0, min.z + (max.z - min.z) * (y1Pct / 100)), n: new THREE.Vector3(0, 0, -1) });
+      if (z0Pct > 0.5) planes.push({ pt: new THREE.Vector3(0, min.y + (max.y - min.y) * (z0Pct / 100), 0), n: new THREE.Vector3(0, 1, 0) });
+      if (z1Pct < 99.5) planes.push({ pt: new THREE.Vector3(0, min.y + (max.y - min.y) * (z1Pct / 100), 0), n: new THREE.Vector3(0, -1, 0) });
+
+      if (planes.length === 0) {
+        showToast('Ajusta los deslizadores X, Y o Z para recortar el volumen.', true);
+        return;
+      }
+
+      let { worldPositions, worldColors } = extractWorldTriangles(currentModel);
+      for (const pl of planes) {
+        const res = sliceGeometryByPlane(worldPositions, worldColors, pl.pt, pl.n, capCut);
+        worldPositions = res.posA;
+        worldColors = res.colA;
+        if (worldPositions.length < 9) break;
+      }
+
+      if (worldPositions.length < 9) {
+        showToast('El recorte de caja dejó la pieza vacía. Intenta un rango más amplio.', true);
+        return;
+      }
+
+      const croppedMesh = buildMeshFromFlatArrays(worldPositions, worldColors, 'Volumen Recortado');
+      const newRoot = new THREE.Group();
+      newRoot.name = currentFileName;
+      newRoot.add(croppedMesh);
+
+      setupLoadedModel(newRoot, currentFileName, currentFileSize, currentModelType, null, true);
+      // Reset sliders to 0 - 100% for the newly cropped volume
+      document.getElementById('crop-xmin').value = 0; document.getElementById('crop-xmax').value = 100;
+      document.getElementById('crop-ymin').value = 0; document.getElementById('crop-ymax').value = 100;
+      document.getElementById('crop-zmin').value = 0; document.getElementById('crop-zmax').value = 100;
+      updateBoxCropPreview();
+      showToast('¡Recorte de caja 6D aplicado exitosamente!');
+    }
+
+    function updateSplitSeparation(val) {
+      const dist = parseFloat(val) || 0;
+      document.getElementById('split-sep-val').textContent = `${dist.toFixed(0)} mm`;
+      if (!currentModel || loadedPlates.length < 2) return;
+
+      loadedPlates.forEach((p, idx) => {
+        const obj = p.object;
+        if (obj && obj.userData && obj.userData.splitNormal) {
+          const dir = obj.userData.splitNormal;
+          obj.position.set(dir.x * (dist / 2), dir.y * (dist / 2), dir.z * (dist / 2));
+        }
+      });
+
+      currentModel.updateMatrixWorld(true);
+      boundingBox = new THREE.Box3().setFromObject(currentModel);
+    }
+
+    function laySplitPartsOnBed() {
+      if (!currentModel || loadedPlates.length < 2) return;
+      pushUndoState();
+
+      loadedPlates.forEach((p, idx) => {
+        const obj = p.object;
+        obj.position.set(0, 0, 0);
+        obj.rotation.set(0, 0, 0);
+        obj.updateMatrixWorld(true);
+
+        const box = new THREE.Box3().setFromObject(obj);
+        const size = box.getSize(new THREE.Vector3());
+        const center = box.getCenter(new THREE.Vector3());
+        const offsetX = (idx === 0 ? -1 : 1) * (Math.max(size.x, 30) * 0.65);
+
+        obj.position.x += (offsetX - center.x);
+        obj.position.z -= center.z;
+        obj.position.y -= box.min.y;
+        if (obj.userData) delete obj.userData.splitNormal;
+      });
+
+      alignModelToBed();
+      const size = boundingBox.getSize(new THREE.Vector3());
+      updateDimensionsDisplay(size);
+      checkAllPrintersCompatibility();
+      fitCameraToObject(currentModel);
+      showToast('Ambas partes acomodadas sobre la cama de impresión.');
+    }
+
+    // ==================== EXPORT STL & 3MF ====================
+    function buildBinarySTLFromObject(targetObj) {
+      targetObj.updateMatrixWorld(true);
+      const tris = [];
+      const v0 = new THREE.Vector3(), v1 = new THREE.Vector3(), v2 = new THREE.Vector3();
+      const cb = new THREE.Vector3(), ab = new THREE.Vector3();
+
+      targetObj.traverse(mesh => {
+        if (!mesh.isMesh || !mesh.visible || !mesh.geometry) return;
+        const pos = mesh.geometry.attributes.position;
+        if (!pos) return;
+        for (let i = 0; i < pos.count; i += 3) {
+          v0.fromBufferAttribute(pos, i).applyMatrix4(mesh.matrixWorld);
+          v1.fromBufferAttribute(pos, i + 1).applyMatrix4(mesh.matrixWorld);
+          v2.fromBufferAttribute(pos, i + 2).applyMatrix4(mesh.matrixWorld);
+          cb.subVectors(v2, v1);
+          ab.subVectors(v0, v1);
+          cb.cross(ab).normalize();
+          // Convert from Three.js Y-up back to CAD/Slicer Z-up (rotate +90 deg on X: x'=x, y'=-z, z'=y)
+          tris.push({
+            nx: cb.x, ny: -cb.z, nz: cb.y,
+            x0: v0.x, y0: -v0.z, z0: v0.y,
+            x1: v1.x, y1: -v1.z, z1: v1.y,
+            x2: v2.x, y2: -v2.z, z2: v2.y
+          });
+        }
+      });
+
+      const buffer = new ArrayBuffer(84 + tris.length * 50);
+      const view = new DataView(buffer);
+      const headerText = 'Exported by Rembrandt 3D Studio';
+      for (let i = 0; i < headerText.length; i++) {
+        view.setUint8(i, headerText.charCodeAt(i));
+      }
+      view.setUint32(80, tris.length, true);
+
+      let offset = 84;
+      for (let i = 0; i < tris.length; i++) {
+        const t = tris[i];
+        view.setFloat32(offset, t.nx, true);
+        view.setFloat32(offset + 4, t.ny, true);
+        view.setFloat32(offset + 8, t.nz, true);
+        view.setFloat32(offset + 12, t.x0, true);
+        view.setFloat32(offset + 16, t.y0, true);
+        view.setFloat32(offset + 20, t.z0, true);
+        view.setFloat32(offset + 24, t.x1, true);
+        view.setFloat32(offset + 28, t.y1, true);
+        view.setFloat32(offset + 32, t.z1, true);
+        view.setFloat32(offset + 36, t.x2, true);
+        view.setFloat32(offset + 40, t.y2, true);
+        view.setFloat32(offset + 44, t.z2, true);
+        view.setUint16(offset + 48, 0, true);
+        offset += 50;
+      }
+
+      return buffer;
+    }
+
+    function triggerBufferDownload(arrayBuffer, filename, mimeType) {
+      const bytes = new Uint8Array(arrayBuffer);
+      let binary = '';
+      const chunk = 0x8000;
+      for (let i = 0; i < bytes.length; i += chunk) {
+        binary += String.fromCharCode.apply(null, bytes.subarray(i, i + chunk));
+      }
+      const base64 = btoa(binary);
+      const dataUri = `data:${mimeType};base64,${base64}`;
+      const link = document.createElement('a');
+      link.href = dataUri;
+      link.download = filename;
+      link.click();
+    }
+
+    function exportCurrentModelSTL() {
+      if (!currentModel) return;
+      const baseName = currentFileName.replace(/\.[^/.]+$/, '');
+      const target = (activePlateIndex >= 0 && loadedPlates[activePlateIndex])
+        ? loadedPlates[activePlateIndex].object
+        : currentModel;
+      const suffix = (activePlateIndex >= 0 && loadedPlates[activePlateIndex])
+        ? `_${loadedPlates[activePlateIndex].name.replace(/[^a-zA-Z0-9_-]/g, '_')}`
+        : '_editado';
+
+      const stlBuffer = buildBinarySTLFromObject(target);
+      triggerBufferDownload(stlBuffer, `${baseName}${suffix}.stl`, 'model/stl');
+      showToast(`Archivo "${baseName}${suffix}.stl" exportado exitosamente.`);
+    }
+
+    function exportSplitPartsSeparately() {
+      if (!currentModel || loadedPlates.length < 2) {
+        exportCurrentModelSTL();
+        return;
+      }
+      const baseName = currentFileName.replace(/\.[^/.]+$/, '');
+      loadedPlates.forEach((p, idx) => {
+        const partBuf = buildBinarySTLFromObject(p.object);
+        const label = idx === 0 ? 'Parte_A' : 'Parte_B';
+        setTimeout(() => {
+          triggerBufferDownload(partBuf, `${baseName}_${label}.stl`, 'model/stl');
+        }, idx * 250);
+      });
+      showToast('Descargando Parte A (.STL) y Parte B (.STL)...');
+    }
+
+    function exportCurrentModel3MF() {
+      if (!currentModel || typeof fflate === 'undefined') return;
+      const baseName = currentFileName.replace(/\.[^/.]+$/, '');
+      currentModel.updateMatrixWorld(true);
+
+      // Collect unique colors for <m:colorgroup id="1">
+      const colorMap = new Map();
+      const colorList = [];
+      const getColorIndex = (r, g, b) => {
+        const col = new THREE.Color(r, g, b);
+        const hex = '#' + col.getHexString().toUpperCase();
+        if (colorMap.has(hex)) return colorMap.get(hex);
+        const idx = colorList.length;
+        colorList.push(hex);
+        colorMap.set(hex, idx);
+        return idx;
+      };
+
+      let objectsXml = '';
+      let buildXml = '';
+      let objCounter = 1;
+      const v = new THREE.Vector3();
+
+      currentModel.traverse(mesh => {
+        if (!mesh.isMesh || !mesh.visible || !mesh.geometry) return;
+        const pos = mesh.geometry.attributes.position;
+        const col = mesh.geometry.attributes.color;
+        if (!pos || pos.count < 3) return;
+
+        let vertsXml = '';
+        let trisXml = '';
+        for (let i = 0; i < pos.count; i += 3) {
+          for (let k = 0; k < 3; k++) {
+            v.fromBufferAttribute(pos, i + k).applyMatrix4(mesh.matrixWorld);
+            const cx = v.x.toFixed(4);
+            const cy = (-v.z).toFixed(4);
+            const cz = v.y.toFixed(4);
+            vertsXml += `<vertex x="${cx}" y="${cy}" z="${cz}"/>`;
+          }
+          const cIdx = col ? getColorIndex(col.getX(i), col.getY(i), col.getZ(i)) : getColorIndex(0.23, 0.51, 0.96);
+          trisXml += `<triangle v1="${i}" v2="${i + 1}" v3="${i + 2}" pid="1" p1="${cIdx}"/>`;
+        }
+
+        const safeName = (mesh.name || `Parte_${objCounter}`).replace(/[<>&"']/g, '');
+        objectsXml += `<object id="${objCounter + 1}" name="${safeName}" type="model"><mesh><vertices>${vertsXml}</vertices><triangles>${trisXml}</triangles></mesh></object>`;
+        buildXml += `<item objectid="${objCounter + 1}"/>`;
+        objCounter++;
+      });
+
+      const colorsXml = colorList.map(h => `<m:color color="${h}FF"/>`).join('');
+      const modelXml = `<?xml version="1.0" encoding="UTF-8"?>
+<model unit="millimeter" xml:lang="en-US" xmlns="http://schemas.microsoft.com/3dmanufacturing/core/2015/02" xmlns:m="http://schemas.microsoft.com/3dmanufacturing/material/2015/02">
+  <resources>
+    <m:colorgroup id="1">${colorsXml}</m:colorgroup>
+    ${objectsXml}
+  </resources>
+  <build>${buildXml}</build>
+</model>`;
+
+      const relsXml = `<?xml version="1.0" encoding="UTF-8"?>
+<Relationships xmlns="http://schemas.openxmlformats.org/package/2006/relationships">
+  <Relationship Target="/3D/3dmodel.model" Id="rel0" Type="http://schemas.microsoft.com/3dmanufacturing/2013/01/3dmodel" />
+</Relationships>`;
+
+      const contentTypesXml = `<?xml version="1.0" encoding="UTF-8"?>
+<Types xmlns="http://schemas.openxmlformats.org/package/2006/content-types">
+  <Default Extension="rels" ContentType="application/vnd.openxmlformats-package.relationships+xml" />
+  <Default Extension="model" ContentType="application/vnd.ms-package.3dmanufacturing-3dmodel+xml" />
+</Types>`;
+
+      const zipped = fflate.zipSync({
+        '[Content_Types].xml': fflate.strToU8(contentTypesXml),
+        '_rels/.rels': fflate.strToU8(relsXml),
+        '3D/3dmodel.model': fflate.strToU8(modelXml)
+      });
+
+      triggerBufferDownload(zipped.buffer, `${baseName}_editado.3mf`, 'model/3mf');
+      showToast(`Archivo "${baseName}_editado.3mf" con colores y partes exportado.`);
+    }
+
+    // ==================== MULTI-PLATE & ORIENTATION HELPERS ====================
     function setupPlatesUI(fileName) {
       const container = document.getElementById('plates-container');
       const buttonsDiv = document.getElementById('plate-buttons');
@@ -1382,9 +3567,8 @@
       }
 
       container.style.display = 'block';
-      badge.textContent = `${loadedPlates.length} detectadas`;
+      badge.textContent = `${loadedPlates.length} piezas`;
 
-      // "Todas" button
       const allBtn = document.createElement('button');
       allBtn.className = 'plate-btn active';
       allBtn.textContent = '👀 Ver Todas';
@@ -1394,7 +3578,7 @@
       loadedPlates.forEach((plate, idx) => {
         const btn = document.createElement('button');
         btn.className = 'plate-btn';
-        btn.textContent = plate.name || `Placa ${idx + 1}`;
+        btn.textContent = plate.name || `Pieza ${idx + 1}`;
         btn.title = `Aislar y enfocar: ${plate.name}`;
         btn.onclick = () => selectPlate(idx);
         buttonsDiv.appendChild(btn);
@@ -1409,18 +3593,15 @@
       });
 
       if (index === -1) {
-        // Show all
         loadedPlates.forEach(p => { p.object.visible = true; });
-        alignModelToBed();
         const bbox = new THREE.Box3().setFromObject(currentModel);
         boundingBox = bbox;
         const size = bbox.getSize(new THREE.Vector3());
         updateDimensionsDisplay(size);
         checkAllPrintersCompatibility();
         fitCameraToObject(currentModel);
-        showToast('Mostrando todas las placas.');
+        showToast('Mostrando todas las piezas.');
       } else {
-        // Show only selected plate
         loadedPlates.forEach((p, idx) => {
           p.object.visible = (idx === index);
         });
@@ -1431,54 +3612,41 @@
         updateDimensionsDisplay(size);
         checkAllPrintersCompatibility();
         fitCameraToObject(activeObj);
-        showToast(`Placa seleccionada: ${loadedPlates[index].name}`);
+        showToast(`Pieza seleccionada: ${loadedPlates[index].name}`);
       }
     }
 
-    // Detect if model's height is smaller than depth/width or oriented on side, and orient to Z-up/bed
     function orientModelToBed() {
       if (!currentModel) return;
       currentModel.updateMatrixWorld(true);
 
-      // Check current bounding box
-      let box = new THREE.Box3().setFromObject(currentModel);
-      let size = box.getSize(new THREE.Vector3());
-
-      // If STL was exported with Z as vertical (common in CAD/3D printers where Z is height),
-      // in Three.js Y is UP and Z is depth.
-      // If size.z is significantly larger than size.y, or if the model lies flat along Z instead of standing on Y,
-      // rotating -90 deg on X aligns CAD Z to Three.js Y!
-      // To provide the cleanest view, we ensure the model stands upright on bed:
-      if (size.z > size.y * 1.5 && size.z > size.x) {
-        currentModel.rotateX(-Math.PI / 2);
-        currentModel.updateMatrixWorld(true);
-      }
+      // CAD and 3D Slicers export STL and 3MF with Z as up; Three.js uses Y as up.
+      // Rotate -90 deg around X so CAD Z-up becomes Three.js Y-up.
+      currentModel.rotation.set(-Math.PI / 2, 0, 0);
+      currentModel.updateMatrixWorld(true);
 
       alignModelToBed();
     }
 
-    // Align base of current model perfectly to Bed (Y=0) and center on X, Z (NO floating, NO submerged)
     function alignModelToBed() {
       if (!currentModel) return;
       currentModel.updateMatrixWorld(true);
 
       const box = new THREE.Box3().setFromObject(currentModel);
+      if (box.isEmpty()) return;
       const center = box.getCenter(new THREE.Vector3());
 
-      // Center exactly at (0, 0) on the print bed plane (X and Z)
       currentModel.position.x -= center.x;
       currentModel.position.z -= center.z;
-
-      // Place the lowest vertex/face EXACTLY on the bed surface (Y = 0)
       currentModel.position.y -= box.min.y;
       currentModel.updateMatrixWorld(true);
 
       boundingBox = new THREE.Box3().setFromObject(currentModel);
     }
 
-    // Rotate model by 90 degrees on the specified axis and re-align to bed
     function rotateModel(axis, degrees = 90) {
       if (!currentModel) return;
+      pushUndoState();
       const rad = THREE.MathUtils.degToRad(degrees);
 
       if (axis === 'x') currentModel.rotateX(rad);
@@ -1491,7 +3659,32 @@
       const size = boundingBox.getSize(new THREE.Vector3());
       updateDimensionsDisplay(size);
       checkAllPrintersCompatibility();
+      syncPaintAndCutSlidersToModel();
       showToast(`Modelo rotado ${degrees}° en eje ${axis.toUpperCase()}`);
+    }
+
+    function scaleModelUniform(factor) {
+      if (!currentModel) return;
+      pushUndoState();
+      currentModel.scale.multiplyScalar(factor);
+      currentModel.updateMatrixWorld(true);
+      alignModelToBed();
+
+      let totalVolume = 0;
+      currentModel.traverse(child => {
+        if (child.isMesh && child.geometry && child.visible) {
+          totalVolume += computeMeshVolume(child.geometry, child.matrixWorld);
+        }
+      });
+
+      const size = boundingBox.getSize(new THREE.Vector3());
+      updateDimensionsDisplay(size);
+      modelVolumeCm3 = totalVolume;
+      document.getElementById('info-volume').textContent = `${modelVolumeCm3.toFixed(2)} cm³`;
+      updateWeightCalc();
+      checkAllPrintersCompatibility();
+      syncPaintAndCutSlidersToModel();
+      showToast(`Volumen escalado al ${Math.round(factor * 100)}%`);
     }
 
     function applyMaterialToModel(material) {
@@ -1504,32 +3697,45 @@
     }
 
     function restoreOriginal3MFColors() {
-      if (originalMaterials.length === 0) return;
+      if (!originalMaterials || originalMaterials.length === 0) return;
       originalMaterials.forEach(item => {
-        item.mesh.material = Array.isArray(item.material) ? item.material.map(m => m.clone()) : item.material.clone();
+        if (item.mesh && item.mesh.geometry && item.colors) {
+          item.mesh.geometry.setAttribute('color', new THREE.BufferAttribute(item.colors.slice(), 3));
+          item.mesh.geometry.attributes.color.needsUpdate = true;
+        }
       });
-      document.querySelectorAll('#controls-panel .btn-grid .btn-compact').forEach(b => b.classList.remove('active'));
-      document.querySelectorAll('.color-swatch').forEach(sw => sw.classList.remove('active'));
-      showToast('Colores originales de 3MF restaurados.');
+      showToast('Colores originales del archivo restaurados.');
     }
 
-    // Load STL via STLLoader
+    // ==================== BULLETPROOF STL & 3MF FILE READERS ====================
+    function isZipBuffer(buffer) {
+      if (!buffer || buffer.byteLength < 4) return false;
+      const u8 = buffer instanceof Uint8Array ? buffer : new Uint8Array(buffer);
+      // PK\x03\x04 magic signature
+      return (u8[0] === 0x50 && u8[1] === 0x4B && u8[2] === 0x03 && u8[3] === 0x04);
+    }
+
     function loadSTLBuffer(buffer, fileName, fileSize) {
-      showLoading(true, 'Procesando archivo STL...');
+      // Auto-detect if a .3mf/ZIP file was named .stl
+      if (isZipBuffer(buffer)) {
+        load3MFBuffer(buffer, fileName, fileSize);
+        return;
+      }
+
+      showLoading(true, 'Procesando geometría STL...');
       setTimeout(() => {
         try {
           const loader = new THREE.STLLoader();
           const geometry = loader.parse(buffer);
 
           if (!geometry || !geometry.attributes.position || geometry.attributes.position.count === 0) {
-            throw new Error('El archivo STL no contiene geometría válida.');
+            throw new Error('El archivo STL no contiene triángulos válidos.');
           }
 
           geometry.computeVertexNormals();
-          geometry.center();
 
-          const material = getModelMaterial(currentMode, currentColor);
-          const mesh = new THREE.Mesh(geometry, material);
+          const mesh = new THREE.Mesh(geometry, getModelMaterial(currentMode, currentColor, true));
+          mesh.name = fileName.replace(/\.[^/.]+$/, '');
           const group = new THREE.Group();
           group.name = fileName;
           group.add(mesh);
@@ -1537,51 +3743,147 @@
           setupLoadedModel(group, fileName, fileSize, 'stl');
         } catch (err) {
           showLoading(false);
-          console.error(err);
+          console.error('Error STL:', err);
           showToast(`Error al leer archivo STL: ${err.message}`, true);
         }
-      }, 40);
+      }, 30);
     }
 
-    // Load 3MF via 3MFLoader
-    function load3MFBuffer(buffer, fileName, fileSize) {
-      showLoading(true, 'Extrayendo y procesando archivo 3MF...');
-      setTimeout(() => {
-        try {
-          const loader = new (THREE.ThreeMFLoader || THREE['3MFLoader'])();
-          const object = loader.parse(buffer);
+    async function load3MFBuffer(buffer, fileName, fileSize) {
+      // Auto-detect if a raw STL file was named .3mf
+      if (!isZipBuffer(buffer)) {
+        loadSTLBuffer(buffer, fileName, fileSize);
+        return;
+      }
 
-          if (!object) {
-            throw new Error('No se pudo interpretar el archivo 3MF.');
+      showLoading(true, 'Extrayendo y procesando archivo 3MF...');
+      setTimeout(async () => {
+        try {
+          let object = null;
+          let meshCount = 0;
+
+          try {
+            const loader = new (THREE.ThreeMFLoader || THREE['3MFLoader'])();
+            object = loader.parse(buffer);
+            if (object) {
+              object.traverse(c => { if (c.isMesh) meshCount++; });
+            }
+          } catch (primaryErr) {
+            console.warn('Primary 3MFLoader warning, attempting JSZip fallback:', primaryErr);
           }
 
-          let meshCount = 0;
-          object.traverse(child => {
-            if (child.isMesh) meshCount++;
-          });
+          // Fallback via JSZip if fflate or primary parser found 0 meshes
+          if (!object || meshCount === 0) {
+            object = await parse3MFWithJSZipFallback(buffer, fileName);
+            meshCount = 0;
+            if (object) {
+              object.traverse(c => { if (c.isMesh) meshCount++; });
+            }
+          }
 
-          if (meshCount === 0) {
-            throw new Error('El archivo 3MF no contiene mallas geométricas legibles.');
+          if (!object || meshCount === 0) {
+            throw new Error('No se encontraron mallas 3D dentro del archivo 3MF.');
           }
 
           setupLoadedModel(object, fileName, fileSize, '3mf');
         } catch (err) {
           showLoading(false);
-          console.error(err);
-          showToast(`Error al leer archivo 3MF: ${err.message}`, true);
+          console.error('Error 3MF:', err);
+          showToast(`Error al abrir 3MF: ${err.message}`, true);
         }
-      }, 40);
+      }, 30);
+    }
+
+    async function parse3MFWithJSZipFallback(buffer, fileName) {
+      if (typeof JSZip === 'undefined') return null;
+      const zip = await JSZip.loadAsync(buffer);
+      const group = new THREE.Group();
+      group.name = fileName;
+
+      const entries = Object.keys(zip.files);
+      for (const entryName of entries) {
+        const fileObj = zip.files[entryName];
+        if (fileObj.dir) continue;
+
+        if (/\.stl$/i.test(entryName)) {
+          const stlBuf = await fileObj.async('arraybuffer');
+          const geo = new THREE.STLLoader().parse(stlBuf);
+          if (geo && geo.attributes.position && geo.attributes.position.count > 0) {
+            const mesh = new THREE.Mesh(geo, getModelMaterial(currentMode, currentColor, true));
+            mesh.name = entryName.split('/').pop();
+            group.add(mesh);
+          }
+        } else if (/\.model$/i.test(entryName)) {
+          const xmlText = await fileObj.async('string');
+          const meshRegex = /<mesh\b[^>]*>([\s\S]*?)<\/mesh>/gi;
+          let mMatch;
+          let partIdx = 1;
+          while ((mMatch = meshRegex.exec(xmlText)) !== null) {
+            const meshXml = mMatch[1];
+            const verts = [];
+            const vRegex = /<vertex\b[^>]*?\bx\s*=\s*["']([^"']+)["'][^>]*?\by\s*=\s*["']([^"']+)["'][^>]*?\bz\s*=\s*["']([^"']+)["'][^>]*>/gi;
+            let vM;
+            while ((vM = vRegex.exec(meshXml)) !== null) {
+              verts.push(parseFloat(vM[1]), parseFloat(vM[2]), parseFloat(vM[3]));
+            }
+            const posArr = [];
+            const tRegex = /<triangle\b[^>]*?\bv1\s*=\s*["'](\d+)["'][^>]*?\bv2\s*=\s*["'](\d+)["'][^>]*?\bv3\s*=\s*["'](\d+)["'][^>]*>/gi;
+            let tM;
+            while ((tM = tRegex.exec(meshXml)) !== null) {
+              const i1 = parseInt(tM[1], 10) * 3;
+              const i2 = parseInt(tM[2], 10) * 3;
+              const i3 = parseInt(tM[3], 10) * 3;
+              posArr.push(
+                verts[i1] || 0, verts[i1 + 1] || 0, verts[i1 + 2] || 0,
+                verts[i2] || 0, verts[i2 + 1] || 0, verts[i2 + 2] || 0,
+                verts[i3] || 0, verts[i3 + 1] || 0, verts[i3 + 2] || 0
+              );
+            }
+            if (posArr.length >= 9) {
+              const geo = new THREE.BufferGeometry();
+              geo.setAttribute('position', new THREE.Float32BufferAttribute(posArr, 3));
+              geo.computeVertexNormals();
+              const mesh = new THREE.Mesh(geo, getModelMaterial(currentMode, currentColor, true));
+              mesh.name = `Parte ${partIdx++}`;
+              group.add(mesh);
+            }
+          }
+        }
+      }
+      return group;
+    }
+
+    // Resilient File -> ArrayBuffer Reader (Handles OneDrive / Windows File Handles safely)
+    function readFileToArrayBuffer(file) {
+      return new Promise((resolve, reject) => {
+        const reader = new FileReader();
+        reader.onload = (e) => {
+          if (e.target && e.target.result) {
+            resolve(e.target.result);
+          } else {
+            reject(new Error('Buffer vacío'));
+          }
+        };
+        reader.onerror = () => {
+          if (typeof file.arrayBuffer === 'function') {
+            file.arrayBuffer().then(resolve).catch(reject);
+          } else {
+            reject(reader.error || new Error('No se pudo leer el archivo desde el disco.'));
+          }
+        };
+        reader.readAsArrayBuffer(file);
+      });
     }
 
     function fitCameraToObject(rootObj) {
       const box = new THREE.Box3().setFromObject(rootObj);
+      if (box.isEmpty()) return;
       const size = box.getSize(new THREE.Vector3());
       const center = box.getCenter(new THREE.Vector3());
 
       const maxDim = Math.max(size.x, size.y, size.z, 30);
       const fov = camera.fov * (Math.PI / 180);
       let cameraDistance = Math.abs(maxDim / Math.sin(fov / 2)) * 1.05;
-
       cameraDistance = Math.max(cameraDistance, 80);
 
       camera.position.set(center.x + cameraDistance * 0.75, center.y + cameraDistance * 0.65, center.z + cameraDistance * 0.85);
@@ -1591,6 +3893,7 @@
 
     function computeMeshVolume(geometry, matrix) {
       const pos = geometry.attributes.position;
+      if (!pos) return 0;
       let totalVolume = 0;
 
       const p1 = new THREE.Vector3();
@@ -1624,8 +3927,8 @@
 
     function updateDimensionsDisplay(dimensions) {
       const xMm = dimensions.x.toFixed(1);
-      const yMm = dimensions.z.toFixed(1); // 3D printer depth
-      const zMm = dimensions.y.toFixed(1); // 3D printer height
+      const yMm = dimensions.z.toFixed(1);
+      const zMm = dimensions.y.toFixed(1);
 
       document.getElementById('dim-x').textContent = `${xMm} mm`;
       document.getElementById('dim-y').textContent = `${yMm} mm`;
@@ -1670,13 +3973,13 @@
     }
 
     function checkAllPrintersCompatibility() {
-      if (!boundingBox) return;
+      if (!boundingBox || boundingBox.isEmpty()) return;
       const size = new THREE.Vector3();
       boundingBox.getSize(size);
 
-      const modelW = size.x; // X width
-      const modelD = size.z; // Y depth in printer
-      const modelH = size.y; // Z height in printer
+      const modelW = size.x;
+      const modelD = size.z;
+      const modelH = size.y;
 
       const activePrinter = PRINTERS[activePrinterKey];
       let activeFits = true;
@@ -1725,22 +4028,22 @@
           reasons.push(`Altura Z (${modelH.toFixed(1)} > ${activePrinter.height}mm)`);
         }
 
-        alertOver.innerHTML = `⚠️ <strong>Excede ${activePrinter.name}:</strong><br>${reasons.join('<br>')}`;
+        alertOver.innerHTML = `⚠️ <strong>Excede ${activePrinter.name}:</strong><br>${reasons.join('<br>')}<br><span style="color:#fde047;">Tip: Usa la pestaña "✂️ Cortar" para dividir la pieza.</span>`;
         alertOver.style.display = 'block';
         alertOk.style.display = 'none';
 
         if (buildCage) {
           buildCage.material.color.setHex(0xef4444);
-          buildCage.material.opacity = 0.45;
+          buildCage.material.opacity = Math.max(cageBaseOpacity, 0.18);
         }
       } else {
         alertOver.style.display = 'none';
-        alertOk.innerHTML = `✅ <strong>Cabe en ${activePrinter.name}:</strong><br>Espacio restante en Z: ${(activePrinter.height - modelH).toFixed(1)} mm`;
+        alertOk.innerHTML = `✅ <strong>Cabe en ${activePrinter.name}:</strong><br>Espacio libre en Z: ${(activePrinter.height - modelH).toFixed(1)} mm`;
         alertOk.style.display = 'block';
 
         if (buildCage) {
           buildCage.material.color.setHex(0x38bdf8);
-          buildCage.material.opacity = 0.25;
+          buildCage.material.opacity = cageBaseOpacity;
         }
       }
     }
@@ -1783,31 +4086,44 @@
 
     function setRenderMode(mode) {
       currentMode = mode;
-      document.querySelectorAll('#controls-panel .btn-grid .btn-compact').forEach(b => b.classList.remove('active'));
-      const activeBtn = document.getElementById(`mode-${mode}`);
+      ['smooth', 'wire', 'flat', 'normals'].forEach(m => {
+        const btn = document.getElementById(`mode-${m}`);
+        if (btn) btn.classList.remove('active');
+      });
+      const activeId = mode === 'wireframe' ? 'mode-wire' : `mode-${mode}`;
+      const activeBtn = document.getElementById(activeId);
       if (activeBtn) activeBtn.classList.add('active');
 
       if (currentModel) {
-        applyMaterialToModel(getModelMaterial(currentMode, currentColor));
+        applyMaterialToModel(getModelMaterial(currentMode, currentColor, true));
       }
     }
 
     function setModelColor(colorHex, element) {
       currentColor = colorHex;
-      document.querySelectorAll('.color-swatch').forEach(sw => sw.classList.remove('active'));
+      document.querySelectorAll('#studio-tab-view .color-swatch').forEach(sw => sw.classList.remove('active'));
       if (element) {
         element.classList.add('active');
         document.getElementById('custom-color-picker').value = colorHex;
       }
       if (currentModel) {
-        applyMaterialToModel(getModelMaterial(currentMode, currentColor));
+        const newCol = new THREE.Color(colorHex);
+        currentModel.traverse(mesh => {
+          if (mesh.isMesh && mesh.geometry && mesh.geometry.attributes.color) {
+            const col = mesh.geometry.attributes.color;
+            for (let i = 0; i < col.count; i++) {
+              col.setXYZ(i, newCol.r, newCol.g, newCol.b);
+            }
+            col.needsUpdate = true;
+          }
+        });
       }
     }
 
     function updateOpacity(val) {
       document.getElementById('opacity-val').textContent = `${val}%`;
       if (currentModel) {
-        applyMaterialToModel(getModelMaterial(currentMode, currentColor));
+        applyMaterialToModel(getModelMaterial(currentMode, currentColor, true));
       }
     }
 
@@ -1848,9 +4164,11 @@
 
     function setupFileInput() {
       const input = document.getElementById('file-input');
-      input.addEventListener('change', (e) => {
+      input.addEventListener('change', async (e) => {
         if (e.target.files && e.target.files.length > 0) {
-          handleFiles(Array.from(e.target.files));
+          const filesCopy = Array.from(e.target.files);
+          await handleFiles(filesCopy);
+          // Only clear input value AFTER file reading has finished so browser doesn't revoke File reference!
           input.value = '';
         }
       });
@@ -1861,18 +4179,18 @@
           const { name, size, buffer } = event.data;
           if (!buffer || !name) return;
           const ext = name.trim().split('.').pop().toLowerCase();
-          if (ext === '3mf') {
+          if (ext === '3mf' || isZipBuffer(buffer)) {
             load3MFBuffer(buffer, name, size || buffer.byteLength);
-          } else if (ext === 'stl') {
+          } else {
             loadSTLBuffer(buffer, name, size || buffer.byteLength);
           }
         }
       });
     }
 
-    function handleFiles(files) {
+    async function handleFiles(files) {
       const validFiles = files.filter(f => {
-        const ext = f.name.split('.').pop().toLowerCase();
+        const ext = f.name.trim().split('.').pop().toLowerCase();
         return ext === 'stl' || ext === '3mf';
       });
 
@@ -1882,96 +4200,75 @@
       }
 
       if (validFiles.length === 1) {
-        handleFile(validFiles[0]);
+        await handleFile(validFiles[0]);
         return;
       }
 
-      // Multiple files loaded simultaneously: load each and assemble into multi-plate group
       showLoading(true, `Cargando ${validFiles.length} modelos 3D...`);
       const masterGroup = new THREE.Group();
-      masterGroup.name = `Conjunto de ${validFiles.length} placas/archivos`;
+      masterGroup.name = `Conjunto de ${validFiles.length} archivos`;
       const platesList = [];
       let totalSize = 0;
-      let loadedCount = 0;
 
-      validFiles.forEach((file, index) => {
+      for (let index = 0; index < validFiles.length; index++) {
+        const file = validFiles[index];
         totalSize += file.size;
-        const ext = file.name.split('.').pop().toLowerCase();
-        const reader = new FileReader();
-
-        reader.onload = function(event) {
-          try {
-            const buffer = event.target.result;
-            if (ext === 'stl') {
-              const loader = new THREE.STLLoader();
-              const geo = loader.parse(buffer);
-              geo.computeVertexNormals();
-              geo.center();
-              const mat = getModelMaterial(currentMode, currentColor);
-              const mesh = new THREE.Mesh(geo, mat);
-              const partGroup = new THREE.Group();
-              partGroup.name = file.name;
-              partGroup.add(mesh);
-
-              // Space them out along X axis initially
-              partGroup.position.x = (index - (validFiles.length - 1) / 2) * 60;
-              masterGroup.add(partGroup);
-              platesList.push({ id: index, name: file.name, object: partGroup });
-            } else {
-              const loader = new (THREE.ThreeMFLoader || THREE['3MFLoader'])();
-              const obj = loader.parse(buffer);
-              obj.name = file.name;
-              obj.position.x = (index - (validFiles.length - 1) / 2) * 60;
-              masterGroup.add(obj);
-              platesList.push({ id: index, name: file.name, object: obj });
-            }
-          } catch (err) {
-            console.error('Error loading file item', file.name, err);
-          } finally {
-            loadedCount++;
-            if (loadedCount === validFiles.length) {
-              if (masterGroup.children.length > 0) {
-                setupLoadedModel(masterGroup, `${validFiles.length} Archivos (${validFiles[0].name}...)`, totalSize, 'stl', platesList);
-              } else {
-                showLoading(false);
-                showToast('No se pudieron procesar los archivos.', true);
-              }
-            }
+        const ext = file.name.trim().split('.').pop().toLowerCase();
+        try {
+          const buffer = await readFileToArrayBuffer(file);
+          if (ext === 'stl' && !isZipBuffer(buffer)) {
+            const loader = new THREE.STLLoader();
+            const geo = loader.parse(buffer);
+            geo.computeVertexNormals();
+            const mat = getModelMaterial(currentMode, currentColor, true);
+            const mesh = new THREE.Mesh(geo, mat);
+            const partGroup = new THREE.Group();
+            partGroup.name = file.name;
+            partGroup.add(mesh);
+            partGroup.position.x = (index - (validFiles.length - 1) / 2) * 65;
+            masterGroup.add(partGroup);
+            platesList.push({ id: index, name: file.name, object: partGroup });
+          } else {
+            const loader = new (THREE.ThreeMFLoader || THREE['3MFLoader'])();
+            const obj = loader.parse(buffer);
+            obj.name = file.name;
+            obj.position.x = (index - (validFiles.length - 1) / 2) * 65;
+            masterGroup.add(obj);
+            platesList.push({ id: index, name: file.name, object: obj });
           }
-        };
+        } catch (err) {
+          console.error('Error loading file item:', file.name, err);
+        }
+      }
 
-        reader.onerror = function() {
-          loadedCount++;
-          if (loadedCount === validFiles.length && masterGroup.children.length > 0) {
-            setupLoadedModel(masterGroup, `${validFiles.length} Archivos`, totalSize, 'stl', platesList);
-          }
-        };
-
-        reader.readAsArrayBuffer(file);
-      });
+      if (masterGroup.children.length > 0) {
+        setupLoadedModel(masterGroup, `${validFiles.length} Archivos (${validFiles[0].name}...)`, totalSize, 'stl', platesList);
+      } else {
+        showLoading(false);
+        showToast('No se pudieron procesar los archivos seleccionados.', true);
+      }
     }
 
-    function handleFile(file) {
-      const ext = file.name.split('.').pop().toLowerCase();
+    async function handleFile(file) {
+      const ext = file.name.trim().split('.').pop().toLowerCase();
       if (ext !== 'stl' && ext !== '3mf') {
         showToast('Por favor selecciona un archivo con extensión .STL o .3MF', true);
         return;
       }
 
       showLoading(true, `Leyendo "${file.name}"...`);
-      const reader = new FileReader();
-      reader.onload = function(event) {
-        if (ext === '3mf') {
-          load3MFBuffer(event.target.result, file.name, file.size);
+      try {
+        const buffer = await readFileToArrayBuffer(file);
+        if (ext === '3mf' || isZipBuffer(buffer)) {
+          await load3MFBuffer(buffer, file.name, file.size);
         } else {
-          loadSTLBuffer(event.target.result, file.name, file.size);
+          loadSTLBuffer(buffer, file.name, file.size);
         }
-      };
-      reader.onerror = function() {
+      } catch (err) {
         showLoading(false);
-        showToast('Error al leer el archivo desde el disco.', true);
-      };
-      reader.readAsArrayBuffer(file);
+        console.error('File read error:', err);
+        showToast(`Error al leer "${file.name}": ${err.message || 'Verifica que el archivo esté descargado en tu equipo.'}`, true);
+      }
     }
 
     function loadSampleModel(type = 'stl') {
@@ -1998,10 +4295,7 @@
     function createFallbackCube(type) {
       const size = 20;
       const geo = new THREE.BoxGeometry(size, size, size);
-      geo.translate(0, size / 2, 0);
-      geo.computeBoundingBox();
-
-      const mat = getModelMaterial(currentMode, currentColor);
+      const mat = getModelMaterial(currentMode, currentColor, true);
       const mesh = new THREE.Mesh(geo, mat);
       const group = new THREE.Group();
       group.add(mesh);
@@ -2011,6 +4305,7 @@
     }
 
     function disposeHierarchy(obj) {
+      if (!obj) return;
       obj.traverse(child => {
         if (child.isMesh) {
           if (child.geometry) child.geometry.dispose();
@@ -2057,13 +4352,15 @@
       }
     }
 
+    let toastTimeout = null;
     function showToast(message, isError = false) {
       const toast = document.getElementById('toast');
       toast.textContent = message;
       toast.className = isError ? 'show error' : 'show';
-      setTimeout(() => {
+      if (toastTimeout) clearTimeout(toastTimeout);
+      toastTimeout = setTimeout(() => {
         toast.className = '';
-      }, 3500);
+      }, 3800);
     }
 
     function onWindowResize() {

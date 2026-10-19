@@ -39,7 +39,9 @@ import {
   ShieldCheck,
   Folder,
   Sparkles,
-  CheckSquare
+  Calculator,
+  CheckSquare,
+  Minimize2
 } from 'lucide-react';
 import { Tab, TabConfig, LinkItem } from './types';
 import { AnimatePresence, motion } from 'motion/react';
@@ -78,33 +80,23 @@ function lazyWithRetry<T extends React.ComponentType<any>>(
 }
 
 // Lazy-loaded tab components for optimized startup performance and reduced memory footprint
-const VideoGenerator = lazyWithRetry(() => import('./components/VideoGenerator'));
 const EmailGenerator = lazyWithRetry(() => import('./components/EmailGenerator'));
-const TextToSpeech = lazyWithRetry(() => import('./components/TextToSpeech'));
-const Whiteboard = lazyWithRetry(() => import('./components/Whiteboard'));
-const Renders = lazyWithRetry(() => import('./components/Renders'));
-const Prompts = lazyWithRetry(() => import('./components/Prompts'));
-const Engineer = lazyWithRetry(() => import('./components/Engineer'));
-const CommandsTab = lazyWithRetry(() => import('./components/CommandsTab'));
 const UsefulTools = lazyWithRetry(() => import('./components/UsefulTools'));
-const Credenciales = lazyWithRetry(() => import('./components/Credenciales'));
-const Dashboard = lazyWithRetry(() => import('./components/Dashboard'));
-const Finanzas = lazyWithRetry(() => import('./components/Finanzas'));
 const DatabaseViewer = lazyWithRetry(() => import('./components/DatabaseViewer'));
 const CustomTabContent = lazyWithRetry(() => import('./components/CustomTabContent'));
 const CalendarTab = lazyWithRetry(() => import('./components/CalendarTab'));
-const NotesTab = lazyWithRetry(() => import('./components/NotesTab'));
-const Nutricion = lazyWithRetry(() => import('./components/Nutricion'));
 const ThreeDPrinting = lazyWithRetry(() => import('./components/ThreeDPrinting'));
 const PanchoAssistantModal = lazyWithRetry(() => import('./components/Pancho/PanchoAssistantModal'));
 const WorkspaceHub = lazyWithRetry(() => import('./components/WorkspaceHub'));
 const TeleprompterTab = lazyWithRetry(() => import('./components/TeleprompterTab'));
-const PersonalTab = lazyWithRetry(() => import('./components/PersonalTab'));
-const ArchivosTab = lazyWithRetry(() => import('./components/ArchivosTab'));
+const CotizadorTab = lazyWithRetry(() => import('./components/CotizadorTab'));
 const ListasTab = lazyWithRetry(() => import('./components/ListasTab'));
+const CompresorTab = lazyWithRetry(() => import('./components/CompresorTab'));
+const PersonalTab = lazyWithRetry(() => import('./components/PersonalTab'));
 
 import { PanchoFloatingButton } from './components/Pancho/PanchoFloatingButton';
 import { PanchoState } from './components/Pancho/PanchoRobotAvatar';
+import { GlobalQuickIdeaModal } from './components/ListasRemb/GlobalQuickIdeaModal';
 
 import LinksBar from './components/LinksBar';
 import AiSidebar from './components/AiSidebar';
@@ -328,14 +320,35 @@ const MainLayout: React.FC = () => {
   const [tempTabName, setTempTabName] = useState('');
   const [leftSidebarOpen, setLeftSidebarOpen] = useState(window.innerWidth >= 1024);
   const [isAssistantOpen, setIsAssistantOpen] = useState(false);
+  const [isQuickIdeaOpen, setIsQuickIdeaOpen] = useState(false);
   const [panchoState, setPanchoState] = useState<PanchoState>('idle');
   const [assistantMessages, setAssistantMessages] = useState<Message[]>([]);
 
   useEffect(() => {
     const handleOpenPancho = () => setIsAssistantOpen(true);
+    const handleOpenQuickIdea = () => setIsQuickIdeaOpen(true);
+    const handleNav = (e: any) => {
+      if (e.detail) setActiveTabId(e.detail);
+    };
+    const handleKeyDown = (e: KeyboardEvent) => {
+      if (e.altKey && (e.key === 'i' || e.key === 'I')) {
+        e.preventDefault();
+        setIsQuickIdeaOpen(prev => !prev);
+      }
+    };
+
     window.addEventListener('open-pancho', handleOpenPancho);
-    return () => window.removeEventListener('open-pancho', handleOpenPancho);
-  }, []);
+    window.addEventListener('open-quick-idea', handleOpenQuickIdea);
+    window.addEventListener('navigate-to-tab', handleNav);
+    window.addEventListener('keydown', handleKeyDown);
+
+    return () => {
+      window.removeEventListener('open-pancho', handleOpenPancho);
+      window.removeEventListener('open-quick-idea', handleOpenQuickIdea);
+      window.removeEventListener('navigate-to-tab', handleNav);
+      window.removeEventListener('keydown', handleKeyDown);
+    };
+  }, [setActiveTabId]);
 
   useEffect(() => {
     const handleResize = () => {
@@ -547,13 +560,61 @@ const MainLayout: React.FC = () => {
         updateConfig({ ...config, tabs: [...config.tabs, newTab] });
       }
 
-      // Auto-remove deprecated tabs (Renders, Video, Archivos) from horizontal tabs bar
+      // Auto-add Cotizador tab right after Teleprompter if missing
+      const hasCotizadorTab = config.tabs.some(t => t.id === 'cotizador' || t.componentKey === 'Cotizador');
+      if (!hasCotizadorTab) {
+        const cotizadorTab: TabConfig = { id: 'cotizador', label: 'Cotizador', type: 'system', componentKey: 'Cotizador', isVisible: true, icon: 'Calculator' };
+        const nextTabs = [...config.tabs];
+        const teleIdx = nextTabs.findIndex(t => t.id === 'teleprompter' || t.componentKey === 'Teleprompter');
+        if (teleIdx !== -1) {
+          nextTabs.splice(teleIdx + 1, 0, cotizadorTab);
+        } else {
+          nextTabs.push(cotizadorTab);
+        }
+        updateConfig({ ...config, tabs: nextTabs });
+      }
+
+      // Auto-add Listas tab right after Cotizador if missing
+      const hasListasTab = config.tabs.some(t => t.id === 'listas' || t.componentKey === 'Listas');
+      if (!hasListasTab) {
+        const listasTab: TabConfig = { id: 'listas', label: 'Listas', type: 'system', componentKey: 'Listas', isVisible: true, icon: 'CheckSquare' };
+        const nextTabs = [...config.tabs];
+        const cotIdx = nextTabs.findIndex(t => t.id === 'cotizador' || t.componentKey === 'Cotizador');
+        if (cotIdx !== -1) {
+          nextTabs.splice(cotIdx + 1, 0, listasTab);
+        } else {
+          nextTabs.push(listasTab);
+        }
+        updateConfig({ ...config, tabs: nextTabs });
+      }
+
+      // Auto-add Compresor tab right after Listas (or Cotizador) if missing
+      const hasCompresorTab = config.tabs.some(t => t.id === 'compresor' || t.componentKey === 'Compresor');
+      if (!hasCompresorTab) {
+        const compresorTab: TabConfig = { id: 'compresor', label: 'Compresor', type: 'system', componentKey: 'Compresor', isVisible: true, icon: 'Minimize2' };
+        const nextTabs = [...config.tabs];
+        const listasIdx = nextTabs.findIndex(t => t.id === 'listas' || t.componentKey === 'Listas');
+        const cotIdx = nextTabs.findIndex(t => t.id === 'cotizador' || t.componentKey === 'Cotizador');
+        const targetIdx = listasIdx !== -1 ? listasIdx : cotIdx;
+        if (targetIdx !== -1) {
+          nextTabs.splice(targetIdx + 1, 0, compresorTab);
+        } else {
+          nextTabs.push(compresorTab);
+        }
+        updateConfig({ ...config, tabs: nextTabs });
+      }
+
+      // Auto-remove deprecated tabs (Renders, Video, Archivos, Dashboard, Ingeniero) from horizontal tabs bar
       const isRemovedTab = (t: { id?: string; label?: string; componentKey?: string }) =>
         isRenderTab(t) ||
         t.id === 'video-gen' ||
         t.componentKey === 'Generador de Video' ||
         t.id === 'archivos' ||
-        t.componentKey === 'Archivos';
+        t.componentKey === 'Archivos' ||
+        t.id === 'dashboard' ||
+        t.componentKey === 'Dashboard' ||
+        t.id === 'engineer' ||
+        t.componentKey === 'Ingeniero';
 
       const hasRemovedTab = config.tabs.some(isRemovedTab);
       if (hasRemovedTab) {
@@ -657,8 +718,14 @@ const MainLayout: React.FC = () => {
     if (activeTabId === 'teleprompter') {
       return <TeleprompterTab />;
     }
-    if (activeTabId === 'archivos') {
-      return <ArchivosTab />;
+    if (activeTabId === 'cotizador') {
+      return <CotizadorTab />;
+    }
+    if (activeTabId === 'listas') {
+      return <ListasTab />;
+    }
+    if (activeTabId === 'compresor') {
+      return <CompresorTab />;
     }
 
     const activeTab = config.tabs.find(t => t.id === activeTabId);
@@ -678,8 +745,6 @@ const MainLayout: React.FC = () => {
         );
       case 'Personal':
         return <PersonalTab />;
-      case 'Archivos':
-        return <ArchivosTab />;
       case 'Finanzas':
         return <PersonalTab initialSubTab="finanzas" />;
       case 'Nutricion':
@@ -689,10 +754,6 @@ const MainLayout: React.FC = () => {
         return <PersonalTab initialSubTab="boveda" />;
       case 'Workspace':
         return <WorkspaceHub />;
-      case 'Renders':
-        return <Renders />;
-      case 'Ingeniero':
-        return <Engineer />;
       case 'Base de Datos':
         return <DatabaseViewer />;
       case 'Herramientas Útiles':
@@ -703,20 +764,18 @@ const MainLayout: React.FC = () => {
         return <CalendarTab />;
       case 'Credenciales':
         return <PersonalTab initialSubTab="boveda" initialBovedaTab="credenciales" />;
-      case 'Dashboard':
-        return <Dashboard />;
       case 'Notas':
         return <PersonalTab initialSubTab="boveda" initialBovedaTab="notas" />;
-      case 'Generador de Video':
-        return <VideoGenerator />;
       case 'Impresión 3D':
         return <ThreeDPrinting />;
       case 'Teleprompter':
         return <TeleprompterTab />;
+      case 'Cotizador':
+        return <CotizadorTab />;
       case 'Listas':
-      case 'Listas Remb':
-      case 'Organizador':
         return <ListasTab />;
+      case 'Compresor':
+        return <CompresorTab />;
       default:
         return (
           <div className="glass-panel p-2.5 sm:p-4 md:p-6 rounded-2xl sm:rounded-3xl shadow-2xl w-full mt-2 sm:mt-6">
@@ -728,8 +787,6 @@ const MainLayout: React.FC = () => {
 
   const tabIcons: Record<string, React.ReactNode> = {
     'Personal': <ShieldCheck />,
-    'Listas': <CheckSquare />,
-    'Listas Remb': <CheckSquare />,
     'Archivos': <Folder />,
     'Bóveda': <Lock />,
     'Boveda': <Lock />,
@@ -751,6 +808,9 @@ const MainLayout: React.FC = () => {
     'Nutricion': <Heart />,
     'Impresión 3D': <Box />,
     'Teleprompter': <Music />,
+    'Cotizador': <Calculator />,
+    'Listas': <CheckSquare />,
+    'Compresor': <Minimize2 />,
   };
 
   const handleCloseNotification = (id: string) => {
@@ -816,6 +876,18 @@ const MainLayout: React.FC = () => {
 
                     {/* Actions Toolbar */}
                     <div className="flex items-center gap-1.5 pl-3 border-l border-white/10">
+                      {/* Global Quick Voice & Idea Capture Button */}
+                      <motion.button 
+                        whileHover={{ scale: 1.05 }} 
+                        whileTap={{ scale: 0.95 }} 
+                        onClick={() => setIsQuickIdeaOpen(true)} 
+                        className="flex items-center gap-1.5 px-3 py-1.5 rounded-xl bg-gradient-to-r from-purple-600/30 via-pink-600/25 to-amber-500/20 hover:from-purple-600/50 hover:to-pink-600/40 border border-purple-500/40 text-purple-200 hover:text-white transition-all shadow-md shadow-purple-900/20 mr-1" 
+                        title="Captura Rápida de Ideas y Voz (Alt + I)"
+                      >
+                        <Mic size={15} className="text-pink-400 animate-pulse" />
+                        <span className="text-xs font-bold tracking-wide">Grabar Idea</span>
+                      </motion.button>
+
                       <motion.button 
                         whileHover={{ scale: 1.08 }} 
                         whileTap={{ scale: 0.94 }} 
@@ -1104,6 +1176,76 @@ const MainLayout: React.FC = () => {
           notifications={config.notifications || []} 
           onClose={handleCloseNotification} 
         />
+
+        {/* Global Quick Idea Modal */}
+        <GlobalQuickIdeaModal 
+          isOpen={isQuickIdeaOpen} 
+          onClose={() => setIsQuickIdeaOpen(false)} 
+        />
+
+        {/* Mobile Ergonomic Bottom Navigation Bar */}
+        <div className="lg:hidden fixed bottom-0 left-0 right-0 z-40 bg-gray-950/90 backdrop-blur-xl border-t border-white/10 px-2 py-1.5 flex items-center justify-around pb-[max(0.4rem,env(safe-area-inset-bottom))] shadow-[0_-4px_25px_rgba(0,0,0,0.5)]">
+          <button
+            onClick={() => setActiveTabId('email-gen')}
+            className={`flex flex-col items-center justify-center p-1.5 rounded-xl transition-all ${
+              activeTabId === 'email-gen' ? 'text-pink-400' : 'text-gray-400 hover:text-gray-200'
+            }`}
+          >
+            <Mail size={18} />
+            <span className="text-[10px] font-medium mt-0.5">Email</span>
+          </button>
+
+          <button
+            onClick={() => setActiveTabId('personal')}
+            className={`flex flex-col items-center justify-center p-1.5 rounded-xl transition-all ${
+              activeTabId === 'personal' || activeTabId === 'finanzas' || activeTabId === 'nutricion' || activeTabId === 'credenciales' || activeTabId === 'notas'
+                ? 'text-purple-400' 
+                : 'text-gray-400 hover:text-gray-200'
+            }`}
+          >
+            <ShieldCheck size={18} />
+            <span className="text-[10px] font-medium mt-0.5">Personal</span>
+          </button>
+
+          {/* Central Quick Voice & Idea Capture Button */}
+          <button
+            onClick={() => setIsQuickIdeaOpen(true)}
+            className="flex flex-col items-center justify-center -mt-5 bg-gradient-to-tr from-purple-600 via-pink-600 to-amber-500 text-white p-3.5 rounded-full shadow-[0_0_20px_rgba(236,72,153,0.5)] border-2 border-gray-950 transform active:scale-95 transition-all"
+            title="Grabar Idea Rápida"
+          >
+            <Mic size={20} className="animate-pulse" />
+          </button>
+
+          <button
+            onClick={() => setActiveTabId('listas')}
+            className={`flex flex-col items-center justify-center p-1.5 rounded-xl transition-all ${
+              activeTabId === 'listas' ? 'text-blue-400' : 'text-gray-400 hover:text-gray-200'
+            }`}
+          >
+            <CheckSquare size={18} />
+            <span className="text-[10px] font-medium mt-0.5">Listas</span>
+          </button>
+
+          <button
+            onClick={() => setActiveTabId('calendar')}
+            className={`flex flex-col items-center justify-center p-1.5 rounded-xl transition-all ${
+              activeTabId === 'calendar' ? 'text-amber-400' : 'text-gray-400 hover:text-gray-200'
+            }`}
+          >
+            <Calendar size={18} />
+            <span className="text-[10px] font-medium mt-0.5">Agenda</span>
+          </button>
+
+          <button
+            onClick={() => setActiveTabId('3d-print')}
+            className={`flex flex-col items-center justify-center p-1.5 rounded-xl transition-all ${
+              activeTabId === '3d-print' ? 'text-cyan-400' : 'text-gray-400 hover:text-gray-200'
+            }`}
+          >
+            <Box size={18} />
+            <span className="text-[10px] font-medium mt-0.5">3D</span>
+          </button>
+        </div>
       </div>
     </DndContext>
   );

@@ -6,20 +6,33 @@ import { Edit, Trash2, Plus, ChevronLeft, ChevronRight } from 'lucide-react';
 import { SortableLinkList } from './common/SortableLinkList';
 import { horizontalListSortingStrategy } from '@dnd-kit/sortable';
 import { toast } from 'sonner';
+import { getInternalTabForLink } from '../utils/appLinkUtils';
 
 const ToolCard: React.FC<{ 
     item: LinkItem; 
     isEditing: boolean;
     onEdit: (item: LinkItem) => void;
     onDelete: (id: string) => void;
+    onSelectInternalTab?: (tabId: string) => void;
     count?: number;
-}> = ({ item, isEditing, onEdit, onDelete }) => {
+}> = ({ item, isEditing, onEdit, onDelete, onSelectInternalTab }) => {
+    const internalTabId = getInternalTabForLink(item);
     return (
         <div className="relative group w-[70px] h-[70px] sm:w-[76px] sm:h-[76px] flex-shrink-0">
             <a 
                 href={item.href} 
-                target="_blank" 
+                target={internalTabId ? undefined : "_blank"} 
                 rel="noopener noreferrer" 
+                onClick={(e) => {
+                    if (isEditing) {
+                        e.preventDefault();
+                        return;
+                    }
+                    if (internalTabId && onSelectInternalTab) {
+                        e.preventDefault();
+                        onSelectInternalTab(internalTabId);
+                    }
+                }}
                 className={`group relative flex flex-col items-center justify-center p-1.5 bg-gradient-to-b from-gray-800/85 via-gray-850/90 to-gray-900/95 hover:from-gray-750/95 hover:to-gray-850 rounded-2xl transition-all duration-200 border border-white/[0.08] hover:border-white/25 hover:shadow-[0_6px_20px_rgba(0,0,0,0.45)] hover:-translate-y-1 w-full h-full backdrop-blur-sm ${item.colorClass || ''} ${isEditing ? 'opacity-50 pointer-events-none' : ''}`}
             >
                 <div 
@@ -70,6 +83,7 @@ interface ToolSectionPanelProps {
     onOpenModal: (sectionId: string, item?: LinkItem) => void;
     onDeleteLink: (itemId: string, sectionId: string) => void;
     onReorder: (sectionId: string, newItems: LinkItem[]) => void;
+    onSelectInternalTab?: (tabId: string) => void;
 }
 
 const ToolSectionPanel: React.FC<ToolSectionPanelProps> = ({
@@ -81,6 +95,7 @@ const ToolSectionPanel: React.FC<ToolSectionPanelProps> = ({
     onOpenModal,
     onDeleteLink,
     onReorder,
+    onSelectInternalTab,
 }) => {
     const scrollRef = useRef<HTMLDivElement>(null);
     const [canScrollLeft, setCanScrollLeft] = useState(false);
@@ -251,6 +266,7 @@ const ToolSectionPanel: React.FC<ToolSectionPanelProps> = ({
                                 key={tool.id} 
                                 item={tool} 
                                 isEditing={isEditing}
+                                onSelectInternalTab={onSelectInternalTab}
                                 onEdit={(i) => onOpenModal(section.id, i)}
                                 onDelete={(id) => onDeleteLink(id, section.id)}
                             />
@@ -281,7 +297,7 @@ const ToolSectionPanel: React.FC<ToolSectionPanelProps> = ({
 };
 
 const UsefulTools: React.FC = () => {
-    const { config, updateConfig, isEditing } = useLinks();
+    const { config, updateConfig, isEditing, setActiveTabId } = useLinks();
     const [modalOpen, setModalOpen] = useState(false);
     const [currentLink, setCurrentLink] = useState<LinkItem | null>(null);
     const [activeSectionId, setActiveSectionId] = useState<string | null>(null);
@@ -483,6 +499,7 @@ const UsefulTools: React.FC = () => {
                         onOpenModal={openModal}
                         onDeleteLink={handleDeleteLink}
                         onReorder={handleReorder}
+                        onSelectInternalTab={setActiveTabId}
                     />
                 ))}
             </div>

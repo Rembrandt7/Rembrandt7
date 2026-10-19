@@ -184,6 +184,8 @@ const CardItem: React.FC<{
   const isPaidThisMonth = isCredit && card.lastPaidMonth === currentMonthStr;
 
   let nextPaymentDateStr = '';
+  let daysUntilPayment: number | null = null;
+
   if (isCredit && card.paymentDate) {
     const paymentDay = parseInt(card.paymentDate, 10);
     if (!isNaN(paymentDay)) {
@@ -198,6 +200,16 @@ const CardItem: React.FC<{
       }
       const nextDate = new Date(nextYear, nextMonth, paymentDay);
       nextPaymentDateStr = nextDate.toLocaleDateString('es-MX', { day: '2-digit', month: 'short' });
+
+      if (!isPaidThisMonth) {
+        const todayZero = new Date(today.getFullYear(), today.getMonth(), today.getDate());
+        let targetDate = new Date(today.getFullYear(), today.getMonth(), paymentDay);
+        if (targetDate.getTime() < todayZero.getTime()) {
+          targetDate = new Date(today.getFullYear(), today.getMonth() + 1, paymentDay);
+        }
+        const diffMs = targetDate.getTime() - todayZero.getTime();
+        daysUntilPayment = Math.round(diffMs / (1000 * 60 * 60 * 24));
+      }
     }
   }
 
@@ -251,16 +263,27 @@ const CardItem: React.FC<{
         </div>
 
         {/* Dates & Status line */}
-        <div className="text-[11px] text-zinc-400 font-medium mt-1.5 flex items-center justify-between border-t border-white/5 pt-1.5">
+        <div className="text-[11px] text-zinc-400 font-medium mt-1.5 flex items-center justify-between border-t border-white/5 pt-1.5 flex-wrap gap-1">
           <span>{card.expirationDate ? `Vence: ${card.expirationDate}` : ''} {isCredit && card.cutoffDate && `| Corte: d.${card.cutoffDate}`}</span>
           {isCredit && nextPaymentDateStr && (
-            <span className={`px-2 py-0.5 rounded-full text-[10px] font-bold border ${
-              isPaidThisMonth 
-                ? 'bg-emerald-500/15 text-emerald-300 border-emerald-500/30' 
-                : 'bg-rose-500/15 text-rose-300 border-rose-500/30'
-            }`}>
-              Pago: {nextPaymentDateStr} {isPaidThisMonth ? '✓' : ''}
-            </span>
+            <div className="flex items-center gap-1.5 flex-wrap">
+              <span className={`px-2 py-0.5 rounded-full text-[10px] font-bold border ${
+                isPaidThisMonth 
+                  ? 'bg-emerald-500/15 text-emerald-300 border-emerald-500/30' 
+                  : 'bg-rose-500/15 text-rose-300 border-rose-500/30'
+              }`}>
+                Pago: {nextPaymentDateStr} {isPaidThisMonth ? '✓' : ''}
+              </span>
+              {daysUntilPayment !== null && !isPaidThisMonth && (
+                <span className={`px-2 py-0.5 rounded-full text-[10px] font-extrabold flex items-center gap-1 border ${
+                  daysUntilPayment <= 2
+                    ? 'bg-rose-600 text-white border-rose-400 shadow-md shadow-rose-600/40 animate-pulse'
+                    : 'bg-amber-500/20 text-amber-300 border-amber-500/40'
+                }`}>
+                  ⚠️ {daysUntilPayment <= 0 ? 'Pagar HOY' : `Faltan ${daysUntilPayment}d`}
+                </span>
+              )}
+            </div>
           )}
         </div>
       </div>
@@ -482,6 +505,22 @@ const Finanzas: React.FC<FinanzasProps> = ({ activeProfileId, onSelectProfile, i
   // Financial data for active file
   const [cards, setCards] = useState<FinanzasCard[]>([]);
   const [financialItems, setFinancialItems] = useState<FinancialItem[]>([]);
+
+  // Privacy Mode (blur/mask sensitive amounts)
+  const [isPrivacyMasked, setIsPrivacyMasked] = useState<boolean>(() => {
+    return localStorage.getItem('finanzas_privacy_mode') === 'true';
+  });
+
+  const togglePrivacyMask = () => {
+    setIsPrivacyMasked(prev => {
+      const next = !prev;
+      localStorage.setItem('finanzas_privacy_mode', String(next));
+      return next;
+    });
+  };
+
+  // Fast filter for cards
+  const [cardTypeFilter, setCardTypeFilter] = useState<'todas' | 'credito' | 'debito' | 'ahorro'>('todas');
 
   // Modals for File operations
   const [isUnlockModalOpen, setIsUnlockModalOpen] = useState(false);
@@ -1702,6 +1741,20 @@ const Finanzas: React.FC<FinanzasProps> = ({ activeProfileId, onSelectProfile, i
         </div>
 
         <div className="flex flex-wrap items-center gap-2">
+          {/* Privacy Eye Toggle */}
+          <button
+            onClick={togglePrivacyMask}
+            className={`px-3 py-1.5 text-xs font-semibold rounded-xl border transition-all flex items-center gap-1.5 ${
+              isPrivacyMasked 
+                ? 'bg-amber-500/20 text-amber-300 border-amber-500/40 shadow-[0_0_12px_rgba(245,158,11,0.2)]' 
+                : 'bg-zinc-800 hover:bg-zinc-700 text-zinc-300 hover:text-white border-white/10'
+            }`}
+            title={isPrivacyMasked ? "Modo Privacidad activo (clic para mostrar saldos)" : "Ocultar saldos (Modo Privacidad)"}
+          >
+            {isPrivacyMasked ? <EyeOff size={14} className="text-amber-400" /> : <Eye size={14} />}
+            <span className="hidden sm:inline">{isPrivacyMasked ? 'Saldos Ocultos' : 'Privacidad'}</span>
+          </button>
+
           {/* Change/Set Password for this file */}
           <button
             onClick={() => {
@@ -1771,13 +1824,13 @@ const Finanzas: React.FC<FinanzasProps> = ({ activeProfileId, onSelectProfile, i
           <div className="bg-white/[0.02] border border-white/5 p-3 px-4 rounded-xl flex flex-col items-center justify-center">
             <span className="text-[8px] text-white/40 uppercase tracking-widest mb-1">Total Ahorrado</span>
             <span className="text-base sm:text-lg font-black text-blue-400 font-mono">
-              ${totalAhorrado.toLocaleString('es-MX', { minimumFractionDigits: 2 })}
+              {isPrivacyMasked ? '$ ••••••' : `$${totalAhorrado.toLocaleString('es-MX', { minimumFractionDigits: 2 })}`}
             </span>
           </div>
           <div className="bg-white/[0.02] border border-white/5 p-3 px-4 rounded-xl flex flex-col items-center justify-center">
             <span className="text-[8px] text-white/40 uppercase tracking-widest mb-1">Total Deudas</span>
             <span className="text-base sm:text-lg font-black text-orange-400 font-mono">
-              ${totalDeber.toLocaleString('es-MX', { minimumFractionDigits: 2 })}
+              {isPrivacyMasked ? '$ ••••••' : `$${totalDeber.toLocaleString('es-MX', { minimumFractionDigits: 2 })}`}
             </span>
           </div>
           <div className={`p-3 px-4 border rounded-xl flex flex-col items-center justify-center relative overflow-hidden ${balanceReal >= 0 ? 'bg-emerald-500/5 border-emerald-500/10' : 'bg-rose-500/5 border-rose-500/10'}`}>
@@ -1785,15 +1838,61 @@ const Finanzas: React.FC<FinanzasProps> = ({ activeProfileId, onSelectProfile, i
               Balance Real
             </span>
             <span className={`text-base sm:text-lg font-black font-mono ${balanceReal >= 0 ? 'text-emerald-400' : 'text-rose-400'}`}>
-              ${balanceReal.toLocaleString('es-MX', { minimumFractionDigits: 2 })}
+              {isPrivacyMasked ? '$ ••••••' : `$${balanceReal.toLocaleString('es-MX', { minimumFractionDigits: 2 })}`}
             </span>
           </div>
         </div>
       </div>
 
+      {/* Fast Filter Pills */}
+      <div className="flex items-center gap-2 overflow-x-auto pb-1">
+        <span className="text-xs font-bold text-zinc-400 uppercase tracking-wider mr-1">Filtrar:</span>
+        <button
+          onClick={() => setCardTypeFilter('todas')}
+          className={`px-3 py-1 rounded-xl text-xs font-bold transition-all ${
+            cardTypeFilter === 'todas'
+              ? 'bg-white text-black shadow-md'
+              : 'bg-white/5 text-zinc-400 hover:text-white hover:bg-white/10'
+          }`}
+        >
+          Todas ({cards.length})
+        </button>
+        <button
+          onClick={() => setCardTypeFilter('credito')}
+          className={`px-3 py-1 rounded-xl text-xs font-bold transition-all ${
+            cardTypeFilter === 'credito'
+              ? 'bg-rose-500 text-white shadow-md shadow-rose-500/30'
+              : 'bg-white/5 text-rose-300/70 hover:text-rose-200 hover:bg-rose-500/10'
+          }`}
+        >
+          Crédito ({creditoCards.length})
+        </button>
+        <button
+          onClick={() => setCardTypeFilter('debito')}
+          className={`px-3 py-1 rounded-xl text-xs font-bold transition-all ${
+            cardTypeFilter === 'debito'
+              ? 'bg-emerald-500 text-white shadow-md shadow-emerald-500/30'
+              : 'bg-white/5 text-emerald-300/70 hover:text-emerald-200 hover:bg-emerald-500/10'
+          }`}
+        >
+          Débito ({debitoCards.length})
+        </button>
+        <button
+          onClick={() => setCardTypeFilter('ahorro')}
+          className={`px-3 py-1 rounded-xl text-xs font-bold transition-all ${
+            cardTypeFilter === 'ahorro'
+              ? 'bg-blue-500 text-white shadow-md shadow-blue-500/30'
+              : 'bg-white/5 text-blue-300/70 hover:text-blue-200 hover:bg-blue-500/10'
+          }`}
+        >
+          Metas & Deudas ({financialItems.length})
+        </button>
+      </div>
+
       {/* Cards Grid */}
       <div className="space-y-8">
         {/* Crédito Section */}
+        {(cardTypeFilter === 'todas' || cardTypeFilter === 'credito') && (
         <div>
           <div className="flex justify-between items-center mb-4">
             <h3 className="text-lg sm:text-xl font-bold text-rose-400">Tarjetas de Crédito</h3>
@@ -1803,12 +1902,21 @@ const Finanzas: React.FC<FinanzasProps> = ({ activeProfileId, onSelectProfile, i
               animate={{ scale: 1, color: '#fb7185' }}
               className="text-xl sm:text-2xl font-black text-rose-400 font-mono"
             >
-              Total: ${totalCredito.toLocaleString('es-MX', { minimumFractionDigits: 2 })}
+              Total: {isPrivacyMasked ? '$ ••••••' : `$${totalCredito.toLocaleString('es-MX', { minimumFractionDigits: 2 })}`}
             </motion.div>
           </div>
           <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3">
             {creditoCards.map(card => (
-              <CardItem key={card.id} card={card} onEdit={openModal} onDelete={handleDeleteCard} onAdjust={adjustBalance} onSetBalance={setCardBalance} onMarkPaid={handleMarkCardPaid} />
+              <CardItem 
+                key={card.id} 
+                card={card} 
+                isMasked={isPrivacyMasked}
+                onEdit={openModal} 
+                onDelete={handleDeleteCard} 
+                onAdjust={adjustBalance} 
+                onSetBalance={setCardBalance} 
+                onMarkPaid={handleMarkCardPaid} 
+              />
             ))}
             {creditoCards.length === 0 && (
               <div className="col-span-full p-6 text-center text-xs text-zinc-500 border border-dashed border-white/10 rounded-xl">
@@ -1817,8 +1925,10 @@ const Finanzas: React.FC<FinanzasProps> = ({ activeProfileId, onSelectProfile, i
             )}
           </div>
         </div>
+        )}
 
         {/* Débito Section */}
+        {(cardTypeFilter === 'todas' || cardTypeFilter === 'debito') && (
         <div>
           <div className="flex justify-between items-center mb-4">
             <h3 className="text-lg sm:text-xl font-bold text-emerald-400">Cuentas de Débito</h3>
@@ -1828,12 +1938,21 @@ const Finanzas: React.FC<FinanzasProps> = ({ activeProfileId, onSelectProfile, i
               animate={{ scale: 1, color: '#34d399' }}
               className="text-xl sm:text-2xl font-black text-emerald-400 font-mono"
             >
-              Total: ${totalDebito.toLocaleString('es-MX', { minimumFractionDigits: 2 })}
+              Total: {isPrivacyMasked ? '$ ••••••' : `$${totalDebito.toLocaleString('es-MX', { minimumFractionDigits: 2 })}`}
             </motion.div>
           </div>
           <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3">
             {debitoCards.map(card => (
-              <CardItem key={card.id} card={card} onEdit={openModal} onDelete={handleDeleteCard} onAdjust={adjustBalance} onSetBalance={setCardBalance} onMarkPaid={handleMarkCardPaid} />
+              <CardItem 
+                key={card.id} 
+                card={card} 
+                isMasked={isPrivacyMasked}
+                onEdit={openModal} 
+                onDelete={handleDeleteCard} 
+                onAdjust={adjustBalance} 
+                onSetBalance={setCardBalance} 
+                onMarkPaid={handleMarkCardPaid} 
+              />
             ))}
             {debitoCards.length === 0 && (
               <div className="col-span-full p-6 text-center text-xs text-zinc-500 border border-dashed border-white/10 rounded-xl">
@@ -1842,8 +1961,10 @@ const Finanzas: React.FC<FinanzasProps> = ({ activeProfileId, onSelectProfile, i
             )}
           </div>
         </div>
+        )}
 
         {/* Deuda / Ahorro Section */}
+        {(cardTypeFilter === 'todas' || cardTypeFilter === 'ahorro') && (
         <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
           <div>
             <h3 className="text-lg sm:text-xl font-bold text-orange-400 mb-4">Deudas & Préstamos</h3>
@@ -1872,6 +1993,7 @@ const Finanzas: React.FC<FinanzasProps> = ({ activeProfileId, onSelectProfile, i
             </div>
           </div>
         </div>
+        )}
       </div>
 
       {/* Card Edit/Create Modal */}

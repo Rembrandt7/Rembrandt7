@@ -6,7 +6,7 @@ import { toast } from 'sonner';
 import { LinkEditorModal } from './common/LinkEditorModal';
 import { SortableLinkList } from './common/SortableLinkList';
 import { rectSortingStrategy } from '@dnd-kit/sortable';
-import { getSmartLinkTarget, openSmartMobileApp } from '../utils/appLinkUtils';
+import { getSmartLinkTarget, openSmartMobileApp, getInternalTabForLink } from '../utils/appLinkUtils';
 import { inferLinkCategory, LinkCategory, CATEGORY_DEFINITIONS, normalizeAndDeduplicateLinksBar } from '../utils/linkCategoryUtils';
 import { isMobileDevice } from '../utils/deviceUtils';
 
@@ -35,16 +35,23 @@ const LinkIcon: React.FC<{
     onEdit: (item: LinkItem) => void; 
     onDelete: (id: string) => void; 
     onMove: (id: string, direction: 'left' | 'right') => void;
+    onSelectInternalTab?: (tabId: string) => void;
     isFirst: boolean;
     isLast: boolean;
-}> = ({ item, isEditing, onEdit, onDelete, onMove, isFirst, isLast }) => {
+}> = ({ item, isEditing, onEdit, onDelete, onMove, onSelectInternalTab, isFirst, isLast }) => {
     const hasBg = item.hasBackground !== false;
     const { href: smartHref, target: smartTarget, isAppScheme, fallbackUrl } = getSmartLinkTarget(item.href, item.name);
     const itemCategory = item.category || inferLinkCategory(item);
+    const internalTabId = getInternalTabForLink(item);
 
     const handleClick = (e: React.MouseEvent) => {
         if (isEditing) {
             e.preventDefault();
+            return;
+        }
+        if (internalTabId && onSelectInternalTab) {
+            e.preventDefault();
+            onSelectInternalTab(internalTabId);
             return;
         }
         if (item.id === 'renders-remb' || (item.name || '').toLowerCase().includes('renders remb')) {
@@ -123,7 +130,7 @@ const LinkIcon: React.FC<{
 };
 
 const LinksBar: React.FC = () => {
-    const { config, updateConfig, saveConfigToFile, loadConfigFromFile, saveAsDefault, saveToSupabase, resetToDefaults, fetchConfigFromSupabaseManual, isEditing, toggleEditing, configFilename, setConfigFilename } = useLinks();
+    const { config, updateConfig, saveConfigToFile, loadConfigFromFile, saveAsDefault, saveToSupabase, resetToDefaults, fetchConfigFromSupabaseManual, isEditing, toggleEditing, configFilename, setConfigFilename, setActiveTabId } = useLinks();
     const [activeCategories, setActiveCategories] = useState<LinkCategory[]>(getDefaultCategories);
     const [modalOpen, setModalOpen] = useState(false);
     const [currentLink, setCurrentLink] = useState<LinkItem | null>(null);
@@ -418,6 +425,7 @@ const LinksBar: React.FC = () => {
                             onMove={handleMoveLink}
                             isFirst={index === 0}
                             isLast={index === filteredLinks.length - 1}
+                            onSelectInternalTab={setActiveTabId}
                         />
                     )}
                 />

@@ -128,6 +128,8 @@ export const GlobalSearch: React.FC = () => {
         case 'Personal': return <ShieldCheck size={16} className="text-amber-400" />;
         case 'Workspace': return <FolderKanban size={16} className="text-violet-400" />;
         case 'Base de Datos': return <Database size={16} className="text-blue-400" />;
+        case 'Teleprompter': return <Music size={16} className="text-pink-400" />;
+        case 'Cotizador': return <FileText size={16} className="text-lime-400" />;
         default: return <Layers size={16} className="text-indigo-400" />;
       }
     };

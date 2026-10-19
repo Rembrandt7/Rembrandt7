@@ -152,6 +152,33 @@ const TaskItem: React.FC<TaskItemProps> = ({ task, onToggle, onDelete, onDragSta
               <CalendarIcon className="w-3 h-3" />
               <span className="text-[10px]">{new Date(task.dueDate).toLocaleDateString(undefined, {month:'short', day:'numeric'})}</span>
             </div>
+
+            {/* Impresión 3D Direct Links */}
+            {(task.category === 'Impresión 3D' || /3d|stl|impres|filamento/i.test(task.title)) && (
+              <div className="flex items-center gap-1">
+                <button
+                  type="button"
+                  onClick={(e) => {
+                    e.stopPropagation();
+                    window.dispatchEvent(new CustomEvent('navigate-to-tab', { detail: '3d-print' }));
+                  }}
+                  className="px-2 py-0.5 rounded-full font-bold text-[9px] bg-purple-100 hover:bg-purple-200 text-purple-700 border border-purple-300 inline-flex items-center gap-1 transition-colors shadow-xs"
+                  title="Abrir Módulo de Impresión 3D"
+                >
+                  <span>🖨️ Módulo 3D</span>
+                </button>
+                <a
+                  href="https://makerworld.com/es"
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  onClick={(e) => e.stopPropagation()}
+                  className="px-2 py-0.5 rounded-full font-bold text-[9px] bg-emerald-100 hover:bg-emerald-200 text-emerald-800 border border-emerald-300 inline-flex items-center gap-1 transition-colors shadow-xs"
+                  title="Abrir MakerWorld"
+                >
+                  <span>MakerWorld</span>
+                </a>
+              </div>
+            )}
           </div>
           
            {/* Progress Bar (Visible if progress > 0 and not completed) */}

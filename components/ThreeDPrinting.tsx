@@ -1,4 +1,4 @@
-import React, { useState, useMemo, useEffect } from 'react';
+import React, { useState, useMemo, useEffect, useRef } from 'react';
 import { Box, Wrench, Layout, Sparkles, Move, Star, Shield, Zap, Package, Key, Sword, Globe, ChevronRight, Settings, Database, ExternalLink, Cloud, Search, X, Calculator, TrendingUp, FolderArchive, Layers, Scissors, Eye, Flame } from 'lucide-react';
 import { motion } from 'motion/react';
 
@@ -481,6 +481,24 @@ const ThreeDPrinting: React.FC = () => {
   const [searchQuery, setSearchQuery] = useState('');
   const [hoveredLib, setHoveredLib] = useState<{ name: string; description: string } | null>(null);
   const [hoveredTool, setHoveredTool] = useState<{ name: string; description: string } | null>(null);
+  const viewerIframeRef = useRef<HTMLIFrameElement | null>(null);
+  const externalFileInputRef = useRef<HTMLInputElement | null>(null);
+
+  const handleExternalViewerFile = async (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+    try {
+      const buffer = await file.arrayBuffer();
+      viewerIframeRef.current?.contentWindow?.postMessage(
+        { type: 'LOAD_MODEL', name: file.name, size: file.size, buffer },
+        '*'
+      );
+    } catch (err) {
+      console.error('Error reading 3D file:', err);
+    } finally {
+      e.target.value = '';
+    }
+  };
 
   // Abre en automático la calculadora flotante del lado derecho al entrar a Impresión 3D
   useEffect(() => {
@@ -785,20 +803,36 @@ const ThreeDPrinting: React.FC = () => {
               </div>
               <div>
                 <h3 className="text-sm font-black text-white flex flex-wrap items-center gap-2">
-                  <span>Visualizador STL & 3MF</span>
+                  <span>Estudio & Visualizador 3D (STL / 3MF)</span>
                   <span className="text-[10px] font-bold px-2 py-0.5 rounded-full bg-cyan-500/20 text-cyan-300 border border-cyan-500/30">
-                    A1 mini · Kobra X · A2L
+                    Pintura 3D · Corte Avanzado · A1 mini · Kobra X · A2L
                   </span>
                 </h3>
                 <p className="text-xs text-gray-400">
-                  Arrastra cualquier modelo .STL o .3MF para rotar, verificar dimensiones, volumen y compatibilidad con tus impresoras.
+                  Abre o arrastra cualquier modelo .STL o .3MF para analizar dimensiones, pintar el volumen en 3D o cortar geometrías con conectores de ensamble.
                 </p>
               </div>
             </div>
 
             <div className="flex items-center gap-2 self-end sm:self-auto">
+              <input
+                ref={externalFileInputRef}
+                type="file"
+                accept=".stl,.3mf,.STL,.3MF"
+                onChange={handleExternalViewerFile}
+                className="hidden"
+              />
+              <button
+                type="button"
+                onClick={() => externalFileInputRef.current?.click()}
+                className="flex items-center gap-1.5 px-3 py-1.5 bg-cyan-600 hover:bg-cyan-500 border border-cyan-400/40 rounded-xl text-xs font-bold text-white transition-all shadow-sm hover:scale-105"
+                title="Seleccionar archivo .STL o .3MF desde tu equipo"
+              >
+                <Package size={14} />
+                <span>Abrir STL / 3MF</span>
+              </button>
               <a
-                href="/visualizador3d/index.html"
+                href="/visualizador3d/index.html?v=68"
                 target="_blank"
                 rel="noopener noreferrer"
                 className="flex items-center gap-1.5 px-3 py-1.5 bg-white/10 hover:bg-white/20 border border-white/15 rounded-xl text-xs font-bold text-white transition-all shadow-sm hover:scale-105"
@@ -810,9 +844,10 @@ const ThreeDPrinting: React.FC = () => {
             </div>
           </div>
 
-          <div className="relative w-full h-[760px] md:h-[840px] bg-slate-950 rounded-2xl border border-white/10 overflow-hidden shadow-2xl">
+          <div className="relative w-full h-[780px] md:h-[860px] bg-slate-950 rounded-2xl border border-white/10 overflow-hidden shadow-2xl">
             <iframe
-              src="/visualizador3d/index.html"
+              ref={viewerIframeRef}
+              src="/visualizador3d/index.html?v=68"
               className="w-full h-full border-none"
               title="Visualizador 3D STL & 3MF"
               allow="fullscreen"

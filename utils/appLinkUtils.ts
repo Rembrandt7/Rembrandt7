@@ -176,3 +176,45 @@ export function openSmartMobileApp(appUri: string, fallbackUrl: string): void {
     }
   }, 1200);
 }
+
+/**
+ * Returns the internal Rembrandt7 tab ID ('cotizador', 'listas', 'compresor')
+ * if the shortcut corresponds to one of the integrated native apps.
+ */
+export function getInternalTabForLink(item: { id?: string; name?: string; href?: string }): string | null {
+  if (!item) return null;
+  const id = (item.id || '').toLowerCase();
+  const name = (item.name || '').toLowerCase().trim();
+  const href = (item.href || '').toLowerCase();
+
+  if (
+    id === 'qa-4' ||
+    name === 'cotizador' ||
+    name === 'cotizador remb' ||
+    href.includes('cotizador-remb.vercel.app')
+  ) {
+    return 'cotizador';
+  }
+
+  if (
+    id === 'qa-5' ||
+    name === 'listas remb' ||
+    name === 'listas' ||
+    name === 'organizador' ||
+    href.includes('listas-remb.vercel.app')
+  ) {
+    return 'listas';
+  }
+
+  if (
+    id === 'qa-2' ||
+    name === 'compresor' ||
+    name === 'compresor remb' ||
+    href.includes('compresor-remb.vercel.app')
+  ) {
+    return 'compresor';
+  }
+
+  return null;
+}
+

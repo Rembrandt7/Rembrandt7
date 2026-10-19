@@ -13,8 +13,10 @@ const INITIAL_TABS: TabConfig[] = [
     { id: 'useful-tools', label: 'Herramientas Útiles', type: 'system', componentKey: 'Herramientas Útiles', isVisible: true, icon: 'Briefcase' },
     { id: 'calendar', label: 'Calendario', type: 'system', componentKey: 'Calendario', isVisible: true, icon: 'Calendar' },
     { id: '3d-print', label: 'Impresión 3D', type: 'system', componentKey: 'Impresión 3D', isVisible: true, icon: 'Box' },
-    { id: 'listas', label: 'Listas', type: 'system', componentKey: 'Listas', isVisible: true, icon: 'CheckSquare' },
     { id: 'teleprompter', label: 'Teleprompter', type: 'system', componentKey: 'Teleprompter', isVisible: true, icon: 'Music' },
+    { id: 'cotizador', label: 'Cotizador', type: 'system', componentKey: 'Cotizador', isVisible: true, icon: 'Calculator' },
+    { id: 'listas', label: 'Listas', type: 'system', componentKey: 'Listas', isVisible: true, icon: 'CheckSquare' },
+    { id: 'compresor', label: 'Compresor', type: 'system', componentKey: 'Compresor', isVisible: true, icon: 'Minimize2' },
 ];
 
 const isDeprecatedTab = (t: any) =>
@@ -163,7 +165,7 @@ const INITIAL_CONFIG: AppConfig = {
         name: "CapCut",
         category: "trabajo",
         colorClass: "text-cyan-400 hover:text-cyan-300",
-        iconSvg: `<svg viewBox="0 0 100 100" class="w-full h-full" xmlns="http://www.w3.org/2000/svg"><defs><linearGradient id="capcut-tile-bg" x1="0%" y1="0%" x2="100%" y2="100%"><stop offset="0%" stop-color="#0a0a0f"/><stop offset="50%" stop-color="#12131a"/><stop offset="100%" stop-color="#181a24"/></linearGradient><linearGradient id="capcut-blade-top" x1="0%" y1="0%" x2="100%" y2="100%"><stop offset="0%" stop-color="#ffffff"/><stop offset="100%" stop-color="#e2e8f0"/></linearGradient></defs><rect width="100" height="100" rx="22" fill="url(#capcut-tile-bg)" stroke="#272935" stroke-width="1.5"/><rect x="4" y="4" width="92" height="92" rx="19" fill="none" stroke="rgba(255,255,255,0.06)" stroke-width="1"/><g transform="translate(50, 50) scale(0.68) translate(-50, -50)"><path d="M 23 27 C 21.5 27 20 28.5 20 30.5 L 20 37 C 20 38.5 20.8 39.8 22.2 40.5 L 50 56.5 L 77.8 40.5 C 79.2 39.8 80 38.5 80 37 L 80 30.5 C 80 28.5 78.5 27 77 27 C 76 27 75 27.5 74.2 28 L 50 42 L 25.8 28 C 25 27.5 24 27 23 27 Z" fill="url(#capcut-blade-top)"/><path d="M 23 73 C 21.5 73 20 71.5 20 69.5 L 20 63 C 20 61.5 20.8 60.2 22.2 59.5 L 50 43.5 L 77.8 59.5 C 79.2 60.2 80 61.5 80 63 L 80 69.5 C 80 71.5 78.5 73 77 73 C 76 73 75 72.5 74.2 72 L 50 58 L 25.8 72 C 25 72.5 24 73 23 73 Z" fill="url(#capcut-blade-top)"/></g></svg>`
+        iconSvg: `<svg viewBox="0 0 100 100" class="w-full h-full" xmlns="http://www.w3.org/2000/svg"><defs><linearGradient id="capcut-tile-bg" x1="0%" y1="0%" x2="100%" y2="100%"><stop offset="0%" stop-color="#0a0a0f"/><stop offset="50%" stop-color="#12131a"/><stop offset="100%" stop-color="#181a24"/></linearGradient><linearGradient id="capcut-blade-top" x1="0%" y1="0%" x2="100%" y2="100%"><stop offset="0%" stop-color="#ffffff"/><stop offset="100%" stop-color="#e2e8f0"/></linearGradient></defs><rect width="100" height="100" rx="22" fill="url(#capcut-tile-bg)" stroke="#272935" stroke-width="1.5"/><rect x="4" y="4" width="92" height="92" rx="19" fill="none" stroke="rgba(255,255,255,0.06)" stroke-width="1"/><g transform="translate(50, 50) scale(0.68) translate(-50, -50)"><path d="M 23 27 C 21.5 27 20 28.5 20 30.5 L 20 37 C 20 38.5 20.8 39.8 22.2 40.5 L 50 56.5 L 77.8 40.5 C 79.2 39.8 80 38.5 80 37 L 80 30.5 C 80 28.5 78.5 27 77 27 C 76 27 75 27.5 74.2 28 L 50 42 L 25.8 28 C 25 72.5 24 73 23 73 Z" fill="url(#capcut-blade-top)"/><path d="M 23 73 C 21.5 73 20 71.5 20 69.5 L 20 63 C 20 61.5 20.8 60.2 22.2 59.5 L 50 43.5 L 77.8 59.5 C 79.2 60.2 80 61.5 80 63 L 80 69.5 C 80 71.5 78.5 73 77 73 C 76 73 75 72.5 74.2 72 L 50 58 L 25.8 72 C 25 72.5 24 73 23 73 Z" fill="url(#capcut-blade-top)"/></g></svg>`
     }
   ],
 
@@ -179,10 +181,11 @@ const INITIAL_CONFIG: AppConfig = {
     quickAccess: [
         { id: 'qa-1', name: 'Rendair', href: 'https://rendair.ai/dashboard', colorClass: 'hover:text-teal-400', iconSvg: '<svg class="w-full h-full" viewBox="0 0 64 64" xmlns="http://www.w3.org/2000/svg"><circle cx="32" cy="32" r="28" fill="#4fd1c5"/><text x="32" y="42" fontFamily="Arial, sans-serif" fontSize="28" fontWeight="bold" fill="black" textAnchor="middle">r</text></svg>' },
         { id: 'qa-javer', name: 'Javer Data Center', href: 'https://aistudio.google.com/apps/3a3196da-cb37-40b8-9a5d-48e74634248d?showPreview=true&showAssistant=true', colorClass: 'hover:text-blue-400', iconSvg: '<svg class="w-full h-full" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg"><defs><linearGradient id="javer-dc-grad" x1="0%" y1="0%" x2="100%" y2="100%"><stop offset="0%" stop-color="#3b82f6" /><stop offset="50%" stop-color="#06b6d4" /><stop offset="100%" stop-color="#3b82f6" /></linearGradient></defs><rect x="3" y="3" width="18" height="18" rx="3" stroke="url(#javer-dc-grad)" stroke-width="2" /><line x1="3" y1="9" x2="21" y2="9" stroke="url(#javer-dc-grad)" stroke-width="1.5" /><line x1="3" y1="15" x2="21" y2="15" stroke="url(#javer-dc-grad)" stroke-width="1.5" stroke-dasharray="2 2" /><circle cx="7" cy="6" r="1" fill="#60a5fa" /><circle cx="11" cy="6" r="1" fill="#34d399" /><circle cx="7" cy="12" r="1" fill="#34d399" /><circle cx="11" cy="12" r="1" fill="#60a5fa" /><circle cx="7" cy="18" r="1" fill="#f43f5e" /><circle cx="11" cy="18" r="1" fill="#34d399" /><path d="M17 5v11a3 3 0 0 1-5 2.2" stroke="url(#javer-dc-grad)" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" /></svg>' },
-        { id: 'qa-2', name: 'Compresor', href: 'https://aistudio.google.com/apps/drive/1SqLlOs1puc_GGSLIqmhQetfRwL-8hiFK?showAssistant=true&resourceKey=&showPreview=true', colorClass: 'hover:text-yellow-400', iconSvg: '<svg class="w-full h-full fill-none stroke-current stroke-2" viewBox="0 0 24 24" strokeLinecap="round" strokeLinejoin="round"><path d="M4 14h6m-6 4h6m6-10h4m-4 4h4M4 10l4-4m0 0l4 4m-4-4v12M20 14l-4 4m0 0l-4-4m4 4V6" /></svg>' },
+        { id: 'qa-pdf-remb', name: 'PDF', href: 'https://pdf-remb.vercel.app/', colorClass: 'hover:text-rose-400', iconSvg: '<svg class="w-full h-full" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/><path d="M9 15v-4h2a1.5 1.5 0 0 1 0 3H9"/><path d="M15 11v4"/></svg>' },
+        { id: 'qa-2', name: 'Compresor', href: 'https://compresor-remb.vercel.app/', colorClass: 'hover:text-yellow-400', iconSvg: '<svg class="w-full h-full fill-none stroke-current stroke-2" viewBox="0 0 24 24" strokeLinecap="round" strokeLinejoin="round"><path d="M4 14h6m-6 4h6m6-10h4m-4 4h4M4 10l4-4m0 0l4 4m-4-4v12M20 14l-4 4m0 0l-4-4m4 4V6" /></svg>' },
         { id: 'qa-3', name: 'iLovePDF', href: 'https://www.ilovepdf.com/es', colorClass: 'hover:text-red-500', iconSvg: '<svg class="w-full h-full" viewBox="0 0 64 64" xmlns="http://www.w3.org/2000/svg"><rect width="56" height="56" x="4" y="4" rx="8" fill="currentColor"/><text x="32" y="42" fontFamily="Arial, sans-serif" fontSize="22" fontWeight="bold" fill="#111827" textAnchor="middle">PDF</text></svg>' },
-        { id: 'qa-4', name: 'Cotizador', href: 'https://aistudio.google.com/apps/drive/1k2aQBZLy96kILLEDYp5JlJX92eQJUUoJ?showPreview=true&showAssistant=true', colorClass: 'hover:text-lime-500', iconSvg: '<svg class="w-full h-full" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><line x1="12" y1="1" x2="12" y2="23"></line><path d="M17 5H9.5a3.5 3.5 0 0 0 0 7h5a3.5 3.5 0 0 1 0 7H6"></path></svg>' },
-        { id: 'qa-5', name: 'Organizador', href: 'https://aistudio.google.com/apps/drive/1EdmjF7bFOnJwakUISXZlEVDfVm4SOBO3?showAssistant=true&showPreview=true&resourceKey=', colorClass: 'hover:text-purple-400', iconSvg: '<svg class="w-full h-full" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M22 19a2 2 0 0 1-2 2H4a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h5l2 3h9a2 2 0 0 1 2 2z"></path><line x1="12" y1="11" x2="12" y2="17"></line><line x1="9" y1="14" x2="15" y2="14"></line></svg>' },
+        { id: 'qa-4', name: 'Cotizador', href: 'https://cotizador-remb.vercel.app', colorClass: 'hover:text-lime-500', iconSvg: '<svg class="w-full h-full" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><line x1="12" y1="1" x2="12" y2="23"></line><path d="M17 5H9.5a3.5 3.5 0 0 0 0 7h5a3.5 3.5 0 0 1 0 7H6"></path></svg>' },
+        { id: 'qa-5', name: 'Listas Remb', href: 'https://listas-remb.vercel.app/', colorClass: 'hover:text-purple-400', iconSvg: '<svg class="w-full h-full" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M22 19a2 2 0 0 1-2 2H4a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h5l2 3h9a2 2 0 0 1 2 2z"></path><line x1="12" y1="11" x2="12" y2="17"></line><line x1="9" y1="14" x2="15" y2="14"></line></svg>' },
         { id: 'qa-6', name: 'Áreas Municipales', href: 'https://areas-municipales-laminas.vercel.app/', colorClass: 'hover:text-orange-500', iconSvg: '<svg class="w-full h-full" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M3 21h18v-8a2 2 0 0 0-2-2H5a2 2 0 0 0-2 2v8z" /><path d="M3 10a2 2 0 0 1 .7-1.7L12 3l8.3 5.3a2 2 0 0 1 .7 1.7V11H3V10z" /><line x1="9" y1="21" x2="9" y2="11" /><line x1="15" y1="21" x2="15" y2="11" /></svg>' },
         { id: 'qa-8', name: 'Convertio', href: 'https://convertio.co/es/download/e6b1e34a2e937c3a18305b732b341a602788c1/', colorClass: 'hover:text-red-400', iconSvg: '<svg class="w-full h-full" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M8 3v12" /><path d="M12 7L8 3L4 7" /><path d="M16 21V9" /><path d="M12 17l4 4l4-4" /></svg>' },
         { id: 'qa-11', name: 'Sherwin Williams', href: 'https://sherrywilliams.vercel.app', colorClass: 'hover:text-blue-500', iconSvg: '<svg class="w-full h-full" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M12 22a7 7 0 0 0 7-7c0-2-1-3.9-3-5.5s-3.5-4-4-6.5c-.5 2.5-2 4.9-4 6.5C6 11.1 5 13 5 15a7 7 0 0 0 7 7z" /></svg>' }
@@ -263,7 +266,6 @@ const INITIAL_CONFIG: AppConfig = {
     { id: 'gd-10', name: "Earth", href: "https://earth.google.com/web/", colorClass: "text-blue-400", iconSvg: '<svg viewBox="0 0 24 24" class="w-8 h-8 fill-current"><path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm-1 17.93c-3.95-.49-7-3.85-7-7.93 0-.62.08-1.21.21-1.79L9 15v1c0 1.1.9 2 2 2v1.93zm6.9-2.54c-.26-.81-1-1.39-1.9-1.39h-1v-3c0-.55-.45-1-1-1H8v-2h2c.55 0 1-.45 1-1V7h2c1.1 0 2-.9 2-2v-.41c2.93 1.19 5 4.06 5 7.41 0 2.08-.8 3.97-2.1 5.39z"/></svg>' },
     { id: 'gd-11', name: "YouTube", href: "https://www.youtube.com/", colorClass: "text-red-600", iconSvg: '<svg viewBox="0 0 24 24" class="w-8 h-8 fill-current"><path d="M23.498 6.186a3.016 3.016 0 0 0-2.122-2.136C19.505 3.545 12 3.545 12 3.545s-7.505 0-9.377.505A3.017 3.017 0 0 0 .502 6.186C0 8.07 0 12 0 12s0 3.93.502 5.814a3.016 3.016 0 0 0 2.122 2.136c1.871.505 9.376.505 9.376.505s7.505 0 9.377-.505a3.015 3.015 0 0 0 2.122-2.136C24 15.93 24 12 24 12s0-3.93-.502-5.814zM9.545 15.568V8.432L15.818 12l-6.273 3.568z"/></svg>' },
     { id: 'gd-12', name: "NotebookLM", href: "https://notebooklm.google.com/", colorClass: "text-emerald-400", iconSvg: '<svg viewBox="0 0 24 24" class="w-8 h-8 fill-none stroke-current stroke-2" strokeLinecap="round" strokeLinejoin="round"><path d="M4 19.5A2.5 2.5 0 0 1 6.5 17H20"></path><path d="M6.5 2H20v20H6.5A2.5 2.5 0 0 1 4 19.5v-15A2.5 2.5 0 0 1 6.5 2z"></path></svg>' },
-    { id: 'gd-14', name: "Mixboard", href: "https://labs.google.com/mixboard/welcome", colorClass: "text-fuchsia-500", iconSvg: '<svg viewBox="0 0 24 24" class="w-8 h-8 fill-none stroke-current stroke-2" strokeLinecap="round" strokeLinejoin="round"><rect x="3" y="3" width="18" height="18" rx="2" ry="2" /><line x1="9" y1="3" x2="9" y2="21" /><line x1="15" y1="3" x2="15" y2="21" /><line x1="3" y1="9" x2="21" y2="9" /><line x1="3" y1="15" x2="21" y2="15" /></svg>' },
     { id: 'gd-15', name: "Stitch", href: "https://stitch.withgoogle.com/?pli=1", colorClass: "text-pink-500", iconSvg: '<svg viewBox="0 0 24 24" class="w-8 h-8 fill-none stroke-current stroke-2" strokeLinecap="round" strokeLinejoin="round"><rect x="2" y="2" width="20" height="20" rx="5" ry="5"></rect><path d="M16 11.37A4 4 0 1 1 12.63 8 4 4 0 0 1 16 11.37z"></path><line x1="17.5" y1="6.5" x2="17.51" y2="6.5"></line></svg>' },
     { id: 'gd-17', name: "Word", href: "https://docs.google.com", colorClass: "text-blue-500", iconSvg: '<svg viewBox="0 0 24 24" class="w-8 h-8 fill-blue-500"><path d="M14 2H6c-1.1 0-1.99.9-1.99 2L4 20c0 1.1.89 2 1.99 2H18c1.1 0 2-.9 2-2V8l-6-6zm2 16H8v-2h8v2zm0-4H8v-2h8v2zm-3-5V3.5L18.5 9H13z"/></svg>' },
     { id: 'gd-18', name: "Excel", href: "https://sheets.google.com", colorClass: "text-green-600", iconSvg: '<svg viewBox="0 0 24 24" class="w-8 h-8 fill-green-500"><path d="M14 2H6c-1.1 0-1.99.9-1.99 2L4 20c0 1.1.89 2 1.99 2H18c1.1 0 2-.9 2-2V8l-6-6zm2 16H8v-2h8v2zm0-4H8v-2h8v2zm-3-5V3.5L18.5 9H13z"/></svg>' },
@@ -480,20 +482,43 @@ const salvageMalformedNotes = (text: string, defaultCategory: string): { notes: 
 
 const SHERWIN_WILLIAMS_URL = 'https://sherrywilliams.vercel.app';
 const AREAS_MUNICIPALES_URL = 'https://areas-municipales-laminas.vercel.app/';
+const COTIZADOR_URL = 'https://cotizador-remb.vercel.app';
+const LISTAS_REMB_URL = 'https://listas-remb.vercel.app/';
+const COMPRESOR_URL = 'https://compresor-remb.vercel.app/';
+const PDF_REMB_URL = 'https://pdf-remb.vercel.app/';
+
+const isMixboardItem = (item: any) => {
+  if (!item || typeof item !== 'object') return false;
+  const name = (item.name || '').toLowerCase().trim();
+  const href = (item.href || '').toLowerCase();
+  return item.id === 'gd-14' || name.includes('mixboard') || href.includes('mixboard');
+};
 
 const normalizeConfigCategoriesAndQuickAccess = (cfg: any): boolean => {
   if (!cfg || typeof cfg !== 'object') return false;
   let modified = false;
 
+  // Remove Mixboard from googleDock and any other lists
+  if (Array.isArray(cfg.googleDock)) {
+    const prevLen = cfg.googleDock.length;
+    cfg.googleDock = cfg.googleDock.filter((item: any) => !isMixboardItem(item));
+    if (cfg.googleDock.length !== prevLen) modified = true;
+  }
+  if (cfg.aiSidebar && Array.isArray(cfg.aiSidebar.models)) {
+    const prevLen = cfg.aiSidebar.models.length;
+    cfg.aiSidebar.models = cfg.aiSidebar.models.filter((item: any) => !isMixboardItem(item));
+    if (cfg.aiSidebar.models.length !== prevLen) modified = true;
+  }
+
   // 1. Normalize Quick Access in aiSidebar
   if (cfg.aiSidebar && Array.isArray(cfg.aiSidebar.quickAccess)) {
-    const obsoleteNames = ['svg generator', 'niveles', 'deberes', 'removedor de marcas de agua', 'vectorizar', 'renders remb'];
+    const obsoleteNames = ['svg generator', 'niveles', 'deberes', 'removedor de marcas de agua', 'vectorizar', 'renders remb', 'mixboard'];
     const originalLen = cfg.aiSidebar.quickAccess.length;
 
     cfg.aiSidebar.quickAccess = cfg.aiSidebar.quickAccess.filter((item: any) => {
       const name = (item.name || '').toLowerCase().trim();
       const href = (item.href || '').toLowerCase();
-      if (item.id === 'qa-renders-remb' || obsoleteNames.includes(name)) return false;
+      if (item.id === 'qa-renders-remb' || isMixboardItem(item) || obsoleteNames.includes(name)) return false;
       if (href.includes('f46f8639-4c97-4e29-9bdc-b99c2a46a091') || // svg generator
           href.includes('b1e55191-36d7-483b-b3fb-d8088b0a07c5') || // niveles
           href.includes('1hsivhk6jdb7s9ccuqgai1dvw7gppzzvl') || // deberes
@@ -505,12 +530,45 @@ const normalizeConfigCategoriesAndQuickAccess = (cfg: any): boolean => {
 
     if (cfg.aiSidebar.quickAccess.length !== originalLen) modified = true;
 
-    // Ensure Áreas Municipales URL is current
+    // Ensure Áreas Municipales, Cotizador, Listas Remb, Compresor, and PDF URLs/names are current
     cfg.aiSidebar.quickAccess.forEach((item: any) => {
       const name = (item.name || '').toLowerCase();
+      const href = (item.href || '').toLowerCase();
+      if (item.id === 'qa-pdf-remb' || name.trim() === 'pdf' || name === 'pdf remb' || href.includes('pdf-remb.vercel.app')) {
+        if (item.name !== 'PDF') {
+          item.name = 'PDF';
+          modified = true;
+        }
+        if (item.href !== PDF_REMB_URL) {
+          item.href = PDF_REMB_URL;
+          modified = true;
+        }
+      }
+      if (name.includes('compresor') || item.id === 'qa-2' || href.includes('1sqllos1puc_ggsliqmhQetfrwl-8hifk'.toLowerCase())) {
+        if (item.href !== COMPRESOR_URL) {
+          item.href = COMPRESOR_URL;
+          modified = true;
+        }
+      }
       if (name.includes('áreas') || name.includes('areas') || item.id === 'qa-6') {
         if (item.href !== AREAS_MUNICIPALES_URL) {
           item.href = AREAS_MUNICIPALES_URL;
+          modified = true;
+        }
+      }
+      if (name.includes('cotizador') || item.id === 'qa-4' || href.includes('1k2aqbzly96killedyp5jljx92eqjuuoj')) {
+        if (item.href !== COTIZADOR_URL) {
+          item.href = COTIZADOR_URL;
+          modified = true;
+        }
+      }
+      if (name.includes('organizador') || name.includes('listas remb') || item.id === 'qa-5' || href.includes('1edmjF7bfonjwakuisxzlevdfvm4sobo3'.toLowerCase())) {
+        if (item.name !== 'Listas Remb') {
+          item.name = 'Listas Remb';
+          modified = true;
+        }
+        if (item.href !== LISTAS_REMB_URL) {
+          item.href = LISTAS_REMB_URL;
           modified = true;
         }
       }
@@ -586,12 +644,86 @@ const ensureSherwinWilliamsLinkUpdated = (cfg: any): boolean => {
     );
   };
 
+  const isCotizadorItem = (item: any) => {
+    if (!item || typeof item !== 'object') return false;
+    const name = (item.name || '').toLowerCase();
+    const href = (item.href || '').toLowerCase();
+    return (
+      item.id === 'qa-4' ||
+      name.includes('cotizador') ||
+      href.includes('1k2aqbzly96killedyp5jljx92eqjuuoj')
+    );
+  };
+
+  const isListasRembItem = (item: any) => {
+    if (!item || typeof item !== 'object') return false;
+    const name = (item.name || '').toLowerCase();
+    const href = (item.href || '').toLowerCase();
+    return (
+      item.id === 'qa-5' ||
+      name.includes('organizador') ||
+      name.includes('listas remb') ||
+      href.includes('1edmjF7bfonjwakuisxzlevdfvm4sobo3'.toLowerCase())
+    );
+  };
+
+  const isCompresorItem = (item: any) => {
+    if (!item || typeof item !== 'object') return false;
+    const name = (item.name || '').toLowerCase();
+    const href = (item.href || '').toLowerCase();
+    return (
+      item.id === 'qa-2' ||
+      name.includes('compresor') ||
+      href.includes('1sqllos1puc_ggsliqmhQetfrwl-8hifk'.toLowerCase())
+    );
+  };
+
+  const isPdfRembItem = (item: any) => {
+    if (!item || typeof item !== 'object') return false;
+    const name = (item.name || '').toLowerCase().trim();
+    const href = (item.href || '').toLowerCase();
+    return (
+      item.id === 'qa-pdf-remb' ||
+      name === 'pdf' ||
+      name === 'pdf remb' ||
+      href.includes('pdf-remb.vercel.app')
+    );
+  };
+
   const updateArray = (arr?: any[]) => {
     if (!Array.isArray(arr)) return;
     arr.forEach(item => {
       if (isSherwinItem(item) && item.href !== SHERWIN_WILLIAMS_URL) {
         item.href = SHERWIN_WILLIAMS_URL;
         updated = true;
+      }
+      if (isCotizadorItem(item) && item.href !== COTIZADOR_URL) {
+        item.href = COTIZADOR_URL;
+        updated = true;
+      }
+      if (isCompresorItem(item) && item.href !== COMPRESOR_URL) {
+        item.href = COMPRESOR_URL;
+        updated = true;
+      }
+      if (isPdfRembItem(item)) {
+        if (item.name !== 'PDF') {
+          item.name = 'PDF';
+          updated = true;
+        }
+        if (item.href !== PDF_REMB_URL) {
+          item.href = PDF_REMB_URL;
+          updated = true;
+        }
+      }
+      if (isListasRembItem(item)) {
+        if (item.name !== 'Listas Remb') {
+          item.name = 'Listas Remb';
+          updated = true;
+        }
+        if (item.href !== LISTAS_REMB_URL) {
+          item.href = LISTAS_REMB_URL;
+          updated = true;
+        }
       }
     });
   };
@@ -606,6 +738,44 @@ const ensureSherwinWilliamsLinkUpdated = (cfg: any): boolean => {
         updated = true;
       }
     }
+    const hasCotizador = cfg.aiSidebar.quickAccess.some(isCotizadorItem);
+    if (!hasCotizador) {
+      const defaultCotizador = INITIAL_CONFIG.aiSidebar.quickAccess.find(l => l.id === 'qa-4');
+      if (defaultCotizador) {
+        cfg.aiSidebar.quickAccess.push({ ...defaultCotizador, href: COTIZADOR_URL });
+        updated = true;
+      }
+    }
+    const hasListasRemb = cfg.aiSidebar.quickAccess.some(isListasRembItem);
+    if (!hasListasRemb) {
+      const defaultListasRemb = INITIAL_CONFIG.aiSidebar.quickAccess.find(l => l.id === 'qa-5');
+      if (defaultListasRemb) {
+        cfg.aiSidebar.quickAccess.push({ ...defaultListasRemb, name: 'Listas Remb', href: LISTAS_REMB_URL });
+        updated = true;
+      }
+    }
+    const hasCompresor = cfg.aiSidebar.quickAccess.some(isCompresorItem);
+    if (!hasCompresor) {
+      const defaultCompresor = INITIAL_CONFIG.aiSidebar.quickAccess.find(l => l.id === 'qa-2');
+      if (defaultCompresor) {
+        cfg.aiSidebar.quickAccess.push({ ...defaultCompresor, href: COMPRESOR_URL });
+        updated = true;
+      }
+    }
+    const hasPdfRemb = cfg.aiSidebar.quickAccess.some(isPdfRembItem);
+    if (!hasPdfRemb) {
+      const defaultPdfRemb = INITIAL_CONFIG.aiSidebar.quickAccess.find(l => l.id === 'qa-pdf-remb');
+      if (defaultPdfRemb) {
+        cfg.aiSidebar.quickAccess.push({ ...defaultPdfRemb, name: 'PDF', href: PDF_REMB_URL });
+        updated = true;
+      }
+    }
+  }
+
+  if (Array.isArray(cfg.googleDock)) {
+    const prevLen = cfg.googleDock.length;
+    cfg.googleDock = cfg.googleDock.filter((item: any) => !isMixboardItem(item));
+    if (cfg.googleDock.length !== prevLen) updated = true;
   }
 
   updateArray(cfg.linksBar);
@@ -859,10 +1029,41 @@ export const LinkProvider: React.FC<{ children: React.ReactNode }> = ({ children
             }
           }
 
+          if (!finalConfig.tabs.find((t: any) => t.id === 'cotizador' || t.componentKey === 'Cotizador')) {
+            const cotizadorTab = INITIAL_TABS.find(t => t.id === 'cotizador');
+            if (cotizadorTab) {
+              const teleIdx = finalConfig.tabs.findIndex((t: any) => t.id === 'teleprompter' || t.componentKey === 'Teleprompter');
+              if (teleIdx !== -1) {
+                finalConfig.tabs.splice(teleIdx + 1, 0, cotizadorTab);
+              } else {
+                finalConfig.tabs.push(cotizadorTab);
+              }
+            }
+          }
+
           if (!finalConfig.tabs.find((t: any) => t.id === 'listas' || t.componentKey === 'Listas')) {
             const listasTab = INITIAL_TABS.find(t => t.id === 'listas');
             if (listasTab) {
-              finalConfig.tabs.push(listasTab);
+              const cotIdx = finalConfig.tabs.findIndex((t: any) => t.id === 'cotizador' || t.componentKey === 'Cotizador');
+              if (cotIdx !== -1) {
+                finalConfig.tabs.splice(cotIdx + 1, 0, listasTab);
+              } else {
+                finalConfig.tabs.push(listasTab);
+              }
+            }
+          }
+
+          if (!finalConfig.tabs.find((t: any) => t.id === 'compresor' || t.componentKey === 'Compresor')) {
+            const compresorTab = INITIAL_TABS.find(t => t.id === 'compresor');
+            if (compresorTab) {
+              const listasIdx = finalConfig.tabs.findIndex((t: any) => t.id === 'listas' || t.componentKey === 'Listas');
+              const cotIdx = finalConfig.tabs.findIndex((t: any) => t.id === 'cotizador' || t.componentKey === 'Cotizador');
+              const targetIdx = listasIdx !== -1 ? listasIdx : cotIdx;
+              if (targetIdx !== -1) {
+                finalConfig.tabs.splice(targetIdx + 1, 0, compresorTab);
+              } else {
+                finalConfig.tabs.push(compresorTab);
+              }
             }
           }
 
@@ -1136,6 +1337,31 @@ export const LinkProvider: React.FC<{ children: React.ReactNode }> = ({ children
     fetchConfigFromSupabase();
   }, [configFilename]);
 
+  // Auto-sync config from Supabase on window focus and visibilitychange (tab switch)
+  useEffect(() => {
+    let lastSyncTime = Date.now();
+    const handleRecheck = () => {
+      // Re-sync if last sync was > 25 seconds ago
+      if (Date.now() - lastSyncTime > 25000) {
+        lastSyncTime = Date.now();
+        fetchConfigFromSupabaseManual();
+      }
+    };
+
+    const handleVisibility = () => {
+      if (document.visibilityState === 'visible') {
+        handleRecheck();
+      }
+    };
+
+    window.addEventListener('focus', handleRecheck);
+    document.addEventListener('visibilitychange', handleVisibility);
+    return () => {
+      window.removeEventListener('focus', handleRecheck);
+      document.removeEventListener('visibilitychange', handleVisibility);
+    };
+  }, [fetchConfigFromSupabaseManual]);
+
   // Load from localStorage on mount
   useEffect(() => {
     const savedConfig = localStorage.getItem('appLinksConfig');
@@ -1163,10 +1389,41 @@ export const LinkProvider: React.FC<{ children: React.ReactNode }> = ({ children
               }
             }
 
+            if (!parsed.tabs.find((t: any) => t.id === 'cotizador' || t.componentKey === 'Cotizador')) {
+              const cotizadorTab = INITIAL_TABS.find(t => t.id === 'cotizador');
+              if (cotizadorTab) {
+                const teleIdx = parsed.tabs.findIndex((t: any) => t.id === 'teleprompter' || t.componentKey === 'Teleprompter');
+                if (teleIdx !== -1) {
+                  parsed.tabs.splice(teleIdx + 1, 0, cotizadorTab);
+                } else {
+                  parsed.tabs.push(cotizadorTab);
+                }
+              }
+            }
+
             if (!parsed.tabs.find((t: any) => t.id === 'listas' || t.componentKey === 'Listas')) {
               const listasTab = INITIAL_TABS.find(t => t.id === 'listas');
               if (listasTab) {
-                parsed.tabs.push(listasTab);
+                const cotIdx = parsed.tabs.findIndex((t: any) => t.id === 'cotizador' || t.componentKey === 'Cotizador');
+                if (cotIdx !== -1) {
+                  parsed.tabs.splice(cotIdx + 1, 0, listasTab);
+                } else {
+                  parsed.tabs.push(listasTab);
+                }
+              }
+            }
+
+            if (!parsed.tabs.find((t: any) => t.id === 'compresor' || t.componentKey === 'Compresor')) {
+              const compresorTab = INITIAL_TABS.find(t => t.id === 'compresor');
+              if (compresorTab) {
+                const listasIdx = parsed.tabs.findIndex((t: any) => t.id === 'listas' || t.componentKey === 'Listas');
+                const cotIdx = parsed.tabs.findIndex((t: any) => t.id === 'cotizador' || t.componentKey === 'Cotizador');
+                const targetIdx = listasIdx !== -1 ? listasIdx : cotIdx;
+                if (targetIdx !== -1) {
+                  parsed.tabs.splice(targetIdx + 1, 0, compresorTab);
+                } else {
+                  parsed.tabs.push(compresorTab);
+                }
               }
             }
 

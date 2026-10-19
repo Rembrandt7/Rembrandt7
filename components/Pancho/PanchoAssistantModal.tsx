@@ -31,6 +31,7 @@ import { toast } from 'sonner';
 import { PanchoRobotAvatar, PanchoState } from './PanchoRobotAvatar';
 import { getPanchoRole } from './PanchoFloatingButton';
 import LiveAssistant from '../LiveAssistant';
+import { addQuickIdeaToCloud } from '../ListasRemb/services/listasSyncService';
 
 export interface PanchoAssistantModalProps {
   onClose: () => void;
@@ -494,6 +495,18 @@ export const PanchoAssistantModal: React.FC<PanchoAssistantModalProps> = ({
       const usedVacDays = getInPeriodVacationDays(events, vacConfig.resetDate);
       const availVacDays = Math.max(0, totalVacDays - usedVacDays);
 
+      let pendingTasksSummary = 'No hay tareas pendientes registradas en Listas Remb.';
+      try {
+        const backupStr = localStorage.getItem('remb-backup-data');
+        if (backupStr) {
+          const parsed = JSON.parse(backupStr);
+          const pending = (parsed.tasks || []).filter((t: any) => !t.completed).slice(0, 15);
+          if (pending.length > 0) {
+            pendingTasksSummary = pending.map((t: any) => `- [${t.category}] ${t.title} (vence: ${t.dueDate ? t.dueDate.split('T')[0] : 'sin fecha'})`).join('\n');
+          }
+        }
+      } catch (e) {}
+
       const systemInstruction = `
 Eres "Pancho" 🐶🤖, el perrito robot y asistente personal de Rembrandt. Eres leal, inteligente, entusiasta, ágil y de alto rendimiento.
 Tu personalidad combina la calidez y fidelidad de un perrito amigable con la precisión analítica de una supercomputadora robótica.
@@ -572,6 +585,12 @@ CONTEXTO Y CAPACIDADES POR PESTAÑA:
    - Nutrición: Registra alimentos con 'log_nutrition' calculando calorías y proteínas para su objetivo de GYM.
    - Finanzas: Consulta tarjetas (${finanzasCards.map(c => `${c.name}: $${c.balance}`).join(', ')}), fechas de corte y pagos.
    - Usa 'log_finance_expense' si gasta o ajusta una tarjeta.
+
+6. LISTAS Y TAREAS PENDIENTES ("listas", "listas_remb"):
+   - Tienes acceso directo a sus pendientes actuales guardados en la nube:
+${pendingTasksSummary}
+   - Si Rembrandt te pregunta qué tiene pendiente, qué tiene que hacer o pide consultar sus listas, dile con amabilidad y precisión cuáles son sus tareas pendientes.
+   - Si Rembrandt te pide agregar una tarea o pendiente, usa 'add_quick_task'.
 
 REGLAS DE RESPUESTA:
 - Cuando uses una herramienta (tool), confirma en tu mensaje qué hiciste de manera alegre y clara.
@@ -809,6 +828,19 @@ REGLAS DE RESPUESTA:
                     concept: { type: Type.STRING }
                   },
                   required: ["cardName", "amount"]
+                }
+              },
+              {
+                name: "add_quick_task",
+                description: "Añade una tarea o pendiente a las Listas Remb",
+                parameters: {
+                  type: Type.OBJECT,
+                  properties: {
+                    title: { type: Type.STRING },
+                    category: { type: Type.STRING, enum: ['Trabajo', 'Casa', 'Compras', 'Estudios', 'Impresión 3D', 'Personal'] },
+                    notes: { type: Type.STRING }
+                  },
+                  required: ["title"]
                 }
               }
             ]
@@ -1120,6 +1152,14 @@ REGLAS DE RESPUESTA:
               concept: args.concept || 'Gasto'
             };
             toast.success(`💳 Gasto registrado en ${finalCardData.cardName}`);
+          }
+
+          else if (call.name === 'add_quick_task') {
+            const title = args.title || 'Nueva tarea';
+            const category = args.category || 'Trabajo';
+            const notes = args.notes || '';
+            await addQuickIdeaToCloud({ title, category, notes });
+            toast.success(`🐾 Pancho agregó "${title}" a la lista ${category}`);
           }
 
           else if (call.name === 'set_vacation_days') {

@@ -6,6 +6,7 @@ import { Edit, Trash2, Plus, RotateCcw } from 'lucide-react';
 import { SortableLinkList } from './common/SortableLinkList';
 import { verticalListSortingStrategy } from '@dnd-kit/sortable';
 import { recordQuickAccessClick, sortQuickAccessByUsage, resetQuickAccessCounters } from '../utils/quickAccessUtils';
+import { getInternalTabForLink } from '../utils/appLinkUtils';
 import { toast } from 'sonner';
 
 const AiSidebarItem: React.FC<{ 
@@ -14,18 +15,26 @@ const AiSidebarItem: React.FC<{
     onEdit: (item: LinkItem) => void;
     onDelete: (id: string) => void;
     onClick?: () => void;
+    onSelectInternalTab?: (tabId: string) => void;
     showClickBadge?: boolean;
-}> = ({ item, isEditing, onEdit, onDelete, onClick, showClickBadge }) => {
+}> = ({ item, isEditing, onEdit, onDelete, onClick, onSelectInternalTab, showClickBadge }) => {
+    const internalTabId = getInternalTabForLink(item);
     return (
         <div className="relative group w-full">
             <a 
                 href={item.href} 
-                target="_blank" 
+                target={internalTabId ? undefined : "_blank"} 
                 rel="noopener noreferrer" 
                 onClick={(e) => {
                     if (isEditing) {
                         e.preventDefault();
                     } else {
+                        if (internalTabId && onSelectInternalTab) {
+                            e.preventDefault();
+                            onClick?.();
+                            onSelectInternalTab(internalTabId);
+                            return;
+                        }
                         if (item.id === 'qa-renders-remb' || (item.name || '').toLowerCase().includes('renders remb')) {
                             const localPath = "C:\\Users\\rblanco\\OneDrive - Servicios Administrativos Javer, S.A. DE C.V\\Renders Remb";
                             try {
@@ -194,7 +203,7 @@ interface AiSidebarProps {
 }
 
 const AiSidebar: React.FC<AiSidebarProps> = ({ isOpen }) => {
-    const { config, updateConfig, isEditing } = useLinks();
+    const { config, updateConfig, isEditing, setActiveTabId } = useLinks();
     const [modalOpen, setModalOpen] = useState(false);
     const [currentLink, setCurrentLink] = useState<LinkItem | null>(null);
     const [activeSection, setActiveSection] = useState<'models' | 'quickAccess'>('models');
@@ -396,6 +405,7 @@ const AiSidebar: React.FC<AiSidebarProps> = ({ isOpen }) => {
                                 key={item.id} 
                                 item={item} 
                                 isEditing={isEditing}
+                                onSelectInternalTab={setActiveTabId}
                                 onEdit={(i) => openModal('models', i)}
                                 onDelete={(id) => handleDeleteLink(id, 'models')}
                             />
@@ -440,6 +450,7 @@ const AiSidebar: React.FC<AiSidebarProps> = ({ isOpen }) => {
                                 isEditing={isEditing}
                                 showClickBadge={true}
                                 onClick={() => handleQuickAccessClick(item.id)}
+                                onSelectInternalTab={setActiveTabId}
                                 onEdit={(i) => openModal('quickAccess', i)}
                                 onDelete={(id) => handleDeleteLink(id, 'quickAccess')}
                             />

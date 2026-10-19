@@ -60,6 +60,7 @@ const Sidebar: React.FC<SidebarProps> = ({
   const [isAdding, setIsAdding] = useState(false);
   const [newListName, setNewListName] = useState('');
   const [showSaveMenu, setShowSaveMenu] = useState(false);
+  const [showUtilities, setShowUtilities] = useState(false);
 
   const menuItems = [
     { id: 'all', icon: LayoutDashboard, label: 'Tablero' },
@@ -310,32 +311,38 @@ const Sidebar: React.FC<SidebarProps> = ({
             )}
           </div>
 
-          {/* Utilidades */}
-          <div>
-            <div className="px-3 mb-2 text-xs font-bold text-slate-400 uppercase tracking-wider">
-              Utilidades
-            </div>
-            <ul className="space-y-1">
-              {utilityItems.map((item) => {
-                 const isActive = activeFilter === item.id;
-                 return (
-                  <li key={item.id}>
-                    <button 
-                      onClick={() => handleNavigation(item.id)}
-                      className={`w-full flex items-center gap-3 px-3 py-2.5 rounded-lg text-sm font-medium transition-all duration-200
-                        ${isActive 
-                          ? 'bg-purple-50 text-purple-700 shadow-sm' 
-                          : 'text-slate-600 hover:bg-slate-50 hover:text-slate-900'}`}
-                    >
-                      <item.icon className={`w-5 h-5 ${isActive ? 'text-purple-600' : 'text-slate-400'}`} />
-                      {item.label}
-                    </button>
-                  </li>
-                );
-              })}
-            </ul>
+          {/* Utilidades Secundarias (Opcionales / Colapsables) */}
+          <div className="pt-2 border-t border-slate-100">
+            <button 
+              type="button"
+              onClick={() => setShowUtilities(!showUtilities)}
+              className="w-full flex items-center justify-between px-3 py-1.5 text-xs font-bold text-slate-400 hover:text-slate-600 uppercase tracking-wider transition-colors"
+            >
+              <span>Otras Vistas</span>
+              <ChevronDown className={`w-3.5 h-3.5 transition-transform duration-200 ${showUtilities ? 'rotate-180' : ''}`} />
+            </button>
+            {showUtilities && (
+              <ul className="space-y-1 mt-1">
+                {utilityItems.map((item) => {
+                   const isActive = activeFilter === item.id;
+                   return (
+                    <li key={item.id}>
+                      <button 
+                        onClick={() => handleNavigation(item.id)}
+                        className={`w-full flex items-center gap-3 px-3 py-2 rounded-lg text-xs font-medium transition-all duration-200
+                          ${isActive 
+                            ? 'bg-purple-50 text-purple-700 shadow-sm' 
+                            : 'text-slate-600 hover:bg-slate-50 hover:text-slate-900'}`}
+                      >
+                        <item.icon className={`w-4 h-4 ${isActive ? 'text-purple-600' : 'text-slate-400'}`} />
+                        {item.label}
+                      </button>
+                    </li>
+                  );
+                })}
+              </ul>
+            )}
           </div>
-
         </nav>
 
         <div className="p-4 border-t border-slate-100 space-y-1">
