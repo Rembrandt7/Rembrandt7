@@ -78,6 +78,11 @@ export const PersonalTab: React.FC<PersonalTabProps> = ({
     return sessionStorage.getItem('personal_unlocked') === 'true' && Boolean(sessionStorage.getItem('personal_active_profile'));
   });
 
+  // Master Password held in session memory for single-password unlock across all Personal modules
+  const [masterPassword, setMasterPassword] = useState<string>(() => {
+    return sessionStorage.getItem('personal_master_key') || '';
+  });
+
   // Security data: hash and salt
   const [securityData, setSecurityData] = useState<{ passwordHash: string; salt: string; hint?: string } | null>(() => {
     const local = localStorage.getItem('rembrandt_personal_security');
@@ -191,6 +196,14 @@ export const PersonalTab: React.FC<PersonalTabProps> = ({
     if (isUnlocked && activeProfileId === profileId) {
       return; // Already unlocked and active
     }
+    // If already unlocked in current session with master password, switch profile directly without re-asking password!
+    if (isUnlocked && masterPassword) {
+      setActiveProfileId(profileId);
+      sessionStorage.setItem('personal_active_profile', profileId);
+      const profileObj = profiles.find(p => p.id === profileId) || profiles[0];
+      toast.success(`Cambiado a ${profileObj.label}`);
+      return;
+    }
     setTargetProfileToUnlock(profileId);
     setUnlockPassword('');
     setShowHint(false);
@@ -212,17 +225,19 @@ export const PersonalTab: React.FC<PersonalTabProps> = ({
     try {
       const isValid = await verifyPassword(unlockPassword, securityData.passwordHash, securityData.salt);
       if (isValid) {
-        const profId = targetProfileToUnlock || 'rem';
+        const profId = targetProfileToUnlock || activeProfileId || 'rem';
         const profileObj = profiles.find(p => p.id === profId) || profiles[0];
+        setMasterPassword(unlockPassword);
         setActiveProfileId(profId);
         setIsUnlocked(true);
         sessionStorage.setItem('personal_active_profile', profId);
         sessionStorage.setItem('personal_unlocked', 'true');
+        sessionStorage.setItem('personal_master_key', unlockPassword);
         sessionStorage.setItem('credenciales_unlocked', 'true');
         setUnlockPassword('');
         setIsUnlockModalOpen(false);
         setTargetProfileToUnlock(null);
-        toast.success(`¡${profileObj.label} cargado con éxito!`);
+        toast.success(`¡${profileObj.label} desbloqueado con éxito!`);
       } else {
         toast.error('Contraseña incorrecta');
       }
@@ -238,8 +253,10 @@ export const PersonalTab: React.FC<PersonalTabProps> = ({
   const handleLock = () => {
     setIsUnlocked(false);
     setActiveProfileId(null);
+    setMasterPassword('');
     sessionStorage.removeItem('personal_active_profile');
     sessionStorage.removeItem('personal_unlocked');
+    sessionStorage.removeItem('personal_master_key');
     sessionStorage.removeItem('credenciales_unlocked');
     setUnlockPassword('');
     toast.info('Perfil cerrado y datos bloqueados.');
@@ -310,10 +327,12 @@ export const PersonalTab: React.FC<PersonalTabProps> = ({
       } catch (e) {}
 
       // Unlock default profile
+      setMasterPassword(setupPassword);
       setActiveProfileId('rem');
       setIsUnlocked(true);
       sessionStorage.setItem('personal_active_profile', 'rem');
       sessionStorage.setItem('personal_unlocked', 'true');
+      sessionStorage.setItem('personal_master_key', setupPassword);
       sessionStorage.setItem('credenciales_unlocked', 'true');
       toast.success('Contraseña maestra configurada con éxito. Espacio Personal activo.');
     } catch (err: any) {
@@ -373,6 +392,8 @@ export const PersonalTab: React.FC<PersonalTabProps> = ({
       } catch (e) {}
 
       setIsChangeModalOpen(false);
+      setMasterPassword(newPassword);
+      sessionStorage.setItem('personal_master_key', newPassword);
       setCurrentPassword('');
       setNewPassword('');
       setConfirmNewPassword('');
@@ -639,6 +660,7 @@ export const PersonalTab: React.FC<PersonalTabProps> = ({
             <Finanzas 
               isLockedPreview={!isUnlocked || !activeProfileId}
               activeProfileId={activeProfileId}
+              masterPassword={masterPassword}
               onSelectProfile={(id) => handlePromptProfile(id)}
             />
           </Suspense>
@@ -735,7 +757,7 @@ export const PersonalTab: React.FC<PersonalTabProps> = ({
 
                 {bovedaTab === 'credenciales' && (
                   <Suspense fallback={<div className="p-8 text-center text-zinc-400">Cargando Credenciales...</div>}>
-                    <Credenciales />
+                    <Credenciales isUnlockedOverride={isUnlocked} />
                   </Suspense>
                 )}
 

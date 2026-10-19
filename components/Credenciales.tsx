@@ -151,13 +151,27 @@ const SortableItem = ({
   );
 };
 
-const Credenciales: React.FC = () => {
+export interface CredencialesProps {
+  isUnlockedOverride?: boolean;
+}
+
+const Credenciales: React.FC<CredencialesProps> = ({ isUnlockedOverride }) => {
   const { config, updateConfig } = useLinks();
 
+  const isPersonalUnlocked = Boolean(
+    isUnlockedOverride || 
+    sessionStorage.getItem('personal_unlocked') === 'true' || 
+    sessionStorage.getItem('credenciales_unlocked') === 'true'
+  );
+
   // Unlock state persisted during the current session
-  const [isUnlocked, setIsUnlocked] = useState<boolean>(() => {
-    return sessionStorage.getItem('credenciales_unlocked') === 'true';
-  });
+  const [isUnlocked, setIsUnlocked] = useState<boolean>(() => isPersonalUnlocked);
+
+  useEffect(() => {
+    if (isPersonalUnlocked) {
+      setIsUnlocked(true);
+    }
+  }, [isPersonalUnlocked]);
 
   // Password inputs
   const [unlockPassword, setUnlockPassword] = useState('');
@@ -189,15 +203,19 @@ const Credenciales: React.FC = () => {
   const [editingId, setEditingId] = useState<string | null>(null);
   const [showSensitive, setShowSensitive] = useState<Record<string, boolean>>({});
 
-  const hasConfiguredSecurity = Boolean(config.credencialesSecurity?.passwordHash);
+  const hasConfiguredSecurity = Boolean(
+    config.credencialesSecurity?.passwordHash || 
+    (config as any).personalSecurity?.passwordHash || 
+    localStorage.getItem('rembrandt_personal_security')
+  );
 
   // Auto-sync if security was deleted or reset
   useEffect(() => {
-    if (!hasConfiguredSecurity) {
+    if (!hasConfiguredSecurity && !isPersonalUnlocked) {
       sessionStorage.removeItem('credenciales_unlocked');
       setIsUnlocked(false);
     }
-  }, [hasConfiguredSecurity]);
+  }, [hasConfiguredSecurity, isPersonalUnlocked]);
 
   // Handle first time setup
   const handleSetupPassword = async (e: React.FormEvent) => {
@@ -248,7 +266,13 @@ const Credenciales: React.FC = () => {
       return;
     }
 
-    const sec = config.credencialesSecurity;
+    const sec = config.credencialesSecurity?.passwordHash 
+      ? config.credencialesSecurity 
+      : ((config as any).personalSecurity?.passwordHash 
+          ? (config as any).personalSecurity 
+          : (() => {
+              try { return JSON.parse(localStorage.getItem('rembrandt_personal_security') || 'null'); } catch(e) { return null; }
+            })());
     if (!sec || !sec.passwordHash || !sec.salt) {
       toast.error('Configuración de seguridad no encontrada');
       return;

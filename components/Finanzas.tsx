@@ -452,9 +452,10 @@ export interface FinanzasProps {
   activeProfileId?: string | null;
   onSelectProfile?: (profileId: string) => void;
   isLockedPreview?: boolean;
+  masterPassword?: string;
 }
 
-const Finanzas: React.FC<FinanzasProps> = ({ activeProfileId, onSelectProfile, isLockedPreview }) => {
+const Finanzas: React.FC<FinanzasProps> = ({ activeProfileId, onSelectProfile, isLockedPreview, masterPassword }) => {
   const { config } = useLinks();
 
   // Registry of known Finanzas JSON files
@@ -634,20 +635,76 @@ const Finanzas: React.FC<FinanzasProps> = ({ activeProfileId, onSelectProfile, i
         };
       }
 
+      const effectivePassword = masterPassword || sessionStorage.getItem('personal_master_key') || filePassword;
       const isProtected = Boolean(rawJson.hasPassword || rawJson.passwordHash || rawJson.encrypted);
 
-      if (isProtected) {
-        // Show password prompt modal
-        setUnlockModalFile({ file, rawJson });
-        setUnlockInputPassword('');
-        setIsUnlockModalOpen(true);
-      } else {
-        // File has no password. Ask user if they wish to set one or open directly
-        setTargetFileForPassword({ file, rawJson });
-        setNewFilePassword('');
-        setConfirmNewFilePassword('');
-        setIsSetPasswordModalOpen(true);
+      // UNIFIED SINGLE-PASSWORD UNLOCK: If we have the master password from Personal, unlock immediately!
+      if (effectivePassword) {
+        let isValid = false;
+        let loadedCards: FinanzasCard[] = [];
+        let loadedItems: FinancialItem[] = [];
+
+        if (rawJson.encrypted && rawJson.ciphertext) {
+          try {
+            const decrypted = await decryptPayload(
+              rawJson.ciphertext,
+              effectivePassword,
+              rawJson.saltEncryption || rawJson.salt,
+              rawJson.iv
+            );
+            loadedCards = decrypted.finanzasCards || [];
+            loadedItems = decrypted.financialItems || [];
+            isValid = true;
+          } catch (e) {
+            isValid = false;
+          }
+        } else if (rawJson.passwordHash && rawJson.salt) {
+          try {
+            isValid = await verifyPassword(effectivePassword, rawJson.passwordHash, rawJson.salt);
+            if (isValid) {
+              loadedCards = rawJson.finanzasCards || [];
+              loadedItems = rawJson.financialItems || [];
+            }
+          } catch (e) {
+            isValid = false;
+          }
+        } else {
+          // File has no individual encryption, master password unlocks it directly
+          loadedCards = rawJson.finanzasCards || [];
+          loadedItems = rawJson.financialItems || [];
+          isValid = true;
+        }
+
+        if (isValid) {
+          setCards(loadedCards);
+          setFinancialItems(loadedItems);
+          setActiveFile(file);
+          setFilePassword(effectivePassword);
+          setIsUnlockModalOpen(false);
+          setUnlockModalFile(null);
+          setIsSetPasswordModalOpen(false);
+          setTargetFileForPassword(null);
+          return;
+        }
       }
+
+      // If file is not protected, open directly without blocking
+      if (!isProtected) {
+        setCards(rawJson.finanzasCards || []);
+        setFinancialItems(rawJson.financialItems || []);
+        setActiveFile(file);
+        setFilePassword(effectivePassword || '');
+        setIsUnlockModalOpen(false);
+        setUnlockModalFile(null);
+        setIsSetPasswordModalOpen(false);
+        setTargetFileForPassword(null);
+        return;
+      }
+
+      // Fallback: only if file had a specific distinct password that failed with masterPassword
+      setUnlockModalFile({ file, rawJson });
+      setUnlockInputPassword('');
+      setIsUnlockModalOpen(true);
     } catch (err) {
       console.error(err);
       toast.error(`Error al acceder al archivo ${file.fileName}`);
@@ -658,12 +715,16 @@ const Finanzas: React.FC<FinanzasProps> = ({ activeProfileId, onSelectProfile, i
 
   useEffect(() => {
     if (activeProfileId && (!activeFile || activeFile.id !== activeProfileId)) {
-      const match = filesRegistry.find(f => f.id === activeProfileId);
-      if (match) {
-        handleSelectFile(match);
-      }
+      const match = filesRegistry.find(f => f.id === activeProfileId) || {
+        id: activeProfileId,
+        name: `Perfil ${activeProfileId.charAt(0).toUpperCase() + activeProfileId.slice(1)}`,
+        fileName: `finanzas_${activeProfileId}.json`,
+        hasPassword: true,
+        updatedAt: Date.now()
+      };
+      handleSelectFile(match);
     }
-  }, [activeProfileId, filesRegistry]);
+  }, [activeProfileId, filesRegistry, masterPassword]);
 
   // UNLOCK FILE WITH PASSWORD
   const handleUnlockFile = async (e: React.FormEvent) => {
