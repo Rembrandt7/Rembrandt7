@@ -1,22 +1,13 @@
 ( function () {
 
 	/**
- *
- * 3D Manufacturing Format (3MF) specification: https://3mf.io/specification/
- *
- * The following features from the core specification are supported:
- *
- * - 3D Models
- * - Object Resources (Meshes and Components)
- * - Material Resources (Base Materials)
- *
- * 3MF Materials and Properties Extension are only partially supported.
- *
- * - Texture 2D
- * - Texture 2D Groups
- * - THREE.Color Groups (Vertex Colors)
- * - Metallic Display Properties (PBR)
- */
+	 * Universal 3MF Loader for Three.js
+	 * Supports:
+	 * - Core 3MF Specification (single & multi-object meshes, components, transforms, units)
+	 * - 3MF Production Extension (Bambu Studio, MakerWorld, OrcaSlicer, PrusaSlicer, AnycubicSlicer multi-file 3D/Objects/*.model with p:path)
+	 * - Materials & Color Groups (basematerials, colorgroup, m:colorgroup, Bambu project_settings.config filament_colour, paint_color / mmu_segmentation)
+	 * - Fast regex-assisted vertex/triangle extraction for high-poly models
+	 */
 
 	class ThreeMFLoader extends THREE.Loader {
 
@@ -63,1259 +54,518 @@
 
 		parse( data ) {
 
-			const scope = this;
-			const textureLoader = new THREE.TextureLoader( this.manager );
+			function decodeUTF8( bytes ) {
 
-			function loadDocument( data ) {
-
-				let zip = null;
-				let file = null;
-				let relsName;
-				let modelRelsName;
-				const modelPartNames = [];
-				const printTicketPartNames = [];
-				const texturesPartNames = [];
-				const otherPartNames = [];
-				let modelRels;
-				const modelParts = {};
-				const printTicketParts = {};
-				const texturesParts = {};
-				const otherParts = {};
-
-				try {
-
-					zip = fflate.unzipSync( new Uint8Array( data ) ); // eslint-disable-line no-undef
-
-				} catch ( e ) {
-
-					if ( e instanceof ReferenceError ) {
-
-						console.error( 'THREE.3MFLoader: fflate missing and file is compressed.' );
-						return null;
-
-					}
-
+				if ( ! bytes ) return '';
+				const u8 = bytes instanceof Uint8Array ? bytes : new Uint8Array( bytes );
+				if ( typeof TextDecoder !== 'undefined' ) {
+					return new TextDecoder( 'utf-8' ).decode( u8 );
 				}
-
-				for ( file in zip ) {
-
-					if ( file.match( /\_rels\/.rels$/ ) ) {
-
-						relsName = file;
-
-					} else if ( file.match( /3D\/_rels\/.*\.model\.rels$/ ) ) {
-
-						modelRelsName = file;
-
-					} else if ( file.match( /^3D\/.*\.model$/ ) ) {
-
-						modelPartNames.push( file );
-
-					} else if ( file.match( /^3D\/Metadata\/.*\.xml$/ ) ) {
-
-						printTicketPartNames.push( file );
-
-					} else if ( file.match( /^3D\/Textures?\/.*/ ) ) {
-
-						texturesPartNames.push( file );
-
-					} else if ( file.match( /^3D\/Other\/.*/ ) ) {
-
-						otherPartNames.push( file );
-
-					}
-
-				} //
-
-
-				const relsView = zip[ relsName ];
-				const relsFileText = THREE.LoaderUtils.decodeText( relsView );
-				const rels = parseRelsXml( relsFileText ); //
-
-				if ( modelRelsName ) {
-
-					const relsView = zip[ modelRelsName ];
-					const relsFileText = THREE.LoaderUtils.decodeText( relsView );
-					modelRels = parseRelsXml( relsFileText );
-
-				} //
-
-
-				for ( let i = 0; i < modelPartNames.length; i ++ ) {
-
-					const modelPart = modelPartNames[ i ];
-					const view = zip[ modelPart ];
-					const fileText = THREE.LoaderUtils.decodeText( view );
-					const xmlData = new DOMParser().parseFromString( fileText, 'application/xml' );
-
-					if ( xmlData.documentElement.nodeName.toLowerCase() !== 'model' ) {
-
-						console.error( 'THREE.3MFLoader: Error loading 3MF - no 3MF document found: ', modelPart );
-
-					}
-
-					const modelNode = xmlData.querySelector( 'model' );
-					const extensions = {};
-
-					for ( let i = 0; i < modelNode.attributes.length; i ++ ) {
-
-						const attr = modelNode.attributes[ i ];
-
-						if ( attr.name.match( /^xmlns:(.+)$/ ) ) {
-
-							extensions[ attr.value ] = RegExp.$1;
-
-						}
-
-					}
-
-					const modelData = parseModelNode( modelNode );
-					modelData[ 'xml' ] = modelNode;
-
-					if ( 0 < Object.keys( extensions ).length ) {
-
-						modelData[ 'extensions' ] = extensions;
-
-					}
-
-					modelParts[ modelPart ] = modelData;
-
-				} //
-
-
-				for ( let i = 0; i < texturesPartNames.length; i ++ ) {
-
-					const texturesPartName = texturesPartNames[ i ];
-					texturesParts[ texturesPartName ] = zip[ texturesPartName ].buffer;
-
+				if ( typeof fflate !== 'undefined' && fflate.strFromU8 ) {
+					return fflate.strFromU8( u8 );
 				}
-
-				return {
-					rels: rels,
-					modelRels: modelRels,
-					model: modelParts,
-					printTicket: printTicketParts,
-					texture: texturesParts,
-					other: otherParts
-				};
+				if ( THREE.LoaderUtils && THREE.LoaderUtils.decodeText ) {
+					return THREE.LoaderUtils.decodeText( u8 );
+				}
+				let s = '';
+				const chunk = 16384;
+				for ( let i = 0; i < u8.length; i += chunk ) {
+					s += String.fromCharCode.apply( null, u8.subarray( i, i + chunk ) );
+				}
+				return s;
 
 			}
 
-			function parseRelsXml( relsFileText ) {
+			function normalizePath( p ) {
 
-				const relationships = [];
-				const relsXmlData = new DOMParser().parseFromString( relsFileText, 'application/xml' );
-				const relsNodes = relsXmlData.querySelectorAll( 'Relationship' );
-
-				for ( let i = 0; i < relsNodes.length; i ++ ) {
-
-					const relsNode = relsNodes[ i ];
-					const relationship = {
-						target: relsNode.getAttribute( 'Target' ),
-						//required
-						id: relsNode.getAttribute( 'Id' ),
-						//required
-						type: relsNode.getAttribute( 'Type' ) //required
-
-					};
-					relationships.push( relationship );
-
-				}
-
-				return relationships;
+				if ( ! p ) return '';
+				return p.replace( /\\/g, '/' ).replace( /^\/+/, '' );
 
 			}
 
-			function parseMetadataNodes( metadataNodes ) {
+			function parseTransformMatrix( transformStr ) {
 
-				const metadataData = {};
-
-				for ( let i = 0; i < metadataNodes.length; i ++ ) {
-
-					const metadataNode = metadataNodes[ i ];
-					const name = metadataNode.getAttribute( 'name' );
-					const validNames = [ 'Title', 'Designer', 'Description', 'Copyright', 'LicenseTerms', 'Rating', 'CreationDate', 'ModificationDate' ];
-
-					if ( 0 <= validNames.indexOf( name ) ) {
-
-						metadataData[ name ] = metadataNode.textContent;
-
-					}
-
-				}
-
-				return metadataData;
-
-			}
-
-			function parseBasematerialsNode( basematerialsNode ) {
-
-				const basematerialsData = {
-					id: basematerialsNode.getAttribute( 'id' ),
-					// required
-					basematerials: []
-				};
-				const basematerialNodes = basematerialsNode.querySelectorAll( 'base' );
-
-				for ( let i = 0; i < basematerialNodes.length; i ++ ) {
-
-					const basematerialNode = basematerialNodes[ i ];
-					const basematerialData = parseBasematerialNode( basematerialNode );
-					basematerialData.index = i; // the order and count of the material nodes form an implicit 0-based index
-
-					basematerialsData.basematerials.push( basematerialData );
-
-				}
-
-				return basematerialsData;
-
-			}
-
-			function parseTexture2DNode( texture2DNode ) {
-
-				const texture2dData = {
-					id: texture2DNode.getAttribute( 'id' ),
-					// required
-					path: texture2DNode.getAttribute( 'path' ),
-					// required
-					contenttype: texture2DNode.getAttribute( 'contenttype' ),
-					// required
-					tilestyleu: texture2DNode.getAttribute( 'tilestyleu' ),
-					tilestylev: texture2DNode.getAttribute( 'tilestylev' ),
-					filter: texture2DNode.getAttribute( 'filter' )
-				};
-				return texture2dData;
-
-			}
-
-			function parseTextures2DGroupNode( texture2DGroupNode ) {
-
-				const texture2DGroupData = {
-					id: texture2DGroupNode.getAttribute( 'id' ),
-					// required
-					texid: texture2DGroupNode.getAttribute( 'texid' ),
-					// required
-					displaypropertiesid: texture2DGroupNode.getAttribute( 'displaypropertiesid' )
-				};
-				const tex2coordNodes = texture2DGroupNode.querySelectorAll( 'tex2coord' );
-				const uvs = [];
-
-				for ( let i = 0; i < tex2coordNodes.length; i ++ ) {
-
-					const tex2coordNode = tex2coordNodes[ i ];
-					const u = tex2coordNode.getAttribute( 'u' );
-					const v = tex2coordNode.getAttribute( 'v' );
-					uvs.push( parseFloat( u ), parseFloat( v ) );
-
-				}
-
-				texture2DGroupData[ 'uvs' ] = new Float32Array( uvs );
-				return texture2DGroupData;
-
-			}
-
-			function parseColorGroupNode( colorGroupNode ) {
-
-				const colorGroupData = {
-					id: colorGroupNode.getAttribute( 'id' ),
-					// required
-					displaypropertiesid: colorGroupNode.getAttribute( 'displaypropertiesid' )
-				};
-				const colorNodes = colorGroupNode.querySelectorAll( 'color' );
-				const colors = [];
-				const colorObject = new THREE.Color();
-
-				for ( let i = 0; i < colorNodes.length; i ++ ) {
-
-					const colorNode = colorNodes[ i ];
-					const color = colorNode.getAttribute( 'color' );
-					colorObject.setStyle( color.substring( 0, 7 ) );
-					colorObject.convertSRGBToLinear(); // color is in sRGB
-
-					colors.push( colorObject.r, colorObject.g, colorObject.b );
-
-				}
-
-				colorGroupData[ 'colors' ] = new Float32Array( colors );
-				return colorGroupData;
-
-			}
-
-			function parseMetallicDisplaypropertiesNode( metallicDisplaypropetiesNode ) {
-
-				const metallicDisplaypropertiesData = {
-					id: metallicDisplaypropetiesNode.getAttribute( 'id' ) // required
-
-				};
-				const metallicNodes = metallicDisplaypropetiesNode.querySelectorAll( 'pbmetallic' );
-				const metallicData = [];
-
-				for ( let i = 0; i < metallicNodes.length; i ++ ) {
-
-					const metallicNode = metallicNodes[ i ];
-					metallicData.push( {
-						name: metallicNode.getAttribute( 'name' ),
-						// required
-						metallicness: parseFloat( metallicNode.getAttribute( 'metallicness' ) ),
-						// required
-						roughness: parseFloat( metallicNode.getAttribute( 'roughness' ) ) // required
-
-					} );
-
-				}
-
-				metallicDisplaypropertiesData.data = metallicData;
-				return metallicDisplaypropertiesData;
-
-			}
-
-			function parseBasematerialNode( basematerialNode ) {
-
-				const basematerialData = {};
-				basematerialData[ 'name' ] = basematerialNode.getAttribute( 'name' ); // required
-
-				basematerialData[ 'displaycolor' ] = basematerialNode.getAttribute( 'displaycolor' ); // required
-
-				basematerialData[ 'displaypropertiesid' ] = basematerialNode.getAttribute( 'displaypropertiesid' );
-				return basematerialData;
-
-			}
-
-			function parseMeshNode( meshNode ) {
-
-				const meshData = {};
-				const vertices = [];
-				const vertexNodes = meshNode.querySelectorAll( 'vertices vertex' );
-
-				for ( let i = 0; i < vertexNodes.length; i ++ ) {
-
-					const vertexNode = vertexNodes[ i ];
-					const x = vertexNode.getAttribute( 'x' );
-					const y = vertexNode.getAttribute( 'y' );
-					const z = vertexNode.getAttribute( 'z' );
-					vertices.push( parseFloat( x ), parseFloat( y ), parseFloat( z ) );
-
-				}
-
-				meshData[ 'vertices' ] = new Float32Array( vertices );
-				const triangleProperties = [];
-				const triangles = [];
-				const triangleNodes = meshNode.querySelectorAll( 'triangles triangle' );
-
-				for ( let i = 0; i < triangleNodes.length; i ++ ) {
-
-					const triangleNode = triangleNodes[ i ];
-					const v1 = triangleNode.getAttribute( 'v1' );
-					const v2 = triangleNode.getAttribute( 'v2' );
-					const v3 = triangleNode.getAttribute( 'v3' );
-					const p1 = triangleNode.getAttribute( 'p1' );
-					const p2 = triangleNode.getAttribute( 'p2' );
-					const p3 = triangleNode.getAttribute( 'p3' );
-					const pid = triangleNode.getAttribute( 'pid' );
-					const triangleProperty = {};
-					triangleProperty[ 'v1' ] = parseInt( v1, 10 );
-					triangleProperty[ 'v2' ] = parseInt( v2, 10 );
-					triangleProperty[ 'v3' ] = parseInt( v3, 10 );
-					triangles.push( triangleProperty[ 'v1' ], triangleProperty[ 'v2' ], triangleProperty[ 'v3' ] ); // optional
-
-					if ( p1 ) {
-
-						triangleProperty[ 'p1' ] = parseInt( p1, 10 );
-
-					}
-
-					if ( p2 ) {
-
-						triangleProperty[ 'p2' ] = parseInt( p2, 10 );
-
-					}
-
-					if ( p3 ) {
-
-						triangleProperty[ 'p3' ] = parseInt( p3, 10 );
-
-					}
-
-					if ( pid ) {
-
-						triangleProperty[ 'pid' ] = pid;
-
-					}
-
-					if ( 0 < Object.keys( triangleProperty ).length ) {
-
-						triangleProperties.push( triangleProperty );
-
-					}
-
-				}
-
-				meshData[ 'triangleProperties' ] = triangleProperties;
-				meshData[ 'triangles' ] = new Uint32Array( triangles );
-				return meshData;
-
-			}
-
-			function parseComponentsNode( componentsNode ) {
-
-				const components = [];
-				const componentNodes = componentsNode.querySelectorAll( 'component' );
-
-				for ( let i = 0; i < componentNodes.length; i ++ ) {
-
-					const componentNode = componentNodes[ i ];
-					const componentData = parseComponentNode( componentNode );
-					components.push( componentData );
-
-				}
-
-				return components;
-
-			}
-
-			function parseComponentNode( componentNode ) {
-
-				const componentData = {};
-				componentData[ 'objectId' ] = componentNode.getAttribute( 'objectid' ); // required
-
-				const transform = componentNode.getAttribute( 'transform' );
-
-				if ( transform ) {
-
-					componentData[ 'transform' ] = parseTransform( transform );
-
-				}
-
-				return componentData;
-
-			}
-
-			function parseTransform( transform ) {
-
-				const t = [];
-				transform.split( ' ' ).forEach( function ( s ) {
-
-					t.push( parseFloat( s ) );
-
-				} );
 				const matrix = new THREE.Matrix4();
-				matrix.set( t[ 0 ], t[ 3 ], t[ 6 ], t[ 9 ], t[ 1 ], t[ 4 ], t[ 7 ], t[ 10 ], t[ 2 ], t[ 5 ], t[ 8 ], t[ 11 ], 0.0, 0.0, 0.0, 1.0 );
+				if ( ! transformStr ) return matrix;
+				const t = transformStr.trim().split( /\s+/ ).map( Number );
+				if ( t.length >= 12 && t.every( isFinite ) ) {
+					matrix.set(
+						t[ 0 ], t[ 3 ], t[ 6 ], t[ 9 ],
+						t[ 1 ], t[ 4 ], t[ 7 ], t[ 10 ],
+						t[ 2 ], t[ 5 ], t[ 8 ], t[ 11 ],
+						0.0, 0.0, 0.0, 1.0
+					);
+				}
 				return matrix;
 
 			}
 
-			function parseObjectNode( objectNode ) {
+			function getUnitScale( unit ) {
 
-				const objectData = {
-					type: objectNode.getAttribute( 'type' )
-				};
-				const id = objectNode.getAttribute( 'id' );
-
-				if ( id ) {
-
-					objectData[ 'id' ] = id;
-
+				switch ( ( unit || 'millimeter' ).toLowerCase() ) {
+					case 'micron': return 0.001;
+					case 'millimeter': return 1.0;
+					case 'centimeter': return 10.0;
+					case 'inch': return 25.4;
+					case 'foot': return 304.8;
+					case 'meter': return 1000.0;
+					default: return 1.0;
 				}
-
-				const pid = objectNode.getAttribute( 'pid' );
-
-				if ( pid ) {
-
-					objectData[ 'pid' ] = pid;
-
-				}
-
-				const pindex = objectNode.getAttribute( 'pindex' );
-
-				if ( pindex ) {
-
-					objectData[ 'pindex' ] = pindex;
-
-				}
-
-				const thumbnail = objectNode.getAttribute( 'thumbnail' );
-
-				if ( thumbnail ) {
-
-					objectData[ 'thumbnail' ] = thumbnail;
-
-				}
-
-				const partnumber = objectNode.getAttribute( 'partnumber' );
-
-				if ( partnumber ) {
-
-					objectData[ 'partnumber' ] = partnumber;
-
-				}
-
-				const name = objectNode.getAttribute( 'name' );
-
-				if ( name ) {
-
-					objectData[ 'name' ] = name;
-
-				}
-
-				const meshNode = objectNode.querySelector( 'mesh' );
-
-				if ( meshNode ) {
-
-					objectData[ 'mesh' ] = parseMeshNode( meshNode );
-
-				}
-
-				const componentsNode = objectNode.querySelector( 'components' );
-
-				if ( componentsNode ) {
-
-					objectData[ 'components' ] = parseComponentsNode( componentsNode );
-
-				}
-
-				return objectData;
 
 			}
 
-			function parseResourcesNode( resourcesNode ) {
+			function getAttr( tagStr, attrName ) {
 
-				const resourcesData = {};
-				resourcesData[ 'basematerials' ] = {};
-				const basematerialsNodes = resourcesNode.querySelectorAll( 'basematerials' );
-
-				for ( let i = 0; i < basematerialsNodes.length; i ++ ) {
-
-					const basematerialsNode = basematerialsNodes[ i ];
-					const basematerialsData = parseBasematerialsNode( basematerialsNode );
-					resourcesData[ 'basematerials' ][ basematerialsData[ 'id' ] ] = basematerialsData;
-
-				} //
-
-
-				resourcesData[ 'texture2d' ] = {};
-				const textures2DNodes = resourcesNode.querySelectorAll( 'texture2d' );
-
-				for ( let i = 0; i < textures2DNodes.length; i ++ ) {
-
-					const textures2DNode = textures2DNodes[ i ];
-					const texture2DData = parseTexture2DNode( textures2DNode );
-					resourcesData[ 'texture2d' ][ texture2DData[ 'id' ] ] = texture2DData;
-
-				} //
-
-
-				resourcesData[ 'colorgroup' ] = {};
-				const colorGroupNodes = resourcesNode.querySelectorAll( 'colorgroup' );
-
-				for ( let i = 0; i < colorGroupNodes.length; i ++ ) {
-
-					const colorGroupNode = colorGroupNodes[ i ];
-					const colorGroupData = parseColorGroupNode( colorGroupNode );
-					resourcesData[ 'colorgroup' ][ colorGroupData[ 'id' ] ] = colorGroupData;
-
-				} //
-
-
-				resourcesData[ 'pbmetallicdisplayproperties' ] = {};
-				const pbmetallicdisplaypropertiesNodes = resourcesNode.querySelectorAll( 'pbmetallicdisplayproperties' );
-
-				for ( let i = 0; i < pbmetallicdisplaypropertiesNodes.length; i ++ ) {
-
-					const pbmetallicdisplaypropertiesNode = pbmetallicdisplaypropertiesNodes[ i ];
-					const pbmetallicdisplaypropertiesData = parseMetallicDisplaypropertiesNode( pbmetallicdisplaypropertiesNode );
-					resourcesData[ 'pbmetallicdisplayproperties' ][ pbmetallicdisplaypropertiesData[ 'id' ] ] = pbmetallicdisplaypropertiesData;
-
-				} //
-
-
-				resourcesData[ 'texture2dgroup' ] = {};
-				const textures2DGroupNodes = resourcesNode.querySelectorAll( 'texture2dgroup' );
-
-				for ( let i = 0; i < textures2DGroupNodes.length; i ++ ) {
-
-					const textures2DGroupNode = textures2DGroupNodes[ i ];
-					const textures2DGroupData = parseTextures2DGroupNode( textures2DGroupNode );
-					resourcesData[ 'texture2dgroup' ][ textures2DGroupData[ 'id' ] ] = textures2DGroupData;
-
-				} //
-
-
-				resourcesData[ 'object' ] = {};
-				const objectNodes = resourcesNode.querySelectorAll( 'object' );
-
-				for ( let i = 0; i < objectNodes.length; i ++ ) {
-
-					const objectNode = objectNodes[ i ];
-					const objectData = parseObjectNode( objectNode );
-					resourcesData[ 'object' ][ objectData[ 'id' ] ] = objectData;
-
-				}
-
-				return resourcesData;
+				const re = new RegExp( '(?:^|\\s|[a-zA-Z0-9_]+:)' + attrName + '\\s*=\\s*["\']([^"\']*)["\']', 'i' );
+				const m = re.exec( tagStr );
+				return m ? m[ 1 ] : null;
 
 			}
 
-			function parseBuildNode( buildNode ) {
+			function getExactAttr( tagStr, attrName ) {
 
-				const buildData = [];
-				const itemNodes = buildNode.querySelectorAll( 'item' );
+				const re = new RegExp( '(?:^|\\s)' + attrName + '\\s*=\\s*["\']([^"\']*)["\']', 'i' );
+				const m = re.exec( tagStr );
+				return m ? m[ 1 ] : null;
 
-				for ( let i = 0; i < itemNodes.length; i ++ ) {
+			}
 
-					const itemNode = itemNodes[ i ];
-					const buildItem = {
-						objectId: itemNode.getAttribute( 'objectid' )
+			// 1. Unzip 3MF container
+			let u8Data;
+			if ( data instanceof Uint8Array ) {
+				u8Data = data;
+			} else if ( data instanceof ArrayBuffer ) {
+				u8Data = new Uint8Array( data );
+			} else if ( ArrayBuffer.isView( data ) ) {
+				u8Data = new Uint8Array( data.buffer, data.byteOffset, data.byteLength );
+			} else {
+				throw new Error( 'Formato de buffer 3MF inválido.' );
+			}
+
+			let zip = null;
+			if ( typeof fflate !== 'undefined' && typeof fflate.unzipSync === 'function' ) {
+				zip = fflate.unzipSync( u8Data );
+			} else {
+				throw new Error( 'Librería de descompresión fflate no disponible.' );
+			}
+
+			// Map normalized paths -> actual zip keys
+			const zipMap = {};
+			const modelFiles = [];
+			for ( const rawKey of Object.keys( zip ) ) {
+				const norm = normalizePath( rawKey );
+				zipMap[ norm ] = rawKey;
+				zipMap[ norm.toLowerCase() ] = rawKey;
+				if ( /\.model$/i.test( norm ) ) {
+					modelFiles.push( norm );
+				}
+			}
+
+			if ( modelFiles.length === 0 ) {
+				throw new Error( 'El archivo 3MF no contiene ningún documento .model.' );
+			}
+
+			// 2. Extract optional Slicer / Bambu Studio / PrusaSlicer filament colors & object names
+			let slicerFilamentColors = [];
+			const objectNameMap = {}; // objectId -> name from model_settings.config
+
+			for ( const normKey of Object.keys( zipMap ) ) {
+				if ( /project_settings\.config$/i.test( normKey ) ) {
+					try {
+						const txt = decodeUTF8( zip[ zipMap[ normKey ] ] );
+						const json = JSON.parse( txt );
+						const cols = json.filament_colour || json.extruder_colour || json.default_filament_colour;
+						if ( Array.isArray( cols ) ) {
+							slicerFilamentColors = cols.map( c => ( typeof c === 'string' && c.startsWith( '#' ) ) ? c.substring( 0, 7 ) : null );
+						}
+					} catch ( e ) { /* ignore optional metadata parse errors */ }
+				} else if ( /model_settings\.config$/i.test( normKey ) ) {
+					try {
+						const txt = decodeUTF8( zip[ zipMap[ normKey ] ] );
+						const objBlocks = txt.match( /<object\b[\s\S]*?<\/object>/gi ) || [];
+						for ( const block of objBlocks ) {
+							const openTag = ( block.match( /^<object\b[^>]*>/i ) || [ '' ] )[ 0 ];
+							const oid = getExactAttr( openTag, 'id' );
+							const nameMeta = block.match( /<metadata\b[^>]*key\s*=\s*["']name["'][^>]*value\s*=\s*["']([^"']+)["']/i );
+							const extruderMeta = block.match( /<metadata\b[^>]*key\s*=\s*["']extruder["'][^>]*value\s*=\s*["'](\d+)["']/i );
+							if ( oid ) {
+								objectNameMap[ oid ] = {
+									name: nameMeta ? nameMeta[ 1 ] : null,
+									extruder: extruderMeta ? parseInt( extruderMeta[ 1 ], 10 ) : null
+								};
+							}
+						}
+					} catch ( e ) { /* ignore */ }
+				}
+			}
+
+			// 3. Determine root .model file via _rels/.rels or fallback to 3D/3dmodel.model
+			let rootModelPath = null;
+			const relsKey = zipMap[ '_rels/.rels' ];
+			if ( relsKey && zip[ relsKey ] ) {
+				const relsText = decodeUTF8( zip[ relsKey ] );
+				const relMatch = relsText.match( /Target\s*=\s*["']([^"']+\.model)["']/i );
+				if ( relMatch ) {
+					const candidate = normalizePath( relMatch[ 1 ] );
+					if ( zipMap[ candidate ] || zipMap[ candidate.toLowerCase() ] ) {
+						rootModelPath = candidate;
+					}
+				}
+			}
+
+			if ( ! rootModelPath ) {
+				const preferred = modelFiles.find( f => /^3d\/3dmodel\.model$/i.test( f ) );
+				rootModelPath = preferred || modelFiles[ 0 ];
+			}
+
+			// 4. Parse a .model XML string into structured resources & build items
+			const parsedModels = {};
+
+			function parseModelFile( normPath ) {
+
+				const lookupKey = normPath.toLowerCase();
+				if ( parsedModels[ lookupKey ] ) return parsedModels[ lookupKey ];
+
+				const actualKey = zipMap[ normPath ] || zipMap[ lookupKey ];
+				if ( ! actualKey || ! zip[ actualKey ] ) return null;
+
+				const xmlText = decodeUTF8( zip[ actualKey ] );
+				const modelTagMatch = xmlText.match( /<model\b[^>]*>/i );
+				const unit = modelTagMatch ? ( getExactAttr( modelTagMatch[ 0 ], 'unit' ) || 'millimeter' ) : 'millimeter';
+				const unitScale = getUnitScale( unit );
+
+				// Parse basematerials & colorgroups
+				const colorPalettes = {}; // pid -> array of hex color strings
+
+				const baseMatRegex = /<basematerials\b([^>]*)>([\s\S]*?)<\/basematerials>/gi;
+				let bmMatch;
+				while ( ( bmMatch = baseMatRegex.exec( xmlText ) ) !== null ) {
+					const pid = getExactAttr( bmMatch[ 1 ], 'id' );
+					if ( pid ) {
+						const colors = [];
+						const baseRegex = /<base\b([^>]*)\/?>/gi;
+						let bMatch;
+						while ( ( bMatch = baseRegex.exec( bmMatch[ 2 ] ) ) !== null ) {
+							const dc = getExactAttr( bMatch[ 1 ], 'displaycolor' );
+							colors.push( dc ? dc.substring( 0, 7 ) : '#3b82f6' );
+						}
+						colorPalettes[ pid ] = colors;
+					}
+				}
+
+				const colorGroupRegex = /<(?:[a-zA-Z0-9_]+:)?colorgroup\b([^>]*)>([\s\S]*?)<\/(?:[a-zA-Z0-9_]+:)?colorgroup>/gi;
+				let cgMatch;
+				while ( ( cgMatch = colorGroupRegex.exec( xmlText ) ) !== null ) {
+					const pid = getExactAttr( cgMatch[ 1 ], 'id' );
+					if ( pid ) {
+						const colors = [];
+						const colRegex = /<(?:[a-zA-Z0-9_]+:)?color\b([^>]*)\/?>/gi;
+						let cMatch;
+						while ( ( cMatch = colRegex.exec( cgMatch[ 2 ] ) ) !== null ) {
+							const col = getExactAttr( cMatch[ 1 ], 'color' );
+							colors.push( col ? col.substring( 0, 7 ) : '#3b82f6' );
+						}
+						colorPalettes[ pid ] = colors;
+					}
+				}
+
+				// Parse <object> nodes
+				const objects = {};
+				const objectRegex = /<object\b([^>]*)>([\s\S]*?)<\/object>/gi;
+				let objMatch;
+
+				while ( ( objMatch = objectRegex.exec( xmlText ) ) !== null ) {
+
+					const objAttrs = objMatch[ 1 ];
+					const objBody = objMatch[ 2 ];
+					const id = getExactAttr( objAttrs, 'id' );
+					if ( ! id ) continue;
+
+					const name = getExactAttr( objAttrs, 'name' ) || ( objectNameMap[ id ] && objectNameMap[ id ].name ) || `Objeto ${id}`;
+					const pid = getExactAttr( objAttrs, 'pid' );
+					const pindexStr = getExactAttr( objAttrs, 'pindex' );
+					const pindex = pindexStr !== null ? parseInt( pindexStr, 10 ) : null;
+
+					const objData = {
+						id,
+						name,
+						pid,
+						pindex,
+						unitScale,
+						mesh: null,
+						components: null
 					};
-					const transform = itemNode.getAttribute( 'transform' );
 
-					if ( transform ) {
-
-						buildItem[ 'transform' ] = parseTransform( transform );
-
-					}
-
-					buildData.push( buildItem );
-
-				}
-
-				return buildData;
-
-			}
-
-			function parseModelNode( modelNode ) {
-
-				const modelData = {
-					unit: modelNode.getAttribute( 'unit' ) || 'millimeter'
-				};
-				const metadataNodes = modelNode.querySelectorAll( 'metadata' );
-
-				if ( metadataNodes ) {
-
-					modelData[ 'metadata' ] = parseMetadataNodes( metadataNodes );
-
-				}
-
-				const resourcesNode = modelNode.querySelector( 'resources' );
-
-				if ( resourcesNode ) {
-
-					modelData[ 'resources' ] = parseResourcesNode( resourcesNode );
-
-				}
-
-				const buildNode = modelNode.querySelector( 'build' );
-
-				if ( buildNode ) {
-
-					modelData[ 'build' ] = parseBuildNode( buildNode );
-
-				}
-
-				return modelData;
-
-			}
-
-			function buildTexture( texture2dgroup, objects, modelData, textureData ) {
-
-				const texid = texture2dgroup.texid;
-				const texture2ds = modelData.resources.texture2d;
-				const texture2d = texture2ds[ texid ];
-
-				if ( texture2d ) {
-
-					const data = textureData[ texture2d.path ];
-					const type = texture2d.contenttype;
-					const blob = new Blob( [ data ], {
-						type: type
-					} );
-					const sourceURI = URL.createObjectURL( blob );
-					const texture = textureLoader.load( sourceURI, function () {
-
-						URL.revokeObjectURL( sourceURI );
-
-					} );
-					texture.encoding = THREE.sRGBEncoding; // texture parameters
-
-					switch ( texture2d.tilestyleu ) {
-
-						case 'wrap':
-							texture.wrapS = THREE.RepeatWrapping;
-							break;
-
-						case 'mirror':
-							texture.wrapS = THREE.MirroredRepeatWrapping;
-							break;
-
-						case 'none':
-						case 'clamp':
-							texture.wrapS = THREE.ClampToEdgeWrapping;
-							break;
-
-						default:
-							texture.wrapS = THREE.RepeatWrapping;
-
-					}
-
-					switch ( texture2d.tilestylev ) {
-
-						case 'wrap':
-							texture.wrapT = THREE.RepeatWrapping;
-							break;
-
-						case 'mirror':
-							texture.wrapT = THREE.MirroredRepeatWrapping;
-							break;
-
-						case 'none':
-						case 'clamp':
-							texture.wrapT = THREE.ClampToEdgeWrapping;
-							break;
-
-						default:
-							texture.wrapT = THREE.RepeatWrapping;
-
-					}
-
-					switch ( texture2d.filter ) {
-
-						case 'auto':
-							texture.magFilter = THREE.LinearFilter;
-							texture.minFilter = THREE.LinearMipmapLinearFilter;
-							break;
-
-						case 'linear':
-							texture.magFilter = THREE.LinearFilter;
-							texture.minFilter = THREE.LinearFilter;
-							break;
-
-						case 'nearest':
-							texture.magFilter = THREE.NearestFilter;
-							texture.minFilter = THREE.NearestFilter;
-							break;
-
-						default:
-							texture.magFilter = THREE.LinearFilter;
-							texture.minFilter = THREE.LinearMipmapLinearFilter;
-
-					}
-
-					return texture;
-
-				} else {
-
-					return null;
-
-				}
-
-			}
-
-			function buildBasematerialsMeshes( basematerials, triangleProperties, meshData, objects, modelData, textureData, objectData ) {
-
-				const objectPindex = objectData.pindex;
-				const materialMap = {};
-
-				for ( let i = 0, l = triangleProperties.length; i < l; i ++ ) {
-
-					const triangleProperty = triangleProperties[ i ];
-					const pindex = triangleProperty.p1 !== undefined ? triangleProperty.p1 : objectPindex;
-					if ( materialMap[ pindex ] === undefined ) materialMap[ pindex ] = [];
-					materialMap[ pindex ].push( triangleProperty );
-
-				} //
-
-
-				const keys = Object.keys( materialMap );
-				const meshes = [];
-
-				for ( let i = 0, l = keys.length; i < l; i ++ ) {
-
-					const materialIndex = keys[ i ];
-					const trianglePropertiesProps = materialMap[ materialIndex ];
-					const basematerialData = basematerials.basematerials[ materialIndex ];
-					const material = getBuild( basematerialData, objects, modelData, textureData, objectData, buildBasematerial ); //
-
-					const geometry = new THREE.BufferGeometry();
-					const positionData = [];
-					const vertices = meshData.vertices;
-
-					for ( let j = 0, jl = trianglePropertiesProps.length; j < jl; j ++ ) {
-
-						const triangleProperty = trianglePropertiesProps[ j ];
-						positionData.push( vertices[ triangleProperty.v1 * 3 + 0 ] );
-						positionData.push( vertices[ triangleProperty.v1 * 3 + 1 ] );
-						positionData.push( vertices[ triangleProperty.v1 * 3 + 2 ] );
-						positionData.push( vertices[ triangleProperty.v2 * 3 + 0 ] );
-						positionData.push( vertices[ triangleProperty.v2 * 3 + 1 ] );
-						positionData.push( vertices[ triangleProperty.v2 * 3 + 2 ] );
-						positionData.push( vertices[ triangleProperty.v3 * 3 + 0 ] );
-						positionData.push( vertices[ triangleProperty.v3 * 3 + 1 ] );
-						positionData.push( vertices[ triangleProperty.v3 * 3 + 2 ] );
-
-					}
-
-					geometry.setAttribute( 'position', new THREE.Float32BufferAttribute( positionData, 3 ) ); //
-
-					const mesh = new THREE.Mesh( geometry, material );
-					meshes.push( mesh );
-
-				}
-
-				return meshes;
-
-			}
-
-			function buildTexturedMesh( texture2dgroup, triangleProperties, meshData, objects, modelData, textureData, objectData ) {
-
-				// geometry
-				const geometry = new THREE.BufferGeometry();
-				const positionData = [];
-				const uvData = [];
-				const vertices = meshData.vertices;
-				const uvs = texture2dgroup.uvs;
-
-				for ( let i = 0, l = triangleProperties.length; i < l; i ++ ) {
-
-					const triangleProperty = triangleProperties[ i ];
-					positionData.push( vertices[ triangleProperty.v1 * 3 + 0 ] );
-					positionData.push( vertices[ triangleProperty.v1 * 3 + 1 ] );
-					positionData.push( vertices[ triangleProperty.v1 * 3 + 2 ] );
-					positionData.push( vertices[ triangleProperty.v2 * 3 + 0 ] );
-					positionData.push( vertices[ triangleProperty.v2 * 3 + 1 ] );
-					positionData.push( vertices[ triangleProperty.v2 * 3 + 2 ] );
-					positionData.push( vertices[ triangleProperty.v3 * 3 + 0 ] );
-					positionData.push( vertices[ triangleProperty.v3 * 3 + 1 ] );
-					positionData.push( vertices[ triangleProperty.v3 * 3 + 2 ] ); //
-
-					uvData.push( uvs[ triangleProperty.p1 * 2 + 0 ] );
-					uvData.push( uvs[ triangleProperty.p1 * 2 + 1 ] );
-					uvData.push( uvs[ triangleProperty.p2 * 2 + 0 ] );
-					uvData.push( uvs[ triangleProperty.p2 * 2 + 1 ] );
-					uvData.push( uvs[ triangleProperty.p3 * 2 + 0 ] );
-					uvData.push( uvs[ triangleProperty.p3 * 2 + 1 ] );
-
-				}
-
-				geometry.setAttribute( 'position', new THREE.Float32BufferAttribute( positionData, 3 ) );
-				geometry.setAttribute( 'uv', new THREE.Float32BufferAttribute( uvData, 2 ) ); // material
-
-				const texture = getBuild( texture2dgroup, objects, modelData, textureData, objectData, buildTexture );
-				const material = new THREE.MeshPhongMaterial( {
-					map: texture,
-					flatShading: true
-				} ); // mesh
-
-				const mesh = new THREE.Mesh( geometry, material );
-				return mesh;
-
-			}
-
-			function buildVertexColorMesh( colorgroup, triangleProperties, meshData, objects, modelData, objectData ) {
-
-				// geometry
-				const geometry = new THREE.BufferGeometry();
-				const positionData = [];
-				const colorData = [];
-				const vertices = meshData.vertices;
-				const colors = colorgroup.colors;
-
-				for ( let i = 0, l = triangleProperties.length; i < l; i ++ ) {
-
-					const triangleProperty = triangleProperties[ i ];
-					const v1 = triangleProperty.v1;
-					const v2 = triangleProperty.v2;
-					const v3 = triangleProperty.v3;
-					positionData.push( vertices[ v1 * 3 + 0 ] );
-					positionData.push( vertices[ v1 * 3 + 1 ] );
-					positionData.push( vertices[ v1 * 3 + 2 ] );
-					positionData.push( vertices[ v2 * 3 + 0 ] );
-					positionData.push( vertices[ v2 * 3 + 1 ] );
-					positionData.push( vertices[ v2 * 3 + 2 ] );
-					positionData.push( vertices[ v3 * 3 + 0 ] );
-					positionData.push( vertices[ v3 * 3 + 1 ] );
-					positionData.push( vertices[ v3 * 3 + 2 ] ); //
-
-					const p1 = triangleProperty.p1 !== undefined ? triangleProperty.p1 : objectData.pindex;
-					const p2 = triangleProperty.p2 !== undefined ? triangleProperty.p2 : p1;
-					const p3 = triangleProperty.p3 !== undefined ? triangleProperty.p3 : p1;
-					colorData.push( colors[ p1 * 3 + 0 ] );
-					colorData.push( colors[ p1 * 3 + 1 ] );
-					colorData.push( colors[ p1 * 3 + 2 ] );
-					colorData.push( colors[ p2 * 3 + 0 ] );
-					colorData.push( colors[ p2 * 3 + 1 ] );
-					colorData.push( colors[ p2 * 3 + 2 ] );
-					colorData.push( colors[ p3 * 3 + 0 ] );
-					colorData.push( colors[ p3 * 3 + 1 ] );
-					colorData.push( colors[ p3 * 3 + 2 ] );
-
-				}
-
-				geometry.setAttribute( 'position', new THREE.Float32BufferAttribute( positionData, 3 ) );
-				geometry.setAttribute( 'color', new THREE.Float32BufferAttribute( colorData, 3 ) ); // material
-
-				const material = new THREE.MeshPhongMaterial( {
-					vertexColors: true,
-					flatShading: true
-				} ); // mesh
-
-				const mesh = new THREE.Mesh( geometry, material );
-				return mesh;
-
-			}
-
-			function buildDefaultMesh( meshData ) {
-
-				const geometry = new THREE.BufferGeometry();
-				geometry.setIndex( new THREE.BufferAttribute( meshData[ 'triangles' ], 1 ) );
-				geometry.setAttribute( 'position', new THREE.BufferAttribute( meshData[ 'vertices' ], 3 ) );
-				const material = new THREE.MeshPhongMaterial( {
-					color: 0xaaaaff,
-					flatShading: true
-				} );
-				const mesh = new THREE.Mesh( geometry, material );
-				return mesh;
-
-			}
-
-			function buildMeshes( resourceMap, meshData, objects, modelData, textureData, objectData ) {
-
-				const keys = Object.keys( resourceMap );
-				const meshes = [];
-
-				for ( let i = 0, il = keys.length; i < il; i ++ ) {
-
-					const resourceId = keys[ i ];
-					const triangleProperties = resourceMap[ resourceId ];
-					const resourceType = getResourceType( resourceId, modelData );
-
-					switch ( resourceType ) {
-
-						case 'material':
-							const basematerials = modelData.resources.basematerials[ resourceId ];
-							const newMeshes = buildBasematerialsMeshes( basematerials, triangleProperties, meshData, objects, modelData, textureData, objectData );
-
-							for ( let j = 0, jl = newMeshes.length; j < jl; j ++ ) {
-
-								meshes.push( newMeshes[ j ] );
-
+					// Check if object has a <mesh>
+					const meshMatch = objBody.match( /<mesh\b[^>]*>([\s\S]*?)<\/mesh>/i );
+					if ( meshMatch ) {
+						const meshXml = meshMatch[ 1 ];
+						const vertices = [];
+						const vertRegex = /<vertex\b[^>]*?\bx\s*=\s*["']([^"']+)["'][^>]*?\by\s*=\s*["']([^"']+)["'][^>]*?\bz\s*=\s*["']([^"']+)["'][^>]*>/gi;
+						let vMatch;
+						while ( ( vMatch = vertRegex.exec( meshXml ) ) !== null ) {
+							vertices.push(
+								parseFloat( vMatch[ 1 ] ) * unitScale,
+								parseFloat( vMatch[ 2 ] ) * unitScale,
+								parseFloat( vMatch[ 3 ] ) * unitScale
+							);
+						}
+
+						// Fallback vertex parser if attribute order isn't x, y, z
+						if ( vertices.length === 0 ) {
+							const genericVertRegex = /<vertex\b([^>]*)\/?>/gi;
+							while ( ( vMatch = genericVertRegex.exec( meshXml ) ) !== null ) {
+								const attrs = vMatch[ 1 ];
+								const vx = parseFloat( getExactAttr( attrs, 'x' ) || '0' ) * unitScale;
+								const vy = parseFloat( getExactAttr( attrs, 'y' ) || '0' ) * unitScale;
+								const vz = parseFloat( getExactAttr( attrs, 'z' ) || '0' ) * unitScale;
+								vertices.push( vx, vy, vz );
+							}
+						}
+
+						const triangles = [];
+						const triColors = [];
+						let hasTriangleColors = false;
+
+						const triBlockMatch = meshXml.match( /<triangles\b[^>]*>([\s\S]*?)<\/triangles>/i );
+						const triSource = triBlockMatch ? triBlockMatch[ 1 ] : meshXml;
+						const triRegex = /<triangle\b([^>]*)\/?>/gi;
+						let tMatch;
+
+						while ( ( tMatch = triRegex.exec( triSource ) ) !== null ) {
+							const tAttrs = tMatch[ 1 ];
+							const v1Match = tAttrs.match( /\bv1\s*=\s*["'](\d+)["']/i );
+							const v2Match = tAttrs.match( /\bv2\s*=\s*["'](\d+)["']/i );
+							const v3Match = tAttrs.match( /\bv3\s*=\s*["'](\d+)["']/i );
+							if ( ! v1Match || ! v2Match || ! v3Match ) continue;
+
+							const v1 = parseInt( v1Match[ 1 ], 10 );
+							const v2 = parseInt( v2Match[ 1 ], 10 );
+							const v3 = parseInt( v3Match[ 1 ], 10 );
+							triangles.push( v1, v2, v3 );
+
+							// Check for color indices (pid/p1 or Bambu paint_color)
+							let hexCol = null;
+							const tPid = getExactAttr( tAttrs, 'pid' ) || pid;
+							const p1Match = tAttrs.match( /\bp1\s*=\s*["'](\d+)["']/i );
+							const paintColorMatch = tAttrs.match( /(?:paint_color|mmu_segmentation)\s*=\s*["']([0-9a-fA-F]+)["']/i );
+
+							if ( tPid && colorPalettes[ tPid ] ) {
+								const idx = p1Match ? parseInt( p1Match[ 1 ], 10 ) : ( pindex !== null ? pindex : 0 );
+								hexCol = colorPalettes[ tPid ][ idx ] || null;
+							} else if ( paintColorMatch && slicerFilamentColors.length > 0 ) {
+								const code = parseInt( paintColorMatch[ 1 ], 16 );
+								// In Bambu/Prusa MMU paint_color, bitmask/nibble maps to extruder index
+								let extIdx = 0;
+								if ( code === 4 ) extIdx = 0;
+								else if ( code === 8 ) extIdx = 1;
+								else if ( code === 12 ) extIdx = 2;
+								else if ( code > 0 ) extIdx = Math.min( slicerFilamentColors.length - 1, code % slicerFilamentColors.length );
+								hexCol = slicerFilamentColors[ extIdx ] || null;
+							} else if ( objectNameMap[ id ] && objectNameMap[ id ].extruder && slicerFilamentColors.length > 0 ) {
+								const ext = Math.max( 0, objectNameMap[ id ].extruder - 1 );
+								hexCol = slicerFilamentColors[ ext ] || null;
 							}
 
-							break;
+							if ( hexCol ) {
+								hasTriangleColors = true;
+								triColors.push( hexCol );
+							} else {
+								triColors.push( null );
+							}
+						}
 
-						case 'texture':
-							const texture2dgroup = modelData.resources.texture2dgroup[ resourceId ];
-							meshes.push( buildTexturedMesh( texture2dgroup, triangleProperties, meshData, objects, modelData, textureData, objectData ) );
-							break;
-
-						case 'vertexColors':
-							const colorgroup = modelData.resources.colorgroup[ resourceId ];
-							meshes.push( buildVertexColorMesh( colorgroup, triangleProperties, meshData, objects, modelData, objectData ) );
-							break;
-
-						case 'default':
-							meshes.push( buildDefaultMesh( meshData ) );
-							break;
-
-						default:
-							console.error( 'THREE.3MFLoader: Unsupported resource type.' );
-
+						if ( vertices.length > 0 && triangles.length > 0 ) {
+							objData.mesh = {
+								vertices: new Float32Array( vertices ),
+								triangles: new Uint32Array( triangles ),
+								triColors: hasTriangleColors ? triColors : null
+							};
+						}
 					}
 
+					// Check if object has <components>
+					const compBlockMatch = objBody.match( /<components\b[^>]*>([\s\S]*?)<\/components>/i );
+					if ( compBlockMatch ) {
+						const comps = [];
+						const compRegex = /<component\b([^>]*)\/?>/gi;
+						let cMatch;
+						while ( ( cMatch = compRegex.exec( compBlockMatch[ 1 ] ) ) !== null ) {
+							const cAttrs = cMatch[ 1 ];
+							const compObjId = getExactAttr( cAttrs, 'objectid' );
+							const subPath = getAttr( cAttrs, 'path' ); // matches p:path or path
+							const transformStr = getExactAttr( cAttrs, 'transform' );
+							if ( compObjId ) {
+								comps.push( {
+									objectId: compObjId,
+									path: subPath ? normalizePath( subPath ) : normPath,
+									transform: parseTransformMatrix( transformStr )
+								} );
+							}
+						}
+						if ( comps.length > 0 ) {
+							objData.components = comps;
+						}
+					}
+
+					objects[ id ] = objData;
+
 				}
 
-				return meshes;
+				// Parse <build> items
+				const buildItems = [];
+				const buildBlockMatch = xmlText.match( /<build\b[^>]*>([\s\S]*?)<\/build>/i );
+				if ( buildBlockMatch ) {
+					const itemRegex = /<item\b([^>]*)\/?>/gi;
+					let iMatch;
+					while ( ( iMatch = itemRegex.exec( buildBlockMatch[ 1 ] ) ) !== null ) {
+						const iAttrs = iMatch[ 1 ];
+						const itemObjId = getExactAttr( iAttrs, 'objectid' );
+						const itemPath = getAttr( iAttrs, 'path' );
+						const transformStr = getExactAttr( iAttrs, 'transform' );
+						if ( itemObjId ) {
+							buildItems.push( {
+								objectId: itemObjId,
+								path: itemPath ? normalizePath( itemPath ) : normPath,
+								transform: parseTransformMatrix( transformStr )
+							} );
+						}
+					}
+				}
+
+				const parsed = {
+					path: normPath,
+					unitScale,
+					objects,
+					build: buildItems
+				};
+				parsedModels[ lookupKey ] = parsed;
+				return parsed;
 
 			}
 
-			function getResourceType( pid, modelData ) {
+			// Parse all .model files in the archive
+			for ( const mf of modelFiles ) {
+				parseModelFile( mf );
+			}
 
-				if ( modelData.resources.texture2dgroup[ pid ] !== undefined ) {
+			// 5. Build Three.js Meshes / Groups with cycle protection
+			function createThreeMeshFromData( meshData, objName ) {
 
-					return 'texture';
+				const geometry = new THREE.BufferGeometry();
+				const verts = meshData.vertices;
+				const tris = meshData.triangles;
 
-				} else if ( modelData.resources.basematerials[ pid ] !== undefined ) {
+				// Build non-indexed BufferGeometry so vertex painting and planar slicing work seamlessly
+				const numTris = Math.floor( tris.length / 3 );
+				const positions = new Float32Array( numTris * 9 );
+				let colors = null;
+				const tmpColor = new THREE.Color( '#3b82f6' );
 
-					return 'material';
+				if ( meshData.triColors ) {
+					colors = new Float32Array( numTris * 9 );
+				}
 
-				} else if ( modelData.resources.colorgroup[ pid ] !== undefined ) {
+				for ( let i = 0; i < numTris; i ++ ) {
+					const i0 = tris[ i * 3 ] * 3;
+					const i1 = tris[ i * 3 + 1 ] * 3;
+					const i2 = tris[ i * 3 + 2 ] * 3;
+					const outIdx = i * 9;
 
-					return 'vertexColors';
+					positions[ outIdx ] = verts[ i0 ] || 0;
+					positions[ outIdx + 1 ] = verts[ i0 + 1 ] || 0;
+					positions[ outIdx + 2 ] = verts[ i0 + 2 ] || 0;
 
-				} else if ( pid === 'default' ) {
+					positions[ outIdx + 3 ] = verts[ i1 ] || 0;
+					positions[ outIdx + 4 ] = verts[ i1 + 1 ] || 0;
+					positions[ outIdx + 5 ] = verts[ i1 + 2 ] || 0;
 
-					return 'default';
+					positions[ outIdx + 6 ] = verts[ i2 ] || 0;
+					positions[ outIdx + 7 ] = verts[ i2 + 1 ] || 0;
+					positions[ outIdx + 8 ] = verts[ i2 + 2 ] || 0;
 
+					if ( colors ) {
+						const hex = meshData.triColors[ i ] || ( slicerFilamentColors[ 0 ] || '#3b82f6' );
+						tmpColor.set( hex );
+						for ( let v = 0; v < 9; v += 3 ) {
+							colors[ outIdx + v ] = tmpColor.r;
+							colors[ outIdx + v + 1 ] = tmpColor.g;
+							colors[ outIdx + 2 + v ] = tmpColor.b;
+						}
+					}
+				}
+
+				geometry.setAttribute( 'position', new THREE.BufferAttribute( positions, 3 ) );
+				if ( colors ) {
+					geometry.setAttribute( 'color', new THREE.BufferAttribute( colors, 3 ) );
+				}
+				geometry.computeVertexNormals();
+
+				const matOptions = {
+					roughness: 0.35,
+					metalness: 0.15,
+					side: THREE.DoubleSide
+				};
+
+				if ( colors ) {
+					matOptions.vertexColors = true;
+					matOptions.color = new THREE.Color( 0xffffff );
+				} else if ( slicerFilamentColors.length > 0 && slicerFilamentColors[ 0 ] ) {
+					matOptions.color = new THREE.Color( slicerFilamentColors[ 0 ] );
 				} else {
-
-					return undefined;
-
+					matOptions.color = new THREE.Color( 0x3b82f6 );
 				}
+
+				const material = new THREE.MeshStandardMaterial( matOptions );
+				const mesh = new THREE.Mesh( geometry, material );
+				mesh.name = objName || 'Pieza 3MF';
+				return mesh;
 
 			}
 
-			function analyzeObject( modelData, meshData, objectData ) {
+			function instantiateObject( modelPath, objectId, visited ) {
 
-				const resourceMap = {};
-				const triangleProperties = meshData[ 'triangleProperties' ];
-				const objectPid = objectData.pid;
+				const normPath = normalizePath( modelPath );
+				const key = `${normPath.toLowerCase()}#${objectId}`;
+				if ( visited.has( key ) ) return null;
 
-				for ( let i = 0, l = triangleProperties.length; i < l; i ++ ) {
+				const nextVisited = new Set( visited );
+				nextVisited.add( key );
 
-					const triangleProperty = triangleProperties[ i ];
-					let pid = triangleProperty.pid !== undefined ? triangleProperty.pid : objectPid;
-					if ( pid === undefined ) pid = 'default';
-					if ( resourceMap[ pid ] === undefined ) resourceMap[ pid ] = [];
-					resourceMap[ pid ].push( triangleProperty );
+				let modelData = parseModelFile( normPath );
+				let objData = modelData && modelData.objects ? modelData.objects[ objectId ] : null;
 
+				// Fallback: search across all other .model files if objectId wasn't in the specified modelPath
+				if ( ! objData ) {
+					for ( const otherKey of Object.keys( parsedModels ) ) {
+						const candidateModel = parsedModels[ otherKey ];
+						if ( candidateModel && candidateModel.objects && candidateModel.objects[ objectId ] ) {
+							modelData = candidateModel;
+							objData = candidateModel.objects[ objectId ];
+							break;
+						}
+					}
 				}
 
-				return resourceMap;
-
-			}
-
-			function buildGroup( meshData, objects, modelData, textureData, objectData ) {
+				if ( ! objData ) return null;
 
 				const group = new THREE.Group();
-				const resourceMap = analyzeObject( modelData, meshData, objectData );
-				const meshes = buildMeshes( resourceMap, meshData, objects, modelData, textureData, objectData );
+				group.name = objData.name || `Objeto ${objectId}`;
 
-				for ( let i = 0, l = meshes.length; i < l; i ++ ) {
-
-					group.add( meshes[ i ] );
-
+				if ( objData.mesh ) {
+					const mesh = createThreeMeshFromData( objData.mesh, objData.name );
+					group.add( mesh );
 				}
 
-				return group;
-
-			}
-
-			function applyExtensions( extensions, meshData, modelXml ) {
-
-				if ( ! extensions ) {
-
-					return;
-
-				}
-
-				const availableExtensions = [];
-				const keys = Object.keys( extensions );
-
-				for ( let i = 0; i < keys.length; i ++ ) {
-
-					const ns = keys[ i ];
-
-					for ( let j = 0; j < scope.availableExtensions.length; j ++ ) {
-
-						const extension = scope.availableExtensions[ j ];
-
-						if ( extension.ns === ns ) {
-
-							availableExtensions.push( extension );
-
-						}
-
-					}
-
-				}
-
-				for ( let i = 0; i < availableExtensions.length; i ++ ) {
-
-					const extension = availableExtensions[ i ];
-					extension.apply( modelXml, extensions[ extension[ 'ns' ] ], meshData );
-
-				}
-
-			}
-
-			function getBuild( data, objects, modelData, textureData, objectData, builder ) {
-
-				if ( data.build !== undefined ) return data.build;
-				data.build = builder( data, objects, modelData, textureData, objectData );
-				return data.build;
-
-			}
-
-			function buildBasematerial( materialData, objects, modelData ) {
-
-				let material;
-				const displaypropertiesid = materialData.displaypropertiesid;
-				const pbmetallicdisplayproperties = modelData.resources.pbmetallicdisplayproperties;
-
-				if ( displaypropertiesid !== null && pbmetallicdisplayproperties[ displaypropertiesid ] !== undefined ) {
-
-					// metallic display property, use StandardMaterial
-					const pbmetallicdisplayproperty = pbmetallicdisplayproperties[ displaypropertiesid ];
-					const metallicData = pbmetallicdisplayproperty.data[ materialData.index ];
-					material = new THREE.MeshStandardMaterial( {
-						flatShading: true,
-						roughness: metallicData.roughness,
-						metalness: metallicData.metallicness
-					} );
-
-				} else {
-
-					// otherwise use PhongMaterial
-					material = new THREE.MeshPhongMaterial( {
-						flatShading: true
-					} );
-
-				}
-
-				material.name = materialData.name; // displaycolor MUST be specified with a value of a 6 or 8 digit hexadecimal number, e.g. "#RRGGBB" or "#RRGGBBAA"
-
-				const displaycolor = materialData.displaycolor;
-				const color = displaycolor.substring( 0, 7 );
-				material.color.setStyle( color );
-				material.color.convertSRGBToLinear(); // displaycolor is in sRGB
-				// process alpha if set
-
-				if ( displaycolor.length === 9 ) {
-
-					material.opacity = parseInt( displaycolor.charAt( 7 ) + displaycolor.charAt( 8 ), 16 ) / 255;
-
-				}
-
-				return material;
-
-			}
-
-			function buildComposite( compositeData, objects, modelData, textureData ) {
-
-				const composite = new THREE.Group();
-
-				for ( let j = 0; j < compositeData.length; j ++ ) {
-
-					const component = compositeData[ j ];
-					let build = objects[ component.objectId ];
-
-					if ( build === undefined ) {
-
-						buildObject( component.objectId, objects, modelData, textureData );
-						build = objects[ component.objectId ];
-
-					}
-
-					const object3D = build.clone(); // apply component transform
-
-					const transform = component.transform;
-
-					if ( transform ) {
-
-						object3D.applyMatrix4( transform );
-
-					}
-
-					composite.add( object3D );
-
-				}
-
-				return composite;
-
-			}
-
-			function buildObject( objectId, objects, modelData, textureData ) {
-
-				const objectData = modelData[ 'resources' ][ 'object' ][ objectId ];
-
-				if ( objectData[ 'mesh' ] ) {
-
-					const meshData = objectData[ 'mesh' ];
-					const extensions = modelData[ 'extensions' ];
-					const modelXml = modelData[ 'xml' ];
-					applyExtensions( extensions, meshData, modelXml );
-					objects[ objectData.id ] = getBuild( meshData, objects, modelData, textureData, objectData, buildGroup );
-
-				} else {
-
-					const compositeData = objectData[ 'components' ];
-					objects[ objectData.id ] = getBuild( compositeData, objects, modelData, textureData, objectData, buildComposite );
-
-				}
-
-			}
-
-			function buildObjects( data3mf ) {
-
-				const modelsData = data3mf.model;
-				const modelRels = data3mf.modelRels;
-				const objects = {};
-				const modelsKeys = Object.keys( modelsData );
-				const textureData = {}; // evaluate model relationships to textures
-
-				if ( modelRels ) {
-
-					for ( let i = 0, l = modelRels.length; i < l; i ++ ) {
-
-						const modelRel = modelRels[ i ];
-						const textureKey = modelRel.target.substring( 1 );
-
-						if ( data3mf.texture[ textureKey ] ) {
-
-							textureData[ modelRel.target ] = data3mf.texture[ textureKey ];
-
-						}
-
-					}
-
-				} // start build
-
-
-				for ( let i = 0; i < modelsKeys.length; i ++ ) {
-
-					const modelsKey = modelsKeys[ i ];
-					const modelData = modelsData[ modelsKey ];
-					const objectIds = Object.keys( modelData[ 'resources' ][ 'object' ] );
-
-					for ( let j = 0; j < objectIds.length; j ++ ) {
-
-						const objectId = objectIds[ j ];
-						buildObject( objectId, objects, modelData, textureData );
-
-					}
-
-				}
-
-				return objects;
-
-			}
-
-			function fetch3DModelPart( rels ) {
-
-				for ( let i = 0; i < rels.length; i ++ ) {
-
-					const rel = rels[ i ];
-					const extension = rel.target.split( '.' ).pop();
-					if ( extension.toLowerCase() === 'model' ) return rel;
-
-				}
-
-			}
-
-			function build( objects, data3mf ) {
-
-				const group = new THREE.Group();
-				const relationship = fetch3DModelPart( data3mf[ 'rels' ] );
-				const buildData = data3mf.model[ relationship[ 'target' ].substring( 1 ) ][ 'build' ];
-
-				for ( let i = 0; i < buildData.length; i ++ ) {
-
-					const buildItem = buildData[ i ];
-					const object3D = objects[ buildItem[ 'objectId' ] ]; // apply transform
-
-					if ( object3D ) {
-						const transform = buildItem[ 'transform' ];
-						if ( transform ) {
-							object3D.applyMatrix4( transform );
-						}
-						group.add( object3D );
-					}
-
-				}
-
-				// If buildData had no objects or added nothing, fallback to adding all parsed objects
-				if ( group.children.length === 0 ) {
-					for ( const id in objects ) {
-						if ( objects[ id ] ) {
-							group.add( objects[ id ] );
+				if ( objData.components && objData.components.length > 0 ) {
+					for ( const comp of objData.components ) {
+						const targetPath = comp.path || modelData.path;
+						const childObj = instantiateObject( targetPath, comp.objectId, nextVisited );
+						if ( childObj ) {
+							if ( comp.transform ) {
+								childObj.applyMatrix4( comp.transform );
+							}
+							group.add( childObj );
 						}
 					}
 				}
@@ -1324,9 +574,47 @@
 
 			}
 
-			const data3mf = loadDocument( data );
-			const objects = buildObjects( data3mf );
-			return build( objects, data3mf );
+			// 6. Assemble Root Group from <build> items
+			const rootGroup = new THREE.Group();
+			const rootModel = parseModelFile( rootModelPath );
+
+			if ( rootModel && rootModel.build && rootModel.build.length > 0 ) {
+				for ( let i = 0; i < rootModel.build.length; i ++ ) {
+					const item = rootModel.build[ i ];
+					const obj3D = instantiateObject( item.path || rootModel.path, item.objectId, new Set() );
+					if ( obj3D ) {
+						if ( item.transform ) {
+							obj3D.applyMatrix4( item.transform );
+						}
+						if ( objectNameMap[ item.objectId ] && objectNameMap[ item.objectId ].name ) {
+							obj3D.name = objectNameMap[ item.objectId ].name;
+						}
+						rootGroup.add( obj3D );
+					}
+				}
+			}
+
+			// Fallback: if rootGroup has no meshes, collect all mesh objects from all .model files
+			let totalMeshes = 0;
+			rootGroup.traverse( c => { if ( c.isMesh ) totalMeshes ++; } );
+
+			if ( totalMeshes === 0 ) {
+				for ( const mKey of Object.keys( parsedModels ) ) {
+					const mData = parsedModels[ mKey ];
+					for ( const oid of Object.keys( mData.objects ) ) {
+						const oData = mData.objects[ oid ];
+						if ( oData.mesh ) {
+							const mesh = createThreeMeshFromData( oData.mesh, oData.name );
+							const wrap = new THREE.Group();
+							wrap.name = oData.name || `Parte ${oid}`;
+							wrap.add( mesh );
+							rootGroup.add( wrap );
+						}
+					}
+				}
+			}
+
+			return rootGroup;
 
 		}
 
@@ -1339,6 +627,6 @@
 	}
 
 	THREE.ThreeMFLoader = ThreeMFLoader;
-	THREE['3MFLoader'] = ThreeMFLoader;
+	THREE[ '3MFLoader' ] = ThreeMFLoader;
 
 } )();

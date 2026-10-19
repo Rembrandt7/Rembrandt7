@@ -13,6 +13,7 @@ const INITIAL_TABS: TabConfig[] = [
     { id: 'useful-tools', label: 'Herramientas Útiles', type: 'system', componentKey: 'Herramientas Útiles', isVisible: true, icon: 'Briefcase' },
     { id: 'calendar', label: 'Calendario', type: 'system', componentKey: 'Calendario', isVisible: true, icon: 'Calendar' },
     { id: '3d-print', label: 'Impresión 3D', type: 'system', componentKey: 'Impresión 3D', isVisible: true, icon: 'Box' },
+    { id: 'listas', label: 'Listas', type: 'system', componentKey: 'Listas', isVisible: true, icon: 'CheckSquare' },
     { id: 'teleprompter', label: 'Teleprompter', type: 'system', componentKey: 'Teleprompter', isVisible: true, icon: 'Music' },
 ];
 
@@ -858,6 +859,13 @@ export const LinkProvider: React.FC<{ children: React.ReactNode }> = ({ children
             }
           }
 
+          if (!finalConfig.tabs.find((t: any) => t.id === 'listas' || t.componentKey === 'Listas')) {
+            const listasTab = INITIAL_TABS.find(t => t.id === 'listas');
+            if (listasTab) {
+              finalConfig.tabs.push(listasTab);
+            }
+          }
+
           // Unify Finanzas, Nutrición, Notas & Bóveda (Credenciales) into single 'Personal' tab
           const hasPersonalTab = finalConfig.tabs.some((t: any) => t.id === 'personal' || t.componentKey === 'Personal');
           const personalTab: TabConfig = {
@@ -1152,6 +1160,13 @@ export const LinkProvider: React.FC<{ children: React.ReactNode }> = ({ children
               const teleprompterTab = INITIAL_TABS.find(t => t.id === 'teleprompter');
               if (teleprompterTab) {
                 parsed.tabs.push(teleprompterTab);
+              }
+            }
+
+            if (!parsed.tabs.find((t: any) => t.id === 'listas' || t.componentKey === 'Listas')) {
+              const listasTab = INITIAL_TABS.find(t => t.id === 'listas');
+              if (listasTab) {
+                parsed.tabs.push(listasTab);
               }
             }
 

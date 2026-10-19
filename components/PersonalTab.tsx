@@ -2,14 +2,14 @@ import React, { useState, useEffect, useCallback, lazy, Suspense } from 'react';
 import { motion, AnimatePresence } from 'motion/react';
 import { 
   ShieldCheck, Lock, Unlock, Key, TrendingUp, Heart, FileText, 
-  Eye, EyeOff, ShieldAlert, Check, X, RefreshCw, Sparkles, FolderLock
+  Eye, EyeOff, ShieldAlert, Check, X, RefreshCw, Sparkles, FolderLock, Plus, UserCheck, User
 } from 'lucide-react';
 import { useLinks } from '../contexts/LinkContext';
 import { hashPassword, verifyPassword } from '../utils/cryptoUtils';
 import { supabase } from '../services/supabaseClient';
 import { toast } from 'sonner';
 
-// Lazy load the 3 sub-sections
+// Lazy load the sub-sections
 const Finanzas = lazy(() => import('./Finanzas'));
 const Nutricion = lazy(() => import('./Nutricion'));
 const Credenciales = lazy(() => import('./Credenciales'));
@@ -17,6 +17,12 @@ const NotesTab = lazy(() => import('./NotesTab'));
 
 export type PersonalSubTab = 'finanzas' | 'nutricion' | 'boveda';
 export type BovedaSubTab = 'credenciales' | 'notas';
+
+interface PersonalProfile {
+  id: string;
+  label: string;
+  fileName: string;
+}
 
 interface PersonalTabProps {
   initialSubTab?: PersonalSubTab;
@@ -47,9 +53,29 @@ export const PersonalTab: React.FC<PersonalTabProps> = ({
     return initialBovedaTab;
   });
 
-  // Master Lock state
+  // Profiles List
+  const [profiles, setProfiles] = useState<PersonalProfile[]>(() => {
+    const saved = localStorage.getItem('rembrandt_personal_profiles');
+    if (saved) {
+      try {
+        const parsed = JSON.parse(saved);
+        if (Array.isArray(parsed) && parsed.length > 0) return parsed;
+      } catch (e) {}
+    }
+    return [
+      { id: 'rem', label: 'Perfil Rem (Principal)', fileName: 'finanzas_rem.json' },
+      { id: 'personal', label: 'Perfil Personal', fileName: 'finanzas_personal.json' }
+    ];
+  });
+
+  // Active Profile ID: null by default on initial load as requested
+  const [activeProfileId, setActiveProfileId] = useState<string | null>(() => {
+    return sessionStorage.getItem('personal_active_profile') || null;
+  });
+
+  // Master Lock state: false by default unless an active profile is authenticated in current session
   const [isUnlocked, setIsUnlocked] = useState<boolean>(() => {
-    return sessionStorage.getItem('personal_unlocked') === 'true';
+    return sessionStorage.getItem('personal_unlocked') === 'true' && Boolean(sessionStorage.getItem('personal_active_profile'));
   });
 
   // Security data: hash and salt
@@ -61,18 +87,18 @@ export const PersonalTab: React.FC<PersonalTabProps> = ({
         if (parsed.passwordHash && parsed.salt) return parsed;
       } catch (e) {}
     }
-    // Also check if config has it
     if ((config as any).personalSecurity?.passwordHash) {
       return (config as any).personalSecurity;
     }
-    // Fallback: check if credencialesSecurity exists so we can reuse that password!
     if (config.credencialesSecurity?.passwordHash && config.credencialesSecurity?.salt) {
       return config.credencialesSecurity;
     }
     return null;
   });
 
-  // Lock Screen inputs
+  // Unlock Modal for Profile
+  const [isUnlockModalOpen, setIsUnlockModalOpen] = useState(false);
+  const [targetProfileToUnlock, setTargetProfileToUnlock] = useState<string | null>(null);
   const [unlockPassword, setUnlockPassword] = useState('');
   const [showUnlockPassword, setShowUnlockPassword] = useState(false);
   const [isVerifying, setIsVerifying] = useState(false);
@@ -106,9 +132,7 @@ export const PersonalTab: React.FC<PersonalTabProps> = ({
             localStorage.setItem('rembrandt_personal_security', JSON.stringify(parsed));
           }
         }
-      } catch (e) {
-        // Silent catch
-      }
+      } catch (e) {}
     };
     fetchRemoteSecurity();
   }, []);
@@ -162,27 +186,86 @@ export const PersonalTab: React.FC<PersonalTabProps> = ({
     localStorage.setItem('rembrandt_boveda_subtab', tab);
   };
 
-  // Save security data to local and Supabase
-  const saveSecurityData = async (sec: { passwordHash: string; salt: string; hint?: string }) => {
-    setSecurityData(sec);
-    localStorage.setItem('rembrandt_personal_security', JSON.stringify(sec));
-
-    // Also update LinkContext config
-    const updatedConfig = {
-      ...config,
-      personalSecurity: sec,
-      credencialesSecurity: sec // Keep in sync with credentials vault
-    };
-    updateConfig(updatedConfig);
-
-    try {
-      await supabase.storage.from('savejson').upload('personal_security.json', JSON.stringify(sec, null, 2), {
-        upsert: true,
-        contentType: 'application/json'
-      });
-    } catch (e) {
-      console.warn('Could not sync personal_security to Supabase:', e);
+  // PROFILE SELECTION & UNLOCK ACTION
+  const handlePromptProfile = (profileId: string) => {
+    if (isUnlocked && activeProfileId === profileId) {
+      return; // Already unlocked and active
     }
+    setTargetProfileToUnlock(profileId);
+    setUnlockPassword('');
+    setShowHint(false);
+    setIsUnlockModalOpen(true);
+  };
+
+  const handleUnlockProfile = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!unlockPassword) {
+      toast.error('Ingresa tu contraseña para acceder al perfil');
+      return;
+    }
+    if (!securityData) {
+      toast.error('No hay contraseña configurada');
+      return;
+    }
+
+    setIsVerifying(true);
+    try {
+      const isValid = await verifyPassword(unlockPassword, securityData.passwordHash, securityData.salt);
+      if (isValid) {
+        const profId = targetProfileToUnlock || 'rem';
+        const profileObj = profiles.find(p => p.id === profId) || profiles[0];
+        setActiveProfileId(profId);
+        setIsUnlocked(true);
+        sessionStorage.setItem('personal_active_profile', profId);
+        sessionStorage.setItem('personal_unlocked', 'true');
+        sessionStorage.setItem('credenciales_unlocked', 'true');
+        setUnlockPassword('');
+        setIsUnlockModalOpen(false);
+        setTargetProfileToUnlock(null);
+        toast.success(`¡${profileObj.label} cargado con éxito!`);
+      } else {
+        toast.error('Contraseña incorrecta');
+      }
+    } catch (err) {
+      console.error('Verification error:', err);
+      toast.error('Error al verificar contraseña');
+    } finally {
+      setIsVerifying(false);
+    }
+  };
+
+  // LOCK / LOGOUT ACTION
+  const handleLock = () => {
+    setIsUnlocked(false);
+    setActiveProfileId(null);
+    sessionStorage.removeItem('personal_active_profile');
+    sessionStorage.removeItem('personal_unlocked');
+    sessionStorage.removeItem('credenciales_unlocked');
+    setUnlockPassword('');
+    toast.info('Perfil cerrado y datos bloqueados.');
+  };
+
+  // CREATE NEW PROFILE
+  const handleCreateProfile = () => {
+    const name = prompt('Nombre del nuevo perfil personal (ej. Casa, Proyecto, Familiar):');
+    if (!name || !name.trim()) return;
+
+    const id = name.trim().toLowerCase().replace(/[^a-z0-9]/g, '_');
+    if (profiles.some(p => p.id === id)) {
+      toast.error('Ya existe un perfil con ese nombre');
+      return;
+    }
+
+    const newProfile: PersonalProfile = {
+      id,
+      label: `Perfil ${name.trim()}`,
+      fileName: `finanzas_${id}.json`
+    };
+
+    const updated = [...profiles, newProfile];
+    setProfiles(updated);
+    localStorage.setItem('rembrandt_personal_profiles', JSON.stringify(updated));
+    toast.success(`Perfil "${newProfile.label}" creado. Selecciónalo para activarlo.`);
   };
 
   // FIRST TIME SETUP
@@ -209,60 +292,36 @@ export const PersonalTab: React.FC<PersonalTabProps> = ({
         salt,
         hint: setupHint.trim() || undefined
       };
-      await saveSecurityData(newSec);
+      setSecurityData(newSec);
+      localStorage.setItem('rembrandt_personal_security', JSON.stringify(newSec));
 
-      // Unlock session
+      const updatedConfig = {
+        ...config,
+        personalSecurity: newSec,
+        credencialesSecurity: newSec
+      };
+      updateConfig(updatedConfig);
+
+      try {
+        await supabase.storage.from('savejson').upload('personal_security.json', JSON.stringify(newSec, null, 2), {
+          upsert: true,
+          contentType: 'application/json'
+        });
+      } catch (e) {}
+
+      // Unlock default profile
+      setActiveProfileId('rem');
       setIsUnlocked(true);
+      sessionStorage.setItem('personal_active_profile', 'rem');
       sessionStorage.setItem('personal_unlocked', 'true');
       sessionStorage.setItem('credenciales_unlocked', 'true');
-      toast.success('Contraseña maestra configurada con éxito. Espacio Personal desbloqueado.');
+      toast.success('Contraseña maestra configurada con éxito. Espacio Personal activo.');
     } catch (err: any) {
       console.error('Setup password error:', err);
       toast.error('Error al configurar contraseña');
     } finally {
       setIsSettingUp(false);
     }
-  };
-
-  // UNLOCK ACTION
-  const handleUnlock = async (e: React.FormEvent) => {
-    e.preventDefault();
-    if (!unlockPassword) {
-      toast.error('Ingresa tu contraseña');
-      return;
-    }
-    if (!securityData) {
-      toast.error('No hay contraseña configurada');
-      return;
-    }
-
-    setIsVerifying(true);
-    try {
-      const isValid = await verifyPassword(unlockPassword, securityData.passwordHash, securityData.salt);
-      if (isValid) {
-        setIsUnlocked(true);
-        sessionStorage.setItem('personal_unlocked', 'true');
-        sessionStorage.setItem('credenciales_unlocked', 'true');
-        setUnlockPassword('');
-        toast.success('¡Espacio Personal desbloqueado!');
-      } else {
-        toast.error('Contraseña incorrecta');
-      }
-    } catch (err) {
-      console.error('Verification error:', err);
-      toast.error('Error al verificar contraseña');
-    } finally {
-      setIsVerifying(false);
-    }
-  };
-
-  // LOCK ACTION
-  const handleLock = () => {
-    setIsUnlocked(false);
-    sessionStorage.removeItem('personal_unlocked');
-    sessionStorage.removeItem('credenciales_unlocked');
-    setUnlockPassword('');
-    toast.info('Espacio Personal bloqueado');
   };
 
   // CHANGE PASSWORD
@@ -296,7 +355,22 @@ export const PersonalTab: React.FC<PersonalTabProps> = ({
         salt,
         hint: newHint.trim() || undefined
       };
-      await saveSecurityData(newSec);
+      setSecurityData(newSec);
+      localStorage.setItem('rembrandt_personal_security', JSON.stringify(newSec));
+
+      const updatedConfig = {
+        ...config,
+        personalSecurity: newSec,
+        credencialesSecurity: newSec
+      };
+      updateConfig(updatedConfig);
+
+      try {
+        await supabase.storage.from('savejson').upload('personal_security.json', JSON.stringify(newSec, null, 2), {
+          upsert: true,
+          contentType: 'application/json'
+        });
+      } catch (e) {}
 
       setIsChangeModalOpen(false);
       setCurrentPassword('');
@@ -343,7 +417,7 @@ export const PersonalTab: React.FC<PersonalTabProps> = ({
               Configura tu Contraseña de Personal
             </h2>
             <p className="text-xs sm:text-sm text-zinc-400">
-              Crea una contraseña maestra para proteger tus <strong className="text-amber-400">Finanzas</strong>, <strong className="text-rose-400">Nutrición</strong> y <strong className="text-purple-400">Bóveda</strong> (Credenciales y Notas).
+              Crea una contraseña maestra para proteger tus <strong className="text-amber-400">Finanzas & Tarjetas</strong>, <strong className="text-rose-400">Nutrición</strong> y <strong className="text-purple-400">Bóveda</strong>.
             </p>
           </div>
 
@@ -358,7 +432,7 @@ export const PersonalTab: React.FC<PersonalTabProps> = ({
                   value={setupPassword}
                   onChange={(e) => setSetupPassword(e.target.value)}
                   placeholder="Mínimo 4 caracteres..."
-                  className="w-full bg-zinc-950 border border-white/10 rounded-xl pl-3 pr-10 py-2.5 text-sm text-white focus:outline-none focus:border-amber-500"
+                  className="w-full bg-zinc-950 border border-white/10 rounded-xl pl-3 pr-10 py-2.5 text-sm text-white focus:outline-none focus:border-amber-500 font-mono"
                   autoFocus
                 />
                 <button
@@ -380,7 +454,7 @@ export const PersonalTab: React.FC<PersonalTabProps> = ({
                 value={confirmSetupPassword}
                 onChange={(e) => setConfirmSetupPassword(e.target.value)}
                 placeholder="Repite la contraseña..."
-                className="w-full bg-zinc-950 border border-white/10 rounded-xl px-3 py-2.5 text-sm text-white focus:outline-none focus:border-amber-500"
+                className="w-full bg-zinc-950 border border-white/10 rounded-xl px-3 py-2.5 text-sm text-white focus:outline-none focus:border-amber-500 font-mono"
               />
             </div>
 
@@ -411,90 +485,91 @@ export const PersonalTab: React.FC<PersonalTabProps> = ({
     );
   }
 
-  // 2. LOCKED SCREEN
-  if (!isUnlocked) {
-    return (
-      <div className="w-full min-h-[550px] flex items-center justify-center p-4">
-        <motion.div 
-          initial={{ opacity: 0, y: 15 }}
-          animate={{ opacity: 1, y: 0 }}
-          className="max-w-md w-full bg-zinc-900/90 border border-white/15 rounded-3xl p-6 sm:p-8 backdrop-blur-xl shadow-2xl space-y-6 text-center"
-        >
-          <div className="w-16 h-16 mx-auto rounded-2xl bg-gradient-to-tr from-purple-600 via-pink-600 to-amber-500 flex items-center justify-center shadow-lg shadow-purple-500/20">
-            <Lock size={30} className="text-white animate-pulse" />
-          </div>
+  const activeProfile = profiles.find(p => p.id === activeProfileId);
 
-          <div className="space-y-1">
-            <h2 className="text-xl sm:text-2xl font-bold text-white tracking-tight">
-              Espacio Personal Protegido
-            </h2>
-            <p className="text-xs sm:text-sm text-zinc-400">
-              Ingresa tu contraseña para acceder a tus Finanzas, Nutrición y Bóveda.
-            </p>
-          </div>
-
-          <form onSubmit={handleUnlock} className="space-y-4">
-            <div className="relative">
-              <input
-                type={showUnlockPassword ? "text" : "password"}
-                value={unlockPassword}
-                onChange={(e) => setUnlockPassword(e.target.value)}
-                placeholder="Contraseña maestra..."
-                className="w-full bg-zinc-950 border border-white/15 rounded-xl pl-4 pr-10 py-3 text-sm text-white focus:outline-none focus:border-amber-400 text-center font-mono placeholder:font-sans placeholder-zinc-500"
-                autoFocus
-              />
-              <button
-                type="button"
-                onClick={() => setShowUnlockPassword(!showUnlockPassword)}
-                className="absolute right-3 top-1/2 -translate-y-1/2 text-zinc-400 hover:text-white"
-              >
-                {showUnlockPassword ? <EyeOff size={16} /> : <Eye size={16} />}
-              </button>
-            </div>
-
-            {securityData.hint && (
-              <div className="text-left">
-                {showHint ? (
-                  <p className="text-xs text-amber-300/90 bg-amber-500/10 p-2 rounded-lg border border-amber-500/20">
-                    💡 Pista: {securityData.hint}
-                  </p>
-                ) : (
-                  <button
-                    type="button"
-                    onClick={() => setShowHint(true)}
-                    className="text-[11px] text-zinc-400 hover:text-amber-400 underline transition-colors"
-                  >
-                    Mostrar pista de contraseña
-                  </button>
-                )}
-              </div>
-            )}
-
-            <button
-              type="submit"
-              disabled={isVerifying}
-              className="w-full py-3 bg-gradient-to-r from-amber-500 via-amber-400 to-yellow-500 hover:from-amber-400 hover:to-yellow-400 text-black font-bold rounded-xl shadow-lg shadow-amber-500/25 flex items-center justify-center gap-2 transition-all cursor-pointer"
-            >
-              {isVerifying ? <RefreshCw className="animate-spin" size={18} /> : <Unlock size={18} />}
-              <span>{isVerifying ? 'Verificando...' : 'Desbloquear Todo'}</span>
-            </button>
-          </form>
-        </motion.div>
-      </div>
-    );
-  }
-
-  // 3. UNLOCKED VIEW: TOP NAVIGATION BAR + 3 SUB-SECTIONS (FINANZAS, NUTRICIÓN, BÓVEDA)
+  // MAIN VIEW: Always shows Top Profiles Bar + Subtabs + Content
   return (
     <div className="w-full flex flex-col space-y-4">
-      {/* HEADER: SUBTAB SWITCHER + TOOLS (CHANGE PASSWORD, LOCK) */}
-      <div className="w-full flex flex-wrap items-center justify-between gap-3 px-1 sm:px-2 pt-1 pb-3 border-b border-white/10">
-        {/* SEGMENTED SWITCHER: FINANZAS | NUTRICIÓN | BÓVEDA */}
+      {/* 1. TOP PROFILE SELECTOR BAR */}
+      <div className="w-full bg-gradient-to-r from-zinc-950 via-zinc-900/90 to-zinc-950 border border-white/10 rounded-2xl p-3 sm:p-4 backdrop-blur-xl shadow-xl flex flex-wrap items-center justify-between gap-3">
+        <div className="flex items-center gap-3">
+          <div className="w-9 h-9 rounded-xl bg-gradient-to-tr from-purple-600 via-pink-600 to-amber-500 flex items-center justify-center text-white shadow-md shadow-purple-600/30">
+            <ShieldCheck size={18} />
+          </div>
+          <div>
+            <h3 className="text-xs sm:text-sm font-bold text-white tracking-wide flex items-center gap-2">
+              Perfiles Personales
+              {isUnlocked && activeProfile ? (
+                <span className="text-[10px] font-mono text-emerald-300 bg-emerald-500/15 border border-emerald-500/30 px-2 py-0.5 rounded-full flex items-center gap-1">
+                  <span className="w-1.5 h-1.5 rounded-full bg-emerald-400 animate-pulse" />
+                  {activeProfile.label} (Cargado)
+                </span>
+              ) : (
+                <span className="text-[10px] font-mono text-zinc-400 bg-white/5 border border-white/10 px-2 py-0.5 rounded-full">
+                  Sin perfil cargado
+                </span>
+              )}
+            </h3>
+            <p className="text-[11px] text-zinc-400">
+              {isUnlocked && activeProfile 
+                ? `Toda tu información personal, finanzas y nutrición están sincronizadas.`
+                : `Selecciona un perfil e ingresa la contraseña para desbloquear y cargar tus datos personales.`}
+            </p>
+          </div>
+        </div>
+
+        {/* Profile Buttons */}
+        <div className="flex items-center gap-2 flex-wrap">
+          {profiles.map(p => {
+            const isActive = activeProfileId === p.id && isUnlocked;
+            return (
+              <button
+                key={p.id}
+                type="button"
+                onClick={() => handlePromptProfile(p.id)}
+                className={`px-3 py-1.5 rounded-xl text-xs font-bold transition-all flex items-center gap-1.5 border cursor-pointer ${
+                  isActive 
+                    ? 'bg-gradient-to-r from-emerald-600 to-teal-600 text-white border-emerald-400/50 shadow-md shadow-emerald-600/30 ring-1 ring-emerald-400/30'
+                    : 'bg-zinc-900/80 text-zinc-300 border-white/10 hover:text-white hover:border-white/25'
+                }`}
+              >
+                {isActive ? <Unlock size={13} className="text-emerald-200" /> : <Lock size={13} className="text-amber-400/70" />}
+                <span>{p.label}</span>
+              </button>
+            );
+          })}
+
+          <button
+            type="button"
+            onClick={handleCreateProfile}
+            className="px-2.5 py-1.5 rounded-xl text-xs font-semibold text-zinc-400 hover:text-white bg-white/5 border border-white/10 hover:border-white/20 transition-all flex items-center gap-1 cursor-pointer"
+            title="Crear nuevo perfil"
+          >
+            <Plus size={13} />
+            <span>Perfil</span>
+          </button>
+
+          {isUnlocked && (
+            <button
+              type="button"
+              onClick={handleLock}
+              className="px-3 py-1.5 bg-rose-600/20 hover:bg-rose-600/30 text-rose-300 hover:text-rose-200 border border-rose-500/30 rounded-xl text-xs font-bold transition-all flex items-center gap-1 cursor-pointer ml-1"
+              title="Cerrar perfil y bloquear"
+            >
+              <Lock size={13} />
+              <span>Bloquear</span>
+            </button>
+          )}
+        </div>
+      </div>
+
+      {/* 2. SUBTAB SWITCHER: FINANZAS | NUTRICIÓN | BÓVEDA */}
+      <div className="w-full flex flex-wrap items-center justify-between gap-3 px-1 sm:px-2 pt-1 pb-2 border-b border-white/10">
         <div className="flex items-center gap-1.5 p-1.5 bg-gradient-to-r from-zinc-950/90 via-zinc-900/90 to-zinc-950/90 border border-white/10 rounded-2xl backdrop-blur-xl shadow-xl overflow-x-auto max-w-full">
           {/* TAB 1: FINANZAS */}
           <button
             onClick={() => handleSelectSubTab('finanzas')}
-            className={`px-4 py-2 rounded-xl text-xs sm:text-sm font-bold transition-all flex items-center gap-2 select-none relative ${
+            className={`px-4 py-2 rounded-xl text-xs sm:text-sm font-bold transition-all flex items-center gap-2 select-none relative cursor-pointer ${
               activeSubTab === 'finanzas'
                 ? 'bg-gradient-to-r from-emerald-600 to-teal-600 text-white shadow-[0_4px_16px_rgba(16,185,129,0.35)] border border-emerald-400/40'
                 : 'text-zinc-400 hover:text-white hover:bg-white/[0.06]'
@@ -504,13 +579,13 @@ export const PersonalTab: React.FC<PersonalTabProps> = ({
               <span className="absolute inset-x-2 -top-px h-[2px] bg-gradient-to-r from-transparent via-emerald-200 to-transparent rounded-full pointer-events-none" />
             )}
             <TrendingUp size={16} className={activeSubTab === 'finanzas' ? 'text-white' : 'text-emerald-400'} />
-            <span>Finanzas</span>
+            <span>Finanzas & Tarjetas</span>
           </button>
 
           {/* TAB 2: NUTRICIÓN */}
           <button
             onClick={() => handleSelectSubTab('nutricion')}
-            className={`px-4 py-2 rounded-xl text-xs sm:text-sm font-bold transition-all flex items-center gap-2 select-none relative ${
+            className={`px-4 py-2 rounded-xl text-xs sm:text-sm font-bold transition-all flex items-center gap-2 select-none relative cursor-pointer ${
               activeSubTab === 'nutricion'
                 ? 'bg-gradient-to-r from-rose-600 to-orange-600 text-white shadow-[0_4px_16px_rgba(244,63,94,0.35)] border border-rose-400/40'
                 : 'text-zinc-400 hover:text-white hover:bg-white/[0.06]'
@@ -520,13 +595,13 @@ export const PersonalTab: React.FC<PersonalTabProps> = ({
               <span className="absolute inset-x-2 -top-px h-[2px] bg-gradient-to-r from-transparent via-rose-200 to-transparent rounded-full pointer-events-none" />
             )}
             <Heart size={16} className={activeSubTab === 'nutricion' ? 'text-white' : 'text-rose-400'} />
-            <span>Nutrición</span>
+            <span>Nutrición & Salud</span>
           </button>
 
           {/* TAB 3: BÓVEDA (CREDENCIALES & NOTAS) */}
           <button
             onClick={() => handleSelectSubTab('boveda')}
-            className={`px-4 py-2 rounded-xl text-xs sm:text-sm font-bold transition-all flex items-center gap-2 select-none relative ${
+            className={`px-4 py-2 rounded-xl text-xs sm:text-sm font-bold transition-all flex items-center gap-2 select-none relative cursor-pointer ${
               activeSubTab === 'boveda'
                 ? 'bg-gradient-to-r from-purple-600 to-indigo-600 text-white shadow-[0_4px_16px_rgba(168,85,247,0.35)] border border-purple-400/40'
                 : 'text-zinc-400 hover:text-white hover:bg-white/[0.06]'
@@ -543,110 +618,242 @@ export const PersonalTab: React.FC<PersonalTabProps> = ({
           </button>
         </div>
 
-        {/* SECURITY ACTIONS: CHANGE PASSWORD & LOCK */}
+        {/* SECURITY ACTIONS: CHANGE PASSWORD */}
         <div className="flex items-center gap-2 ml-auto">
           <button
             onClick={() => setIsChangeModalOpen(true)}
-            className="px-2.5 py-1.5 bg-zinc-800/80 hover:bg-zinc-700 text-zinc-300 hover:text-white text-xs font-semibold rounded-xl border border-white/10 transition-colors flex items-center gap-1.5 shadow-sm"
-            title="Cambiar contraseña de Personal"
+            className="px-2.5 py-1.5 bg-zinc-800/80 hover:bg-zinc-700 text-zinc-300 hover:text-white text-xs font-semibold rounded-xl border border-white/10 transition-colors flex items-center gap-1.5 shadow-sm cursor-pointer"
+            title="Cambiar contraseña maestra"
           >
             <Key size={13} className="text-amber-400" />
-            <span className="hidden sm:inline">Cambiar Contraseña</span>
-          </button>
-
-          <button
-            onClick={handleLock}
-            className="px-3 py-1.5 bg-rose-600/20 hover:bg-rose-600/30 text-rose-300 hover:text-rose-200 text-xs font-bold rounded-xl border border-rose-500/30 transition-all flex items-center gap-1.5 shadow-sm"
-            title="Bloquear espacio personal ahora"
-          >
-            <Lock size={14} />
-            <span>Bloquear</span>
+            <span className="hidden sm:inline">Contraseña Maestra</span>
           </button>
         </div>
       </div>
 
-      {/* CONTENT AREA */}
+      {/* 3. CONTENT AREA */}
       <div className="w-full">
         {/* SUBTAB 1: FINANZAS */}
         {activeSubTab === 'finanzas' && (
           <Suspense fallback={<div className="p-8 text-center text-zinc-400">Cargando Finanzas...</div>}>
-            <Finanzas />
+            <Finanzas 
+              isLockedPreview={!isUnlocked || !activeProfileId}
+              activeProfileId={activeProfileId}
+              onSelectProfile={(id) => handlePromptProfile(id)}
+            />
           </Suspense>
         )}
 
         {/* SUBTAB 2: NUTRICIÓN */}
         {activeSubTab === 'nutricion' && (
           <Suspense fallback={<div className="p-8 text-center text-zinc-400">Cargando Nutrición...</div>}>
-            <Nutricion />
+            {!isUnlocked || !activeProfileId ? (
+              <div className="w-full bg-gradient-to-b from-zinc-900/70 via-zinc-900/50 to-zinc-950/70 border border-white/10 rounded-2xl p-8 backdrop-blur-md shadow-xl text-center space-y-4">
+                <div className="w-14 h-14 mx-auto rounded-2xl bg-gradient-to-tr from-rose-600 to-orange-500 flex items-center justify-center text-white shadow-lg shadow-rose-600/30">
+                  <Heart size={26} className="animate-pulse" />
+                </div>
+                <div>
+                  <h3 className="text-base sm:text-lg font-bold text-white">Plan Nutricional & Salud Protegido</h3>
+                  <p className="text-xs text-zinc-400 mt-1 max-w-md mx-auto leading-relaxed">
+                    Las metas calóricas, macronutrientes y registros de alimentos están resguardados bajo contraseña. Selecciona tu perfil arriba para cargarlos.
+                  </p>
+                </div>
+                <button
+                  type="button"
+                  onClick={() => handlePromptProfile('rem')}
+                  className="px-5 py-2.5 bg-gradient-to-r from-rose-600 to-orange-600 hover:from-rose-500 hover:to-orange-500 text-white font-bold text-xs sm:text-sm rounded-xl shadow-lg shadow-rose-600/30 inline-flex items-center gap-2 transition-all cursor-pointer"
+                >
+                  <Unlock size={16} />
+                  <span>Desbloquear Nutrición</span>
+                </button>
+              </div>
+            ) : (
+              <Nutricion />
+            )}
           </Suspense>
         )}
 
         {/* SUBTAB 3: BÓVEDA (CREDENCIALES Y NOTAS) */}
         {activeSubTab === 'boveda' && (
           <div className="w-full space-y-4">
-            {/* BOVEDA SUB-SWITCHER: CREDENCIALES VS NOTAS */}
-            <div className="w-full flex items-center justify-center pt-1 pb-1">
-              <div className="inline-flex p-1 bg-zinc-950/80 border border-white/10 rounded-2xl backdrop-blur-md shadow-inner">
+            {!isUnlocked || !activeProfileId ? (
+              <div className="w-full bg-gradient-to-b from-zinc-900/70 via-zinc-900/50 to-zinc-950/70 border border-white/10 rounded-2xl p-8 backdrop-blur-md shadow-xl text-center space-y-4">
+                <div className="w-14 h-14 mx-auto rounded-2xl bg-gradient-to-tr from-purple-600 to-indigo-600 flex items-center justify-center text-white shadow-lg shadow-purple-600/30">
+                  <FolderLock size={26} className="animate-pulse" />
+                </div>
+                <div>
+                  <h3 className="text-base sm:text-lg font-bold text-white">Bóveda de Credenciales & Notas Protegida</h3>
+                  <p className="text-xs text-zinc-400 mt-1 max-w-md mx-auto leading-relaxed">
+                    Tus contraseñas guardadas y notas confidenciales requieren autenticación. Selecciona tu perfil para desbloquear la bóveda.
+                  </p>
+                </div>
                 <button
-                  onClick={() => handleSelectBovedaTab('credenciales')}
-                  className={`px-4 py-1.5 rounded-xl text-xs sm:text-sm font-bold transition-all flex items-center gap-2 ${
-                    bovedaTab === 'credenciales'
-                      ? 'bg-purple-600 text-white shadow-md shadow-purple-600/30'
-                      : 'text-zinc-400 hover:text-white'
-                  }`}
+                  type="button"
+                  onClick={() => handlePromptProfile('rem')}
+                  className="px-5 py-2.5 bg-gradient-to-r from-purple-600 to-indigo-600 hover:from-purple-500 hover:to-indigo-500 text-white font-bold text-xs sm:text-sm rounded-xl shadow-lg shadow-purple-600/30 inline-flex items-center gap-2 transition-all cursor-pointer"
                 >
-                  <Lock size={14} className="text-rose-400" />
-                  <span>Credenciales</span>
-                  <span className="text-[10px] font-mono px-1.5 py-0.5 rounded-full bg-white/15">
-                    {credsCount}
-                  </span>
-                </button>
-
-                <button
-                  onClick={() => handleSelectBovedaTab('notas')}
-                  className={`px-4 py-1.5 rounded-xl text-xs sm:text-sm font-bold transition-all flex items-center gap-2 ${
-                    bovedaTab === 'notas'
-                      ? 'bg-amber-600 text-white shadow-md shadow-amber-600/30'
-                      : 'text-zinc-400 hover:text-white'
-                  }`}
-                >
-                  <FileText size={14} className="text-amber-300" />
-                  <span>Notas Privadas</span>
-                  <span className="text-[10px] font-mono px-1.5 py-0.5 rounded-full bg-white/15">
-                    {notesCount}
-                  </span>
+                  <Unlock size={16} />
+                  <span>Desbloquear Bóveda</span>
                 </button>
               </div>
-            </div>
-
-            {/* BOVEDA INNER VIEW */}
-            {bovedaTab === 'credenciales' ? (
-              <Suspense fallback={<div className="p-8 text-center text-zinc-400">Cargando Credenciales...</div>}>
-                <Credenciales />
-              </Suspense>
             ) : (
-              <Suspense fallback={<div className="p-8 text-center text-zinc-400">Cargando Notas...</div>}>
-                <NotesTab />
-              </Suspense>
+              <>
+                {/* BOVEDA SUB-SWITCHER: CREDENCIALES VS NOTAS */}
+                <div className="w-full flex items-center justify-center pt-1 pb-1">
+                  <div className="inline-flex p-1 bg-zinc-950/80 border border-white/10 rounded-2xl backdrop-blur-md shadow-inner">
+                    <button
+                      onClick={() => handleSelectBovedaTab('credenciales')}
+                      className={`px-4 py-1.5 rounded-xl text-xs sm:text-sm font-bold transition-all flex items-center gap-2 cursor-pointer ${
+                        bovedaTab === 'credenciales'
+                          ? 'bg-purple-600 text-white shadow-md shadow-purple-600/30'
+                          : 'text-zinc-400 hover:text-white'
+                      }`}
+                    >
+                      <Lock size={14} className="text-rose-400" />
+                      <span>Credenciales</span>
+                      <span className="text-[10px] font-mono px-1.5 py-0.5 rounded-full bg-white/15">
+                        {credsCount}
+                      </span>
+                    </button>
+
+                    <button
+                      onClick={() => handleSelectBovedaTab('notas')}
+                      className={`px-4 py-1.5 rounded-xl text-xs sm:text-sm font-bold transition-all flex items-center gap-2 cursor-pointer ${
+                        bovedaTab === 'notas'
+                          ? 'bg-purple-600 text-white shadow-md shadow-purple-600/30'
+                          : 'text-zinc-400 hover:text-white'
+                      }`}
+                    >
+                      <FileText size={14} className="text-indigo-400" />
+                      <span>Notas</span>
+                      <span className="text-[10px] font-mono px-1.5 py-0.5 rounded-full bg-white/15">
+                        {notesCount}
+                      </span>
+                    </button>
+                  </div>
+                </div>
+
+                {bovedaTab === 'credenciales' && (
+                  <Suspense fallback={<div className="p-8 text-center text-zinc-400">Cargando Credenciales...</div>}>
+                    <Credenciales />
+                  </Suspense>
+                )}
+
+                {bovedaTab === 'notas' && (
+                  <Suspense fallback={<div className="p-8 text-center text-zinc-400">Cargando Notas...</div>}>
+                    <NotesTab />
+                  </Suspense>
+                )}
+              </>
             )}
           </div>
         )}
       </div>
 
-      {/* MODAL: CAMBIAR CONTRASEÑA */}
+      {/* 4. UNLOCK PROFILE MODAL */}
+      <AnimatePresence>
+        {isUnlockModalOpen && (
+          <div className="fixed inset-0 bg-black/80 backdrop-blur-sm z-50 flex items-center justify-center p-4">
+            <motion.div
+              initial={{ opacity: 0, scale: 0.95, y: 10 }}
+              animate={{ opacity: 1, scale: 1, y: 0 }}
+              exit={{ opacity: 0, scale: 0.95, y: 10 }}
+              className="max-w-md w-full bg-zinc-900 border border-white/15 rounded-3xl p-6 sm:p-7 shadow-2xl space-y-5 text-center relative"
+            >
+              <button
+                onClick={() => { setIsUnlockModalOpen(false); setTargetProfileToUnlock(null); }}
+                className="absolute top-4 right-4 text-zinc-400 hover:text-white p-1 rounded-lg"
+              >
+                <X size={18} />
+              </button>
+
+              <div className="w-14 h-14 mx-auto rounded-2xl bg-gradient-to-tr from-purple-600 via-pink-600 to-amber-500 flex items-center justify-center shadow-lg shadow-purple-500/30 text-white">
+                <Lock size={26} className="animate-pulse" />
+              </div>
+
+              <div>
+                <h3 className="text-lg font-bold text-white tracking-tight">
+                  Desbloquear {profiles.find(p => p.id === targetProfileToUnlock)?.label || 'Perfil'}
+                </h3>
+                <p className="text-xs text-zinc-400 mt-1">
+                  Ingresa tu contraseña para acceder a todas tus finanzas, tarjetas y nutrición personal.
+                </p>
+              </div>
+
+              <form onSubmit={handleUnlockProfile} className="space-y-4">
+                <div className="relative">
+                  <input
+                    type={showUnlockPassword ? "text" : "password"}
+                    value={unlockPassword}
+                    onChange={(e) => setUnlockPassword(e.target.value)}
+                    placeholder="Contraseña..."
+                    className="w-full bg-zinc-950 border border-white/15 rounded-xl pl-4 pr-10 py-3 text-sm text-white focus:outline-none focus:border-amber-400 text-center font-mono placeholder:font-sans placeholder-zinc-500"
+                    autoFocus
+                  />
+                  <button
+                    type="button"
+                    onClick={() => setShowUnlockPassword(!showUnlockPassword)}
+                    className="absolute right-3 top-1/2 -translate-y-1/2 text-zinc-400 hover:text-white cursor-pointer"
+                  >
+                    {showUnlockPassword ? <EyeOff size={16} /> : <Eye size={16} />}
+                  </button>
+                </div>
+
+                {securityData?.hint && (
+                  <div className="text-left">
+                    {showHint ? (
+                      <p className="text-xs text-amber-300/90 bg-amber-500/10 p-2 rounded-lg border border-amber-500/20">
+                        💡 Pista: {securityData.hint}
+                      </p>
+                    ) : (
+                      <button
+                        type="button"
+                        onClick={() => setShowHint(true)}
+                        className="text-[11px] text-zinc-400 hover:text-amber-400 underline transition-colors cursor-pointer"
+                      >
+                        Mostrar pista de contraseña
+                      </button>
+                    )}
+                  </div>
+                )}
+
+                <div className="flex gap-2">
+                  <button
+                    type="button"
+                    onClick={() => { setIsUnlockModalOpen(false); setTargetProfileToUnlock(null); }}
+                    className="flex-1 py-2.5 bg-zinc-800 hover:bg-zinc-700 text-zinc-300 font-semibold text-xs rounded-xl transition-all cursor-pointer"
+                  >
+                    Cancelar
+                  </button>
+                  <button
+                    type="submit"
+                    disabled={isVerifying}
+                    className="flex-1 py-2.5 bg-gradient-to-r from-amber-500 to-yellow-500 hover:from-amber-400 hover:to-yellow-400 text-black font-bold text-xs rounded-xl shadow-lg shadow-amber-500/25 flex items-center justify-center gap-1.5 transition-all cursor-pointer"
+                  >
+                    {isVerifying ? <RefreshCw className="animate-spin" size={16} /> : <Unlock size={16} />}
+                    <span>{isVerifying ? 'Verificando...' : 'Desbloquear'}</span>
+                  </button>
+                </div>
+              </form>
+            </motion.div>
+          </div>
+        )}
+      </AnimatePresence>
+
+      {/* 5. CHANGE PASSWORD MODAL */}
       <AnimatePresence>
         {isChangeModalOpen && (
-          <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/80 backdrop-blur-md">
+          <div className="fixed inset-0 bg-black/80 backdrop-blur-sm z-50 flex items-center justify-center p-4">
             <motion.div
               initial={{ opacity: 0, scale: 0.95 }}
               animate={{ opacity: 1, scale: 1 }}
               exit={{ opacity: 0, scale: 0.95 }}
-              className="bg-zinc-900 border border-white/15 rounded-3xl p-6 max-w-md w-full shadow-2xl space-y-4"
+              className="max-w-md w-full bg-zinc-900 border border-white/10 rounded-2xl p-6 shadow-2xl space-y-4"
             >
-              <div className="flex justify-between items-center pb-2 border-b border-white/10">
+              <div className="flex justify-between items-center border-b border-white/10 pb-3">
                 <h3 className="text-base font-bold text-white flex items-center gap-2">
                   <Key size={18} className="text-amber-400" />
-                  Cambiar Contraseña de Personal
+                  Cambiar Contraseña Maestra
                 </h3>
                 <button onClick={() => setIsChangeModalOpen(false)} className="text-zinc-400 hover:text-white">
                   <X size={18} />
@@ -662,7 +869,7 @@ export const PersonalTab: React.FC<PersonalTabProps> = ({
                     type="password"
                     value={currentPassword}
                     onChange={(e) => setCurrentPassword(e.target.value)}
-                    placeholder="Contraseña actual..."
+                    placeholder="Ingresa tu contraseña actual..."
                     className="w-full bg-zinc-950 border border-white/10 rounded-xl px-3 py-2 text-sm text-white focus:outline-none focus:border-amber-500 font-mono"
                     autoFocus
                   />
@@ -711,14 +918,14 @@ export const PersonalTab: React.FC<PersonalTabProps> = ({
                   <button
                     type="button"
                     onClick={() => setIsChangeModalOpen(false)}
-                    className="px-4 py-2 bg-zinc-800 hover:bg-zinc-700 text-zinc-300 text-xs font-semibold rounded-xl"
+                    className="px-4 py-2 bg-zinc-800 hover:bg-zinc-700 text-zinc-300 text-xs font-semibold rounded-xl cursor-pointer"
                   >
                     Cancelar
                   </button>
                   <button
                     type="submit"
                     disabled={isChangingPassword}
-                    className="px-5 py-2 bg-amber-500 hover:bg-amber-400 text-black font-bold text-xs rounded-xl shadow-lg shadow-amber-500/20 flex items-center gap-1.5"
+                    className="px-5 py-2 bg-amber-500 hover:bg-amber-400 text-black font-bold text-xs rounded-xl shadow-lg shadow-amber-500/20 flex items-center gap-1.5 cursor-pointer"
                   >
                     {isChangingPassword ? <RefreshCw className="animate-spin" size={14} /> : <Check size={14} />}
                     <span>{isChangingPassword ? 'Guardando...' : 'Actualizar'}</span>

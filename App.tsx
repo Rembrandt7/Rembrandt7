@@ -38,7 +38,8 @@ import {
   Maximize2,
   ShieldCheck,
   Folder,
-  Sparkles
+  Sparkles,
+  CheckSquare
 } from 'lucide-react';
 import { Tab, TabConfig, LinkItem } from './types';
 import { AnimatePresence, motion } from 'motion/react';
@@ -100,6 +101,7 @@ const WorkspaceHub = lazyWithRetry(() => import('./components/WorkspaceHub'));
 const TeleprompterTab = lazyWithRetry(() => import('./components/TeleprompterTab'));
 const PersonalTab = lazyWithRetry(() => import('./components/PersonalTab'));
 const ArchivosTab = lazyWithRetry(() => import('./components/ArchivosTab'));
+const ListasTab = lazyWithRetry(() => import('./components/ListasTab'));
 
 import { PanchoFloatingButton } from './components/Pancho/PanchoFloatingButton';
 import { PanchoState } from './components/Pancho/PanchoRobotAvatar';
@@ -711,6 +713,10 @@ const MainLayout: React.FC = () => {
         return <ThreeDPrinting />;
       case 'Teleprompter':
         return <TeleprompterTab />;
+      case 'Listas':
+      case 'Listas Remb':
+      case 'Organizador':
+        return <ListasTab />;
       default:
         return (
           <div className="glass-panel p-2.5 sm:p-4 md:p-6 rounded-2xl sm:rounded-3xl shadow-2xl w-full mt-2 sm:mt-6">
@@ -722,6 +728,8 @@ const MainLayout: React.FC = () => {
 
   const tabIcons: Record<string, React.ReactNode> = {
     'Personal': <ShieldCheck />,
+    'Listas': <CheckSquare />,
+    'Listas Remb': <CheckSquare />,
     'Archivos': <Folder />,
     'Bóveda': <Lock />,
     'Boveda': <Lock />,

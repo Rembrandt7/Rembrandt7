@@ -16,6 +16,14 @@ export const PwaInstallPrompt: React.FC = () => {
       return; // Already installed and running as PWA
     }
 
+    // Check if running on PC / Desktop - do not suggest installation on PC
+    const userAgent = window.navigator.userAgent.toLowerCase();
+    const isMobileDevice = /android|iphone|ipad|ipod|blackberry|iemobile|opera mini|mobile|tablet/i.test(userAgent) ||
+                           (window.navigator.platform === 'MacIntel' && window.navigator.maxTouchPoints > 1);
+    if (!isMobileDevice) {
+      return; // PC / Desktop detected: do not show install prompt
+    }
+
     // Check if dismissed recently (24h cooldown)
     const dismissedUntil = localStorage.getItem('pwa_prompt_dismissed');
     if (dismissedUntil && Date.now() < Number(dismissedUntil)) {
