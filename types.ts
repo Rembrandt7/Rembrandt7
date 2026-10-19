@@ -183,6 +183,7 @@ export interface FinanzasCard {
   annualYieldRate?: number;
   lastYieldUpdate?: number;
   lastPaidMonth?: string;
+  accountNumber?: string;
 }
 
 export interface FinancialItem {

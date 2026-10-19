@@ -1337,31 +1337,6 @@ export const LinkProvider: React.FC<{ children: React.ReactNode }> = ({ children
     fetchConfigFromSupabase();
   }, [configFilename]);
 
-  // Auto-sync config from Supabase on window focus and visibilitychange (tab switch)
-  useEffect(() => {
-    let lastSyncTime = Date.now();
-    const handleRecheck = () => {
-      // Re-sync if last sync was > 25 seconds ago
-      if (Date.now() - lastSyncTime > 25000) {
-        lastSyncTime = Date.now();
-        fetchConfigFromSupabaseManual();
-      }
-    };
-
-    const handleVisibility = () => {
-      if (document.visibilityState === 'visible') {
-        handleRecheck();
-      }
-    };
-
-    window.addEventListener('focus', handleRecheck);
-    document.addEventListener('visibilitychange', handleVisibility);
-    return () => {
-      window.removeEventListener('focus', handleRecheck);
-      document.removeEventListener('visibilitychange', handleVisibility);
-    };
-  }, [fetchConfigFromSupabaseManual]);
-
   // Load from localStorage on mount
   useEffect(() => {
     const savedConfig = localStorage.getItem('appLinksConfig');
@@ -2337,7 +2312,7 @@ export const LinkProvider: React.FC<{ children: React.ReactNode }> = ({ children
     reader.readAsText(file);
   };
 
-  const fetchConfigFromSupabaseManual = async () => {
+  const fetchConfigFromSupabaseManual = async (silent: boolean = false) => {
     try {
       console.log(`Manually fetching config ${configFilename} from Supabase...`);
       
@@ -2348,7 +2323,7 @@ export const LinkProvider: React.FC<{ children: React.ReactNode }> = ({ children
 
       if (signedUrlError) {
           if (signedUrlError.message?.includes('Object not found') || signedUrlError.name === 'StorageApiError') {
-              alert(`No se encontró configuración en Supabase (${configFilename}).`);
+              if (!silent) alert(`No se encontró configuración en Supabase (${configFilename}).`);
               return;
           }
           throw signedUrlError;
@@ -2494,21 +2469,48 @@ export const LinkProvider: React.FC<{ children: React.ReactNode }> = ({ children
       setConfig(json);
       localStorage.setItem('appLinksConfig', JSON.stringify(json));
 
-      const toast = document.createElement('div');
-      toast.className = 'fixed bottom-4 right-4 bg-blue-600 text-white px-6 py-3 rounded-lg shadow-2xl z-[9999] animate-fade-in flex items-center gap-2 font-bold';
-      toast.innerHTML = '<svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M22 11.08V12a10 10 0 1 1-5.93-9.14"></path><polyline points="22 4 12 14.01 9 11.01"></polyline></svg> Configuración cargada de Supabase';
-      document.body.appendChild(toast);
-      setTimeout(() => {
-      toast.style.opacity = '0';
-      toast.style.transition = 'opacity 0.5s ease';
-      setTimeout(() => toast.remove(), 500);
-      }, 3000);
+      if (!silent) {
+        const toast = document.createElement('div');
+        toast.className = 'fixed bottom-4 right-4 bg-blue-600 text-white px-6 py-3 rounded-lg shadow-2xl z-[9999] animate-fade-in flex items-center gap-2 font-bold';
+        toast.innerHTML = '<svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M22 11.08V12a10 10 0 1 1-5.93-9.14"></path><polyline points="22 4 12 14.01 9 11.01"></polyline></svg> Configuración cargada de Supabase';
+        document.body.appendChild(toast);
+        setTimeout(() => {
+          toast.style.opacity = '0';
+          toast.style.transition = 'opacity 0.5s ease';
+          setTimeout(() => toast.remove(), 500);
+        }, 3000);
+      }
 
     } catch (error: any) {
       console.error('Error processing Supabase config:', error);
-      alert(`Error al cargar desde Supabase: ${error.message || 'Unknown error'}`);
+      if (!silent) alert(`Error al cargar desde Supabase: ${error.message || 'Unknown error'}`);
     }
   };
+
+  // Auto-sync config from Supabase on window focus and visibilitychange (tab switch)
+  useEffect(() => {
+    let lastSyncTime = Date.now();
+    const handleRecheck = () => {
+      // Re-sync if last sync was > 25 seconds ago
+      if (Date.now() - lastSyncTime > 25000) {
+        lastSyncTime = Date.now();
+        fetchConfigFromSupabaseManual(true).catch(() => {});
+      }
+    };
+
+    const handleVisibility = () => {
+      if (document.visibilityState === 'visible') {
+        handleRecheck();
+      }
+    };
+
+    window.addEventListener('focus', handleRecheck);
+    document.addEventListener('visibilitychange', handleVisibility);
+    return () => {
+      window.removeEventListener('focus', handleRecheck);
+      document.removeEventListener('visibilitychange', handleVisibility);
+    };
+  }, []);
 
   const toggleEditing = React.useCallback(() => setIsEditing(prev => !prev), []);
 

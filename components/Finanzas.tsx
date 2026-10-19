@@ -754,9 +754,9 @@ const Finanzas: React.FC<FinanzasProps> = ({ activeProfileId, onSelectProfile, i
 
   useEffect(() => {
     if (activeProfileId && (!activeFile || activeFile.id !== activeProfileId)) {
-      const match = filesRegistry.find(f => f.id === activeProfileId) || {
+      const match: FinanzasFileMeta = filesRegistry.find(f => f.id === activeProfileId) || {
         id: activeProfileId,
-        name: `Perfil ${activeProfileId.charAt(0).toUpperCase() + activeProfileId.slice(1)}`,
+        label: `Perfil ${activeProfileId.charAt(0).toUpperCase() + activeProfileId.slice(1)}`,
         fileName: `finanzas_${activeProfileId}.json`,
         hasPassword: true,
         updatedAt: Date.now()
