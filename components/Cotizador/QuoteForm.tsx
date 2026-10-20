@@ -2303,14 +2303,14 @@ const QuoteForm: React.FC<QuoteFormProps> = ({ onGenerateQuote, initialDetails }
                 </div>
             )}
 
-            {/* SUBMIT BUTTON */}
-            <div className="mt-8 flex justify-end">
+            {/* SUBMIT BUTTON - Acomodado a la izquierda */}
+            <div className="mt-8 flex justify-start">
                 <button 
                     type="submit" 
                     disabled={!isFormValid}
-                    className="bg-slate-900 text-white px-8 py-3 rounded-lg font-bold text-lg hover:bg-black transition-transform hover:scale-105 disabled:opacity-50 disabled:scale-100 shadow-lg"
+                    className="bg-slate-900 text-white px-8 py-3 rounded-lg font-bold text-lg hover:bg-black transition-transform hover:scale-105 disabled:opacity-50 disabled:scale-100 shadow-lg cursor-pointer flex items-center gap-2"
                 >
-                    Generar Vista Previa
+                    Generar Vista Previa &rarr;
                 </button>
             </div>
         </form>

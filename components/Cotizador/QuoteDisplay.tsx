@@ -492,58 +492,50 @@ Arq. Rembrandt Blanco`;
          </div>
       )}
 
-      {/* Action Bar */}
-      <div className="no-print fixed bottom-0 left-0 right-0 bg-white border-t border-slate-200 p-4 shadow-[0_-4px_6px_-1px_rgba(0,0,0,0.1)] z-50">
-        <div className="max-w-4xl mx-auto flex flex-col sm:flex-row justify-center sm:justify-between items-center gap-3">
-          <div className="flex gap-2 w-full sm:w-auto justify-center">
-            <button onClick={onEdit} className="px-4 py-2 bg-slate-100 text-slate-700 rounded-md hover:bg-slate-200 font-medium transition-colors text-sm">
+      {/* Action Bar - Acomodados del lado izquierdo */}
+      <div className="no-print fixed bottom-0 left-0 right-0 bg-[#0d1322]/95 backdrop-blur-md border-t border-slate-800 p-3 shadow-2xl z-50">
+        <div className="max-w-5xl mx-auto flex flex-wrap justify-start items-center gap-2">
+            <button onClick={onEdit} className="px-3.5 py-2 bg-slate-800 hover:bg-slate-700 text-slate-200 rounded-lg font-medium transition-colors text-xs border border-slate-700 cursor-pointer">
               &larr; Editar
             </button>
-            <button onClick={onReset} className="px-4 py-2 bg-slate-100 text-slate-700 rounded-md hover:bg-slate-200 font-medium transition-colors text-sm">
+            <button onClick={onReset} className="px-3.5 py-2 bg-slate-800 hover:bg-slate-700 text-slate-200 rounded-lg font-medium transition-colors text-xs border border-slate-700 cursor-pointer">
               Nueva
             </button>
-          </div>
-          <div className="flex gap-2 w-full sm:w-auto flex-wrap justify-center sm:justify-end items-center">
-             <button 
-                onClick={handleDownloadJSON}
-                className="flex items-center justify-center gap-2 px-4 py-2 rounded-md bg-yellow-100 text-yellow-700 border border-yellow-300 hover:bg-yellow-400 hover:text-white hover:border-yellow-500 transition-all duration-200 shadow-sm mr-1 font-medium text-sm whitespace-nowrap"
-            >
-                <span className="hidden sm:inline">Guardar Datos</span>
-            </button>
-            
             <button 
               onClick={() => handleDownloadPdf()}
               disabled={isGenerating}
-              className="flex-1 sm:flex-none flex items-center justify-center gap-2 px-4 py-2 bg-slate-700 text-white rounded-md hover:bg-slate-800 transition-colors shadow-sm font-medium text-sm whitespace-nowrap"
+              className="px-4 py-2 bg-blue-600 hover:bg-blue-500 text-white rounded-lg font-semibold text-xs transition-colors shadow-sm whitespace-nowrap cursor-pointer"
             >
               Descargar PDF
             </button>
-
             <button 
-              onClick={handleEmailClick}
-              disabled={isGenerating}
-              className="flex-1 sm:flex-none flex items-center justify-center gap-2 px-4 py-2 bg-blue-500 text-white rounded-md hover:bg-blue-600 transition-colors shadow-sm font-medium text-sm whitespace-nowrap"
+                onClick={handleDownloadJSON}
+                className="px-3.5 py-2 rounded-lg bg-amber-950/60 hover:bg-amber-900/60 text-amber-300 border border-amber-500/30 transition-all font-medium text-xs whitespace-nowrap cursor-pointer"
             >
-               Enviar Correo
+                Guardar Datos JSON
             </button>
-
-             <button 
-              onClick={() => { setShowInvoiceModal(true); }}
-              disabled={isGenerating}
-              className="flex-1 sm:flex-none flex items-center justify-center gap-2 px-4 py-2 bg-indigo-50 text-indigo-700 border border-indigo-200 rounded-md hover:bg-indigo-100 transition-colors shadow-sm font-medium text-sm whitespace-nowrap"
-            >
-               Solicitar Factura
-            </button>
-
-             <button 
+            <button 
               onClick={handleWhatsAppClick}
               disabled={isGenerating}
-              className="flex-1 sm:flex-none flex items-center justify-center gap-2 px-4 py-2 bg-green-500 text-white rounded-md hover:bg-green-600 transition-colors shadow-sm font-medium text-sm whitespace-nowrap"
+              className="px-4 py-2 bg-emerald-600 hover:bg-emerald-500 text-white rounded-lg font-semibold text-xs transition-colors shadow-sm whitespace-nowrap cursor-pointer"
             >
               Enviar WhatsApp
             </button>
-                </div>
-            </div>
+            <button 
+              onClick={handleEmailClick}
+              disabled={isGenerating}
+              className="px-3.5 py-2 bg-sky-600 hover:bg-sky-500 text-white rounded-lg font-medium text-xs transition-colors shadow-sm whitespace-nowrap cursor-pointer"
+            >
+               Enviar Correo
+            </button>
+            <button 
+              onClick={() => { setShowInvoiceModal(true); }}
+              disabled={isGenerating}
+              className="px-3.5 py-2 bg-indigo-950/60 hover:bg-indigo-900/60 text-indigo-300 border border-indigo-500/40 rounded-lg transition-colors font-medium text-xs whitespace-nowrap cursor-pointer"
+            >
+               Solicitar Factura
+            </button>
+        </div>
       </div>
 
     </div>

@@ -913,11 +913,10 @@ export const ListasTab: React.FC = () => {
                     
                     const columnTasks = tasks.filter(t => {
                         if (t.category !== listName) return false;
-                        if (taskStatusFilter === 'pending' && t.completed) return false;
-                        if (taskStatusFilter === 'completed' && !t.completed) return false;
                         if (!t.title.toLowerCase().includes(searchQuery.toLowerCase())) return false;
-                        if (taskStatusFilter === 'all') return true;
-                        return isVisible || !t.completed;
+                        if (taskStatusFilter === 'pending') return !t.completed;
+                        if (taskStatusFilter === 'completed') return t.completed;
+                        return isVisible || true; // 'all' muestra todas
                     });
 
                     const customColor = listColors[listName];
