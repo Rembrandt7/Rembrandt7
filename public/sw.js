@@ -1,5 +1,5 @@
 // Rembrandt IA Studio - Service Worker
-const CACHE_NAME = 'rembrandt-pwa-v78';
+const CACHE_NAME = 'rembrandt-pwa-v79';
 const STATIC_ASSETS = [
   '/',
   '/index.html',
@@ -59,6 +59,28 @@ self.addEventListener('fetch', (event) => {
     return; // Pass through to network
   }
 
+  // Cache-first for hashed static assets, fonts and images (Instant load < 5ms)
+  if (
+    url.pathname.startsWith('/assets/') ||
+    url.pathname.match(/\.(png|svg|jpg|jpeg|webp|woff2|woff|ttf)$/)
+  ) {
+    event.respondWith(
+      caches.match(event.request).then((cached) => {
+        if (cached) {
+          return cached;
+        }
+        return fetch(event.request).then((response) => {
+          if (response && response.status === 200 && (response.type === 'basic' || response.type === 'cors')) {
+            const copy = response.clone();
+            caches.open(CACHE_NAME).then((cache) => cache.put(event.request, copy));
+          }
+          return response;
+        });
+      })
+    );
+    return;
+  }
+
   // Network-first for navigation (HTML) with no-cache so latest build is always loaded
   if (event.request.mode === 'navigate') {
     event.respondWith(
@@ -75,11 +97,10 @@ self.addEventListener('fetch', (event) => {
     return;
   }
 
-  // Network-first with cache fallback for navigation and static assets
+  // Network-first with cache fallback for other GET requests
   event.respondWith(
     fetch(event.request)
       .then((response) => {
-        // Cache successful responses for static items
         if (response && response.status === 200 && response.type === 'basic') {
           const responseToCache = response.clone();
           caches.open(CACHE_NAME).then((cache) => {

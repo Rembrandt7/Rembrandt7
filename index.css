@@ -1,47 +1,64 @@
 @import "tailwindcss";
-@import url('https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;500;600;700&display=swap');
 
 body {
   margin: 0;
   font-family: 'Outfit', sans-serif;
-  background: radial-gradient(circle at 15% 15%, #2a0a4a 0%, transparent 40%),
-              radial-gradient(circle at 85% 85%, #0d1a45 0%, transparent 40%),
-              radial-gradient(circle at 50% 50%, #1a0b2e 0%, transparent 60%);
   background-color: #07050f;
-  background-size: 150% 150%;
-  animation: gradientShift 15s ease infinite;
+  background-image: 
+    radial-gradient(circle at 15% 15%, rgba(42, 10, 74, 0.45) 0%, transparent 45%),
+    radial-gradient(circle at 85% 85%, rgba(13, 26, 69, 0.45) 0%, transparent 45%),
+    radial-gradient(circle at 50% 50%, rgba(26, 11, 46, 0.35) 0%, transparent 60%);
+  background-attachment: fixed;
   color: #f3f4f6;
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+  text-rendering: optimizeLegibility;
+  overflow-x: hidden;
 }
 
-@keyframes gradientShift {
-  0% { background-position: 0% 50%; }
-  50% { background-position: 100% 50%; }
-  100% { background-position: 0% 50%; }
+/* GPU Hardware Acceleration Utils */
+.gpu-accelerated {
+  transform: translateZ(0);
+  backface-visibility: hidden;
+  perspective: 1000px;
+}
+
+.will-change-transform {
+  will-change: transform;
 }
 
 @keyframes fade-in { 
-  0% { opacity: 0; transform: translateY(-10px); } 
+  0% { opacity: 0; transform: translateY(-8px); } 
   100% { opacity: 1; transform: translateY(0); } 
 }
 .animate-fade-in { 
-  animation: fade-in 0.4s cubic-bezier(0.16, 1, 0.3, 1) forwards; 
+  animation: fade-in 0.25s cubic-bezier(0.16, 1, 0.3, 1) forwards; 
 }
 
-/* Glassmorphism utils */
+/* Glassmorphism utils optimized for 60fps */
 .glass-panel {
-  background: rgba(255, 255, 255, 0.03);
-  backdrop-filter: blur(16px);
-  -webkit-backdrop-filter: blur(16px);
+  background: rgba(255, 255, 255, 0.035);
+  backdrop-filter: blur(14px);
+  -webkit-backdrop-filter: blur(14px);
   border: 1px solid rgba(255, 255, 255, 0.08);
   box-shadow: 0 8px 32px 0 rgba(0, 0, 0, 0.3);
 }
 
 .glass-panel-heavy {
-  background: rgba(10, 10, 15, 0.6);
-  backdrop-filter: blur(24px);
-  -webkit-backdrop-filter: blur(24px);
-  border: 1px solid rgba(255, 255, 255, 0.05);
+  background: rgba(10, 10, 15, 0.7);
+  backdrop-filter: blur(18px);
+  -webkit-backdrop-filter: blur(18px);
+  border: 1px solid rgba(255, 255, 255, 0.06);
   box-shadow: 0 16px 40px 0 rgba(0, 0, 0, 0.5);
+}
+
+/* Mobile GPU optimization: reduce heavy blur cost on touch screens */
+@media (max-width: 1023px) {
+  .glass-panel,
+  .glass-panel-heavy {
+    backdrop-filter: blur(8px) !important;
+    -webkit-backdrop-filter: blur(8px) !important;
+  }
 }
 
 /* Chat bubble styles */
@@ -182,4 +199,3 @@ body {
     display: none !important;
   }
 }
-

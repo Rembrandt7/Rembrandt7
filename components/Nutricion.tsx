@@ -14,7 +14,7 @@ import { generateContentWithFallback, getGeminiClient, GEMINI_MODELS } from '../
 import { cleanJsonResponse } from '../utils/jsonUtils';
 import Markdown from 'react-markdown';
 import { toast } from 'sonner';
-import html2canvas from 'html2canvas';
+
 import WaterBottle from './WaterBottle';
 import Battery from './Battery';
 import { loadADN } from '../services/memoriaService';
@@ -579,6 +579,7 @@ Responde estrictamente en formato JSON:
         
         toast.loading('Generando imagen...', { id: 'copy-image' });
         try {
+            const html2canvas = (await import('html2canvas')).default;
             const canvas = await html2canvas(mealPlanRef.current, {
                 backgroundColor: '#09090b',
                 scale: 2,

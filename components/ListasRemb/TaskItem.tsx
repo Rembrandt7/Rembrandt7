@@ -225,4 +225,4 @@ const TaskItem: React.FC<TaskItemProps> = ({ task, onToggle, onDelete, onDragSta
   );
 };
 
-export default TaskItem;
+export default React.memo(TaskItem);

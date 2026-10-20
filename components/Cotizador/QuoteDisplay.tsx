@@ -1,7 +1,6 @@
 import React, { useRef, useState } from 'react';
 import type { QuoteDetails } from './types';
-import jsPDF from 'jspdf';
-import html2canvas from 'html2canvas';
+
 import { DEFAULT_LOGO_B64 } from './constants/defaultLogo';
 import { exportDataAsJsonFile, exportBase64AsFile } from '../../utils/cotizadorExportUtils';
 
@@ -79,6 +78,13 @@ const QuoteDisplay: React.FC<QuoteDisplayProps> = ({ details, onReset, onEdit })
     setIsGenerating(true);
 
     try {
+        const [html2canvasModule, jspdfModule] = await Promise.all([
+            import('html2canvas'),
+            import('jspdf')
+        ]);
+        const html2canvas = html2canvasModule.default;
+        const jsPDF = jspdfModule.default;
+
         const originalShadow = input.style.boxShadow;
         input.style.boxShadow = 'none';
         input.classList.add('printing');

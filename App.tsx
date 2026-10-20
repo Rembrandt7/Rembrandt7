@@ -323,6 +323,13 @@ const MainLayout: React.FC = () => {
   const [isQuickIdeaOpen, setIsQuickIdeaOpen] = useState(false);
   const [quickIdeaAutoStart, setQuickIdeaAutoStart] = useState(false);
   const hasAutoOpenedMobileRef = useRef(false);
+  const [visitedTabIds, setVisitedTabIds] = useState<string[]>(() => [activeTabId]);
+
+  useEffect(() => {
+    if (activeTabId) {
+      setVisitedTabIds(prev => prev.includes(activeTabId) ? prev : [...prev, activeTabId]);
+    }
+  }, [activeTabId]);
 
   // When on mobile (celular), auto-deploy audio apuntes recorder on initial load as requested
   useEffect(() => {
@@ -698,48 +705,48 @@ const MainLayout: React.FC = () => {
     }
   };
 
-  const renderContent = () => {
-    if (activeTabId === 'database' || isDbTab({ id: activeTabId })) {
+  const renderSingleTab = (tabId: string) => {
+    if (tabId === 'database' || isDbTab({ id: tabId })) {
       return <DatabaseViewer />;
     }
-    if (activeTabId === 'personal') {
+    if (tabId === 'personal') {
       return <PersonalTab />;
     }
-    if (activeTabId === 'finanzas') {
+    if (tabId === 'finanzas') {
       return <PersonalTab initialSubTab="finanzas" />;
     }
-    if (activeTabId === 'nutricion') {
+    if (tabId === 'nutricion') {
       return <PersonalTab initialSubTab="nutricion" />;
     }
-    if (activeTabId === 'boveda') {
+    if (tabId === 'boveda') {
       return <PersonalTab initialSubTab="boveda" />;
     }
-    if (activeTabId === 'workspace') {
+    if (tabId === 'workspace') {
       return <WorkspaceHub />;
     }
-    if (activeTabId === 'commands') {
+    if (tabId === 'commands') {
       return <WorkspaceHub initialSubTab="comandos" />;
     }
-    if (activeTabId === 'credenciales') {
+    if (tabId === 'credenciales') {
       return <PersonalTab initialSubTab="boveda" initialBovedaTab="credenciales" />;
     }
-    if (activeTabId === 'notas') {
+    if (tabId === 'notas') {
       return <PersonalTab initialSubTab="boveda" initialBovedaTab="notas" />;
     }
-    if (activeTabId === 'teleprompter') {
+    if (tabId === 'teleprompter') {
       return <TeleprompterTab />;
     }
-    if (activeTabId === 'cotizador') {
+    if (tabId === 'cotizador') {
       return <CotizadorTab />;
     }
-    if (activeTabId === 'listas') {
+    if (tabId === 'listas') {
       return <ListasTab />;
     }
-    if (activeTabId === 'compresor') {
+    if (tabId === 'compresor') {
       return <CompresorTab />;
     }
 
-    const activeTab = config.tabs.find(t => t.id === activeTabId);
+    const activeTab = config.tabs.find(t => t.id === tabId);
     if (!activeTab) return null;
 
     if (activeTab.type === 'custom') {
@@ -1160,20 +1167,22 @@ const MainLayout: React.FC = () => {
                       <LinksBar />
 
                       <div className="w-full flex-grow">
-                        <AnimatePresence mode="wait">
-                          <motion.div
-                            key={activeTabId}
-                            initial={{ opacity: 0, y: 10 }}
-                            animate={{ opacity: 1, y: 0 }}
-                            exit={{ opacity: 0, y: -10 }}
-                            transition={{ duration: 0.2 }}
-                            className="w-full h-full"
-                          >
-                            <Suspense fallback={<TabLoadingFallback />}>
-                              {renderContent()}
-                            </Suspense>
-                          </motion.div>
-                        </AnimatePresence>
+                        {/* Keep-Alive Visited Tabs Container */}
+                        {(visitedTabIds.includes(activeTabId) ? visitedTabIds : [...visitedTabIds, activeTabId]).map((tabId) => {
+                          const isActive = activeTabId === tabId;
+                          return (
+                            <div
+                              key={tabId}
+                              className={isActive ? 'w-full h-full block animate-fade-in' : 'hidden'}
+                              aria-hidden={!isActive}
+                            >
+                              <Suspense fallback={<TabLoadingFallback />}>
+                                {renderSingleTab(tabId)}
+                              </Suspense>
+                            </div>
+                          );
+                        })}
+
                       </div>
                   </main>
               </div>

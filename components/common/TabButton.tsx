@@ -50,4 +50,4 @@ const TabButton: React.FC<TabButtonProps> = ({ label, isActive, onClick, classNa
   );
 };
 
-export default TabButton;
+export default React.memo(TabButton);
