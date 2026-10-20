@@ -670,26 +670,7 @@ export const ListasTab: React.FC = () => {
     : lists.filter(l => l === filter);
 
   return (
-    <div className="flex h-[calc(100vh-140px)] min-h-[720px] bg-[#0b0f19] text-slate-100 font-sans overflow-hidden rounded-2xl border border-slate-800/80 shadow-2xl relative">
-      <Sidebar 
-        isOpen={isSidebarOpen} 
-        setIsOpen={setIsSidebarOpen}
-        lists={lists}
-        activeFilter={filter}
-        onFilterChange={setFilter}
-        onAddList={handleAddList}
-        onDeleteList={handleDeleteList}
-        lastModified={lastModified}
-        username={username}
-        setUsername={setUsername}
-        onSaveFile={() => handleSaveFile(false)}
-        onSaveFileAs={() => handleSaveFile(true)}
-        onLoadFile={handleOpenFile}
-        onOpenCloud={() => setIsCloudSyncOpen(true)}
-        fileInputRef={fileInputRef}
-        listColors={listColors}
-      />
-
+    <div className="flex flex-col h-[calc(100vh-140px)] min-h-[720px] bg-[#0b0f19] text-slate-100 font-sans overflow-hidden rounded-2xl border border-slate-800/80 shadow-2xl relative w-full">
       {/* Hidden File Input for Fallback Load */}
       <input 
         type="file" 
@@ -705,14 +686,6 @@ export const ListasTab: React.FC = () => {
         {/* Header */}
         <header className="h-14 bg-[#0f172a] border-b border-slate-800 flex items-center justify-between px-3 lg:px-6 z-20 shrink-0 gap-2 sm:gap-4">
           <div className="flex items-center gap-2 sm:gap-3 flex-1 min-w-0">
-            <button 
-              className="p-1.5 text-slate-400 hover:text-white hover:bg-slate-800 rounded-lg transition-colors cursor-pointer shrink-0"
-              onClick={() => setIsSidebarOpen(prev => !prev)}
-              title="Mostrar / Ocultar panel lateral"
-            >
-              <Menu className="w-5 h-5" />
-            </button>
-            
             {/* Left-Aligned Utilities: Cámara para escanear pendientes */}
             <div className="flex items-center border-r border-slate-800 pr-2 shrink-0">
                 <button 
@@ -773,8 +746,22 @@ export const ListasTab: React.FC = () => {
             </div>
           </div>
 
-          {/* Right Header Area: [👤 rembrandt] [Guardar ▾] [Cargar] [☁ Conectado a Listas Remb] */}
+          {/* Right Header Area: [Últ. mod] [👤 rembrandt] [Guardar ▾] [Cargar] [☁ Conectado a Listas Remb] */}
           <div className="flex items-center gap-1.5 sm:gap-2 shrink-0">
+            {/* Última modificación / Fecha al lado de Rembrandt */}
+            <div 
+              className="hidden lg:flex items-center gap-1.5 px-2.5 py-1 bg-slate-900/80 border border-slate-800 rounded-lg text-xs text-slate-400 shrink-0 shadow-xs"
+              title="Última modificación de la lista"
+            >
+              <span className="text-[10px] uppercase font-semibold text-slate-500 tracking-wider">Últ. mod:</span>
+              <span className="text-purple-300 font-medium">
+                {lastModified.dayOfWeek.slice(0, 3)} {lastModified.fullDate}
+              </span>
+              <span className="text-slate-400 font-mono text-[11px] border-l border-slate-800 pl-1.5 ml-0.5">
+                {lastModified.time}
+              </span>
+            </div>
+
             {/* User Profile Badge (Rembrandt) */}
             <div 
               className="flex items-center gap-1.5 px-2.5 py-1 bg-slate-900/90 border border-slate-800 rounded-lg text-xs font-medium text-slate-300 shadow-xs" 
@@ -1001,13 +988,10 @@ export const ListasTab: React.FC = () => {
 
           <div className="h-5 w-px bg-slate-800 shrink-0 mx-1" />
 
-          {/* Secondary Views: Contactos, Notas, Almacén, Caja Fuerte, Links */}
+          {/* Secondary Views: Notas y Links */}
           <div className="flex items-center gap-1 shrink-0">
             {[
-              { id: 'contacts', icon: Users, label: 'Contactos' },
               { id: 'notes', icon: StickyNote, label: 'Notas' },
-              { id: 'storage', icon: Archive, label: 'Almacén' },
-              { id: 'safe', icon: Lock, label: 'Caja Fuerte' },
               { id: 'links', icon: LinkIcon, label: 'Links' },
             ].map(item => {
               const isActive = filter === item.id;
