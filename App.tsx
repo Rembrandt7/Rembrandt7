@@ -867,126 +867,128 @@ const MainLayout: React.FC = () => {
               {/* DESKTOP HEADER (Large screens >= 1024px) */}
               <header className="hidden lg:flex w-full max-w-screen-2xl mb-2.5 pt-1.5 px-2 justify-between items-center gap-3">
                   {/* Floating Glass Capsule Header */}
-                  <div className="w-full flex items-center justify-between gap-3 px-4 py-1.5 bg-gradient-to-r from-gray-950/80 via-gray-900/70 to-gray-950/80 backdrop-blur-xl border border-white/10 rounded-2xl shadow-[0_8px_30px_rgba(0,0,0,0.4)]">
-                    {/* Brand Logo with Renders HDR Studio (Transparent & Bigger) */}
-                    <div className="flex items-center min-w-0">
+                  <div className="w-full flex items-center justify-between gap-3 px-4 py-2 bg-gradient-to-r from-gray-950/80 via-gray-900/70 to-gray-950/80 backdrop-blur-xl border border-white/10 rounded-2xl shadow-[0_8px_30px_rgba(0,0,0,0.4)] min-h-[66px]">
+                    {/* Brand Logo with Renders HDR Studio (Clickable for Zen Mode & Maximum Height) */}
+                    <motion.button
+                      whileHover={{ scale: 1.03 }}
+                      whileTap={{ scale: 0.97 }}
+                      onClick={() => setLeftSidebarOpen(!leftSidebarOpen)}
+                      className="h-14 md:h-16 flex items-center shrink-0 cursor-pointer focus:outline-none group/logo"
+                      title={leftSidebarOpen ? "Modo Zen Activo: Clic en el logo para restaurar barras laterales" : "Clic en el logo para Activar Modo Zen (Ocultar barras laterales)"}
+                    >
                       <img 
                         src="/logo-rendershdr-studio.png" 
-                        alt="Renders HDR Studio" 
-                        className="h-10 md:h-12 w-auto max-w-[210px] md:max-w-[260px] object-contain drop-shadow-[0_4px_14px_rgba(0,0,0,0.65)] hover:scale-[1.03] transition-transform cursor-pointer"
+                        alt="Renders HDR Studio - Clic para Modo Zen" 
+                        className={`h-full w-auto max-w-[240px] md:max-w-[300px] object-contain drop-shadow-[0_4px_14px_rgba(0,0,0,0.65)] transition-all ${leftSidebarOpen ? 'brightness-125 filter drop-shadow-[0_0_15px_rgba(168,85,247,0.5)]' : 'hover:brightness-110'}`}
                         onError={(e) => {
                           (e.currentTarget as HTMLImageElement).src = '/logo-rendershdr-transparent.png';
                         }}
                       />
-                    </div>
+                    </motion.button>
 
-                    {/* Center Reminder Display */}
-                    <div className="hidden md:flex flex-1 max-w-xl mx-3">
+                    {/* Right-Shifted Reminder Display (Desplazado a la derecha junto al reloj) */}
+                    <div className="hidden md:flex flex-1 max-w-xl ml-auto mr-2 justify-end">
                       <ReminderDisplay />
                     </div>
 
                     {/* Clock & Status Badge */}
                     <div className="hidden sm:flex items-center gap-2 shrink-0">
-                      <div className="px-2.5 py-1 bg-white/[0.04] border border-white/10 rounded-xl backdrop-blur-md shadow-inner flex items-center gap-1.5 text-xs">
+                      <div className="px-2.5 py-1.5 bg-white/[0.04] border border-white/10 rounded-xl backdrop-blur-md shadow-inner flex items-center gap-1.5 text-xs">
                         <Clock />
                       </div>
                     </div>
 
                     {/* Actions Toolbar */}
-                    <div className="flex items-center gap-1 pl-2.5 border-l border-white/10">
-                      {/* Global Quick Voice & Idea Capture Button */}
+                    <div className="flex items-center gap-2 pl-2.5 border-l border-white/10 self-stretch">
+                      {/* Global Quick Voice & Idea Capture Button - Grande a todo lo alto */}
                       <motion.button 
-                        whileHover={{ scale: 1.05 }} 
-                        whileTap={{ scale: 0.95 }} 
+                        whileHover={{ scale: 1.04 }} 
+                        whileTap={{ scale: 0.96 }} 
                         onClick={() => {
                           setQuickIdeaAutoStart(true);
                           setIsQuickIdeaOpen(true);
                         }} 
-                        className="flex items-center gap-1.5 px-3 py-1.5 rounded-xl bg-gradient-to-r from-purple-600/30 via-pink-600/25 to-amber-500/20 hover:from-purple-600/50 hover:to-pink-600/40 border border-purple-500/40 text-purple-200 hover:text-white transition-all shadow-md shadow-purple-900/20 mr-1" 
+                        className="self-stretch flex items-center justify-center gap-2 px-3.5 py-2 rounded-xl bg-gradient-to-r from-purple-600/35 via-pink-600/30 to-amber-500/25 hover:from-purple-600/55 hover:to-pink-600/45 border border-purple-500/40 text-purple-100 hover:text-white transition-all shadow-md shadow-purple-900/30" 
                         title="Captura Rápida de Ideas y Voz (Alt + I)"
                       >
-                        <Mic size={15} className="text-pink-400 animate-pulse" />
-                        <span className="text-xs font-bold tracking-wide">Grabar Idea</span>
+                        <Mic size={18} className="text-pink-400 animate-pulse" />
+                        <span className="text-xs sm:text-sm font-bold tracking-wide whitespace-nowrap">Grabar Idea</span>
                       </motion.button>
 
-                      <motion.button 
-                        whileHover={{ scale: 1.08 }} 
-                        whileTap={{ scale: 0.94 }} 
-                        onClick={() => setLeftSidebarOpen(!leftSidebarOpen)} 
-                        className={`p-2 rounded-xl transition-all ${leftSidebarOpen ? 'bg-purple-600 shadow-[0_0_15px_rgba(147,51,234,0.5)] text-white' : 'text-gray-400 hover:text-white hover:bg-white/10'}`} 
-                        title="Modo Zen (Colapsar Barras)"
-                      >
-                        <LayoutDashboard size={18} />
-                      </motion.button>
+                      {/* 2x2 Action Icons Grid: Fila 1 = Configuración + Base de Datos | Fila 2 = Salvar + Actualizar */}
+                      <div className="grid grid-cols-2 gap-1 shrink-0">
+                        {/* Configuración / Personalizar */}
+                        <motion.button 
+                          whileHover={{ scale: 1.1 }} 
+                          whileTap={{ scale: 0.92 }} 
+                          onClick={toggleEditing} 
+                          className={`p-1.5 rounded-lg transition-all flex items-center justify-center ${isEditing ? 'bg-amber-500/20 text-amber-300 border border-amber-500/40' : 'text-gray-400 hover:text-white hover:bg-white/10'}`} 
+                          title="Personalizar"
+                        >
+                          <Settings size={15} />
+                        </motion.button>
 
-                      <motion.button 
-                        whileHover={{ scale: 1.08 }} 
-                        whileTap={{ scale: 0.94 }} 
-                        onClick={toggleEditing} 
-                        className={`p-2 rounded-xl transition-all ${isEditing ? 'bg-amber-500/20 text-amber-300 border border-amber-500/40' : 'text-gray-400 hover:text-white hover:bg-white/10'}`} 
-                        title="Personalizar"
-                      >
-                        <Settings size={18} />
-                      </motion.button>
+                        {/* Base de Datos */}
+                        <motion.button 
+                          whileHover={{ scale: 1.1 }} 
+                          whileTap={{ scale: 0.92 }} 
+                          onClick={handleToggleDatabaseTab} 
+                          className={`p-1.5 rounded-lg transition-all flex items-center justify-center ${
+                            isDatabaseActive 
+                              ? 'bg-blue-600 shadow-[0_0_12px_rgba(37,99,235,0.6)] text-white ring-2 ring-blue-400' 
+                              : 'hover:bg-blue-500/20 text-blue-400'
+                          }`} 
+                          title={isDatabaseActive ? "Cerrar Base de Datos" : "Base de Datos & Cloud"}
+                        >
+                          <Database size={15} />
+                        </motion.button>
 
-                      <motion.button 
-                        whileHover={{ scale: 1.08 }} 
-                        whileTap={{ scale: 0.94 }} 
-                        onClick={handleToggleDatabaseTab} 
-                        className={`p-2 rounded-xl transition-all ${
-                          isDatabaseActive 
-                            ? 'bg-blue-600 shadow-[0_0_15px_rgba(37,99,235,0.6)] text-white ring-2 ring-blue-400' 
-                            : 'hover:bg-blue-500/20 text-blue-400'
-                        }`} 
-                        title={isDatabaseActive ? "Cerrar Base de Datos" : "Base de Datos & Cloud"}
-                      >
-                        <Database size={18} />
-                      </motion.button>
+                        {/* Guardar en la nube */}
+                        <motion.button 
+                          whileHover={{ scale: 1.1 }} 
+                          whileTap={{ scale: 0.92 }} 
+                          onClick={() => saveToSupabase(undefined, { showToast: true, immediate: true })} 
+                          className="relative p-1.5 text-gray-400 hover:text-white hover:bg-white/10 rounded-lg transition-all flex items-center justify-center" 
+                          title={
+                            syncStatus === 'saving' 
+                              ? 'Sincronizando con Supabase...' 
+                              : syncStatus === 'error' 
+                              ? 'Error al sincronizar. Clic para forzar guardado' 
+                              : 'Todo guardado en la nube. Clic para forzar guardado'
+                          }
+                        >
+                          <Save size={15} className={
+                            syncStatus === 'saving' 
+                              ? 'animate-pulse text-amber-400' 
+                              : syncStatus === 'error' 
+                              ? 'text-rose-400' 
+                              : 'text-gray-300'
+                          } />
+                          {syncStatus === 'saving' && (
+                            <span className="absolute top-1 right-1 flex h-2 w-2">
+                              <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-amber-400 opacity-75"></span>
+                              <span className="relative inline-flex rounded-full h-2 w-2 bg-amber-500"></span>
+                            </span>
+                          )}
+                          {syncStatus === 'synced' && (
+                            <span className="absolute top-1 right-1 flex h-1.5 w-1.5 rounded-full bg-emerald-400 shadow-[0_0_8px_rgba(52,211,153,0.9)]"></span>
+                          )}
+                          {syncStatus === 'error' && (
+                            <span className="absolute top-1 right-1 flex h-1.5 w-1.5 rounded-full bg-rose-500 shadow-[0_0_8px_rgba(244,63,94,0.9)]"></span>
+                          )}
+                        </motion.button>
 
-                      {/* Cloud Sync with subtle badge */}
-                      <motion.button 
-                        whileHover={{ scale: 1.08 }} 
-                        whileTap={{ scale: 0.94 }} 
-                        onClick={() => saveToSupabase(undefined, { showToast: true, immediate: true })} 
-                        className="relative p-2 text-gray-400 hover:text-white hover:bg-white/10 rounded-xl transition-all" 
-                        title={
-                          syncStatus === 'saving' 
-                            ? 'Sincronizando con Supabase...' 
-                            : syncStatus === 'error' 
-                            ? 'Error al sincronizar. Clic para forzar guardado' 
-                            : 'Todo guardado en la nube. Clic para forzar guardado'
-                        }
-                      >
-                        <Save size={18} className={
-                          syncStatus === 'saving' 
-                            ? 'animate-pulse text-amber-400' 
-                            : syncStatus === 'error' 
-                            ? 'text-rose-400' 
-                            : 'text-gray-300'
-                        } />
-                        {syncStatus === 'saving' && (
-                          <span className="absolute top-1.5 right-1.5 flex h-2 w-2">
-                            <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-amber-400 opacity-75"></span>
-                            <span className="relative inline-flex rounded-full h-2 w-2 bg-amber-500"></span>
-                          </span>
-                        )}
-                        {syncStatus === 'synced' && (
-                          <span className="absolute top-1.5 right-1.5 flex h-2 w-2 rounded-full bg-emerald-400 shadow-[0_0_8px_rgba(52,211,153,0.9)]"></span>
-                        )}
-                        {syncStatus === 'error' && (
-                          <span className="absolute top-1.5 right-1.5 flex h-2 w-2 rounded-full bg-rose-500 shadow-[0_0_8px_rgba(244,63,94,0.9)]"></span>
-                        )}
-                      </motion.button>
-
-                      <motion.button 
-                        whileHover={{ scale: 1.08 }} 
-                        whileTap={{ scale: 0.94 }} 
-                        onClick={fetchConfigFromSupabaseManual} 
-                        className="p-2 text-gray-400 hover:text-white hover:bg-white/10 rounded-xl transition-all" 
-                        title="Actualizar datos desde la nube"
-                      >
-                        <RefreshCw size={18} />
-                      </motion.button>
+                        {/* Actualizar / Refresh */}
+                        <motion.button 
+                          whileHover={{ scale: 1.1 }} 
+                          whileTap={{ scale: 0.92 }} 
+                          onClick={fetchConfigFromSupabaseManual} 
+                          className="p-1.5 text-gray-400 hover:text-white hover:bg-white/10 rounded-lg transition-all flex items-center justify-center" 
+                          title="Actualizar datos desde la nube"
+                        >
+                          <RefreshCw size={15} />
+                        </motion.button>
+                      </div>
                     </div>
                   </div>
               </header>
