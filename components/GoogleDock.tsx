@@ -42,8 +42,12 @@ const ToolItem: React.FC<{
                 )}
                 
                 <div 
-                    className={`${isGemini ? 'w-8 h-8' : 'w-6 h-6'} flex items-center justify-center relative z-10`} 
+                    className={`google-dock-item ${isGemini ? 'w-8 h-8 max-w-[2rem] max-h-[2rem]' : 'w-6 h-6 max-w-[1.5rem] max-h-[1.5rem]'} flex items-center justify-center relative z-10 shrink-0 [&>svg]:w-full [&>svg]:h-full [&>svg]:max-w-full [&>svg]:max-h-full`} 
                     style={{
+                        width: isGemini ? 32 : 24,
+                        height: isGemini ? 32 : 24,
+                        maxWidth: isGemini ? 32 : 24,
+                        maxHeight: isGemini ? 32 : 24,
                         filter: item.outlineColor && item.outlineWidth ? `drop-shadow(0 0 ${item.outlineWidth}px ${item.outlineColor})` : (isGemini ? 'drop-shadow(0 0 8px rgba(255,255,255,0.5))' : undefined)
                     }}
                     dangerouslySetInnerHTML={{ __html: item.iconSvg }} 
