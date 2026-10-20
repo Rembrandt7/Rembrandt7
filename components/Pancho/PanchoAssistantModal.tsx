@@ -345,6 +345,7 @@ export const PanchoAssistantModal: React.FC<PanchoAssistantModalProps> = ({
         'email-gen': '¡Hola Rembrandt! 🐶 Pancho listo para redactar. Platiquemos sobre a quién le escribes y qué necesitas decir, y yo te armo el correo profesional y la versión de WhatsApp.',
         '3d-print': '¡Hola Rembrandt! 🐶 Modo 3D Maker activo. Dime qué pieza vas a imprimir, el filamento y tiempo estimado, y la anoto en tu cola de impresión con su cálculo de costo.',
         personal: '¡Hola Rembrandt! 🐶 Coach Personal Pancho a tus órdenes. Dime qué comiste para registrar tus macros, o cuéntame sobre tus gastos y tarjetas para llevar tus finanzas al día.',
+        listas: '¡Hola Rembrandt! 🐶 Soy Pancho, tu Asistente Experto en Productividad y Listas. Dime en qué vas a trabajar hoy y te propondré 3 roles expertos para asistirte, organizar tus tareas o preparar mensajes para WhatsApp Web.',
       };
 
       const greeting = welcomeMap[activeTabId] || '¡Hola Rembrandt! 🐶 Soy Pancho, tu perrito robot asistente. ¿En qué te ayudo hoy?';
@@ -398,6 +399,13 @@ export const PanchoAssistantModal: React.FC<PanchoAssistantModalProps> = ({
           '¿Cómo van mis calorías y proteína de hoy?',
           'Registra un gasto en mi tarjeta...',
           '¿Cuándo es mi próximo corte o pago de tarjeta?',
+        ];
+      case 'listas':
+        return [
+          'Dime qué roles expertos me propones para hoy...',
+          'Añade una nueva tarea a mis listas...',
+          'Abrir WhatsApp Web',
+          '¿Cuáles son mis pendientes prioritarios?',
         ];
       default:
         return [
@@ -586,11 +594,19 @@ CONTEXTO Y CAPACIDADES POR PESTAÑA:
    - Finanzas: Consulta tarjetas (${finanzasCards.map(c => `${c.name}: $${c.balance}`).join(', ')}), fechas de corte y pagos.
    - Usa 'log_finance_expense' si gasta o ajusta una tarjeta.
 
-6. LISTAS Y TAREAS PENDIENTES ("listas", "listas_remb"):
-   - Tienes acceso directo a sus pendientes actuales guardados en la nube:
-${pendingTasksSummary}
+6. LISTAS, PRODUCTIVIDAD Y ASISTENTE EXPERTO ("listas", "listas_remb"):
+   - Eres el Asistente Experto en Productividad de Listas Remb.
+   - Si Rembrandt te dice en qué va a trabajar hoy o te plantea un proyecto/tarea:
+     1. Analiza la tarea a fondo.
+     2. Propón 3 ROLES EXPERTOS específicos (ej: "1. Director de Arte & Renders", "2. Project Manager Ejecutivo", "3. Asesor de Automatizaciones") que tú, Pancho, puedes adoptar para asistirlo al máximo.
+     3. Pregúntale cuál prefiere y adáptate de inmediato a ese rol.
    - Si Rembrandt te pregunta qué tiene pendiente, qué tiene que hacer o pide consultar sus listas, dile con amabilidad y precisión cuáles son sus tareas pendientes.
    - Si Rembrandt te pide agregar una tarea o pendiente, usa 'add_quick_task'.
+   - Si te pide redactar algo para WhatsApp o enviar a WhatsApp Web, o abrir WhatsApp Web:
+     * Estructura el mensaje con formato limpio (negritas, viñetas, tono ejecutivo).
+     * Proporciónale el enlace directo a WhatsApp Web (https://web.whatsapp.com) o confirma que puede abrirlo con un clic.
+   - Tienes acceso directo a sus pendientes actuales guardados en la nube:
+${pendingTasksSummary}
 
 REGLAS DE RESPUESTA:
 - Cuando uses una herramienta (tool), confirma en tu mensaje qué hiciste de manera alegre y clara.

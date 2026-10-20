@@ -69,26 +69,26 @@ const TaskModal: React.FC<TaskModalProps> = ({ isOpen, onClose, task, onSave, on
   };
 
   return (
-    <div className="fixed inset-0 bg-black/40 backdrop-blur-sm z-50 flex items-center justify-center p-4">
-      <div className="bg-white w-full max-w-2xl rounded-2xl shadow-2xl overflow-hidden animate-in zoom-in-95 duration-200 flex flex-col max-h-[90vh]">
+    <div className="fixed inset-0 bg-black/70 backdrop-blur-sm z-50 flex items-center justify-center p-4">
+      <div className="bg-slate-900 w-full max-w-2xl rounded-2xl shadow-2xl overflow-hidden animate-in zoom-in-95 duration-200 flex flex-col max-h-[90vh] border border-slate-800 text-slate-100">
         {/* Header */}
-        <div className="flex items-center justify-between p-4 border-b border-slate-100">
+        <div className="flex items-center justify-between p-4 border-b border-slate-800 bg-slate-900/90">
            <div className="flex items-center gap-2 w-full mr-4">
              <input 
                type="text" 
                value={editedTask.title} 
                onChange={(e) => handleChange('title', e.target.value)}
-               className="text-xl font-bold text-slate-800 bg-transparent border-none focus:outline-none focus:ring-2 focus:ring-brand-100 rounded px-2 w-full"
+               className="text-xl font-bold text-white bg-transparent border-none focus:outline-none focus:ring-2 focus:ring-purple-400 rounded px-2 w-full"
                placeholder="Título de la tarea"
              />
            </div>
-           <button onClick={onClose} className="p-2 hover:bg-slate-100 rounded-full text-slate-500 flex-shrink-0">
+           <button onClick={onClose} className="p-2 hover:bg-slate-800 rounded-full text-slate-400 hover:text-white flex-shrink-0 cursor-pointer">
              <X className="w-6 h-6" />
            </button>
         </div>
 
         {/* Body */}
-        <div className="p-6 overflow-y-auto space-y-6 flex-1 bg-slate-50/50">
+        <div className="p-6 overflow-y-auto space-y-6 flex-1 bg-slate-950/70">
           
           <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
             {/* Category Select */}
@@ -99,10 +99,10 @@ const TaskModal: React.FC<TaskModalProps> = ({ isOpen, onClose, task, onSave, on
               <select 
                 value={editedTask.category}
                 onChange={(e) => handleChange('category', e.target.value)}
-                className="w-full p-2.5 bg-white border border-slate-200 rounded-lg text-sm text-slate-700 focus:outline-none focus:border-brand-500 shadow-sm"
+                className="w-full p-2.5 bg-slate-900 border border-slate-700 rounded-lg text-sm text-slate-100 focus:outline-none focus:border-purple-500 shadow-sm"
               >
                 {lists.map(list => (
-                  <option key={list} value={list}>{list}</option>
+                  <option key={list} value={list} className="bg-slate-900 text-white">{list}</option>
                 ))}
               </select>
             </div>
@@ -120,27 +120,27 @@ const TaskModal: React.FC<TaskModalProps> = ({ isOpen, onClose, task, onSave, on
                   value={getInputValue(editedTask.dueDate)}
                   onChange={handleDateChange}
                   onClick={handleInputClick}
-                  className="w-full p-2.5 pl-10 bg-white border border-slate-200 rounded-lg text-sm text-slate-700 focus:outline-none focus:border-brand-500 shadow-sm cursor-pointer hover:border-brand-300 transition-colors"
+                  className="w-full p-2.5 pl-10 bg-slate-900 border border-slate-700 rounded-lg text-sm text-slate-100 focus:outline-none focus:border-purple-500 shadow-sm cursor-pointer hover:border-slate-500 transition-colors"
                 />
-                <Calendar className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-brand-500 pointer-events-none" />
+                <Calendar className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-purple-400 pointer-events-none" />
               </div>
 
               <div className="flex gap-2 mt-2 overflow-x-auto pb-1 no-scrollbar">
                   <button 
                     onClick={() => setQuickDate('today')}
-                    className="flex items-center gap-1.5 px-3 py-1.5 bg-orange-50 text-orange-700 border border-orange-100 rounded-full text-xs font-medium hover:bg-orange-100 transition-colors whitespace-nowrap"
+                    className="flex items-center gap-1.5 px-3 py-1.5 bg-amber-950/40 text-amber-300 border border-amber-500/30 rounded-full text-xs font-medium hover:bg-amber-900/40 transition-colors whitespace-nowrap cursor-pointer"
                   >
                       <Sun className="w-3 h-3" /> Hoy
                   </button>
                   <button 
                     onClick={() => setQuickDate('tomorrow')}
-                    className="flex items-center gap-1.5 px-3 py-1.5 bg-blue-50 text-blue-700 border border-blue-100 rounded-full text-xs font-medium hover:bg-blue-100 transition-colors whitespace-nowrap"
+                    className="flex items-center gap-1.5 px-3 py-1.5 bg-blue-950/40 text-blue-300 border border-blue-500/30 rounded-full text-xs font-medium hover:bg-blue-900/40 transition-colors whitespace-nowrap cursor-pointer"
                   >
                       <Sunrise className="w-3 h-3" /> Mañana
                   </button>
                   <button 
                     onClick={() => setQuickDate('next-week')}
-                    className="flex items-center gap-1.5 px-3 py-1.5 bg-purple-50 text-purple-700 border border-purple-100 rounded-full text-xs font-medium hover:bg-purple-100 transition-colors whitespace-nowrap"
+                    className="flex items-center gap-1.5 px-3 py-1.5 bg-purple-950/40 text-purple-300 border border-purple-500/30 rounded-full text-xs font-medium hover:bg-purple-900/40 transition-colors whitespace-nowrap cursor-pointer"
                   >
                       <CalendarClock className="w-3 h-3" /> Próx. Semana
                   </button>
@@ -149,13 +149,13 @@ const TaskModal: React.FC<TaskModalProps> = ({ isOpen, onClose, task, onSave, on
           </div>
 
           {/* Progress Slider */}
-          <div className="space-y-2 bg-white p-4 rounded-xl border border-slate-200 shadow-sm">
+          <div className="space-y-2 bg-slate-900 p-4 rounded-xl border border-slate-800 shadow-sm">
              <div className="flex justify-between items-center">
                 <label className="text-xs font-semibold text-slate-400 uppercase tracking-wider flex items-center gap-1">
                   <Percent className="w-3 h-3" /> Progreso
                 </label>
                 <span className={`text-sm font-bold ${
-                  (editedTask.progress || 0) === 100 ? 'text-green-600' : 'text-brand-600'
+                  (editedTask.progress || 0) === 100 ? 'text-emerald-400' : 'text-purple-400'
                 }`}>
                   {editedTask.progress || 0}%
                 </span>
@@ -167,9 +167,9 @@ const TaskModal: React.FC<TaskModalProps> = ({ isOpen, onClose, task, onSave, on
                step="5"
                value={editedTask.progress || 0} 
                onChange={(e) => handleChange('progress', parseInt(e.target.value))}
-               className="w-full h-2 bg-slate-100 rounded-lg appearance-none cursor-pointer accent-brand-600"
+               className="w-full h-2 bg-slate-800 rounded-lg appearance-none cursor-pointer accent-purple-500"
              />
-             <div className="flex justify-between text-[10px] text-slate-400 font-medium px-1">
+             <div className="flex justify-between text-[10px] text-slate-500 font-medium px-1">
                <span>0%</span>
                <span>50%</span>
                <span>100%</span>
@@ -184,27 +184,27 @@ const TaskModal: React.FC<TaskModalProps> = ({ isOpen, onClose, task, onSave, on
             <textarea 
               value={editedTask.notes || ''}
               onChange={(e) => handleChange('notes', e.target.value)}
-              className="w-full h-40 p-4 bg-white border border-slate-200 rounded-xl text-sm text-slate-700 focus:outline-none focus:border-brand-500 focus:ring-2 focus:ring-brand-50 resize-none leading-relaxed shadow-sm"
+              className="w-full h-40 p-4 bg-slate-900 border border-slate-700 rounded-xl text-sm text-slate-100 placeholder:text-slate-500 focus:outline-none focus:border-purple-500 focus:ring-2 focus:ring-purple-950 resize-none leading-relaxed shadow-sm"
               placeholder="Escribe aquí los detalles, ideas o subtareas..."
             />
           </div>
         </div>
 
         {/* Footer */}
-        <div className="p-4 border-t border-slate-100 bg-white flex justify-between items-center shrink-0">
+        <div className="p-4 border-t border-slate-800 bg-slate-900 flex justify-between items-center shrink-0">
            <button 
              onClick={() => { onDelete(editedTask.id); onClose(); }}
-             className="flex items-center gap-2 px-4 py-2 text-red-600 bg-red-50 hover:bg-red-100 rounded-lg text-sm font-medium transition-colors"
+             className="flex items-center gap-2 px-4 py-2 text-red-400 bg-red-950/40 hover:bg-red-900/40 border border-red-500/30 rounded-lg text-sm font-medium transition-colors cursor-pointer"
            >
              <Trash2 className="w-4 h-4" /> Eliminar
            </button>
            <div className="flex gap-3">
-             <button onClick={onClose} className="px-4 py-2 text-slate-500 hover:text-slate-700 text-sm font-medium">
+             <button onClick={onClose} className="px-4 py-2 text-slate-400 hover:text-white text-sm font-medium cursor-pointer">
                Cancelar
              </button>
              <button 
                onClick={() => { onSave(editedTask); onClose(); }}
-               className="flex items-center gap-2 px-6 py-2 bg-brand-600 hover:bg-brand-700 text-white rounded-lg text-sm font-medium shadow-lg shadow-brand-200 transition-all"
+               className="flex items-center gap-2 px-6 py-2 bg-purple-600 hover:bg-purple-500 text-white rounded-lg text-sm font-medium shadow-lg shadow-purple-900/30 transition-all cursor-pointer"
              >
                <Save className="w-4 h-4" /> Guardar Cambios
              </button>

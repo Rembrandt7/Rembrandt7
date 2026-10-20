@@ -51,6 +51,13 @@ export const getPanchoRole = (activeTabId: string): { title: string; subtitle: s
         icon: '🥗',
         color: 'from-emerald-500 to-green-600',
       };
+    case 'listas':
+      return {
+        title: 'Pancho Asistente Experto',
+        subtitle: 'Productividad, Tareas & WhatsApp',
+        icon: '📋',
+        color: 'from-blue-600 via-indigo-600 to-purple-600',
+      };
     default:
       return {
         title: 'Pancho IA',

@@ -92,33 +92,33 @@ const TaskItem: React.FC<TaskItemProps> = ({ task, onToggle, onDelete, onDragSta
       onDragEnter={handleDragEnter}
       onDragLeave={handleDragLeave}
       onDrop={handleDropLocal}
-      className={`group relative bg-white rounded-xl border transition-all duration-200 ease-in-out cursor-grab active:cursor-grabbing
-        ${task.completed ? 'border-slate-100 bg-slate-50 opacity-75' : 'border-slate-200 hover:border-brand-300 hover:shadow-md'}
+      className={`group relative rounded-xl border transition-all duration-200 ease-in-out cursor-grab active:cursor-grabbing
+        ${task.completed ? 'border-slate-800/80 bg-slate-900/60 opacity-60' : 'bg-slate-800/90 border-slate-700/80 hover:border-purple-500/50 hover:shadow-lg hover:shadow-purple-950/20'}
         p-3 flex flex-col gap-2`}
       onMouseEnter={() => setIsHovered(true)}
       onMouseLeave={() => setIsHovered(false)}
     >
       {/* Drop Indicators */}
       {dropPosition === 'top' && (
-          <div className="absolute -top-1.5 left-0 right-0 h-1.5 bg-brand-500 rounded-full z-50 pointer-events-none shadow-sm ring-2 ring-brand-100"></div>
+          <div className="absolute -top-1.5 left-0 right-0 h-1.5 bg-purple-500 rounded-full z-50 pointer-events-none shadow-sm ring-2 ring-purple-900"></div>
       )}
       {dropPosition === 'bottom' && (
-          <div className="absolute -bottom-1.5 left-0 right-0 h-1.5 bg-brand-500 rounded-full z-50 pointer-events-none shadow-sm ring-2 ring-brand-100"></div>
+          <div className="absolute -bottom-1.5 left-0 right-0 h-1.5 bg-purple-500 rounded-full z-50 pointer-events-none shadow-sm ring-2 ring-purple-900"></div>
       )}
 
       <div className={`flex items-start gap-3 ${dropPosition ? 'opacity-50' : ''}`}>
          {/* Grip for Dragging */}
-         <div className="text-slate-300 cursor-grab mt-1 hidden group-hover:block">
+         <div className="text-slate-500 cursor-grab mt-1 hidden group-hover:block">
           <GripVertical className="w-4 h-4" />
         </div>
 
         {/* Checkbox */}
         <button
           onClick={(e) => { e.stopPropagation(); onToggle(task.id); }}
-          className={`flex-shrink-0 w-5 h-5 mt-0.5 rounded-full border-2 flex items-center justify-center transition-all duration-300
+          className={`flex-shrink-0 w-5 h-5 mt-0.5 rounded-full border-2 flex items-center justify-center transition-all duration-300 cursor-pointer
             ${task.completed 
-              ? 'bg-brand-500 border-brand-500 scale-100' 
-              : 'border-slate-300 hover:border-brand-400 bg-white'}`}
+              ? 'bg-purple-600 border-purple-600 scale-100' 
+              : 'border-slate-600 hover:border-purple-400 bg-slate-900'}`}
           style={task.completed && customColor ? { backgroundColor: customColor, borderColor: customColor } : {}}
         >
           <Check 
@@ -131,9 +131,8 @@ const TaskItem: React.FC<TaskItemProps> = ({ task, onToggle, onDelete, onDragSta
         {/* Content */}
         <div className="flex-1 min-w-0" onClick={() => onEdit(task)}>
           <h3 
-            className={`font-medium text-sm leading-tight mb-2 transition-all duration-300
-              ${task.completed ? 'text-slate-400 line-through' : ''}`}
-            style={{ color: task.completed ? undefined : `rgba(15, 23, 42, ${textDarkness})` }}
+            className={`font-semibold text-sm leading-tight mb-2 transition-all duration-300
+              ${task.completed ? 'text-slate-500 line-through' : 'text-slate-100'}`}
           >
             {task.title}
           </h3>
@@ -148,7 +147,7 @@ const TaskItem: React.FC<TaskItemProps> = ({ task, onToggle, onDelete, onDragSta
             </span>
             
             {/* Date Display */}
-            <div className="flex items-center gap-1 text-slate-500 hover:text-brand-600 transition-colors">
+            <div className="flex items-center gap-1 text-slate-400 hover:text-purple-300 transition-colors">
               <CalendarIcon className="w-3 h-3" />
               <span className="text-[10px]">{new Date(task.dueDate).toLocaleDateString(undefined, {month:'short', day:'numeric'})}</span>
             </div>
@@ -162,7 +161,7 @@ const TaskItem: React.FC<TaskItemProps> = ({ task, onToggle, onDelete, onDragSta
                     e.stopPropagation();
                     window.dispatchEvent(new CustomEvent('navigate-to-tab', { detail: '3d-print' }));
                   }}
-                  className="px-2 py-0.5 rounded-full font-bold text-[9px] bg-purple-100 hover:bg-purple-200 text-purple-700 border border-purple-300 inline-flex items-center gap-1 transition-colors shadow-xs"
+                  className="px-2 py-0.5 rounded-full font-bold text-[9px] bg-purple-950/60 hover:bg-purple-900/60 text-purple-300 border border-purple-500/40 inline-flex items-center gap-1 transition-colors shadow-xs cursor-pointer"
                   title="Abrir Módulo de Impresión 3D"
                 >
                   <span>🖨️ Módulo 3D</span>
@@ -172,7 +171,7 @@ const TaskItem: React.FC<TaskItemProps> = ({ task, onToggle, onDelete, onDragSta
                   target="_blank"
                   rel="noopener noreferrer"
                   onClick={(e) => e.stopPropagation()}
-                  className="px-2 py-0.5 rounded-full font-bold text-[9px] bg-emerald-100 hover:bg-emerald-200 text-emerald-800 border border-emerald-300 inline-flex items-center gap-1 transition-colors shadow-xs"
+                  className="px-2 py-0.5 rounded-full font-bold text-[9px] bg-emerald-950/60 hover:bg-emerald-900/60 text-emerald-300 border border-emerald-500/40 inline-flex items-center gap-1 transition-colors shadow-xs"
                   title="Abrir MakerWorld"
                 >
                   <span>MakerWorld</span>
@@ -184,9 +183,9 @@ const TaskItem: React.FC<TaskItemProps> = ({ task, onToggle, onDelete, onDragSta
            {/* Progress Bar (Visible if progress > 0 and not completed) */}
           {!task.completed && progress > 0 && (
              <div className="mt-2 w-full flex items-center gap-2">
-                <div className="flex-1 h-1.5 bg-slate-100 rounded-full overflow-hidden">
+                <div className="flex-1 h-1.5 bg-slate-900 rounded-full overflow-hidden border border-slate-700">
                     <div 
-                        className="h-full bg-brand-500 rounded-full transition-all duration-500" 
+                        className="h-full bg-purple-500 rounded-full transition-all duration-500" 
                         style={{ width: `${progress}%`, backgroundColor: customColor }} 
                     />
                 </div>
@@ -196,7 +195,7 @@ const TaskItem: React.FC<TaskItemProps> = ({ task, onToggle, onDelete, onDragSta
 
           {/* Notes Preview */}
           {showNotes && task.notes && (
-             <div className="mt-2 text-xs text-slate-400 bg-slate-50 p-2 rounded border border-slate-100 line-clamp-3 leading-relaxed">
+             <div className="mt-2 text-xs text-slate-300 bg-slate-900/80 p-2 rounded-lg border border-slate-700/60 line-clamp-3 leading-relaxed">
                  {task.notes}
              </div>
           )}
@@ -207,14 +206,14 @@ const TaskItem: React.FC<TaskItemProps> = ({ task, onToggle, onDelete, onDragSta
         <div className="flex flex-col gap-1 opacity-0 group-hover:opacity-100 transition-opacity">
            <button 
             onClick={(e) => { e.stopPropagation(); onEdit(task); }}
-            className="text-slate-300 hover:text-brand-500 transition-colors"
+            className="text-slate-400 hover:text-purple-400 transition-colors cursor-pointer"
             title="Editar"
           >
             <Edit2 className="w-4 h-4" />
           </button>
           <button 
             onClick={(e) => { e.stopPropagation(); onDelete(task.id); }}
-            className="text-slate-300 hover:text-red-500 transition-colors"
+            className="text-slate-400 hover:text-red-400 transition-colors cursor-pointer"
             title="Eliminar tarea"
           >
             <Trash2 className="w-4 h-4" />

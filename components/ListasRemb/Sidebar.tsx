@@ -104,40 +104,40 @@ const Sidebar: React.FC<SidebarProps> = ({
 
       {/* Sidebar Container */}
       <aside 
-        className={`fixed lg:static inset-y-0 left-0 z-30 w-64 bg-white border-r border-slate-200 transform transition-transform duration-300 ease-in-out lg:translate-x-0 ${isOpen ? 'translate-x-0' : '-translate-x-full'} flex flex-col shadow-lg lg:shadow-none`}
+        className={`fixed lg:static inset-y-0 left-0 z-30 w-64 bg-[#0d1322] border-r border-slate-800 text-slate-200 transform transition-transform duration-300 ease-in-out lg:translate-x-0 ${isOpen ? 'translate-x-0' : '-translate-x-full'} flex flex-col shadow-2xl lg:shadow-none`}
       >
         <div className="p-6">
           <div className="flex items-center gap-3 mb-4">
-            <div className="w-8 h-8 bg-brand-600 rounded-lg flex items-center justify-center shadow-lg shadow-brand-200">
+            <div className="w-8 h-8 bg-purple-600 rounded-lg flex items-center justify-center shadow-lg shadow-purple-900/40">
               <CheckSquare className="text-white w-5 h-5" />
             </div>
-            <span className="font-bold text-lg text-slate-800 tracking-tight leading-tight">Listas<br/>Remb</span>
+            <span className="font-bold text-lg text-white tracking-tight leading-tight">Listas<br/>Remb</span>
           </div>
           
           {/* Last Modified Date */}
           <div className="flex flex-col gap-0.5 mb-4 pl-1">
-             <span className="text-xs font-bold text-slate-400 uppercase tracking-wider mb-1">Última Modificación</span>
-             <div className="text-sm font-semibold text-brand-600 leading-tight">
+             <span className="text-xs font-bold text-slate-500 uppercase tracking-wider mb-1">Última Modificación</span>
+             <div className="text-sm font-semibold text-purple-400 leading-tight">
                {lastModified.dayOfWeek}
              </div>
-             <div className="text-sm text-slate-600 leading-tight">
+             <div className="text-sm text-slate-300 leading-tight">
                {lastModified.fullDate}
              </div>
-             <div className="text-xs text-slate-400 mt-0.5 font-mono">
+             <div className="text-xs text-slate-500 mt-0.5 font-mono">
                {lastModified.time}
              </div>
           </div>
 
           {/* User Profile Input */}
-          <div className="flex items-center gap-2 px-3 py-2 bg-slate-50 rounded-lg border border-slate-200 mb-2">
-             <div className="w-6 h-6 bg-brand-600 rounded-full flex items-center justify-center text-white text-xs font-bold shrink-0">
+          <div className="flex items-center gap-2 px-3 py-2 bg-slate-900/90 rounded-lg border border-slate-800 mb-2">
+             <div className="w-6 h-6 bg-purple-600 rounded-full flex items-center justify-center text-white text-xs font-bold shrink-0">
                 <User className="w-3 h-3" />
              </div>
              <input 
                type="text" 
                value={username}
                onChange={(e) => setUsername(e.target.value)}
-               className="bg-transparent border-none focus:outline-none text-sm font-medium text-slate-700 w-full truncate"
+               className="bg-transparent border-none focus:outline-none text-sm font-medium text-slate-200 placeholder:text-slate-500 w-full truncate"
                placeholder="Usuario"
              />
           </div>
@@ -145,17 +145,17 @@ const Sidebar: React.FC<SidebarProps> = ({
           {/* Backup Controls */}
           <div className="flex flex-col gap-2">
             <div className="flex gap-2 relative">
-              <div className="flex-1 flex bg-blue-50 rounded-lg border border-blue-200 hover:bg-blue-100 transition-colors">
+              <div className="flex-1 flex bg-blue-950/40 rounded-lg border border-blue-500/30 hover:bg-blue-900/40 transition-colors">
                   <button 
                       onClick={onSaveFile} 
-                      className="flex-1 flex items-center justify-center gap-2 p-2 text-blue-700 text-xs font-medium"
+                      className="flex-1 flex items-center justify-center gap-2 p-2 text-blue-300 text-xs font-medium cursor-pointer"
                       title="Guardar Copia de Seguridad"
                   >
                       <Save className="w-4 h-4" /> Guardar
                   </button>
                   <button 
                       onClick={() => setShowSaveMenu(!showSaveMenu)}
-                      className="px-1 border-l border-blue-200 text-blue-700 hover:bg-blue-200 rounded-r-lg flex items-center justify-center"
+                      className="px-1 border-l border-blue-500/30 text-blue-300 hover:bg-blue-800/40 rounded-r-lg flex items-center justify-center cursor-pointer"
                   >
                       <ChevronDown className="w-3 h-3" />
                   </button>
@@ -164,10 +164,10 @@ const Sidebar: React.FC<SidebarProps> = ({
                   {showSaveMenu && (
                       <>
                           <div className="fixed inset-0 z-40" onClick={() => setShowSaveMenu(false)}></div>
-                          <div className="absolute top-full mt-1 left-0 w-40 bg-white shadow-xl rounded-lg border border-slate-100 py-1 z-50 flex flex-col animate-in fade-in zoom-in-95 duration-100">
+                          <div className="absolute top-full mt-1 left-0 w-40 bg-slate-900 shadow-xl rounded-lg border border-slate-800 py-1 z-50 flex flex-col animate-in fade-in zoom-in-95 duration-100">
                               <button 
                                   onClick={() => { onSaveFileAs(); setShowSaveMenu(false); }}
-                                  className="px-4 py-2 text-left text-xs text-slate-700 hover:bg-slate-50 flex items-center gap-2"
+                                  className="px-4 py-2 text-left text-xs text-slate-200 hover:bg-slate-800 flex items-center gap-2"
                               >
                                   <Save className="w-3 h-3" /> Guardar como...
                               </button>
@@ -178,7 +178,7 @@ const Sidebar: React.FC<SidebarProps> = ({
 
               <button 
                   onClick={onLoadFile}
-                  className="flex-1 flex items-center justify-center gap-2 p-2 bg-yellow-50 text-yellow-700 hover:bg-yellow-100 rounded-lg text-xs font-medium transition-colors border border-yellow-200"
+                  className="flex-1 flex items-center justify-center gap-2 p-2 bg-amber-950/40 text-amber-300 hover:bg-amber-900/40 rounded-lg text-xs font-medium transition-colors border border-amber-500/30 cursor-pointer"
                   title="Cargar Copia de Seguridad"
               >
                   <FolderOpen className="w-4 h-4" /> Cargar
@@ -187,7 +187,7 @@ const Sidebar: React.FC<SidebarProps> = ({
             
             <button 
                 onClick={onOpenCloud}
-                className="w-full flex items-center justify-center gap-2 p-2 bg-indigo-50 text-indigo-700 hover:bg-indigo-100 rounded-lg text-xs font-medium transition-colors border border-indigo-200 shadow-sm"
+                className="w-full flex items-center justify-center gap-2 p-2 bg-purple-950/40 text-purple-300 hover:bg-purple-900/40 rounded-lg text-xs font-medium transition-colors border border-purple-500/30 shadow-sm cursor-pointer"
                 title="Sincronizar en la Nube"
             >
                 <Cloud className="w-4 h-4" /> Sincronizar / Nube
@@ -199,7 +199,7 @@ const Sidebar: React.FC<SidebarProps> = ({
         <nav className="flex-1 overflow-y-auto px-3 py-4 space-y-6">
           {/* Vistas Principales */}
           <div>
-            <div className="px-3 mb-2 text-xs font-bold text-slate-400 uppercase tracking-wider">
+            <div className="px-3 mb-2 text-xs font-bold text-slate-500 uppercase tracking-wider">
               Vistas
             </div>
             <ul className="space-y-1">
@@ -209,12 +209,12 @@ const Sidebar: React.FC<SidebarProps> = ({
                   <li key={item.id}>
                     <button 
                       onClick={() => handleNavigation(item.id)}
-                      className={`w-full flex items-center gap-3 px-3 py-2.5 rounded-lg text-sm font-medium transition-all duration-200
+                      className={`w-full flex items-center gap-3 px-3 py-2.5 rounded-lg text-sm font-medium transition-all duration-200 cursor-pointer
                         ${isActive 
-                          ? 'bg-brand-50 text-brand-700 shadow-sm' 
-                          : 'text-slate-600 hover:bg-slate-50 hover:text-slate-900'}`}
+                          ? 'bg-purple-600/25 text-purple-300 border border-purple-500/40 shadow-sm' 
+                          : 'text-slate-400 hover:bg-slate-850 hover:text-white'}`}
                     >
-                      <item.icon className={`w-5 h-5 ${isActive ? 'text-brand-600' : 'text-slate-400'}`} />
+                      <item.icon className={`w-5 h-5 ${isActive ? 'text-purple-300' : 'text-slate-400'}`} />
                       {item.label}
                     </button>
                   </li>
@@ -229,7 +229,7 @@ const Sidebar: React.FC<SidebarProps> = ({
               <span className="text-xs font-bold text-slate-400 uppercase tracking-wider">Listas</span>
               <button 
                 onClick={() => setIsAdding(true)}
-                className="text-slate-400 hover:text-brand-600 p-0.5 rounded transition-colors opacity-0 group-hover:opacity-100 focus:opacity-100"
+                className="text-slate-400 hover:text-purple-400 p-0.5 rounded transition-colors opacity-0 group-hover:opacity-100 focus:opacity-100 cursor-pointer"
                 title="Nueva lista"
               >
                 <Plus className="w-4 h-4" />
@@ -246,19 +246,19 @@ const Sidebar: React.FC<SidebarProps> = ({
                   <li key={listName} className="group relative">
                     <button 
                       onClick={() => handleNavigation(listName)}
-                      className={`w-full flex items-center justify-between px-3 py-2.5 rounded-lg text-sm font-medium transition-all duration-200
+                      className={`w-full flex items-center justify-between px-3 py-2.5 rounded-lg text-sm font-medium transition-all duration-200 cursor-pointer
                         ${isActive 
-                          ? 'bg-brand-50 shadow-sm' 
-                          : 'hover:bg-slate-50'}`}
+                          ? 'bg-purple-600/25 border border-purple-500/40 shadow-sm' 
+                          : 'hover:bg-slate-800/60'}`}
                     >
                       <div className="flex items-center gap-3 truncate">
                         <Icon 
                            className="w-5 h-5 flex-shrink-0" 
-                           style={{ color: customColor || (isActive ? '#2563eb' : '#94a3b8') }}
+                           style={{ color: customColor || (isActive ? '#c084fc' : '#94a3b8') }}
                         />
                         <span 
                            className="truncate"
-                           style={{ color: customColor || (isActive ? '#1d4ed8' : '#475569') }}
+                           style={{ color: customColor || (isActive ? '#f3e8ff' : '#cbd5e1') }}
                         >
                             {listName}
                         </span>
@@ -269,7 +269,7 @@ const Sidebar: React.FC<SidebarProps> = ({
                         e.stopPropagation();
                         onDeleteList(listName);
                       }}
-                      className="absolute right-2 top-1/2 -translate-y-1/2 p-1.5 text-slate-300 hover:text-red-500 hover:bg-red-50 rounded-md opacity-0 group-hover:opacity-100 transition-all"
+                      className="absolute right-2 top-1/2 -translate-y-1/2 p-1.5 text-slate-500 hover:text-red-400 hover:bg-red-950/40 rounded-md opacity-0 group-hover:opacity-100 transition-all cursor-pointer"
                       title="Eliminar lista"
                     >
                       <Trash2 className="w-3.5 h-3.5" />
@@ -280,19 +280,19 @@ const Sidebar: React.FC<SidebarProps> = ({
               
               {isAdding && (
                 <li className="px-1 py-1">
-                  <form onSubmit={handleAddSubmit} className="flex items-center gap-2 p-2 bg-slate-50 rounded-lg border border-brand-200 shadow-sm animate-in fade-in zoom-in-95 duration-200">
+                  <form onSubmit={handleAddSubmit} className="flex items-center gap-2 p-2 bg-slate-900 rounded-lg border border-purple-500/40 shadow-sm animate-in fade-in zoom-in-95 duration-200">
                     <input
                       autoFocus
                       type="text"
                       value={newListName}
                       onChange={(e) => setNewListName(e.target.value)}
                       placeholder="Nombre..."
-                      className="w-full bg-transparent text-sm text-slate-800 placeholder-slate-400 focus:outline-none min-w-0"
+                      className="w-full bg-transparent text-sm text-slate-100 placeholder-slate-500 focus:outline-none min-w-0"
                     />
-                    <button type="submit" className="p-1 bg-brand-500 text-white rounded hover:bg-brand-600">
+                    <button type="submit" className="p-1 bg-purple-600 text-white rounded hover:bg-purple-500 cursor-pointer">
                       <Check className="w-3 h-3" />
                     </button>
-                    <button type="button" onClick={() => setIsAdding(false)} className="p-1 text-slate-400 hover:text-red-500">
+                    <button type="button" onClick={() => setIsAdding(false)} className="p-1 text-slate-400 hover:text-red-400 cursor-pointer">
                       <X className="w-3 h-3" />
                     </button>
                   </form>
@@ -303,7 +303,7 @@ const Sidebar: React.FC<SidebarProps> = ({
             {!isAdding && (
                <button 
                onClick={() => setIsAdding(true)}
-               className="w-full mt-2 flex items-center gap-2 px-3 py-2 text-sm text-slate-400 hover:text-brand-600 hover:bg-brand-50 rounded-lg border border-dashed border-slate-200 hover:border-brand-200 transition-all"
+               className="w-full mt-2 flex items-center gap-2 px-3 py-2 text-sm text-slate-400 hover:text-purple-300 hover:bg-slate-800/60 rounded-lg border border-dashed border-slate-800 hover:border-purple-500/40 transition-all cursor-pointer"
              >
                <Plus className="w-4 h-4" />
                <span>Añadir lista</span>
@@ -312,11 +312,11 @@ const Sidebar: React.FC<SidebarProps> = ({
           </div>
 
           {/* Utilidades Secundarias (Opcionales / Colapsables) */}
-          <div className="pt-2 border-t border-slate-100">
+          <div className="pt-2 border-t border-slate-800">
             <button 
               type="button"
               onClick={() => setShowUtilities(!showUtilities)}
-              className="w-full flex items-center justify-between px-3 py-1.5 text-xs font-bold text-slate-400 hover:text-slate-600 uppercase tracking-wider transition-colors"
+              className="w-full flex items-center justify-between px-3 py-1.5 text-xs font-bold text-slate-500 hover:text-slate-300 uppercase tracking-wider transition-colors cursor-pointer"
             >
               <span>Otras Vistas</span>
               <ChevronDown className={`w-3.5 h-3.5 transition-transform duration-200 ${showUtilities ? 'rotate-180' : ''}`} />
@@ -329,12 +329,12 @@ const Sidebar: React.FC<SidebarProps> = ({
                     <li key={item.id}>
                       <button 
                         onClick={() => handleNavigation(item.id)}
-                        className={`w-full flex items-center gap-3 px-3 py-2 rounded-lg text-xs font-medium transition-all duration-200
+                        className={`w-full flex items-center gap-3 px-3 py-2 rounded-lg text-xs font-medium transition-all duration-200 cursor-pointer
                           ${isActive 
-                            ? 'bg-purple-50 text-purple-700 shadow-sm' 
-                            : 'text-slate-600 hover:bg-slate-50 hover:text-slate-900'}`}
+                            ? 'bg-purple-600/25 text-purple-300 border border-purple-500/40 shadow-sm' 
+                            : 'text-slate-400 hover:bg-slate-800/60 hover:text-slate-200'}`}
                       >
-                        <item.icon className={`w-4 h-4 ${isActive ? 'text-purple-600' : 'text-slate-400'}`} />
+                        <item.icon className={`w-4 h-4 ${isActive ? 'text-purple-400' : 'text-slate-500'}`} />
                         {item.label}
                       </button>
                     </li>
@@ -345,12 +345,12 @@ const Sidebar: React.FC<SidebarProps> = ({
           </div>
         </nav>
 
-        <div className="p-4 border-t border-slate-100 space-y-1">
+        <div className="p-4 border-t border-slate-800 space-y-1">
            <button 
              onClick={handleLogout}
-             className="w-full flex items-center gap-3 px-3 py-2 rounded-lg text-sm font-medium text-slate-600 hover:bg-slate-50 transition-colors"
+             className="w-full flex items-center gap-3 px-3 py-2 rounded-lg text-sm font-medium text-slate-400 hover:text-slate-200 hover:bg-slate-800/60 transition-colors cursor-pointer"
            >
-            <LogOut className="w-5 h-5 text-slate-400" />
+            <LogOut className="w-5 h-5 text-slate-500" />
             Cerrar Sesión
           </button>
         </div>

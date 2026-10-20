@@ -15,9 +15,8 @@ import CloudSyncModal from './ListasRemb/CloudSyncModal';
 import { Task, Contact, StickyNote, StoredImage, SafeItem, LinkItem } from './ListasRemb/types';
 import { INITIAL_TASKS, DEFAULT_LISTS, CATEGORY_ICONS } from './ListasRemb/constants';
 import { fetchListasFromSupabase, saveListasToSupabase } from './ListasRemb/services/listasSyncService';
-import EventIdeaRecorder from './ListasRemb/EventIdeaRecorder';
 import { exportDataAsJsonFile } from '../utils/cotizadorExportUtils';
-import { Search, Plus, Menu, Bot, Calendar as CalIcon, Calculator as CalcIcon, Camera, MessageCircle, Eye, EyeOff, Palette, GripHorizontal, AlignLeft, Cloud } from 'lucide-react';
+import { Search, Plus, Menu, Camera, Eye, EyeOff, Palette, GripHorizontal, AlignLeft, Cloud } from 'lucide-react';
 
 export const ListasTab: React.FC = () => {
   const [tasks, setTasks] = useState<Task[]>(INITIAL_TASKS);
@@ -644,7 +643,7 @@ export const ListasTab: React.FC = () => {
     : lists.filter(l => l === filter);
 
   return (
-    <div className="flex h-[calc(100vh-140px)] min-h-[720px] bg-slate-50 text-slate-800 font-sans overflow-hidden rounded-2xl border border-slate-200 shadow-2xl relative">
+    <div className="flex h-[calc(100vh-140px)] min-h-[720px] bg-[#0b0f19] text-slate-100 font-sans overflow-hidden rounded-2xl border border-slate-800/80 shadow-2xl relative">
       <Sidebar 
         isOpen={isSidebarOpen} 
         setIsOpen={setIsSidebarOpen}
@@ -677,74 +676,46 @@ export const ListasTab: React.FC = () => {
       <div className="flex-1 flex flex-col h-full relative min-w-0">
         
         {/* Header */}
-        <header className="h-16 bg-white border-b border-slate-200 flex items-center justify-between px-4 lg:px-8 z-10 shrink-0">
+        <header className="h-16 bg-[#0f172a] border-b border-slate-800 flex items-center justify-between px-4 lg:px-8 z-10 shrink-0">
           <div className="flex items-center gap-4 flex-1">
             <button 
-              className="lg:hidden p-2 text-slate-600 hover:bg-slate-100 rounded-lg"
+              className="lg:hidden p-2 text-slate-400 hover:bg-slate-800 rounded-lg"
               onClick={() => setIsSidebarOpen(true)}
             >
               <Menu className="w-6 h-6" />
             </button>
             
-            {/* Left-Aligned Utilities */}
-            <div className="flex items-center gap-1 border-r border-slate-200 pr-4 mr-2">
-                <button 
-                  className={`p-2 rounded-full transition-all duration-300 relative ${isAIModalOpen ? 'text-brand-600 bg-brand-50' : 'text-slate-400 hover:text-brand-600 hover:bg-brand-50'}`}
-                  onClick={() => setIsAIModalOpen(!isAIModalOpen)}
-                  title="Asistente IA"
-                >
-                  <Bot className="w-6 h-6" />
-                </button>
+            {/* Left-Aligned Utilities: Solo cámara para escanear pendientes */}
+            <div className="flex items-center gap-1 border-r border-slate-800 pr-3 mr-2">
                 <button 
                   onClick={() => setIsImageAnalyzerOpen(!isImageAnalyzerOpen)}
-                  className={`p-2 rounded-full transition-colors ${isImageAnalyzerOpen ? 'bg-brand-100 text-brand-700' : 'text-slate-400 hover:text-brand-600 hover:bg-slate-100'}`}
+                  className={`p-2 rounded-xl transition-all ${isImageAnalyzerOpen ? 'bg-purple-600/30 text-purple-300 border border-purple-500/40' : 'text-slate-400 hover:text-white hover:bg-slate-800/70'}`}
                   title="Escanear Pendientes"
                 >
                   <Camera className="w-5 h-5" />
                 </button>
-                <button 
-                  onClick={() => setIsCalculatorOpen(!isCalculatorOpen)}
-                  className={`p-2 rounded-full transition-colors ${isCalculatorOpen ? 'bg-brand-100 text-brand-700' : 'text-slate-400 hover:text-brand-600 hover:bg-slate-100'}`}
-                  title="Calculadora"
-                >
-                  <CalcIcon className="w-5 h-5" />
-                </button>
-                <button 
-                  onClick={() => setIsCalendarOpen(!isCalendarOpen)}
-                  className={`p-2 rounded-full transition-colors ${isCalendarOpen ? 'bg-brand-100 text-brand-700' : 'text-slate-400 hover:text-brand-600 hover:bg-slate-100'}`}
-                  title="Calendario"
-                >
-                  <CalIcon className="w-5 h-5" />
-                </button>
-                <button 
-                  onClick={() => window.open('https://web.whatsapp.com', '_blank')}
-                  className="p-2 rounded-full transition-colors text-[#00a884] hover:bg-[#00a884]/10"
-                  title="Ir a WhatsApp Web"
-                >
-                  <MessageCircle className="w-5 h-5" />
-                </button>
             </div>
 
             <div className="relative hidden md:block w-64">
-              <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-400" />
+              <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-500" />
               <input 
                 type="text" 
                 placeholder="Buscar tareas..." 
-                className="w-full pl-10 pr-4 py-2 bg-slate-50 border border-slate-200 rounded-lg text-sm text-slate-800 focus:outline-none focus:border-brand-500 transition-all"
+                className="w-full pl-10 pr-4 py-2 bg-slate-900 border border-slate-800 rounded-xl text-sm text-slate-200 placeholder:text-slate-500 focus:outline-none focus:border-purple-500 transition-all"
                 value={searchQuery}
                 onChange={(e) => setSearchQuery(e.target.value)}
               />
             </div>
 
             {/* Quick Status Filter Tabs */}
-            <div className="flex items-center gap-1 bg-slate-100 p-0.5 rounded-lg border border-slate-200">
+            <div className="flex items-center gap-1 bg-slate-900 p-1 rounded-xl border border-slate-800">
               <button
                 type="button"
                 onClick={() => setTaskStatusFilter('all')}
-                className={`px-2.5 py-1 text-xs font-semibold rounded-md transition-all ${
+                className={`px-2.5 py-1 text-xs font-semibold rounded-lg transition-all ${
                   taskStatusFilter === 'all'
-                    ? 'bg-white text-slate-800 shadow-xs'
-                    : 'text-slate-500 hover:text-slate-800'
+                    ? 'bg-slate-800 text-white shadow-xs'
+                    : 'text-slate-400 hover:text-slate-200'
                 }`}
               >
                 Todas
@@ -752,10 +723,10 @@ export const ListasTab: React.FC = () => {
               <button
                 type="button"
                 onClick={() => setTaskStatusFilter('pending')}
-                className={`px-2.5 py-1 text-xs font-semibold rounded-md transition-all ${
+                className={`px-2.5 py-1 text-xs font-semibold rounded-lg transition-all ${
                   taskStatusFilter === 'pending'
                     ? 'bg-blue-600 text-white shadow-xs'
-                    : 'text-slate-500 hover:text-slate-800'
+                    : 'text-slate-400 hover:text-slate-200'
                 }`}
               >
                 Pendientes
@@ -763,10 +734,10 @@ export const ListasTab: React.FC = () => {
               <button
                 type="button"
                 onClick={() => setTaskStatusFilter('completed')}
-                className={`px-2.5 py-1 text-xs font-semibold rounded-md transition-all ${
+                className={`px-2.5 py-1 text-xs font-semibold rounded-lg transition-all ${
                   taskStatusFilter === 'completed'
                     ? 'bg-emerald-600 text-white shadow-xs'
-                    : 'text-slate-500 hover:text-slate-800'
+                    : 'text-slate-400 hover:text-slate-200'
                 }`}
               >
                 Completadas
@@ -774,11 +745,11 @@ export const ListasTab: React.FC = () => {
             </div>
           </div>
 
-          <div className="flex items-center gap-2 text-xs text-slate-500">
+          <div className="flex items-center gap-2 text-xs text-slate-400">
             <span className={`inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full font-medium border ${
               cloudStatus === 'syncing'
-                ? 'bg-blue-50 text-blue-600 border-blue-200'
-                : 'bg-emerald-50 text-emerald-600 border-emerald-200'
+                ? 'bg-blue-950/60 text-blue-400 border-blue-800/60'
+                : 'bg-emerald-950/60 text-emerald-400 border-emerald-800/60'
             }`}>
               <Cloud className={`w-3.5 h-3.5 ${cloudStatus === 'syncing' ? 'animate-pulse' : ''}`} />
               {cloudStatus === 'syncing' ? 'Sincronizando...' : 'Conectado a Listas Remb'}
@@ -787,20 +758,7 @@ export const ListasTab: React.FC = () => {
         </header>
 
         {/* Board / Views Area */}
-        <main className="flex-1 overflow-y-auto bg-slate-100/50 relative flex flex-col min-w-0">
-           
-           {/* Event & Idea Recorder with Speech & AI */}
-           {filter !== 'contacts' && filter !== 'notes' && filter !== 'storage' && filter !== 'safe' && filter !== 'links' && (
-             <div className="p-4 lg:p-6 pb-0 shrink-0">
-               <EventIdeaRecorder 
-                 availableCategories={lists}
-                 onAddIdea={({ title, category, notes, priority }) => {
-                   addTask(title, category, undefined, notes, priority);
-                 }}
-               />
-             </div>
-           )}
-
+        <main className="flex-1 overflow-y-auto bg-[#070a12] relative flex flex-col min-w-0">
            <div className="flex-1 overflow-x-auto min-h-0">
            
            {filter === 'contacts' ? (
@@ -864,16 +822,16 @@ export const ListasTab: React.FC = () => {
                     });
 
                     const customColor = listColors[listName];
-                    const headerStyle = customColor ? { backgroundColor: customColor, color: 'white', borderColor: customColor } : { backgroundColor: 'white' };
-                    const columnStyle = customColor ? { backgroundColor: `${customColor}15`, borderColor: customColor } : { backgroundColor: '#f8fafc' };
-                    const textStyle = customColor ? { color: 'white' } : { color: '#334155' };
+                    const headerStyle = customColor ? { backgroundColor: customColor, color: 'white', borderColor: customColor } : { backgroundColor: '#1e293b' };
+                    const columnStyle = customColor ? { backgroundColor: `${customColor}18`, borderColor: `${customColor}50` } : { backgroundColor: '#0f172a' };
+                    const textStyle = customColor ? { color: 'white' } : { color: '#f8fafc' };
                     const iconStyle = customColor ? { color: 'white' } : {};
                     const isDragTarget = isDraggingList && dragOverListId === listName;
 
                     return (
                         <div 
                           key={listName} 
-                          className={`w-80 flex flex-col h-full rounded-2xl border shadow-sm transition-all duration-200 ${isDragTarget ? 'border-brand-500 ring-2 ring-brand-200 ring-opacity-50 scale-[1.01]' : 'border-slate-200'}`}
+                          className={`w-80 flex flex-col h-full rounded-2xl border shadow-lg transition-all duration-200 ${isDragTarget ? 'border-purple-500 ring-2 ring-purple-500/40 scale-[1.01]' : 'border-slate-800'}`}
                           style={columnStyle}
                           draggable={!isEditing}
                           onDragStart={(e) => handleDragStart(e, listName, 'LIST')}
@@ -887,13 +845,13 @@ export const ListasTab: React.FC = () => {
                           onDrop={(e) => handleListDrop(e, listName)}
                         >
                             {/* Column Header */}
-                            <div className="p-4 border-b border-slate-100 flex flex-col gap-2 rounded-t-xl sticky top-0 group" style={headerStyle}>
+                            <div className="p-4 border-b border-slate-800 flex flex-col gap-2 rounded-t-xl sticky top-0 group" style={headerStyle}>
                                 <div className="flex items-center justify-between">
                                     <div className="flex items-center gap-2 font-bold w-full" style={textStyle}>
                                         <div className="cursor-grab active:cursor-grabbing hover:opacity-70 flex-shrink-0">
                                           <GripHorizontal className="w-4 h-4" />
                                         </div>
-                                        <div className={`p-1.5 rounded-md flex-shrink-0 ${customColor ? 'bg-white/20' : 'bg-slate-100'}`}>
+                                        <div className={`p-1.5 rounded-md flex-shrink-0 ${customColor ? 'bg-white/20' : 'bg-slate-800 text-slate-300'}`}>
                                           <Icon className="w-4 h-4" style={iconStyle} />
                                         </div>
                                         
@@ -906,12 +864,12 @@ export const ListasTab: React.FC = () => {
                                                     onChange={(e) => setEditingListName(e.target.value)}
                                                     onBlur={saveListRename}
                                                     onKeyDown={(e) => e.key === 'Enter' && saveListRename()}
-                                                    className="w-full bg-white text-slate-800 text-sm px-2 py-1 rounded shadow-sm focus:outline-none focus:ring-2 focus:ring-brand-400"
+                                                    className="w-full bg-slate-800 text-white border border-slate-700 text-sm px-2 py-1 rounded shadow-sm focus:outline-none focus:ring-2 focus:ring-purple-400"
                                                 />
                                             </div>
                                         ) : (
                                             <span 
-                                                className="truncate max-w-[120px] cursor-text hover:bg-black/5 rounded px-1 transition-colors" 
+                                                className="truncate max-w-[120px] cursor-text hover:bg-white/10 rounded px-1 transition-colors" 
                                                 title={listName}
                                                 onClick={(e) => {
                                                     e.stopPropagation();
@@ -996,7 +954,7 @@ export const ListasTab: React.FC = () => {
                                     />
                                 ))}
                                 {columnTasks.length === 0 && (
-                                    <div className={`h-24 border-2 border-dashed rounded-xl flex items-center justify-center text-sm italic ${customColor ? 'border-black/5 text-black/30' : 'border-slate-200 text-slate-400'}`}>
+                                    <div className={`h-24 border-2 border-dashed rounded-xl flex items-center justify-center text-sm italic ${customColor ? 'border-white/10 text-white/30' : 'border-slate-800 text-slate-500'}`}>
                                         Arrastra tareas aquí
                                     </div>
                                 )}
@@ -1012,7 +970,7 @@ export const ListasTab: React.FC = () => {
                           const name = prompt("Nombre de la nueva lista:");
                           if (name) handleAddList(name);
                       }}
-                      className="flex items-center gap-2 text-slate-400 hover:text-brand-600 hover:bg-slate-200/50 px-6 py-3 rounded-xl transition-all border border-transparent hover:border-slate-300 border-dashed"
+                      className="flex items-center gap-2 text-slate-400 hover:text-purple-400 hover:bg-slate-800/60 px-6 py-3 rounded-xl transition-all border border-slate-800 hover:border-purple-500/40 border-dashed"
                     >
                         <Plus className="w-5 h-5" />
                         Nueva Lista
