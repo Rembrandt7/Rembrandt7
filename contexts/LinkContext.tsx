@@ -5,6 +5,7 @@ import { toast } from 'sonner';
 import { normalizeAndDeduplicateNotes } from '../utils/noteUtils';
 import { normalizeAndDeduplicateLinksBar } from '../utils/linkCategoryUtils';
 import { sortQuickAccessByUsage } from '../utils/quickAccessUtils';
+import { isMobileDevice } from '../utils/deviceUtils';
 
 const INITIAL_TABS: TabConfig[] = [
     { id: 'email-gen', label: 'Email', type: 'system', componentKey: 'Generador de Email', isVisible: true, icon: 'Mail' },
@@ -802,7 +803,13 @@ export const LinkProvider: React.FC<{ children: React.ReactNode }> = ({ children
   const [isEditing, setIsEditing] = useState(false);
   const [syncStatus, setSyncStatus] = useState<SyncStatus>('synced');
   const lastUploadedJsonRef = useRef<string>('');
-  const [activeTabId, setActiveTabId] = useState<string>('email-gen');
+  const [activeTabId, setActiveTabId] = useState<string>(() => {
+    // When on mobile / cell phone, land on Listas by default for immediate access to notes & ideas
+    if (typeof window !== 'undefined' && isMobileDevice()) {
+      return 'listas';
+    }
+    return 'email-gen';
+  });
   const [isShoppingEditMode, setShoppingEditMode] = useState(false);
   const [isNotesEditMode, setNotesEditMode] = useState(false);
   const [isEstudiosEditMode, setEstudiosEditMode] = useState(false);

@@ -6,16 +6,24 @@ import { toast } from 'sonner';
 interface EventIdeaRecorderProps {
   onAddIdea: (idea: { title: string; category: string; notes?: string; priority?: 'Alta' | 'Media' | 'Baja' }) => void;
   availableCategories: string[];
+  autoStart?: boolean;
 }
 
 export const EventIdeaRecorder: React.FC<EventIdeaRecorderProps> = ({
   onAddIdea,
-  availableCategories
+  availableCategories,
+  autoStart = false
 }) => {
   const [inputText, setInputText] = useState('');
   const [isRecording, setIsRecording] = useState(false);
   const [recordingSeconds, setRecordingSeconds] = useState(0);
   const [isStructuring, setIsStructuring] = useState(false);
+  
+  // Synchronous ref to avoid stale closures during voice dictation
+  const inputTextRef = useRef('');
+  useEffect(() => {
+    inputTextRef.current = inputText;
+  }, [inputText]);
   
   // Structured result ready to review/save
   const [structuredIdea, setStructuredIdea] = useState<{
@@ -55,9 +63,9 @@ export const EventIdeaRecorder: React.FC<EventIdeaRecorderProps> = ({
           setInputText(prev => {
             // Append or replace smoothly
             const base = prev.trim();
-            if (!base) return fullText;
-            if (base.endsWith(fullText)) return base;
-            return `${base} ${fullText}`;
+            const updated = !base ? fullText : base.endsWith(fullText) ? base : `${base} ${fullText}`;
+            inputTextRef.current = updated;
+            return updated;
           });
         }
       };
@@ -86,6 +94,16 @@ export const EventIdeaRecorder: React.FC<EventIdeaRecorderProps> = ({
     };
   }, []);
 
+  // Auto-start recording if requested (e.g. triggered on mobile tap)
+  useEffect(() => {
+    if (autoStart && recognitionRef.current && !isRecording) {
+      const t = setTimeout(() => {
+        startRecording();
+      }, 250);
+      return () => clearTimeout(t);
+    }
+  }, [autoStart]);
+
   const startRecording = () => {
     if (!recognitionRef.current) {
       toast.error('Tu navegador no soporta dictado por voz directo. Puedes escribir tu idea en el campo.');
@@ -113,6 +131,20 @@ export const EventIdeaRecorder: React.FC<EventIdeaRecorderProps> = ({
     }
     setIsRecording(false);
     clearInterval(timerRef.current);
+
+    // Auto structure idea if we captured text
+    const textToProcess = inputTextRef.current.trim();
+    if (textToProcess) {
+      setTimeout(() => {
+        try {
+          const structured = classifyAndStructure(textToProcess);
+          setStructuredIdea(structured);
+          toast.success('¡Idea organizada y clasificada! Revisa y confirma el guardado.');
+        } catch (e) {
+          console.error(e);
+        }
+      }, 300);
+    }
   };
 
   const toggleRecording = () => {
@@ -382,6 +414,43 @@ export const EventIdeaRecorder: React.FC<EventIdeaRecorderProps> = ({
               {isStructuring ? <Loader2 size={18} className="animate-spin" /> : <Sparkles size={18} />}
             </button>
           </div>
+        </div>
+
+        {/* Touch-Friendly Dictation Action Bar (Ideal for cell phones & quick input) */}
+        <div className="flex flex-col sm:flex-row gap-2">
+          <button
+            type="button"
+            onClick={toggleRecording}
+            className={`w-full py-2.5 sm:py-3 px-4 rounded-xl font-bold flex items-center justify-center gap-2.5 transition-all shadow-md cursor-pointer ${
+              isRecording
+                ? 'bg-gradient-to-r from-rose-600 to-red-600 text-white animate-pulse shadow-rose-600/40 ring-2 ring-rose-400'
+                : 'bg-gradient-to-r from-purple-600 via-pink-600 to-indigo-600 hover:from-purple-500 hover:to-indigo-500 text-white shadow-purple-600/30 active:scale-[0.98]'
+            }`}
+          >
+            {isRecording ? (
+              <>
+                <MicOff size={19} className="animate-bounce shrink-0" />
+                <span className="text-xs sm:text-sm">Detener Dictado ({recordingSeconds}s)</span>
+              </>
+            ) : (
+              <>
+                <Mic size={19} className="text-amber-300 animate-pulse shrink-0" />
+                <span className="text-xs sm:text-sm">Tocar para Dictar Apunte por Voz</span>
+              </>
+            )}
+          </button>
+
+          {inputText.trim() && !structuredIdea && (
+            <button
+              type="button"
+              onClick={handleStructureIdea}
+              disabled={isStructuring}
+              className="py-2.5 sm:py-3 px-4 rounded-xl bg-slate-800 hover:bg-slate-700 text-purple-200 border border-purple-500/30 text-xs sm:text-sm font-semibold flex items-center justify-center gap-2 transition-all cursor-pointer shrink-0"
+            >
+              {isStructuring ? <Loader2 size={16} className="animate-spin" /> : <Sparkles size={16} className="text-pink-400" />}
+              <span>Organizar con IA</span>
+            </button>
+          )}
         </div>
 
         {/* Structured Result Card Preview (when generated) */}

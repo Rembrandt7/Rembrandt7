@@ -1,5 +1,5 @@
 
-import React, { useState, useCallback, useEffect, lazy, Suspense } from 'react';
+import React, { useState, useCallback, useEffect, useRef, lazy, Suspense } from 'react';
 import { 
   Mail, 
   Image as ImageIcon, 
@@ -273,7 +273,7 @@ const TabLoadingFallback: React.FC<{ message?: string }> = ({ message = 'Cargand
 
 const MainLayout: React.FC = () => {
   const { config, updateConfig, isEditing, toggleEditing, saveToSupabase, fetchConfigFromSupabaseManual, updateNotifications, activeTabId, setActiveTabId, syncStatus } = useLinks();
-  const { isFoldUnfolded } = useDeviceLayout();
+  const { isMobile, isFoldUnfolded } = useDeviceLayout();
   const [previousActiveTabId, setPreviousActiveTabId] = useState<string>('email-gen');
 
   const isDbTab = (t: { id?: string; label?: string; componentKey?: string }) => {
@@ -321,6 +321,19 @@ const MainLayout: React.FC = () => {
   const [leftSidebarOpen, setLeftSidebarOpen] = useState(window.innerWidth >= 1024);
   const [isAssistantOpen, setIsAssistantOpen] = useState(false);
   const [isQuickIdeaOpen, setIsQuickIdeaOpen] = useState(false);
+  const [quickIdeaAutoStart, setQuickIdeaAutoStart] = useState(false);
+  const hasAutoOpenedMobileRef = useRef(false);
+
+  // When on mobile (celular), auto-deploy audio apuntes recorder on initial load as requested
+  useEffect(() => {
+    if (isMobile && !hasAutoOpenedMobileRef.current) {
+      hasAutoOpenedMobileRef.current = true;
+      const timer = setTimeout(() => {
+        setIsQuickIdeaOpen(true);
+      }, 400);
+      return () => clearTimeout(timer);
+    }
+  }, [isMobile]);
   const [panchoState, setPanchoState] = useState<PanchoState>('idle');
   const [assistantMessages, setAssistantMessages] = useState<Message[]>([]);
 
@@ -878,7 +891,10 @@ const MainLayout: React.FC = () => {
                       <motion.button 
                         whileHover={{ scale: 1.05 }} 
                         whileTap={{ scale: 0.95 }} 
-                        onClick={() => setIsQuickIdeaOpen(true)} 
+                        onClick={() => {
+                          setQuickIdeaAutoStart(true);
+                          setIsQuickIdeaOpen(true);
+                        }} 
                         className="flex items-center gap-1.5 px-3 py-1.5 rounded-xl bg-gradient-to-r from-purple-600/30 via-pink-600/25 to-amber-500/20 hover:from-purple-600/50 hover:to-pink-600/40 border border-purple-500/40 text-purple-200 hover:text-white transition-all shadow-md shadow-purple-900/20 mr-1" 
                         title="Captura Rápida de Ideas y Voz (Alt + I)"
                       >
@@ -1075,6 +1091,39 @@ const MainLayout: React.FC = () => {
                           )}
                       </nav>
 
+                      {/* MOBILE FIRST ACTION: Botón de Audio para Apuntes y Dictado Rápido a Listas Remb */}
+                      <div className="flex lg:hidden w-full mb-3 px-1">
+                        <div className="w-full bg-gradient-to-r from-purple-950/85 via-slate-900/90 to-indigo-950/85 border border-purple-500/40 rounded-2xl p-2.5 sm:p-3 shadow-[0_4px_25px_rgba(168,85,247,0.25)] flex items-center justify-between gap-2.5 backdrop-blur-md">
+                          <div className="flex items-center gap-2.5 min-w-0">
+                            <div className="w-10 h-10 rounded-xl bg-gradient-to-tr from-purple-600 via-pink-600 to-amber-500 p-0.5 shadow-md shadow-pink-500/30 shrink-0">
+                              <div className="w-full h-full bg-slate-950 rounded-[10px] flex items-center justify-center">
+                                <Mic size={20} className="text-pink-400 animate-pulse" />
+                              </div>
+                            </div>
+                            <div className="min-w-0">
+                              <h3 className="text-xs sm:text-sm font-black text-white truncate flex items-center gap-1.5">
+                                Dictar Apunte a tus Listas
+                                <Sparkles size={13} className="text-amber-400 shrink-0" />
+                              </h3>
+                              <p className="text-[10px] text-zinc-400 truncate">
+                                Habla para organizar en Trabajo, Casa, Compras...
+                              </p>
+                            </div>
+                          </div>
+                          <button
+                            onClick={() => {
+                              setQuickIdeaAutoStart(true);
+                              setIsQuickIdeaOpen(true);
+                            }}
+                            className="shrink-0 px-3.5 py-2 bg-gradient-to-r from-purple-600 via-pink-600 to-indigo-600 active:scale-95 text-white font-bold text-xs rounded-xl shadow-lg shadow-purple-600/40 flex items-center gap-1.5 transition-all cursor-pointer border border-purple-400/30"
+                            title="Dictar Apunte por Voz"
+                          >
+                            <Mic size={15} className="text-amber-300 animate-pulse" />
+                            <span>Dictar</span>
+                          </button>
+                        </div>
+                      </div>
+
                       {/* MOBILE & GALAXY FOLD RESPONSIVE TABS BAR (< 1024px) */}
                       <nav className="flex lg:hidden w-full mb-3 px-1">
                         {isFoldUnfolded ? (
@@ -1178,7 +1227,11 @@ const MainLayout: React.FC = () => {
         {/* Global Quick Idea Modal */}
         <GlobalQuickIdeaModal 
           isOpen={isQuickIdeaOpen} 
-          onClose={() => setIsQuickIdeaOpen(false)} 
+          onClose={() => {
+            setIsQuickIdeaOpen(false);
+            setQuickIdeaAutoStart(false);
+          }}
+          autoStart={quickIdeaAutoStart} 
         />
 
         {/* Mobile Ergonomic Bottom Navigation Bar */}
@@ -1207,7 +1260,10 @@ const MainLayout: React.FC = () => {
 
           {/* Central Quick Voice & Idea Capture Button */}
           <button
-            onClick={() => setIsQuickIdeaOpen(true)}
+            onClick={() => {
+              setQuickIdeaAutoStart(true);
+              setIsQuickIdeaOpen(true);
+            }}
             className="flex flex-col items-center justify-center -mt-5 bg-gradient-to-tr from-purple-600 via-pink-600 to-amber-500 text-white p-3.5 rounded-full shadow-[0_0_20px_rgba(236,72,153,0.5)] border-2 border-gray-950 transform active:scale-95 transition-all"
             title="Grabar Idea Rápida"
           >
