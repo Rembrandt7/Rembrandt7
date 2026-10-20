@@ -16,7 +16,11 @@ import { Task, Contact, StickyNote, StoredImage, SafeItem, LinkItem } from './Li
 import { INITIAL_TASKS, DEFAULT_LISTS, CATEGORY_ICONS } from './ListasRemb/constants';
 import { fetchListasFromSupabase, saveListasToSupabase } from './ListasRemb/services/listasSyncService';
 import { exportDataAsJsonFile } from '../utils/cotizadorExportUtils';
-import { Search, Plus, Menu, Camera, Eye, EyeOff, Palette, GripHorizontal, AlignLeft, Cloud } from 'lucide-react';
+import { 
+  Search, Plus, Menu, Camera, Eye, EyeOff, Palette, GripHorizontal, AlignLeft, Cloud,
+  Save, FolderOpen, ChevronDown, LayoutDashboard, Calendar, CheckSquare, Users, StickyNote,
+  Archive, Lock, Link as LinkIcon, User, Check, X
+} from 'lucide-react';
 
 export const ListasTab: React.FC = () => {
   const [tasks, setTasks] = useState<Task[]>(INITIAL_TASKS);
@@ -42,7 +46,10 @@ export const ListasTab: React.FC = () => {
 
   const [filter, setFilter] = useState<string>('all'); 
   const [taskStatusFilter, setTaskStatusFilter] = useState<'all' | 'pending' | 'completed'>('all');
-  const [isSidebarOpen, setIsSidebarOpen] = useState(false);
+  const [isSidebarOpen, setIsSidebarOpen] = useState(() => typeof window !== 'undefined' ? window.innerWidth >= 1200 : false);
+  const [showHeaderSaveMenu, setShowHeaderSaveMenu] = useState(false);
+  const [isAddingListInBar, setIsAddingListInBar] = useState(false);
+  const [newListNameInBar, setNewListNameInBar] = useState('');
   const [searchQuery, setSearchQuery] = useState('');
   
   const [editingListId, setEditingListId] = useState<string | null>(null);
@@ -460,6 +467,26 @@ export const ListasTab: React.FC = () => {
     }
   };
 
+  const handleManualSync = async () => {
+    if (cloudStatus === 'syncing') return;
+    setCloudStatus('syncing');
+    try {
+      const cloudData = await fetchListasFromSupabase();
+      if (cloudData) {
+        applyImportedObject(cloudData);
+      }
+      const ts = Date.now();
+      lastSyncTimestampRef.current = ts;
+      localStorage.setItem('remb-backup-ts', String(ts));
+      const payload = buildBackupJson(ts);
+      await saveListasToSupabase(payload);
+    } catch (e) {
+      console.error('Error en sincronización manual:', e);
+    } finally {
+      setTimeout(() => setCloudStatus('synced'), 500);
+    }
+  };
+
   const handleSaveFile = async (saveAs: boolean = false) => {
     const now = new Date();
     setLastModified(getFormattedDate(now));
@@ -676,43 +703,44 @@ export const ListasTab: React.FC = () => {
       <div className="flex-1 flex flex-col h-full relative min-w-0">
         
         {/* Header */}
-        <header className="h-16 bg-[#0f172a] border-b border-slate-800 flex items-center justify-between px-4 lg:px-8 z-10 shrink-0">
-          <div className="flex items-center gap-4 flex-1">
+        <header className="h-14 bg-[#0f172a] border-b border-slate-800 flex items-center justify-between px-3 lg:px-6 z-20 shrink-0 gap-2 sm:gap-4">
+          <div className="flex items-center gap-2 sm:gap-3 flex-1 min-w-0">
             <button 
-              className="lg:hidden p-2 text-slate-400 hover:bg-slate-800 rounded-lg"
-              onClick={() => setIsSidebarOpen(true)}
+              className="p-1.5 text-slate-400 hover:text-white hover:bg-slate-800 rounded-lg transition-colors cursor-pointer shrink-0"
+              onClick={() => setIsSidebarOpen(prev => !prev)}
+              title="Mostrar / Ocultar panel lateral"
             >
-              <Menu className="w-6 h-6" />
+              <Menu className="w-5 h-5" />
             </button>
             
-            {/* Left-Aligned Utilities: Solo cámara para escanear pendientes */}
-            <div className="flex items-center gap-1 border-r border-slate-800 pr-3 mr-2">
+            {/* Left-Aligned Utilities: Cámara para escanear pendientes */}
+            <div className="flex items-center border-r border-slate-800 pr-2 shrink-0">
                 <button 
                   onClick={() => setIsImageAnalyzerOpen(!isImageAnalyzerOpen)}
-                  className={`p-2 rounded-xl transition-all ${isImageAnalyzerOpen ? 'bg-purple-600/30 text-purple-300 border border-purple-500/40' : 'text-slate-400 hover:text-white hover:bg-slate-800/70'}`}
-                  title="Escanear Pendientes"
+                  className={`p-1.5 rounded-lg transition-all cursor-pointer ${isImageAnalyzerOpen ? 'bg-purple-600/30 text-purple-300 border border-purple-500/40' : 'text-slate-400 hover:text-white hover:bg-slate-800/70'}`}
+                  title="Escanear Pendientes con Cámara"
                 >
-                  <Camera className="w-5 h-5" />
+                  <Camera className="w-4 h-4" />
                 </button>
             </div>
 
-            <div className="relative hidden md:block w-64">
-              <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-500" />
+            <div className="relative hidden md:block w-48 lg:w-56 shrink-0">
+              <Search className="absolute left-2.5 top-1/2 -translate-y-1/2 w-3.5 h-3.5 text-slate-500" />
               <input 
                 type="text" 
                 placeholder="Buscar tareas..." 
-                className="w-full pl-10 pr-4 py-2 bg-slate-900 border border-slate-800 rounded-xl text-sm text-slate-200 placeholder:text-slate-500 focus:outline-none focus:border-purple-500 transition-all"
+                className="w-full pl-8 pr-3 py-1 bg-slate-900 border border-slate-800 rounded-lg text-xs text-slate-200 placeholder:text-slate-500 focus:outline-none focus:border-purple-500 transition-all"
                 value={searchQuery}
                 onChange={(e) => setSearchQuery(e.target.value)}
               />
             </div>
 
             {/* Quick Status Filter Tabs */}
-            <div className="flex items-center gap-1 bg-slate-900 p-1 rounded-xl border border-slate-800">
+            <div className="flex items-center gap-0.5 bg-slate-900 p-0.5 rounded-lg border border-slate-800 shrink-0">
               <button
                 type="button"
                 onClick={() => setTaskStatusFilter('all')}
-                className={`px-2.5 py-1 text-xs font-semibold rounded-lg transition-all ${
+                className={`px-2 py-0.5 text-xs font-semibold rounded-md transition-all cursor-pointer ${
                   taskStatusFilter === 'all'
                     ? 'bg-slate-800 text-white shadow-xs'
                     : 'text-slate-400 hover:text-slate-200'
@@ -723,7 +751,7 @@ export const ListasTab: React.FC = () => {
               <button
                 type="button"
                 onClick={() => setTaskStatusFilter('pending')}
-                className={`px-2.5 py-1 text-xs font-semibold rounded-lg transition-all ${
+                className={`px-2 py-0.5 text-xs font-semibold rounded-md transition-all cursor-pointer ${
                   taskStatusFilter === 'pending'
                     ? 'bg-blue-600 text-white shadow-xs'
                     : 'text-slate-400 hover:text-slate-200'
@@ -734,7 +762,7 @@ export const ListasTab: React.FC = () => {
               <button
                 type="button"
                 onClick={() => setTaskStatusFilter('completed')}
-                className={`px-2.5 py-1 text-xs font-semibold rounded-lg transition-all ${
+                className={`px-2 py-0.5 text-xs font-semibold rounded-md transition-all cursor-pointer ${
                   taskStatusFilter === 'completed'
                     ? 'bg-emerald-600 text-white shadow-xs'
                     : 'text-slate-400 hover:text-slate-200'
@@ -745,17 +773,262 @@ export const ListasTab: React.FC = () => {
             </div>
           </div>
 
-          <div className="flex items-center gap-2 text-xs text-slate-400">
-            <span className={`inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full font-medium border ${
-              cloudStatus === 'syncing'
-                ? 'bg-blue-950/60 text-blue-400 border-blue-800/60'
-                : 'bg-emerald-950/60 text-emerald-400 border-emerald-800/60'
-            }`}>
-              <Cloud className={`w-3.5 h-3.5 ${cloudStatus === 'syncing' ? 'animate-pulse' : ''}`} />
-              {cloudStatus === 'syncing' ? 'Sincronizando...' : 'Conectado a Listas Remb'}
-            </span>
+          {/* Right Header Area: [👤 rembrandt] [Guardar ▾] [Cargar] [☁ Conectado a Listas Remb] */}
+          <div className="flex items-center gap-1.5 sm:gap-2 shrink-0">
+            {/* User Profile Badge (Rembrandt) */}
+            <div 
+              className="flex items-center gap-1.5 px-2.5 py-1 bg-slate-900/90 border border-slate-800 rounded-lg text-xs font-medium text-slate-300 shadow-xs" 
+              title={`Lista de: ${username}`}
+            >
+              <div className="w-4 h-4 bg-purple-600 rounded-full flex items-center justify-center text-[9px] text-white font-bold shrink-0">
+                <User className="w-2.5 h-2.5" />
+              </div>
+              <span className="font-semibold text-purple-300 max-w-[80px] sm:max-w-[120px] truncate">
+                {username || 'rembrandt'}
+              </span>
+            </div>
+
+            {/* Guardar con dropdown */}
+            <div className="relative flex shrink-0">
+              <button 
+                onClick={() => handleSaveFile(false)}
+                className="flex items-center gap-1 px-2.5 py-1 bg-blue-950/50 hover:bg-blue-900/60 text-blue-300 border border-blue-500/30 rounded-l-lg text-xs font-medium transition-all cursor-pointer"
+                title="Guardar archivo JSON"
+              >
+                <Save className="w-3.5 h-3.5" />
+                <span className="hidden sm:inline">Guardar</span>
+              </button>
+              <button
+                onClick={() => setShowHeaderSaveMenu(prev => !prev)}
+                className="px-1 bg-blue-950/50 hover:bg-blue-900/60 text-blue-300 border-y border-r border-blue-500/30 rounded-r-lg text-xs transition-all flex items-center justify-center cursor-pointer"
+                title="Opciones de Guardar"
+              >
+                <ChevronDown className="w-2.5 h-2.5" />
+              </button>
+              {showHeaderSaveMenu && (
+                <>
+                  <div className="fixed inset-0 z-40" onClick={() => setShowHeaderSaveMenu(false)} />
+                  <div className="absolute right-0 top-full mt-1.5 w-36 bg-slate-900 border border-slate-800 rounded-lg shadow-2xl py-1 z-50 animate-in fade-in zoom-in-95 duration-100">
+                    <button
+                      onClick={() => { handleSaveFile(true); setShowHeaderSaveMenu(false); }}
+                      className="w-full text-left px-3 py-1.5 text-xs text-slate-200 hover:bg-slate-800 flex items-center gap-2 cursor-pointer"
+                    >
+                      <Save className="w-3 h-3" /> Guardar como...
+                    </button>
+                  </div>
+                </>
+              )}
+            </div>
+
+            {/* Cargar */}
+            <button 
+              onClick={handleOpenFile}
+              className="flex items-center gap-1 px-2.5 py-1 bg-amber-950/50 hover:bg-amber-900/60 text-amber-300 border border-amber-500/30 rounded-lg text-xs font-medium transition-all cursor-pointer shrink-0"
+              title="Cargar copia de seguridad JSON"
+            >
+              <FolderOpen className="w-3.5 h-3.5" />
+              <span className="hidden sm:inline">Cargar</span>
+            </button>
+
+            {/* Botón Sincronizar Nube / Conectado a Listas */}
+            <button
+              onClick={handleManualSync}
+              disabled={cloudStatus === 'syncing'}
+              className={`inline-flex items-center gap-1.5 px-2.5 py-1 rounded-lg font-medium border text-xs transition-all shadow-sm cursor-pointer select-none shrink-0 ${
+                cloudStatus === 'syncing'
+                  ? 'bg-blue-950/70 text-blue-300 border-blue-500/50 cursor-wait'
+                  : 'bg-emerald-950/50 hover:bg-emerald-900/60 text-emerald-300 border-emerald-500/40 hover:border-emerald-400 active:scale-95'
+              }`}
+              title="Sincronización automática activa. Haz clic para actualizar ahora mismo con la nube."
+            >
+              <Cloud className={`w-3.5 h-3.5 ${cloudStatus === 'syncing' ? 'animate-spin text-blue-400' : 'text-emerald-400'}`} />
+              <span className="hidden md:inline font-semibold">
+                {cloudStatus === 'syncing' ? 'Sincronizando...' : 'Conectado a Listas Remb'}
+              </span>
+              <span className="md:hidden font-semibold">
+                {cloudStatus === 'syncing' ? 'Sync...' : 'Sincronizar'}
+              </span>
+            </button>
           </div>
         </header>
+
+        {/* Línea de navegación horizontal para ver las listas (desplazable para los lados) */}
+        <div 
+          className="bg-[#0b101e] border-b border-slate-800/90 px-3 py-1.5 flex items-center gap-2 overflow-x-auto scrollbar-thin scrollbar-thumb-slate-800 scrollbar-track-transparent select-none shrink-0 z-10"
+          onWheel={(e) => {
+            if (e.deltaY !== 0) {
+              e.currentTarget.scrollLeft += e.deltaY;
+            }
+          }}
+        >
+          {/* Vistas Principales: Tablero, Hoy, Completado */}
+          <div className="flex items-center gap-1 shrink-0">
+            <button
+              onClick={() => setFilter('all')}
+              className={`flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-semibold transition-all cursor-pointer ${
+                filter === 'all'
+                  ? 'bg-purple-600 text-white shadow-md shadow-purple-900/30 border border-purple-500/50'
+                  : 'text-slate-400 hover:text-white hover:bg-slate-800/70 border border-transparent'
+              }`}
+              title="Tablero Kanban completo"
+            >
+              <LayoutDashboard className="w-3.5 h-3.5" />
+              <span>Tablero</span>
+            </button>
+
+            <button
+              onClick={() => setFilter('today')}
+              className={`flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-semibold transition-all cursor-pointer ${
+                filter === 'today'
+                  ? 'bg-purple-600 text-white shadow-md shadow-purple-900/30 border border-purple-500/50'
+                  : 'text-slate-400 hover:text-white hover:bg-slate-800/70 border border-transparent'
+              }`}
+              title="Tareas para hoy"
+            >
+              <Calendar className="w-3.5 h-3.5" />
+              <span>Hoy</span>
+              {(() => {
+                const todayCount = tasks.filter(t => {
+                  if (t.completed) return false;
+                  const d = new Date(t.dueDate);
+                  return d.toDateString() === new Date().toDateString();
+                }).length;
+                return todayCount > 0 ? (
+                  <span className="px-1.5 py-0.2 bg-purple-950 text-purple-200 text-[10px] rounded-full border border-purple-400/40">
+                    {todayCount}
+                  </span>
+                ) : null;
+              })()}
+            </button>
+
+            <button
+              onClick={() => setFilter('completed')}
+              className={`flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-semibold transition-all cursor-pointer ${
+                filter === 'completed'
+                  ? 'bg-purple-600 text-white shadow-md shadow-purple-900/30 border border-purple-500/50'
+                  : 'text-slate-400 hover:text-white hover:bg-slate-800/70 border border-transparent'
+              }`}
+              title="Tareas completadas"
+            >
+              <CheckSquare className="w-3.5 h-3.5" />
+              <span>Completado</span>
+            </button>
+          </div>
+
+          <div className="h-5 w-px bg-slate-800 shrink-0 mx-1" />
+
+          {/* Listas Dinámicas */}
+          <div className="flex items-center gap-1.5 shrink-0">
+            {lists.map(listName => {
+              const Icon = CATEGORY_ICONS[listName] || CATEGORY_ICONS['default'];
+              const isActive = filter === listName;
+              const customColor = listColors[listName];
+              const pendingCount = tasks.filter(t => t.category === listName && !t.completed).length;
+
+              return (
+                <button
+                  key={listName}
+                  onClick={() => setFilter(listName)}
+                  className={`flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-medium transition-all shrink-0 cursor-pointer ${
+                    isActive
+                      ? 'bg-purple-600/30 text-purple-200 border border-purple-500/60 shadow-sm ring-1 ring-purple-500/30'
+                      : 'text-slate-300 hover:text-white hover:bg-slate-800/60 border border-slate-800/80'
+                  }`}
+                  style={
+                    isActive && customColor
+                      ? { backgroundColor: `${customColor}30`, borderColor: `${customColor}90`, color: '#fff' }
+                      : customColor
+                      ? { borderColor: `${customColor}40` }
+                      : undefined
+                  }
+                  title={`Ver lista: ${listName}`}
+                >
+                  <Icon 
+                    className="w-3.5 h-3.5 shrink-0" 
+                    style={{ color: customColor || (isActive ? '#c084fc' : '#94a3b8') }} 
+                  />
+                  <span className="font-semibold">{listName}</span>
+                  {pendingCount > 0 && (
+                    <span 
+                      className="text-[10px] font-mono px-1.5 py-0.2 rounded-full bg-slate-800/90 text-slate-300 border border-slate-700/60"
+                    >
+                      {pendingCount}
+                    </span>
+                  )}
+                </button>
+              );
+            })}
+
+            {/* Añadir nueva lista en la barra */}
+            {isAddingListInBar ? (
+              <form
+                onSubmit={(e) => {
+                  e.preventDefault();
+                  if (newListNameInBar.trim()) {
+                    handleAddList(newListNameInBar.trim());
+                    setNewListNameInBar('');
+                    setIsAddingListInBar(false);
+                  }
+                }}
+                className="flex items-center gap-1 bg-slate-900 px-2 py-1 rounded-lg border border-purple-500/50 shrink-0"
+              >
+                <input
+                  autoFocus
+                  type="text"
+                  value={newListNameInBar}
+                  onChange={(e) => setNewListNameInBar(e.target.value)}
+                  placeholder="Nombre lista..."
+                  className="bg-transparent text-xs text-white placeholder-slate-500 focus:outline-none w-24"
+                />
+                <button type="submit" className="text-purple-400 hover:text-purple-300 p-0.5 cursor-pointer">
+                  <Check className="w-3 h-3" />
+                </button>
+                <button type="button" onClick={() => setIsAddingListInBar(false)} className="text-slate-400 hover:text-red-400 p-0.5 cursor-pointer">
+                  <X className="w-3 h-3" />
+                </button>
+              </form>
+            ) : (
+              <button
+                onClick={() => setIsAddingListInBar(true)}
+                className="flex items-center gap-1 px-2.5 py-1.5 rounded-lg text-xs font-medium text-slate-400 hover:text-purple-300 hover:bg-slate-800/50 border border-dashed border-slate-800 hover:border-purple-500/40 transition-all shrink-0 cursor-pointer"
+                title="Crear nueva lista"
+              >
+                <Plus className="w-3.5 h-3.5" />
+                <span>Nueva lista</span>
+              </button>
+            )}
+          </div>
+
+          <div className="h-5 w-px bg-slate-800 shrink-0 mx-1" />
+
+          {/* Secondary Views: Contactos, Notas, Almacén, Caja Fuerte, Links */}
+          <div className="flex items-center gap-1 shrink-0">
+            {[
+              { id: 'contacts', icon: Users, label: 'Contactos' },
+              { id: 'notes', icon: StickyNote, label: 'Notas' },
+              { id: 'storage', icon: Archive, label: 'Almacén' },
+              { id: 'safe', icon: Lock, label: 'Caja Fuerte' },
+              { id: 'links', icon: LinkIcon, label: 'Links' },
+            ].map(item => {
+              const isActive = filter === item.id;
+              return (
+                <button
+                  key={item.id}
+                  onClick={() => setFilter(item.id)}
+                  className={`flex items-center gap-1 px-2.5 py-1.5 rounded-lg text-xs font-medium transition-all shrink-0 cursor-pointer ${
+                    isActive
+                      ? 'bg-purple-600/30 text-purple-200 border border-purple-500/60 shadow-sm'
+                      : 'text-slate-400 hover:text-slate-200 hover:bg-slate-800/60 border border-transparent'
+                  }`}
+                  title={item.label}
+                >
+                  <item.icon className="w-3.5 h-3.5" />
+                  <span>{item.label}</span>
+                </button>
+              );
+            })}
+          </div>
+        </div>
 
         {/* Board / Views Area */}
         <main className="flex-1 overflow-y-auto bg-[#070a12] relative flex flex-col min-w-0">
