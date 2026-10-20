@@ -1979,43 +1979,89 @@ const EmailGenerator: React.FC<EmailGeneratorProps> = ({ attachedImages, onAttac
                 }}
             />
             
-            {/* ENCABEZADO SUPERIOR (EN ESCRITORIO) */}
+            {/* ENCABEZADO SUPERIOR UNIFICADO EN UN SOLO RENGLÓN (ESCRITORIO) */}
             {isDesktopMode && (
-                <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-3 mb-4">
-                    <div className="flex items-center gap-3 flex-wrap">
-                        <div className="p-2.5 bg-gradient-to-br from-purple-600 to-indigo-600 rounded-xl shadow-md text-white">
-                            <Mail size={22} />
+                <div className="flex items-center justify-between gap-2.5 mb-3.5 p-2 bg-gray-900/70 backdrop-blur-md rounded-2xl border border-purple-500/20 shadow-md">
+                    {/* IZQUIERDA: ICONO + TÍTULO COMPACTO */}
+                    <div className="flex items-center gap-2 shrink-0">
+                        <div className="p-2 bg-gradient-to-br from-purple-600 to-indigo-600 rounded-xl shadow-md text-white shrink-0">
+                            <Mail size={18} />
                         </div>
-                        <div>
-                            <h2 className="text-xl font-black text-white uppercase tracking-tighter">Generador de Mensajes</h2>
-                            <p className="text-[11px] text-gray-400">Entregas de planos, renders y redacción ejecutiva para Javer</p>
+                        <div className="leading-tight">
+                            <h2 className="text-sm font-black text-white uppercase tracking-tight whitespace-nowrap">Generador de Mensajes</h2>
+                            <p className="text-[10px] text-gray-400 hidden xl:block">Entregas de planos, renders y redacción Javer</p>
                         </div>
                     </div>
 
-                    <div className="flex items-center gap-2 flex-wrap">
+                    {/* CENTRO: SELECTOR DE MODOS (REDACTOR LIBRE / ENTREGAS 0S) */}
+                    <div className="flex items-center gap-1 p-1 bg-slate-950/80 rounded-xl border border-gray-800 shadow-inner shrink-0">
+                        <button
+                            type="button"
+                            onClick={() => setActiveMode('ai')}
+                            className={`py-1.5 px-3 rounded-lg text-xs font-black uppercase tracking-wider flex items-center gap-1.5 transition-all cursor-pointer whitespace-nowrap ${
+                                activeMode === 'ai'
+                                    ? 'bg-gradient-to-r from-purple-600 via-indigo-600 to-blue-600 text-white shadow-md shadow-indigo-500/25'
+                                    : 'text-gray-400 hover:text-white hover:bg-gray-800/60'
+                            }`}
+                        >
+                            <Sparkles size={13} className={activeMode === 'ai' ? 'text-purple-300' : ''} />
+                            <span>1. Redactor Libre</span>
+                        </button>
+                        <button
+                            type="button"
+                            onClick={() => setActiveMode('quick')}
+                            className={`py-1.5 px-3 rounded-lg text-xs font-black uppercase tracking-wider flex items-center gap-1.5 transition-all cursor-pointer whitespace-nowrap ${
+                                activeMode === 'quick'
+                                    ? 'bg-gradient-to-r from-purple-600 to-indigo-600 text-white shadow-md shadow-purple-500/25'
+                                    : 'text-gray-400 hover:text-white hover:bg-gray-800/60'
+                            }`}
+                        >
+                            <Zap size={13} className={activeMode === 'quick' ? 'text-amber-300' : ''} />
+                            <span>2. Entregas (0s)</span>
+                        </button>
+                    </div>
+
+                    {/* DERECHA: BOTONES DE ACCIÓN (OUTLOOK WEB, ALEJAVI NOTICIAS, HISTORIAL, RESET) */}
+                    <div className="flex items-center gap-1.5 shrink-0 flex-wrap sm:flex-nowrap">
+                        <button
+                            type="button"
+                            onClick={() => handleOpenOutlookWeb()}
+                            className="px-3 py-1.5 bg-gradient-to-r from-blue-600 to-indigo-600 hover:from-blue-500 hover:to-indigo-500 text-white rounded-xl text-xs font-black uppercase tracking-wider shadow-sm flex items-center gap-1.5 hover:scale-[1.02] active:scale-[0.98] transition-all cursor-pointer border border-blue-400/30 whitespace-nowrap"
+                            title="Abrir Outlook Web Javer 365 con el destinatario y contenido actual"
+                        >
+                            <ExternalLink size={12} />
+                            <span>Outlook Web</span>
+                        </button>
+
                         <a 
                             href="https://academiartificial.com/noticias-ia/" 
                             target="_blank" 
                             rel="noopener noreferrer"
-                            className="px-3 py-2 bg-gradient-to-r from-blue-600/30 to-indigo-600/30 hover:from-blue-600/50 hover:to-indigo-600/50 text-blue-300 hover:text-white rounded-lg border border-blue-500/30 text-xs font-bold uppercase tracking-wider transition-all shadow-sm flex items-center gap-1.5 cursor-pointer group hover:scale-105"
+                            className="px-2.5 py-1.5 bg-gradient-to-r from-blue-600/30 to-indigo-600/30 hover:from-blue-600/50 hover:to-indigo-600/50 text-blue-300 hover:text-white rounded-xl border border-blue-500/30 text-xs font-bold uppercase tracking-wider transition-all shadow-sm flex items-center gap-1.5 cursor-pointer group whitespace-nowrap"
                             title="Ver noticias de IA en Academia Artificial"
                         >
-                            <Newspaper size={13} className="text-blue-400 group-hover:text-blue-200" />
+                            <Newspaper size={12} className="text-blue-400 group-hover:text-blue-200" />
                             <span>alejavi noticias</span>
-                            <ExternalLink size={11} className="opacity-70 group-hover:opacity-100 group-hover:translate-x-0.5 transition-all" />
+                            <ExternalLink size={10} className="opacity-70 group-hover:opacity-100 transition-all" />
                         </a>
+
                         <button 
+                            type="button"
                             onClick={() => setShowHistory(!showHistory)} 
-                            className="px-3.5 py-2 bg-gray-800 rounded-lg text-xs font-black uppercase text-gray-400 border border-gray-700 hover:bg-gray-700 transition-colors cursor-pointer"
+                            className="px-2.5 py-1.5 bg-gray-800/90 hover:bg-gray-700/90 rounded-xl text-xs font-black uppercase text-gray-300 border border-gray-700 transition-colors cursor-pointer flex items-center gap-1 whitespace-nowrap"
+                            title="Ver historial de mensajes"
                         >
-                            Historial
+                            <Clock size={12} className="text-gray-400" />
+                            <span>Historial</span>
                         </button>
+
                         <button 
+                            type="button"
                             onClick={handleResetAll} 
                             title="Reiniciar todos los campos (Erik por defecto)" 
-                            className="px-3 py-2 bg-gray-800 hover:bg-red-600/20 text-gray-400 hover:text-red-400 rounded-lg text-xs font-black uppercase border border-gray-700 hover:border-red-500/40 transition-all flex items-center gap-1.5 cursor-pointer"
+                            className="px-2.5 py-1.5 bg-gray-800/90 hover:bg-red-600/20 text-gray-400 hover:text-red-400 rounded-xl text-xs font-black uppercase border border-gray-700 hover:border-red-500/40 transition-all flex items-center gap-1 cursor-pointer whitespace-nowrap"
                         >
-                            <RotateCcw size={14} />
+                            <RotateCcw size={12} />
                             <span>Reset</span>
                         </button>
                     </div>
@@ -3497,48 +3543,7 @@ const EmailGenerator: React.FC<EmailGeneratorProps> = ({ attachedImages, onAttac
                 </div>
             )}
 
-            {/* BARRA SUPERIOR DE CONTROL: MODOS Y ACCESO DIRECTO A OUTLOOK WEB (ESCRITORIO) */}
-            {isDesktopMode && (
-                <div className="flex flex-col sm:flex-row items-stretch sm:items-center justify-between gap-2.5 mb-4">
-                    <div className="flex items-center gap-1 sm:gap-2 p-1 sm:p-1.5 bg-gray-900/90 rounded-2xl border border-gray-800 shadow-lg w-full sm:w-auto sm:min-w-[420px]">
-                        <button
-                            type="button"
-                            onClick={() => setActiveMode('ai')}
-                            className={`flex-1 py-2 sm:py-2.5 px-2 sm:px-4 rounded-xl text-[10.5px] sm:text-xs font-black uppercase tracking-wider flex items-center justify-center gap-1.5 sm:gap-2 transition-all cursor-pointer ${
-                                activeMode === 'ai'
-                                    ? 'bg-gradient-to-r from-purple-600 via-indigo-600 to-blue-600 text-white shadow-md shadow-indigo-500/25'
-                                    : 'text-gray-400 hover:text-white hover:bg-gray-800/60'
-                            }`}
-                        >
-                            <Sparkles size={14} className={activeMode === 'ai' ? 'text-purple-300' : ''} />
-                            <span className="truncate">1. Redactor Libre</span>
-                        </button>
-                        <button
-                            type="button"
-                            onClick={() => setActiveMode('quick')}
-                            className={`flex-1 py-2 sm:py-2.5 px-2 sm:px-4 rounded-xl text-[10.5px] sm:text-xs font-black uppercase tracking-wider flex items-center justify-center gap-1.5 sm:gap-2 transition-all cursor-pointer ${
-                                activeMode === 'quick'
-                                    ? 'bg-gradient-to-r from-purple-600 to-indigo-600 text-white shadow-md shadow-purple-500/25'
-                                    : 'text-gray-400 hover:text-white hover:bg-gray-800/60'
-                            }`}
-                        >
-                            <Zap size={14} className={activeMode === 'quick' ? 'text-amber-300' : ''} />
-                            <span className="truncate">2. Entregas (0s)</span>
-                        </button>
-                    </div>
 
-                    {/* BOTÓN OUTLOOK WEB SIEMPRE ACCESIBLE EN AMBAS OPCIONES */}
-                    <button
-                        type="button"
-                        onClick={() => handleOpenOutlookWeb()}
-                        className="w-full sm:w-auto px-3.5 py-2 sm:py-2.5 bg-gradient-to-r from-blue-600 to-indigo-600 hover:from-blue-500 hover:to-indigo-500 text-white rounded-xl text-[11px] sm:text-xs font-black uppercase tracking-wider shadow-lg shadow-blue-500/20 flex items-center justify-center gap-1.5 sm:gap-2 hover:scale-[1.02] active:scale-[0.98] transition-all cursor-pointer border border-blue-400/30 shrink-0"
-                        title="Abrir Outlook Web Javer 365 con el destinatario y contenido actual"
-                    >
-                        <ExternalLink size={13} />
-                        <span>Outlook Web (Javer 365)</span>
-                    </button>
-                </div>
-            )}
 
             {/* GESTIÓN DE ERROR DE IA */}
             {error && (
