@@ -1248,96 +1248,7 @@ const QuoteForm: React.FC<QuoteFormProps> = ({ onGenerateQuote, initialDetails }
   const isFormValid = details.projectName.trim() !== '' && details.activities.length > 0;
 
   return (
-    <div className="max-w-3xl mx-auto pb-24 relative">
-        {/* Header Controls */}
-        <div className="flex flex-col sm:flex-row justify-between items-center mb-6 bg-white p-4 rounded-lg shadow-sm border border-slate-200 gap-4">
-            {/* ... header controls content ... (unchanged logic, huge block) */}
-             <h2 className="text-lg font-bold text-slate-700 flex items-center gap-2">
-                Editor
-                <span className="text-xs font-normal bg-green-100 text-green-700 px-2 py-0.5 rounded-full border border-green-200">
-                    Auto-guardado
-                </span>
-            </h2>
-            <div className="flex gap-1 flex-wrap justify-center items-center">
-                 <input type="file" ref={fileInputRef} onChange={handleLoadJSON} accept=".json" className="hidden" />
-                 
-                 {/* CLOUD BUTTON */}
-                 <button 
-                    type="button" 
-                    onClick={() => setShowCloudModal(true)} 
-                    className={`flex items-center gap-1 text-[10px] px-2 py-1.5 rounded transition-colors border ${cloudConfig.isConnected ? 'bg-green-50 text-green-700 border-green-200' : 'bg-slate-50 text-slate-600 border-slate-200 hover:bg-slate-100'}`}
-                    title="Conectar a Nube (Supabase)"
-                 >
-                    {isSyncing ? (
-                        <LoadingSpinner /> 
-                    ) : (
-                        <svg xmlns="http://www.w3.org/2000/svg" className="h-3 w-3" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M3 15a4 4 0 004 4h9a5 5 0 10-.1-9.999 5.002 5.002 0 10-9.78 2.096A4.001 4.001 0 003 15z" /></svg>
-                    )}
-                    {cloudConfig.isConnected ? 'Nube OK' : 'Nube'}
-                 </button>
-
-                 <button type="button" onClick={() => setShowDataManager(true)} className="flex items-center gap-1 text-[10px] bg-indigo-50 text-indigo-700 px-2 py-1.5 rounded hover:bg-indigo-100 transition-colors border border-indigo-200" title="Administrar base de datos y catálogos">
-                    📚 Datos
-                 </button>
-
-                 {/* SAVE CURRENT AS STYLE BUTTON */}
-                 <button 
-                    type="button" 
-                    onClick={handleOpenSaveStyleModal} 
-                    className="flex items-center gap-1 text-[10px] bg-emerald-50 text-emerald-800 hover:bg-emerald-100 font-semibold px-2 py-1.5 rounded transition-colors border border-emerald-200 shadow-2xs"
-                    title="Guardar configuración actual como nuevo Estilo predeterminado"
-                 >
-                    <span>💾</span> Guardar Estilo
-                 </button>
-
-                 {/* STYLES (DEFAULT CONFIGS) MODAL BUTTON */}
-                 <button 
-                    type="button" 
-                    onClick={() => setShowDefaultConfigsModal(true)} 
-                    className="flex items-center gap-1 text-[10px] bg-amber-50 text-amber-800 hover:bg-amber-100 font-semibold px-2 py-1.5 rounded transition-colors border border-amber-200 shadow-2xs"
-                    title="Administrar Estilos, plantillas y respaldos"
-                 >
-                    <span>🎨</span> Estilos
-                 </button>
-                 
-                 <button type="button" onClick={handleClearDraft} className="flex items-center gap-1 text-[10px] text-red-500 hover:text-red-700 px-2 py-1.5 transition-colors" title="Borrar formulario e iniciar nuevo">
-                    Limpiar
-                 </button>
-                 
-                 <button type="button" onClick={handleLoadJSONClick} className="flex items-center gap-1 text-[10px] bg-slate-100 text-slate-700 px-2 py-1.5 rounded hover:bg-slate-200 transition-colors">
-                    <svg xmlns="http://www.w3.org/2000/svg" className="h-3 w-3" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-8l-4 4m0 0L8 8m4-4v12" /></svg>
-                    Cargar
-                 </button>
-                 
-                 <button 
-                    type="button" 
-                    onClick={handleSaveQuote} 
-                    disabled={!isFormValid} 
-                    className="flex items-center gap-1 text-[10px] bg-blue-50 text-blue-700 border border-blue-200 px-2 py-1.5 rounded hover:bg-blue-100 transition-colors disabled:opacity-50"
-                 >
-                    <svg xmlns="http://www.w3.org/2000/svg" className="h-3 w-3" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M8 7H5a2 2 0 00-2 2v9a2 2 0 002 2h14a2 2 0 002-2V9a2 2 0 00-2-2h-3m-1 4l-3 3m0 0l-3-3m3 3V4" /></svg>
-                    Guardar
-                 </button>
-
-                 <div className="relative group">
-                    <button 
-                        type="button" 
-                        onClick={handleDbModalOpen}
-                        className="flex items-center justify-center p-1.5 rounded-full bg-yellow-100 text-yellow-500 border border-yellow-300 hover:bg-yellow-400 hover:text-white hover:border-yellow-500 transition-all duration-300 ease-out"
-                        aria-label="Actualizar Base de Datos"
-                    >
-                        <svg xmlns="http://www.w3.org/2000/svg" className="h-4 w-4 fill-current" viewBox="0 0 20 20" fill="currentColor">
-                            <path fillRule="evenodd" d="M11.3 1.046A1 1 0 0112 2v5h4a1 1 0 01.82 1.573l-7 10A1 1 0 018 18v-5H4a1 1 0 01-.82-1.573l7-10a1 1 0 011.12-.38z" clipRule="evenodd" />
-                        </svg>
-                    </button>
-                    <div className="absolute top-full right-0 mt-2 w-max px-3 py-1.5 bg-slate-800 text-white text-[10px] rounded shadow-lg opacity-0 group-hover:opacity-100 transition-opacity z-50 pointer-events-none transform translate-y-1">
-                        Actualizar base de datos
-                        <div className="absolute -top-1 right-3 w-2 h-2 bg-slate-800 transform rotate-45"></div>
-                    </div>
-                 </div>
-            </div>
-        </div>
-
+    <div className="max-w-7xl mx-auto pb-24 relative px-2 sm:px-4">
         {/* MODAL: CLOUD CONFIGURATION (SUPABASE) */}
         {showCloudModal && (
             <div className="fixed inset-0 bg-black bg-opacity-60 z-[80] flex items-center justify-center p-4 backdrop-blur-sm animate-fade-in">
@@ -1642,7 +1553,181 @@ const QuoteForm: React.FC<QuoteFormProps> = ({ onGenerateQuote, initialDetails }
             </div>
         )}
 
-        <form onSubmit={handleSubmit} className="bg-white p-2 sm:p-8 rounded-2xl shadow-xl space-y-4 sm:space-y-10 transition-all duration-300">
+        <form onSubmit={handleSubmit} className="flex flex-col lg:flex-row items-start gap-6">
+            {/* PANEL LATERAL IZQUIERDO: HERRAMIENTAS, BANCOS Y BOTON GENERAR */}
+            <aside className="w-full lg:w-80 shrink-0 flex flex-col gap-4 lg:sticky lg:top-4">
+                {/* 1. HERRAMIENTAS / ACCIONES DEL EDITOR */}
+                <div className="bg-white p-4 rounded-xl shadow-md border border-slate-200">
+                    <div className="flex items-center justify-between pb-2.5 mb-2.5 border-b border-slate-100">
+                        <h2 className="text-sm font-bold text-slate-700 flex items-center gap-1.5">
+                            Editor
+                            <span className="text-[10px] font-normal bg-green-100 text-green-700 px-1.5 py-0.5 rounded-full border border-green-200">
+                                Auto-guardado
+                            </span>
+                        </h2>
+                    </div>
+
+                    <input type="file" ref={fileInputRef} onChange={handleLoadJSON} accept=".json" className="hidden" />
+
+                    <div className="grid grid-cols-2 gap-2">
+                        {/* CLOUD BUTTON */}
+                        <button 
+                            type="button" 
+                            onClick={() => setShowCloudModal(true)} 
+                            className={`flex items-center justify-center gap-1.5 text-xs px-2 py-2 rounded-lg font-medium transition-colors border ${cloudConfig.isConnected ? 'bg-green-50 text-green-700 border-green-200' : 'bg-slate-50 text-slate-600 border-slate-200 hover:bg-slate-100'}`}
+                            title="Conectar a Nube (Supabase)"
+                        >
+                            {isSyncing ? (
+                                <LoadingSpinner /> 
+                            ) : (
+                                <svg xmlns="http://www.w3.org/2000/svg" className="h-3.5 w-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M3 15a4 4 0 004 4h9a5 5 0 10-.1-9.999 5.002 5.002 0 10-9.78 2.096A4.001 4.001 0 003 15z" /></svg>
+                            )}
+                            {cloudConfig.isConnected ? 'Nube OK' : 'Nube'}
+                        </button>
+
+                        {/* DATOS BUTTON */}
+                        <button type="button" onClick={() => setShowDataManager(true)} className="flex items-center justify-center gap-1.5 text-xs bg-indigo-50 text-indigo-700 font-medium px-2 py-2 rounded-lg hover:bg-indigo-100 transition-colors border border-indigo-200" title="Administrar base de datos y catálogos">
+                            📚 Datos
+                        </button>
+
+                        {/* GUARDAR ESTILO BUTTON */}
+                        <button 
+                            type="button" 
+                            onClick={handleOpenSaveStyleModal} 
+                            className="flex items-center justify-center gap-1.5 text-xs bg-emerald-50 text-emerald-800 hover:bg-emerald-100 font-medium px-2 py-2 rounded-lg transition-colors border border-emerald-200"
+                            title="Guardar configuración actual como nuevo Estilo predeterminado"
+                        >
+                            💾 Guardar Estilo
+                        </button>
+
+                        {/* ESTILOS BUTTON */}
+                        <button 
+                            type="button" 
+                            onClick={() => setShowDefaultConfigsModal(true)} 
+                            className="flex items-center justify-center gap-1.5 text-xs bg-amber-50 text-amber-800 hover:bg-amber-100 font-medium px-2 py-2 rounded-lg transition-colors border border-amber-200"
+                            title="Administrar Estilos, plantillas y respaldos"
+                        >
+                            🎨 Estilos
+                        </button>
+                        
+                        {/* CARGAR BUTTON */}
+                        <button type="button" onClick={handleLoadJSONClick} className="flex items-center justify-center gap-1.5 text-xs bg-slate-100 text-slate-700 font-medium px-2 py-2 rounded-lg hover:bg-slate-200 transition-colors border border-slate-200">
+                            <svg xmlns="http://www.w3.org/2000/svg" className="h-3.5 w-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-8l-4 4m0 0L8 8m4-4v12" /></svg>
+                            Cargar
+                        </button>
+                        
+                        {/* GUARDAR BUTTON */}
+                        <button 
+                            type="button" 
+                            onClick={handleSaveQuote} 
+                            disabled={!isFormValid} 
+                            className="flex items-center justify-center gap-1.5 text-xs bg-blue-50 text-blue-700 font-medium border border-blue-200 px-2 py-2 rounded-lg hover:bg-blue-100 transition-colors disabled:opacity-50"
+                        >
+                            <svg xmlns="http://www.w3.org/2000/svg" className="h-3.5 w-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M8 7H5a2 2 0 00-2 2v9a2 2 0 002 2h14a2 2 0 002-2V9a2 2 0 00-2-2h-3m-1 4l-3 3m0 0l-3-3m3 3V4" /></svg>
+                            Guardar
+                        </button>
+
+                        {/* LIMPIAR BUTTON */}
+                        <button type="button" onClick={handleClearDraft} className="flex items-center justify-center gap-1 text-xs text-red-500 hover:text-red-700 bg-red-50 hover:bg-red-100 border border-red-200 px-2 py-2 rounded-lg transition-colors font-medium" title="Borrar formulario e iniciar nuevo">
+                            Limpiar
+                        </button>
+
+                        {/* SYNC BD BUTTON */}
+                        <button 
+                            type="button" 
+                            onClick={handleDbModalOpen}
+                            className="flex items-center justify-center gap-1.5 text-xs bg-yellow-100 text-yellow-800 border border-yellow-300 hover:bg-yellow-200 font-medium px-2 py-2 rounded-lg transition-colors"
+                            title="Actualizar Base de Datos"
+                        >
+                            <svg xmlns="http://www.w3.org/2000/svg" className="h-3.5 w-3.5 fill-current text-yellow-600" viewBox="0 0 20 20">
+                                <path fillRule="evenodd" d="M11.3 1.046A1 1 0 0112 2v5h4a1 1 0 01.82 1.573l-7 10A1 1 0 018 18v-5H4a1 1 0 01-.82-1.573l7-10a1 1 0 011.12-.38z" clipRule="evenodd" />
+                            </svg>
+                            Sync BD
+                        </button>
+                    </div>
+                </div>
+
+                {/* 2. DATOS BANCARIOS */}
+                <div className="bg-white p-4 rounded-xl shadow-md border border-slate-200">
+                    <h3 className="text-xs font-bold text-slate-500 uppercase tracking-wider mb-2.5">Datos Bancarios</h3>
+                    <div className="space-y-2">
+                        {/* SANTANDER */}
+                        <div className="bg-white border border-slate-200 rounded-lg shadow-2xs overflow-hidden">
+                            <button type="button" onClick={() => toggleBankDetails('santander')} className="w-full flex justify-between items-center p-2.5 hover:bg-slate-50 transition-colors">
+                                <div className="flex items-center gap-2">
+                                     <div className="w-6 h-6 rounded-full bg-red-600 flex items-center justify-center text-white font-bold text-[10px]">S</div>
+                                     <span className="font-bold text-xs text-slate-800">Santander</span>
+                                </div>
+                                <svg className={`w-4 h-4 text-slate-400 transform transition-transform ${visibleBank === 'santander' ? 'rotate-180' : ''}`} fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 9l-7 7-7-7" /></svg>
+                            </button>
+                            {visibleBank === 'santander' && (
+                                <div className="px-3 pb-3 space-y-1.5 text-xs border-t border-slate-100 pt-2">
+                                     {bankDetails.santander.data.map((item, i) => (
+                                         <div key={i} className="flex justify-between items-center group cursor-pointer p-1 hover:bg-slate-50 rounded" onClick={() => handleCopy(item.value)}>
+                                             <span className="text-[11px] text-slate-500">{item.label}</span>
+                                             <span className="font-mono text-[11px] font-medium text-slate-800 flex items-center gap-1">
+                                                 {item.value}
+                                                 <svg className="w-3 h-3 text-slate-300 opacity-0 group-hover:opacity-100" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M8 16H6a2 2 0 01-2-2V6a2 2 0 012-2h8a2 2 0 012 2v2m-6 12h8a2 2 0 002-2v-8a2 2 0 00-2-2h-8a2 2 0 00-2 2v8a2 2 0 002 2z" /></svg>
+                                             </span>
+                                         </div>
+                                     ))}
+                                     <button type="button" onClick={() => handleCopyBankFull(bankDetails.santander.allDetails)} className="w-full mt-2 bg-slate-100 text-slate-600 text-[11px] py-1.5 rounded hover:bg-slate-200 transition-colors font-medium">
+                                         Copiar Todo
+                                     </button>
+                                </div>
+                            )}
+                        </div>
+
+                        {/* HSBC */}
+                        <div className="bg-white border border-slate-200 rounded-lg shadow-2xs overflow-hidden">
+                            <button type="button" onClick={() => toggleBankDetails('hsbc')} className="w-full flex justify-between items-center p-2.5 hover:bg-slate-50 transition-colors">
+                                <div className="flex items-center gap-2">
+                                     <div className="w-6 h-6 rounded-full bg-red-700 flex items-center justify-center text-white font-bold text-[10px]">H</div>
+                                     <span className="font-bold text-xs text-slate-800">HSBC</span>
+                                </div>
+                                <svg className={`w-4 h-4 text-slate-400 transform transition-transform ${visibleBank === 'hsbc' ? 'rotate-180' : ''}`} fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 9l-7 7-7-7" /></svg>
+                            </button>
+                            {visibleBank === 'hsbc' && (
+                                <div className="px-3 pb-3 space-y-1.5 text-xs border-t border-slate-100 pt-2">
+                                     {bankDetails.hsbc.data.map((item, i) => (
+                                         <div key={i} className="flex justify-between items-center group cursor-pointer p-1 hover:bg-slate-50 rounded" onClick={() => handleCopy(item.value)}>
+                                             <span className="text-[11px] text-slate-500">{item.label}</span>
+                                             <span className="font-mono text-[11px] font-medium text-slate-800 flex items-center gap-1">
+                                                 {item.value}
+                                                 <svg className="w-3 h-3 text-slate-300 opacity-0 group-hover:opacity-100" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M8 16H6a2 2 0 01-2-2V6a2 2 0 012-2h8a2 2 0 012 2v2m-6 12h8a2 2 0 002-2v-8a2 2 0 00-2-2h-8a2 2 0 00-2 2v8a2 2 0 002 2z" /></svg>
+                                             </span>
+                                         </div>
+                                     ))}
+                                     <button type="button" onClick={() => handleCopyBankFull(bankDetails.hsbc.allDetails)} className="w-full mt-2 bg-slate-100 text-slate-600 text-[11px] py-1.5 rounded hover:bg-slate-200 transition-colors font-medium">
+                                         Copiar Todo
+                                     </button>
+                                </div>
+                            )}
+                        </div>
+                    </div>
+                </div>
+
+                {/* 3. BOTÓN GENERAR VISTA PREVIA Y VALIDACIÓN */}
+                <div className="bg-white p-4 rounded-xl shadow-md border border-slate-200 space-y-3">
+                    {!isFormValid && (details.projectName || details.recipientName) && (
+                        <div className="bg-red-50 text-red-600 p-2.5 rounded-lg text-xs text-center font-medium animate-pulse">
+                            Faltan campos requeridos: 
+                            {!details.projectName && " Nombre del Proyecto,"}
+                            {details.activities.length === 0 && " Al menos una actividad."}
+                        </div>
+                    )}
+                    <button 
+                        type="submit" 
+                        disabled={!isFormValid}
+                        className="w-full bg-slate-900 text-white px-4 py-3.5 rounded-xl font-bold text-sm hover:bg-black transition-all hover:scale-[1.02] active:scale-[0.98] disabled:opacity-50 disabled:scale-100 shadow-md cursor-pointer flex items-center justify-center gap-2"
+                    >
+                        Generar Vista Previa &rarr;
+                    </button>
+                </div>
+            </aside>
+
+            {/* COLUMNA DERECHA: CAMPOS DE LA COTIZACIÓN */}
+            <div className="flex-1 min-w-0 w-full bg-white p-4 sm:p-8 rounded-2xl shadow-xl space-y-4 sm:space-y-10 border border-slate-200">
             {/* ... section 1 ... */}
             <fieldset className="border border-slate-200 rounded-lg overflow-hidden">
                 <button 
@@ -2294,91 +2379,24 @@ const QuoteForm: React.FC<QuoteFormProps> = ({ onGenerateQuote, initialDetails }
                 </div>
             </fieldset>
 
-            {/* ERROR SUMMARY */}
-            {!isFormValid && (details.projectName || details.recipientName) && (
-                <div className="bg-red-50 text-red-600 p-4 rounded-lg text-sm text-center font-medium animate-pulse">
-                    Faltan campos requeridos: 
-                    {!details.projectName && " Nombre del Proyecto,"}
-                    {details.activities.length === 0 && " Al menos una actividad."}
+                {/* Botón generar al final del formulario por conveniencia */}
+                <div className="pt-4 flex justify-end">
+                    <button 
+                        type="submit" 
+                        disabled={!isFormValid}
+                        className="bg-slate-900 text-white px-8 py-3 rounded-xl font-bold text-base hover:bg-black transition-all hover:scale-105 disabled:opacity-50 disabled:scale-100 shadow-lg cursor-pointer flex items-center gap-2"
+                    >
+                        Generar Vista Previa &rarr;
+                    </button>
                 </div>
-            )}
-
-            {/* SUBMIT BUTTON - Acomodado a la izquierda */}
-            <div className="mt-8 flex justify-start">
-                <button 
-                    type="submit" 
-                    disabled={!isFormValid}
-                    className="bg-slate-900 text-white px-8 py-3 rounded-lg font-bold text-lg hover:bg-black transition-transform hover:scale-105 disabled:opacity-50 disabled:scale-100 shadow-lg cursor-pointer flex items-center gap-2"
-                >
-                    Generar Vista Previa &rarr;
-                </button>
             </div>
         </form>
 
-        {/* BANK DETAILS BOTTOM SHEET */}
-        <div className="mt-8 border-t border-slate-200 pt-6">
-            <h3 className="text-sm font-bold text-slate-500 uppercase tracking-widest text-center mb-4">Datos Bancarios Rápidos</h3>
-            <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-                {/* SANTANDER */}
-                <div className="bg-white border border-slate-200 rounded-lg shadow-sm hover:shadow-md transition-shadow">
-                    <button onClick={() => toggleBankDetails('santander')} className="w-full flex justify-between items-center p-4">
-                        <div className="flex items-center gap-2">
-                             <div className="w-8 h-8 rounded-full bg-red-600 flex items-center justify-center text-white font-bold text-xs">S</div>
-                             <span className="font-bold text-slate-800">Santander</span>
-                        </div>
-                        <svg className={`w-5 h-5 text-slate-400 transform transition-transform ${visibleBank === 'santander' ? 'rotate-180' : ''}`} fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 9l-7 7-7-7" /></svg>
-                    </button>
-                    {visibleBank === 'santander' && (
-                        <div className="px-4 pb-4 space-y-2 text-sm border-t border-slate-100 pt-2">
-                             {bankDetails.santander.data.map((item, i) => (
-                                 <div key={i} className="flex justify-between group cursor-pointer p-1 hover:bg-slate-50 rounded" onClick={() => handleCopy(item.value)}>
-                                     <span className="text-slate-500">{item.label}</span>
-                                     <span className="font-mono font-medium text-slate-800 flex items-center gap-1">
-                                         {item.value}
-                                         <svg className="w-3 h-3 text-slate-300 opacity-0 group-hover:opacity-100" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M8 16H6a2 2 0 01-2-2V6a2 2 0 012-2h8a2 2 0 012 2v2m-6 12h8a2 2 0 002-2v-8a2 2 0 00-2-2h-8a2 2 0 00-2 2v8a2 2 0 002 2z" /></svg>
-                                     </span>
-                                 </div>
-                             ))}
-                             <button onClick={() => handleCopyBankFull(bankDetails.santander.allDetails)} className="w-full mt-2 bg-slate-100 text-slate-600 text-xs py-2 rounded hover:bg-slate-200 transition-colors font-medium">
-                                 Copiar Todo
-                             </button>
-                        </div>
-                    )}
-                </div>
-
-                {/* HSBC */}
-                <div className="bg-white border border-slate-200 rounded-lg shadow-sm hover:shadow-md transition-shadow">
-                    <button onClick={() => toggleBankDetails('hsbc')} className="w-full flex justify-between items-center p-4">
-                        <div className="flex items-center gap-2">
-                             <div className="w-8 h-8 rounded-full bg-red-700 flex items-center justify-center text-white font-bold text-xs">H</div>
-                             <span className="font-bold text-slate-800">HSBC</span>
-                        </div>
-                         <svg className={`w-5 h-5 text-slate-400 transform transition-transform ${visibleBank === 'hsbc' ? 'rotate-180' : ''}`} fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 9l-7 7-7-7" /></svg>
-                    </button>
-                    {visibleBank === 'hsbc' && (
-                        <div className="px-4 pb-4 space-y-2 text-sm border-t border-slate-100 pt-2">
-                             {bankDetails.hsbc.data.map((item, i) => (
-                                 <div key={i} className="flex justify-between group cursor-pointer p-1 hover:bg-slate-50 rounded" onClick={() => handleCopy(item.value)}>
-                                     <span className="text-slate-500">{item.label}</span>
-                                     <span className="font-mono font-medium text-slate-800 flex items-center gap-1">
-                                         {item.value}
-                                         <svg className="w-3 h-3 text-slate-300 opacity-0 group-hover:opacity-100" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M8 16H6a2 2 0 01-2-2V6a2 2 0 012-2h8a2 2 0 012 2v2m-6 12h8a2 2 0 002-2v-8a2 2 0 00-2-2h-8a2 2 0 00-2 2v8a2 2 0 002 2z" /></svg>
-                                     </span>
-                                 </div>
-                             ))}
-                             <button onClick={() => handleCopyBankFull(bankDetails.hsbc.allDetails)} className="w-full mt-2 bg-slate-100 text-slate-600 text-xs py-2 rounded hover:bg-slate-200 transition-colors font-medium">
-                                 Copiar Todo
-                             </button>
-                        </div>
-                    )}
-                </div>
+        {copiedValue && (
+            <div className="fixed bottom-24 left-1/2 transform -translate-x-1/2 bg-slate-800 text-white px-4 py-2 rounded-full text-sm shadow-lg animate-bounce z-50">
+                Copiado: {copiedValue.substring(0, 20)}...
             </div>
-            {copiedValue && (
-                <div className="fixed bottom-24 left-1/2 transform -translate-x-1/2 bg-slate-800 text-white px-4 py-2 rounded-full text-sm shadow-lg animate-bounce">
-                    Copiado: {copiedValue.substring(0, 20)}...
-                </div>
-            )}
-        </div>
+        )}
         
         {/* CALCULATOR FLOATING BUTTON */}
         <button 
