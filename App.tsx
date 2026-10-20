@@ -94,7 +94,6 @@ const ListasTab = lazyWithRetry(() => import('./components/ListasTab'));
 const CompresorTab = lazyWithRetry(() => import('./components/CompresorTab'));
 const PersonalTab = lazyWithRetry(() => import('./components/PersonalTab'));
 
-import { PanchoFloatingButton } from './components/Pancho/PanchoFloatingButton';
 import { PanchoState } from './components/Pancho/PanchoRobotAvatar';
 import { GlobalQuickIdeaModal } from './components/ListasRemb/GlobalQuickIdeaModal';
 
@@ -1193,14 +1192,7 @@ const MainLayout: React.FC = () => {
         </div>
 
         
-        {/* Unified Persistent Pancho Floating Button */}
-        <PanchoFloatingButton
-          activeTabId={activeTabId}
-          panchoState={panchoState}
-          isOpen={isAssistantOpen}
-          onClick={() => setIsAssistantOpen(true)}
-          leftSidebarOpen={leftSidebarOpen}
-        />
+
 
         {/* Pancho Assistant Modal */}
         <AnimatePresence>

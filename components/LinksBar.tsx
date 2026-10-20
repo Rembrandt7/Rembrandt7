@@ -451,8 +451,8 @@ const LinksBar: React.FC = () => {
 
                 <div className="h-10 w-[1px] bg-white/10 shrink-0 hidden sm:block mx-0.5" />
 
-                {/* Lista de los demás Enlaces interactivos con scroll horizontal suave */}
-                <div className="flex-1 min-w-0 overflow-x-auto no-scrollbar scroll-smooth">
+                {/* Lista de los demás Enlaces interactivos con scroll horizontal suave y siempre centrado */}
+                <div className="flex-1 min-w-0 overflow-x-auto no-scrollbar scroll-smooth flex justify-center">
                     <SortableLinkList 
                         key={`links-bar-${activeCategories.slice().sort().join('-')}`}
                         id="linksBar"
@@ -460,7 +460,7 @@ const LinksBar: React.FC = () => {
                         isEditing={isEditing}
                         onReorder={handleReorderOther}
                         strategy={rectSortingStrategy}
-                        className="flex items-center justify-start gap-2 sm:gap-2.5 py-1 min-h-[50px] px-0.5"
+                        className="flex items-center justify-center gap-2 sm:gap-2.5 py-1 min-h-[50px] px-0.5 mx-auto"
                         renderItem={(link, index) => (
                             <LinkIcon 
                                 key={link.id} 
