@@ -45,11 +45,8 @@ export const ListasTab: React.FC = () => {
   const [lastModified, setLastModified] = useState<{dayOfWeek: string; fullDate: string; time: string}>({ dayOfWeek: '', fullDate: '', time: '' });
 
   const [filter, setFilter] = useState<string>('all'); 
-  const [taskStatusFilter, setTaskStatusFilter] = useState<'all' | 'pending' | 'completed'>('all');
-  const [isSidebarOpen, setIsSidebarOpen] = useState(() => typeof window !== 'undefined' ? window.innerWidth >= 1200 : false);
+  const [taskStatusFilter, setTaskStatusFilter] = useState<'all' | 'pending' | 'completed'>('pending');
   const [showHeaderSaveMenu, setShowHeaderSaveMenu] = useState(false);
-  const [isAddingListInBar, setIsAddingListInBar] = useState(false);
-  const [newListNameInBar, setNewListNameInBar] = useState('');
   const [searchQuery, setSearchQuery] = useState('');
   
   const [editingListId, setEditingListId] = useState<string | null>(null);
@@ -686,8 +683,8 @@ export const ListasTab: React.FC = () => {
         {/* Header */}
         <header className="h-14 bg-[#0f172a] border-b border-slate-800 flex items-center justify-between px-3 lg:px-6 z-20 shrink-0 gap-2 sm:gap-4">
           <div className="flex items-center gap-2 sm:gap-3 flex-1 min-w-0">
-            {/* Left-Aligned Utilities: Cámara para escanear pendientes */}
-            <div className="flex items-center border-r border-slate-800 pr-2 shrink-0">
+            {/* Left-Aligned Utilities: Cámara, Notas y Links */}
+            <div className="flex items-center gap-1 border-r border-slate-800 pr-2 shrink-0">
                 <button 
                   onClick={() => setIsImageAnalyzerOpen(!isImageAnalyzerOpen)}
                   className={`p-1.5 rounded-lg transition-all cursor-pointer ${isImageAnalyzerOpen ? 'bg-purple-600/30 text-purple-300 border border-purple-500/40' : 'text-slate-400 hover:text-white hover:bg-slate-800/70'}`}
@@ -695,7 +692,31 @@ export const ListasTab: React.FC = () => {
                 >
                   <Camera className="w-4 h-4" />
                 </button>
+                <button 
+                  onClick={() => setFilter(filter === 'notes' ? 'all' : 'notes')}
+                  className={`p-1.5 rounded-lg transition-all cursor-pointer ${filter === 'notes' ? 'bg-purple-600/30 text-purple-300 border border-purple-500/40' : 'text-slate-400 hover:text-white hover:bg-slate-800/70'}`}
+                  title="Notas Rápidas"
+                >
+                  <StickyNote className="w-4 h-4" />
+                </button>
+                <button 
+                  onClick={() => setFilter(filter === 'links' ? 'all' : 'links')}
+                  className={`p-1.5 rounded-lg transition-all cursor-pointer ${filter === 'links' ? 'bg-purple-600/30 text-purple-300 border border-purple-500/40' : 'text-slate-400 hover:text-white hover:bg-slate-800/70'}`}
+                  title="Enlaces y Links"
+                >
+                  <LinkIcon className="w-4 h-4" />
+                </button>
             </div>
+
+            {filter !== 'all' && (
+              <button
+                onClick={() => setFilter('all')}
+                className="px-2.5 py-1 text-xs bg-purple-600/30 hover:bg-purple-600/50 text-purple-200 border border-purple-500/40 rounded-lg font-semibold transition-all shrink-0 cursor-pointer"
+                title="Volver al tablero de listas"
+              >
+                ← Ver Listas
+              </button>
+            )}
 
             <div className="relative hidden md:block w-48 lg:w-56 shrink-0">
               <Search className="absolute left-2.5 top-1/2 -translate-y-1/2 w-3.5 h-3.5 text-slate-500" />
@@ -708,38 +729,41 @@ export const ListasTab: React.FC = () => {
               />
             </div>
 
-            {/* Quick Status Filter Tabs */}
+            {/* Quick Status Filter Tabs: Todas, Pendientes (por defecto), Completadas */}
             <div className="flex items-center gap-0.5 bg-slate-900 p-0.5 rounded-lg border border-slate-800 shrink-0">
               <button
                 type="button"
                 onClick={() => setTaskStatusFilter('all')}
-                className={`px-2 py-0.5 text-xs font-semibold rounded-md transition-all cursor-pointer ${
+                className={`px-2.5 py-1 text-xs font-semibold rounded-md transition-all cursor-pointer ${
                   taskStatusFilter === 'all'
                     ? 'bg-slate-800 text-white shadow-xs'
                     : 'text-slate-400 hover:text-slate-200'
                 }`}
+                title="Ver todas las tareas (pendientes y completadas)"
               >
                 Todas
               </button>
               <button
                 type="button"
                 onClick={() => setTaskStatusFilter('pending')}
-                className={`px-2 py-0.5 text-xs font-semibold rounded-md transition-all cursor-pointer ${
+                className={`px-2.5 py-1 text-xs font-semibold rounded-md transition-all cursor-pointer ${
                   taskStatusFilter === 'pending'
                     ? 'bg-blue-600 text-white shadow-xs'
                     : 'text-slate-400 hover:text-slate-200'
                 }`}
+                title="Ver solo tareas pendientes (por defecto)"
               >
                 Pendientes
               </button>
               <button
                 type="button"
                 onClick={() => setTaskStatusFilter('completed')}
-                className={`px-2 py-0.5 text-xs font-semibold rounded-md transition-all cursor-pointer ${
+                className={`px-2.5 py-1 text-xs font-semibold rounded-md transition-all cursor-pointer ${
                   taskStatusFilter === 'completed'
                     ? 'bg-emerald-600 text-white shadow-xs'
                     : 'text-slate-400 hover:text-slate-200'
                 }`}
+                title="Ver solo tareas completadas"
               >
                 Completadas
               </button>
@@ -839,181 +863,6 @@ export const ListasTab: React.FC = () => {
           </div>
         </header>
 
-        {/* Línea de navegación horizontal para ver las listas (desplazable para los lados) */}
-        <div 
-          className="bg-[#0b101e] border-b border-slate-800/90 px-3 py-1.5 flex items-center gap-2 overflow-x-auto scrollbar-thin scrollbar-thumb-slate-800 scrollbar-track-transparent select-none shrink-0 z-10"
-          onWheel={(e) => {
-            if (e.deltaY !== 0) {
-              e.currentTarget.scrollLeft += e.deltaY;
-            }
-          }}
-        >
-          {/* Vistas Principales: Tablero, Hoy, Completado */}
-          <div className="flex items-center gap-1 shrink-0">
-            <button
-              onClick={() => setFilter('all')}
-              className={`flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-semibold transition-all cursor-pointer ${
-                filter === 'all'
-                  ? 'bg-purple-600 text-white shadow-md shadow-purple-900/30 border border-purple-500/50'
-                  : 'text-slate-400 hover:text-white hover:bg-slate-800/70 border border-transparent'
-              }`}
-              title="Tablero Kanban completo"
-            >
-              <LayoutDashboard className="w-3.5 h-3.5" />
-              <span>Tablero</span>
-            </button>
-
-            <button
-              onClick={() => setFilter('today')}
-              className={`flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-semibold transition-all cursor-pointer ${
-                filter === 'today'
-                  ? 'bg-purple-600 text-white shadow-md shadow-purple-900/30 border border-purple-500/50'
-                  : 'text-slate-400 hover:text-white hover:bg-slate-800/70 border border-transparent'
-              }`}
-              title="Tareas para hoy"
-            >
-              <Calendar className="w-3.5 h-3.5" />
-              <span>Hoy</span>
-              {(() => {
-                const todayCount = tasks.filter(t => {
-                  if (t.completed) return false;
-                  const d = new Date(t.dueDate);
-                  return d.toDateString() === new Date().toDateString();
-                }).length;
-                return todayCount > 0 ? (
-                  <span className="px-1.5 py-0.2 bg-purple-950 text-purple-200 text-[10px] rounded-full border border-purple-400/40">
-                    {todayCount}
-                  </span>
-                ) : null;
-              })()}
-            </button>
-
-            <button
-              onClick={() => setFilter('completed')}
-              className={`flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-semibold transition-all cursor-pointer ${
-                filter === 'completed'
-                  ? 'bg-purple-600 text-white shadow-md shadow-purple-900/30 border border-purple-500/50'
-                  : 'text-slate-400 hover:text-white hover:bg-slate-800/70 border border-transparent'
-              }`}
-              title="Tareas completadas"
-            >
-              <CheckSquare className="w-3.5 h-3.5" />
-              <span>Completado</span>
-            </button>
-          </div>
-
-          <div className="h-5 w-px bg-slate-800 shrink-0 mx-1" />
-
-          {/* Listas Dinámicas */}
-          <div className="flex items-center gap-1.5 shrink-0">
-            {lists.map(listName => {
-              const Icon = CATEGORY_ICONS[listName] || CATEGORY_ICONS['default'];
-              const isActive = filter === listName;
-              const customColor = listColors[listName];
-              const pendingCount = tasks.filter(t => t.category === listName && !t.completed).length;
-
-              return (
-                <button
-                  key={listName}
-                  onClick={() => setFilter(listName)}
-                  className={`flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-medium transition-all shrink-0 cursor-pointer ${
-                    isActive
-                      ? 'bg-purple-600/30 text-purple-200 border border-purple-500/60 shadow-sm ring-1 ring-purple-500/30'
-                      : 'text-slate-300 hover:text-white hover:bg-slate-800/60 border border-slate-800/80'
-                  }`}
-                  style={
-                    isActive && customColor
-                      ? { backgroundColor: `${customColor}30`, borderColor: `${customColor}90`, color: '#fff' }
-                      : customColor
-                      ? { borderColor: `${customColor}40` }
-                      : undefined
-                  }
-                  title={`Ver lista: ${listName}`}
-                >
-                  <Icon 
-                    className="w-3.5 h-3.5 shrink-0" 
-                    style={{ color: customColor || (isActive ? '#c084fc' : '#94a3b8') }} 
-                  />
-                  <span className="font-semibold">{listName}</span>
-                  {pendingCount > 0 && (
-                    <span 
-                      className="text-[10px] font-mono px-1.5 py-0.2 rounded-full bg-slate-800/90 text-slate-300 border border-slate-700/60"
-                    >
-                      {pendingCount}
-                    </span>
-                  )}
-                </button>
-              );
-            })}
-
-            {/* Añadir nueva lista en la barra */}
-            {isAddingListInBar ? (
-              <form
-                onSubmit={(e) => {
-                  e.preventDefault();
-                  if (newListNameInBar.trim()) {
-                    handleAddList(newListNameInBar.trim());
-                    setNewListNameInBar('');
-                    setIsAddingListInBar(false);
-                  }
-                }}
-                className="flex items-center gap-1 bg-slate-900 px-2 py-1 rounded-lg border border-purple-500/50 shrink-0"
-              >
-                <input
-                  autoFocus
-                  type="text"
-                  value={newListNameInBar}
-                  onChange={(e) => setNewListNameInBar(e.target.value)}
-                  placeholder="Nombre lista..."
-                  className="bg-transparent text-xs text-white placeholder-slate-500 focus:outline-none w-24"
-                />
-                <button type="submit" className="text-purple-400 hover:text-purple-300 p-0.5 cursor-pointer">
-                  <Check className="w-3 h-3" />
-                </button>
-                <button type="button" onClick={() => setIsAddingListInBar(false)} className="text-slate-400 hover:text-red-400 p-0.5 cursor-pointer">
-                  <X className="w-3 h-3" />
-                </button>
-              </form>
-            ) : (
-              <button
-                onClick={() => setIsAddingListInBar(true)}
-                className="flex items-center gap-1 px-2.5 py-1.5 rounded-lg text-xs font-medium text-slate-400 hover:text-purple-300 hover:bg-slate-800/50 border border-dashed border-slate-800 hover:border-purple-500/40 transition-all shrink-0 cursor-pointer"
-                title="Crear nueva lista"
-              >
-                <Plus className="w-3.5 h-3.5" />
-                <span>Nueva lista</span>
-              </button>
-            )}
-          </div>
-
-          <div className="h-5 w-px bg-slate-800 shrink-0 mx-1" />
-
-          {/* Secondary Views: Notas y Links */}
-          <div className="flex items-center gap-1 shrink-0">
-            {[
-              { id: 'notes', icon: StickyNote, label: 'Notas' },
-              { id: 'links', icon: LinkIcon, label: 'Links' },
-            ].map(item => {
-              const isActive = filter === item.id;
-              return (
-                <button
-                  key={item.id}
-                  onClick={() => setFilter(item.id)}
-                  className={`flex items-center gap-1 px-2.5 py-1.5 rounded-lg text-xs font-medium transition-all shrink-0 cursor-pointer ${
-                    isActive
-                      ? 'bg-purple-600/30 text-purple-200 border border-purple-500/60 shadow-sm'
-                      : 'text-slate-400 hover:text-slate-200 hover:bg-slate-800/60 border border-transparent'
-                  }`}
-                  title={item.label}
-                >
-                  <item.icon className="w-3.5 h-3.5" />
-                  <span>{item.label}</span>
-                </button>
-              );
-            })}
-          </div>
-        </div>
-
         {/* Board / Views Area */}
         <main className="flex-1 overflow-y-auto bg-[#070a12] relative flex flex-col min-w-0">
            <div className="flex-1 overflow-x-auto min-h-0">
@@ -1067,14 +916,7 @@ export const ListasTab: React.FC = () => {
                         if (taskStatusFilter === 'pending' && t.completed) return false;
                         if (taskStatusFilter === 'completed' && !t.completed) return false;
                         if (!t.title.toLowerCase().includes(searchQuery.toLowerCase())) return false;
-                        if (filter === 'today') {
-                            const d = new Date(t.dueDate);
-                            const now = new Date();
-                            return d.toDateString() === now.toDateString();
-                        }
-                        if (filter === 'completed') {
-                            return t.completed;
-                        }
+                        if (taskStatusFilter === 'all') return true;
                         return isVisible || !t.completed;
                     });
 
