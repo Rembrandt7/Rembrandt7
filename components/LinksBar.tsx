@@ -228,6 +228,8 @@ const LinksBar: React.FC = () => {
         const name = (link.name || '').toLowerCase();
         const href = (link.href || '').toLowerCase();
         if (link.id === 'renders-remb' || name.includes('renders remb') || href.includes('renders%20remb')) return false;
+        if (link.id === 'capcut' || name.includes('capcut') || name.includes('catcup') || href.includes('capcut')) return false;
+        if (link.id === 'maket-ai' || name.includes('maket') || href.includes('maket.ai')) return false;
         if (isLinkAlwaysVisible(link)) return true; // WhatsApp y Javer siempre visibles
         const cat = link.category || inferLinkCategory(link);
         return activeCategories.includes(cat);
@@ -236,7 +238,11 @@ const LinksBar: React.FC = () => {
     // Deduplicate on the fly so Javer, Flow, MakerWorld and others never appear duplicated, and exclude renders remb
     const cleanLinksBar = (Array.isArray(normalizeAndDeduplicateLinksBar(config?.linksBar || []))
         ? normalizeAndDeduplicateLinksBar(config?.linksBar || [])
-        : []).filter(l => l.id !== 'renders-remb' && !(l.name || '').toLowerCase().includes('renders remb') && !(l.href || '').toLowerCase().includes('renders%20remb'));
+        : []).filter(l => 
+            l.id !== 'renders-remb' && !(l.name || '').toLowerCase().includes('renders remb') && !(l.href || '').toLowerCase().includes('renders%20remb') &&
+            l.id !== 'capcut' && !(l.name || '').toLowerCase().includes('capcut') && !(l.name || '').toLowerCase().includes('catcup') && !(l.href || '').toLowerCase().includes('capcut') &&
+            l.id !== 'maket-ai' && !(l.name || '').toLowerCase().includes('maket') && !(l.href || '').toLowerCase().includes('maket.ai')
+        );
     
     const filteredLinks = cleanLinksBar.filter(isLinkIncludedInFilter);
 

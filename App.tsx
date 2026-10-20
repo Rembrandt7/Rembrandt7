@@ -868,21 +868,16 @@ const MainLayout: React.FC = () => {
               <header className="hidden lg:flex w-full max-w-screen-2xl mb-2.5 pt-1.5 px-2 justify-between items-center gap-3">
                   {/* Floating Glass Capsule Header */}
                   <div className="w-full flex items-center justify-between gap-3 px-4 py-1.5 bg-gradient-to-r from-gray-950/80 via-gray-900/70 to-gray-950/80 backdrop-blur-xl border border-white/10 rounded-2xl shadow-[0_8px_30px_rgba(0,0,0,0.4)]">
-                    {/* Brand Logo with Factura / Renders HDR Logo */}
-                    <div className="flex items-center gap-2.5 min-w-0">
-                      <div className="h-8 md:h-9 px-2 py-0.5 rounded-xl bg-white/5 border border-white/10 flex items-center justify-center shrink-0 shadow-inner">
-                        <img 
-                          src="/logo-rendershdr.jpg" 
-                          alt="Renders HDR" 
-                          className="h-6 md:h-7 w-auto max-w-[130px] md:max-w-[155px] object-contain rounded"
-                          onError={(e) => {
-                            (e.currentTarget as HTMLImageElement).src = 'https://humndjymddoitxxkgtyt.supabase.co/storage/v1/object/public/Rembrandtcosas/logo%20horizontal%20rendershdr.jpg';
-                          }}
-                        />
-                      </div>
-                      <span className="hidden xl:inline text-[11px] font-semibold text-gray-400 tracking-wider uppercase border-l border-white/10 pl-2">
-                        Studio
-                      </span>
+                    {/* Brand Logo with Renders HDR Studio (Transparent & Bigger) */}
+                    <div className="flex items-center min-w-0">
+                      <img 
+                        src="/logo-rendershdr-studio.png" 
+                        alt="Renders HDR Studio" 
+                        className="h-10 md:h-12 w-auto max-w-[210px] md:max-w-[260px] object-contain drop-shadow-[0_4px_14px_rgba(0,0,0,0.65)] hover:scale-[1.03] transition-transform cursor-pointer"
+                        onError={(e) => {
+                          (e.currentTarget as HTMLImageElement).src = '/logo-rendershdr-transparent.png';
+                        }}
+                      />
                     </div>
 
                     {/* Center Reminder Display */}
@@ -1007,16 +1002,14 @@ const MainLayout: React.FC = () => {
                       <Menu size={18} />
                     </button>
                     <div className="flex items-center gap-1.5 min-w-0">
-                      <div className="h-7 px-1.5 py-0.5 rounded-lg bg-white/5 border border-white/10 flex items-center justify-center shrink-0">
-                        <img 
-                          src="/logo-rendershdr.jpg" 
-                          alt="Renders HDR" 
-                          className="h-5 w-auto max-w-[105px] object-contain rounded"
-                          onError={(e) => {
-                            (e.currentTarget as HTMLImageElement).src = 'https://humndjymddoitxxkgtyt.supabase.co/storage/v1/object/public/Rembrandtcosas/logo%20horizontal%20rendershdr.jpg';
-                          }}
-                        />
-                      </div>
+                      <img 
+                        src="/logo-rendershdr-studio.png" 
+                        alt="Renders HDR Studio" 
+                        className="h-7 sm:h-8 w-auto max-w-[140px] object-contain drop-shadow-md"
+                        onError={(e) => {
+                          (e.currentTarget as HTMLImageElement).src = '/logo-rendershdr-transparent.png';
+                        }}
+                      />
                       {isFoldUnfolded && (
                         <span className="text-[8px] text-cyan-400 font-mono font-bold flex items-center gap-0.5">
                           <Maximize2 size={8} /> Fold

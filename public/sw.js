@@ -1,5 +1,5 @@
 // Rembrandt IA Studio - Service Worker
-const CACHE_NAME = 'rembrandt-pwa-v81';
+const CACHE_NAME = 'rembrandt-pwa-v82';
 const STATIC_ASSETS = [
   '/',
   '/index.html',
@@ -10,6 +10,8 @@ const STATIC_ASSETS = [
   '/apple-touch-icon.png',
   '/makerworld_premium.png',
   '/javer_premium.png',
+  '/logo-rendershdr-studio.png',
+  '/logo-rendershdr-transparent.png',
   '/flow_premium.png'
 ];
 
