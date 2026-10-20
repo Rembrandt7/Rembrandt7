@@ -108,9 +108,7 @@ export const PanchoFloatingButton: React.FC<PanchoFloatingButtonProps> = ({
 
   return (
     <div 
-      className={`fixed top-3 z-50 pointer-events-auto flex items-center gap-2 transition-all duration-300 ${
-        leftSidebarOpen ? 'left-14 sm:left-16 lg:left-[345px]' : 'left-14 sm:left-16 lg:left-6'
-      }`}
+      className="fixed bottom-20 lg:bottom-6 right-4 sm:right-6 z-50 pointer-events-auto flex items-center flex-row-reverse gap-2 transition-all duration-300"
     >
       {/* Main Avatar Button */}
       <motion.button
@@ -148,11 +146,11 @@ export const PanchoFloatingButton: React.FC<PanchoFloatingButtonProps> = ({
         />
       </motion.button>
 
-      {/* Dynamic pill badge indicating active tab role (to the right of avatar in top-left) */}
+      {/* Dynamic pill badge indicating active tab role (to the left of avatar when docked on right) */}
       <motion.div
-        initial={{ opacity: 0, x: -15 }}
+        initial={{ opacity: 0, x: 15 }}
         animate={{ opacity: 1, x: 0 }}
-        exit={{ opacity: 0, x: -15 }}
+        exit={{ opacity: 0, x: 15 }}
         className="hidden md:flex items-center gap-2 px-3 py-1.5 rounded-full bg-gray-900/90 backdrop-blur-md border border-white/10 shadow-xl cursor-pointer hover:border-white/20 transition-all"
         onClick={onClick}
       >

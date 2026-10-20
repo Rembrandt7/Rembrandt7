@@ -20,7 +20,7 @@ const TabButton: React.FC<TabButtonProps> = ({ label, isActive, onClick, classNa
       whileTap={{ scale: 0.96 }}
       onClick={onClick}
       className={cn(
-        "px-4 py-2 text-xs sm:text-sm font-semibold rounded-2xl focus:outline-none transition-all duration-200 flex items-center gap-2 group relative backdrop-blur-md select-none",
+        "px-3.5 py-1.5 text-xs font-semibold rounded-xl focus:outline-none transition-all duration-200 flex items-center gap-1.5 group relative backdrop-blur-md select-none",
         onDelete && "pr-[34px]",
         isActive 
           ? "bg-gradient-to-r from-purple-600/90 via-pink-600/85 to-indigo-600/90 text-white shadow-[0_4px_22px_rgba(168,85,247,0.45)] border border-purple-400/50 ring-1 ring-white/20"

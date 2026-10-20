@@ -9,6 +9,7 @@ import { rectSortingStrategy } from '@dnd-kit/sortable';
 import { getSmartLinkTarget, openSmartMobileApp, getInternalTabForLink } from '../utils/appLinkUtils';
 import { inferLinkCategory, LinkCategory, CATEGORY_DEFINITIONS, normalizeAndDeduplicateLinksBar } from '../utils/linkCategoryUtils';
 import { isMobileDevice } from '../utils/deviceUtils';
+import { PanchoRobotAvatar } from './Pancho/PanchoRobotAvatar';
 
 const DEFAULT_CATEGORIES_STORAGE_KEY = 'rembrandt_active_link_categories_v2';
 
@@ -25,8 +26,8 @@ const getDefaultCategories = (): LinkCategory[] => {
             }
         }
     } catch (e) {}
-    // Por defecto en la app: trabajo desactivado, solo compras y social activas
-    return ['compras', 'social'];
+    // Por defecto en la app: todas las categorías activas
+    return ['trabajo', 'compras', 'social'];
 };
 
 const LinkIcon: React.FC<{ 
@@ -220,14 +221,14 @@ const LinksBar: React.FC = () => {
     const isLinkAlwaysVisible = (link: LinkItem) => {
         const name = (link.name || '').toLowerCase();
         const href = (link.href || '').toLowerCase();
-        return name.includes('whatsapp') || href.includes('whatsapp') || link.id === '2';
+        return name.includes('whatsapp') || href.includes('whatsapp') || link.id === '2' || name.includes('javer') || href.includes('javer') || link.id === 'javer';
     };
 
     const isLinkIncludedInFilter = (link: LinkItem) => {
         const name = (link.name || '').toLowerCase();
         const href = (link.href || '').toLowerCase();
         if (link.id === 'renders-remb' || name.includes('renders remb') || href.includes('renders%20remb')) return false;
-        if (isLinkAlwaysVisible(link)) return true; // WhatsApp siempre visible
+        if (isLinkAlwaysVisible(link)) return true; // WhatsApp y Javer siempre visibles
         const cat = link.category || inferLinkCategory(link);
         return activeCategories.includes(cat);
     };
@@ -236,7 +237,21 @@ const LinksBar: React.FC = () => {
     const cleanLinksBar = (Array.isArray(normalizeAndDeduplicateLinksBar(config?.linksBar || []))
         ? normalizeAndDeduplicateLinksBar(config?.linksBar || [])
         : []).filter(l => l.id !== 'renders-remb' && !(l.name || '').toLowerCase().includes('renders remb') && !(l.href || '').toLowerCase().includes('renders%20remb'));
+    
     const filteredLinks = cleanLinksBar.filter(isLinkIncludedInFilter);
+
+    const isJaverLink = (l: LinkItem) => l.id === 'javer' || (l.name || '').toLowerCase() === 'javer' || (l.href || '').toLowerCase().includes('portal.javer.net');
+
+    const javerItem = cleanLinksBar.find(isJaverLink) || {
+        id: 'javer',
+        name: 'Javer',
+        href: 'https://portal.javer.net/Paginas/Index.aspx',
+        category: 'trabajo' as LinkCategory,
+        colorClass: 'text-blue-400 hover:text-white',
+        iconSvg: '<img src="/javer_premium.png" class="w-10 h-10 object-contain" />'
+    };
+
+    const otherFilteredLinks = filteredLinks.filter(l => !isJaverLink(l));
 
     const handleReorder = (newSubset: LinkItem[]) => {
         const newLinks = [...cleanLinksBar];
@@ -252,6 +267,10 @@ const LinksBar: React.FC = () => {
             }
         });
         updateConfig({ ...config, linksBar: normalizeAndDeduplicateLinksBar(newLinks) });
+    };
+
+    const handleReorderOther = (newOtherSubset: LinkItem[]) => {
+        handleReorder([javerItem, ...newOtherSubset]);
     };
 
     const handleMoveLink = (id: string, direction: 'left' | 'right') => {
@@ -285,7 +304,7 @@ const LinksBar: React.FC = () => {
     };
 
     return (
-        <div className="w-full bg-black/30 backdrop-blur-xl border border-white/5 p-2.5 sm:p-4 mb-3 sm:mb-6 relative group/bar shadow-2xl rounded-2xl">
+        <div className="w-full bg-black/30 backdrop-blur-xl border border-white/5 px-2.5 py-1.5 sm:px-3 sm:py-2 mb-2 sm:mb-4 relative group/bar shadow-2xl rounded-2xl">
             {/* Edit Controls - Always visible for better discovery */}
             <div className="absolute top-4 right-4 flex flex-col gap-2 z-50">
             </div>
@@ -363,9 +382,23 @@ const LinksBar: React.FC = () => {
                 </div>
             )}
 
-            <div className={`flex flex-col items-center gap-2.5 sm:gap-3.5 max-w-full mx-auto w-full px-0.5 sm:px-1 ${isEditing ? 'mt-14' : 'mt-0.5'}`}>
-                {/* Selector de Categorías: Selección múltiple de tarjetas (1 o más activas simultáneamente) */}
-                <div className="flex items-center justify-start sm:justify-center gap-1.5 sm:gap-2.5 w-full overflow-x-auto no-scrollbar py-0.5 px-0.5">
+            <div className={`flex items-center gap-2 sm:gap-3 max-w-full mx-auto w-full px-0.5 sm:px-1 ${isEditing ? 'mt-14' : 'mt-0'}`}>
+                {/* Logo de Javer */}
+                <div className="shrink-0 flex items-center">
+                    <LinkIcon 
+                        item={javerItem} 
+                        isEditing={isEditing}
+                        onEdit={(item) => { setCurrentLink(item); setModalOpen(true); }}
+                        onDelete={handleDeleteLink}
+                        onMove={handleMoveLink}
+                        isFirst={true}
+                        isLast={false}
+                        onSelectInternalTab={setActiveTabId}
+                    />
+                </div>
+
+                {/* Pila Vertical de las 3 Categorías (Trabajo, Compras, Social) acomodadas en columna para coincidir con la altura del icono */}
+                <div className="flex flex-col justify-center gap-0.5 sm:gap-1 shrink-0 select-none py-0.5">
                     {CATEGORY_DEFINITIONS.map(cat => {
                         const count = cleanLinksBar.filter(l => (l.category || inferLinkCategory(l)) === cat.id).length;
                         const isActive = activeCategories.includes(cat.id);
@@ -375,66 +408,92 @@ const LinksBar: React.FC = () => {
                                 key={cat.id}
                                 type="button"
                                 onClick={() => toggleCategory(cat.id)}
-                                className={`group/pill relative flex items-center gap-1 sm:gap-1.5 px-2.5 sm:px-3.5 py-1 sm:py-1.5 rounded-full text-[11px] sm:text-xs font-semibold transition-all duration-200 border whitespace-nowrap cursor-pointer select-none shrink-0 ${
+                                className={`group/pill relative flex items-center justify-between gap-1.5 px-2 py-0.5 rounded-lg text-[10px] font-semibold transition-all duration-200 border whitespace-nowrap cursor-pointer shrink-0 ${
                                     isActive 
-                                        ? `${cat.activeClass} shadow-md scale-[1.02]` 
-                                        : `bg-white/5 border-white/10 text-gray-400 opacity-60 hover:opacity-100 hover:scale-[1.01] ${cat.hoverClass}`
+                                        ? `${cat.activeClass} shadow-sm scale-[1.01]` 
+                                        : `bg-white/[0.03] border-white/10 text-gray-400 opacity-60 hover:opacity-100 ${cat.hoverClass}`
                                 }`}
                                 title={`Clic para ${isActive ? 'desactivar' : 'activar'} categoría ${cat.label}`}
                             >
-                                {cat.iconType === 'trabajo' && <Briefcase size={13} className={isActive ? 'text-blue-400' : 'text-gray-400 group-hover/pill:text-blue-300'} />}
-                                {cat.iconType === 'compras' && <ShoppingCart size={13} className={isActive ? 'text-amber-400' : 'text-gray-400 group-hover/pill:text-amber-300'} />}
-                                {cat.iconType === 'social' && <MessageCircle size={13} className={isActive ? 'text-pink-400' : 'text-gray-400 group-hover/pill:text-pink-300'} />}
+                                <div className="flex items-center gap-1">
+                                    {cat.iconType === 'trabajo' && <Briefcase size={11} className={isActive ? 'text-blue-400' : 'text-gray-400 group-hover/pill:text-blue-300'} />}
+                                    {cat.iconType === 'compras' && <ShoppingCart size={11} className={isActive ? 'text-amber-400' : 'text-gray-400 group-hover/pill:text-amber-300'} />}
+                                    {cat.iconType === 'social' && <MessageCircle size={11} className={isActive ? 'text-pink-400' : 'text-gray-400 group-hover/pill:text-pink-300'} />}
+                                    
+                                    <span className="capitalize text-[10px] sm:text-[11px] leading-tight">{cat.label}</span>
+                                </div>
                                 
-                                <span className="capitalize text-[11px] sm:text-xs">{cat.label}</span>
-                                
-                                <span className={`text-[10px] font-mono px-1.5 py-0.2 rounded-full ${
-                                    isActive 
-                                        ? 'bg-black/40 text-white font-bold' 
-                                        : 'bg-white/5 text-gray-500'
-                                }`}>
-                                    {count}
-                                </span>
+                                <div className="flex items-center gap-1 ml-1.5">
+                                    <span className={`text-[9px] font-mono px-1 py-0.2 rounded ${
+                                        isActive 
+                                            ? 'bg-black/40 text-white font-bold' 
+                                            : 'bg-white/5 text-gray-500'
+                                    }`}>
+                                        {count}
+                                    </span>
 
-                                <div className={`w-1.5 h-1.5 rounded-full transition-all duration-200 ${
-                                    isActive 
-                                        ? 'bg-emerald-400 shadow-[0_0_8px_rgba(52,211,153,0.8)]' 
-                                        : 'bg-gray-600/40'
-                                }`} />
+                                    <div className={`w-1.5 h-1.5 rounded-full transition-all duration-200 ${
+                                        isActive 
+                                            ? 'bg-emerald-400 shadow-[0_0_6px_rgba(52,211,153,0.8)]' 
+                                            : 'bg-gray-600/40'
+                                    }`} />
+                                </div>
                             </button>
                         );
                     })}
                 </div>
 
-                {/* Lista de Enlaces interactivos */}
-                <SortableLinkList 
-                    key={`links-bar-${activeCategories.slice().sort().join('-')}`}
-                    id="linksBar"
-                    items={filteredLinks}
-                    isEditing={isEditing}
-                    onReorder={handleReorder}
-                    strategy={rectSortingStrategy}
-                    className="flex items-center justify-start sm:justify-center gap-2 sm:gap-3 w-full py-1.5 overflow-x-auto no-scrollbar scroll-smooth min-h-[54px] px-1"
-                    renderItem={(link, index) => (
-                        <LinkIcon 
-                            key={link.id} 
-                            item={link} 
-                            isEditing={isEditing}
-                            onEdit={(item) => { setCurrentLink(item); setModalOpen(true); }}
-                            onDelete={handleDeleteLink}
-                            onMove={handleMoveLink}
-                            isFirst={index === 0}
-                            isLast={index === filteredLinks.length - 1}
-                            onSelectInternalTab={setActiveTabId}
-                        />
+                <div className="h-10 w-[1px] bg-white/10 shrink-0 hidden sm:block mx-0.5" />
+
+                {/* Lista de los demás Enlaces interactivos con scroll horizontal suave */}
+                <div className="flex-1 min-w-0 overflow-x-auto no-scrollbar scroll-smooth">
+                    <SortableLinkList 
+                        key={`links-bar-${activeCategories.slice().sort().join('-')}`}
+                        id="linksBar"
+                        items={otherFilteredLinks}
+                        isEditing={isEditing}
+                        onReorder={handleReorderOther}
+                        strategy={rectSortingStrategy}
+                        className="flex items-center justify-start gap-2 sm:gap-2.5 py-1 min-h-[50px] px-0.5"
+                        renderItem={(link, index) => (
+                            <LinkIcon 
+                                key={link.id} 
+                                item={link} 
+                                isEditing={isEditing}
+                                onEdit={(item) => { setCurrentLink(item); setModalOpen(true); }}
+                                onDelete={handleDeleteLink}
+                                onMove={handleMoveLink}
+                                isFirst={false}
+                                isLast={index === otherFilteredLinks.length - 1}
+                                onSelectInternalTab={setActiveTabId}
+                            />
+                        )}
+                    />
+                    
+                    {otherFilteredLinks.length === 0 && (
+                        <div className="text-gray-500 text-xs italic py-2 text-center whitespace-nowrap">
+                            Ningún otro enlace con los filtros activos.
+                        </div>
                     )}
-                />
-                
-                {filteredLinks.length === 0 && (
-                    <div className="text-gray-500 text-xs italic py-3 text-center">
-                        Ninguna categoría activa. Selecciona una o más tarjetas arriba para ver tus enlaces.
-                    </div>
-                )}
+                </div>
+
+                {/* Pancho Assistant Button a la derecha de la barra (Caja roja de la solicitud) */}
+                <div className="shrink-0 flex items-center pl-1 sm:pl-2 border-l border-white/10">
+                    <button
+                        onClick={() => window.dispatchEvent(new CustomEvent('open-pancho'))}
+                        className="flex items-center gap-1.5 sm:gap-2 px-2.5 sm:px-3 py-1.5 rounded-2xl bg-gradient-to-r from-purple-950/60 via-purple-900/40 to-pink-950/40 hover:from-purple-900/70 hover:to-pink-900/60 border border-purple-500/40 text-purple-200 hover:text-white transition-all shadow-lg hover:shadow-purple-500/20 group/panchoBar shrink-0 cursor-pointer"
+                        title="Abrir a Pancho Asistente"
+                    >
+                        <div className="relative flex items-center justify-center shrink-0">
+                            <PanchoRobotAvatar state="idle" size={28} showTail={false} />
+                            <span className="absolute -top-0.5 -right-0.5 w-2 h-2 rounded-full bg-emerald-400 shadow-[0_0_6px_rgba(52,211,153,0.9)]" />
+                        </div>
+                        <div className="hidden sm:flex flex-col text-left leading-none">
+                            <span className="text-[11px] font-bold text-white group-hover/panchoBar:text-pink-300 transition-colors">Pancho</span>
+                            <span className="text-[8px] text-purple-300/80 font-mono">IA Asistente</span>
+                        </div>
+                    </button>
+                </div>
             </div>
 
             <LinkEditorModal 

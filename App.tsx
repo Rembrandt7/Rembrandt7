@@ -865,35 +865,40 @@ const MainLayout: React.FC = () => {
           <ShortcutListener />
           <div className="flex flex-col items-center p-2 sm:p-4 min-h-full pb-24"> 
               {/* DESKTOP HEADER (Large screens >= 1024px) */}
-              <header className="hidden lg:flex w-full max-w-screen-2xl mb-5 pt-3 px-2 justify-between items-center gap-4">
+              <header className="hidden lg:flex w-full max-w-screen-2xl mb-2.5 pt-1.5 px-2 justify-between items-center gap-3">
                   {/* Floating Glass Capsule Header */}
-                  <div className="w-full flex items-center justify-between gap-4 px-6 py-3 bg-gradient-to-r from-gray-950/75 via-gray-900/65 to-gray-950/75 backdrop-blur-xl border border-white/10 rounded-3xl shadow-[0_10px_35px_rgba(0,0,0,0.45)]">
-                    {/* Brand Title with Gradient Glow */}
-                    <div className="flex items-center gap-3.5 min-w-0">
-                      <div className="w-9 h-9 rounded-2xl bg-gradient-to-tr from-purple-600 via-pink-600 to-amber-500 p-0.5 shadow-[0_0_20px_rgba(168,85,247,0.4)] flex items-center justify-center shrink-0">
-                        <div className="w-full h-full bg-gray-950/90 rounded-[14px] flex items-center justify-center">
-                          <Sparkles size={18} className="text-pink-400 animate-pulse" />
-                        </div>
+                  <div className="w-full flex items-center justify-between gap-3 px-4 py-1.5 bg-gradient-to-r from-gray-950/80 via-gray-900/70 to-gray-950/80 backdrop-blur-xl border border-white/10 rounded-2xl shadow-[0_8px_30px_rgba(0,0,0,0.4)]">
+                    {/* Brand Logo with Factura / Renders HDR Logo */}
+                    <div className="flex items-center gap-2.5 min-w-0">
+                      <div className="h-8 md:h-9 px-2 py-0.5 rounded-xl bg-white/5 border border-white/10 flex items-center justify-center shrink-0 shadow-inner">
+                        <img 
+                          src="/logo-rendershdr.jpg" 
+                          alt="Renders HDR" 
+                          className="h-6 md:h-7 w-auto max-w-[130px] md:max-w-[155px] object-contain rounded"
+                          onError={(e) => {
+                            (e.currentTarget as HTMLImageElement).src = 'https://humndjymddoitxxkgtyt.supabase.co/storage/v1/object/public/Rembrandtcosas/logo%20horizontal%20rendershdr.jpg';
+                          }}
+                        />
                       </div>
-                      <h1 className="text-xl md:text-2xl font-black tracking-tight text-transparent bg-clip-text bg-gradient-to-r from-white via-purple-200 to-pink-400 truncate">
-                        Rembrandt <span className="text-pink-500 font-extrabold">Studio</span>
-                      </h1>
+                      <span className="hidden xl:inline text-[11px] font-semibold text-gray-400 tracking-wider uppercase border-l border-white/10 pl-2">
+                        Studio
+                      </span>
                     </div>
 
                     {/* Center Reminder Display */}
-                    <div className="hidden md:flex flex-1 max-w-xl mx-4">
+                    <div className="hidden md:flex flex-1 max-w-xl mx-3">
                       <ReminderDisplay />
                     </div>
 
                     {/* Clock & Status Badge */}
-                    <div className="hidden sm:flex items-center gap-3 shrink-0">
-                      <div className="px-3.5 py-1.5 bg-white/[0.04] border border-white/10 rounded-2xl backdrop-blur-md shadow-inner flex items-center gap-2">
+                    <div className="hidden sm:flex items-center gap-2 shrink-0">
+                      <div className="px-2.5 py-1 bg-white/[0.04] border border-white/10 rounded-xl backdrop-blur-md shadow-inner flex items-center gap-1.5 text-xs">
                         <Clock />
                       </div>
                     </div>
 
                     {/* Actions Toolbar */}
-                    <div className="flex items-center gap-1.5 pl-3 border-l border-white/10">
+                    <div className="flex items-center gap-1 pl-2.5 border-l border-white/10">
                       {/* Global Quick Voice & Idea Capture Button */}
                       <motion.button 
                         whileHover={{ scale: 1.05 }} 
@@ -992,26 +997,29 @@ const MainLayout: React.FC = () => {
               </header>
 
               {/* MOBILE & GALAXY FOLD HEADER (< 1024px) */}
-              <header className="flex lg:hidden w-full mb-2.5 pt-1.5 px-0.5 sm:px-1 justify-between items-center gap-1 sm:gap-2">
-                  <div className="flex items-center gap-1 sm:gap-2 min-w-0">
+              <header className="flex lg:hidden w-full mb-1.5 pt-1 px-0.5 sm:px-1 justify-between items-center gap-1 sm:gap-2">
+                  <div className="flex items-center gap-1.5 min-w-0">
                     <button 
                       onClick={() => setLeftSidebarOpen(!leftSidebarOpen)} 
-                      className="p-1.5 sm:p-2 hover:bg-gray-800 rounded-xl text-gray-400 hover:text-white transition-colors shrink-0"
+                      className="p-1.5 hover:bg-gray-800 rounded-xl text-gray-400 hover:text-white transition-colors shrink-0"
                       title="Menú lateral"
                     >
-                      <Menu size={20} />
+                      <Menu size={18} />
                     </button>
-                    <div className="flex flex-col min-w-0">
-                      <h1 className="text-base sm:text-lg font-black text-transparent bg-clip-text bg-gradient-to-r from-purple-400 to-pink-600 truncate leading-tight">
-                        Rembrandt IA
-                      </h1>
-                      {isFoldUnfolded ? (
-                        <span className="text-[8px] sm:text-[9px] text-cyan-400 font-mono font-bold flex items-center gap-1">
-                          <Maximize2 size={9} /> Fold Desplegado
-                        </span>
-                      ) : (
-                        <span className="text-[8px] sm:text-[9px] text-purple-400/80 font-mono">
-                          Plegado
+                    <div className="flex items-center gap-1.5 min-w-0">
+                      <div className="h-7 px-1.5 py-0.5 rounded-lg bg-white/5 border border-white/10 flex items-center justify-center shrink-0">
+                        <img 
+                          src="/logo-rendershdr.jpg" 
+                          alt="Renders HDR" 
+                          className="h-5 w-auto max-w-[105px] object-contain rounded"
+                          onError={(e) => {
+                            (e.currentTarget as HTMLImageElement).src = 'https://humndjymddoitxxkgtyt.supabase.co/storage/v1/object/public/Rembrandtcosas/logo%20horizontal%20rendershdr.jpg';
+                          }}
+                        />
+                      </div>
+                      {isFoldUnfolded && (
+                        <span className="text-[8px] text-cyan-400 font-mono font-bold flex items-center gap-0.5">
+                          <Maximize2 size={8} /> Fold
                         </span>
                       )}
                     </div>
@@ -1062,7 +1070,7 @@ const MainLayout: React.FC = () => {
               <div className="w-full max-w-screen-2xl flex-grow">
                   <main className="w-full pb-8">
                       {/* DESKTOP NAVIGATION TABS (>= 1024px) */}
-                      <nav className="hidden lg:flex w-full mb-4 flex-wrap justify-center gap-2 items-center">
+                      <nav className="hidden lg:flex w-full mb-2 flex-wrap justify-center gap-1.5 items-center">
                           <SortableContext 
                             items={config.tabs.filter(t => t.isVisible && !isDbTab(t) && !isRenderTab(t)).map(t => t.id)} 
                             strategy={horizontalListSortingStrategy}
