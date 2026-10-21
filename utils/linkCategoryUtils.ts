@@ -132,7 +132,7 @@ export const CANONICAL_LINKS_MAP: Record<string, Partial<LinkItem>> = {
     href: 'https://web.whatsapp.com/',
     category: 'social',
     colorClass: 'text-green-500 hover:text-green-400',
-    iconSvg: `<svg xmlns="http://www.w3.org/2000/svg" class="h-6 w-6" viewBox="0 0 24 24" fill="currentColor"><path d="M.057 24l1.687-6.163c-1.041-1.804-1.588-3.849-1.587-5.946.003-6.556 5.338-11.891 11.893-11.891 3.181.001 6.167 1.24 8.413 3.488 2.245 2.248 3.481 5.236 3.48 8.414-.003 6.557-5.338 11.892-11.893 11.892-1.99-.001-3.951-.5-5.688-1.448l-6.305 1.654zm6.597-3.807c1.676.995 3.276 1.591 5.392 1.592 5.448 0 9.886-4.434 9.889-9.885.002-5.462-4.415-9.89-9.881-9.892-5.452 0-9.887 4.434-9.889 9.886-.001 2.269.655 4.502 1.906 6.344l-1.191 4.353 4.462-1.161z" /></svg>`
+    iconSvg: `<svg viewBox="0 0 24 24" class="w-full h-full fill-current" xmlns="http://www.w3.org/2000/svg"><path d="M12.04 2c-5.46 0-9.91 4.45-9.91 9.91 0 1.75.46 3.45 1.32 4.95L2.05 22l5.25-1.38c1.45.79 3.08 1.21 4.74 1.21 5.46 0 9.91-4.45 9.91-9.91 0-2.65-1.03-5.14-2.9-7.01A9.816 9.816 0 0 0 12.04 2m.01 1.67c2.2 0 4.26.86 5.82 2.42a8.225 8.225 0 0 1 2.41 5.83c0 4.54-3.7 8.24-8.24 8.24-1.48 0-2.93-.4-4.2-1.15l-.3-.18-3.12.82.83-3.04-.2-.31a8.196 8.196 0 0 1-1.26-4.38c0-4.54 3.7-8.24 8.24-8.24m-3.53 3.63c-.19 0-.52.07-.79.37-.27.3-1.04 1.02-1.04 2.48 0 1.47 1.07 2.89 1.21 3.09.15.2 2.1 3.2 5.08 4.49 2.49 1.07 2.99.86 3.53.81.54-.05 1.74-.71 1.99-1.4.24-.68.24-1.27.17-1.4-.07-.12-.27-.2-.56-.34-.3-.15-1.74-.86-2.01-.96-.27-.1-.47-.15-.67.15-.2.3-.77.96-.94 1.16-.17.2-.34.22-.64.07-.3-.15-1.26-.46-2.39-1.48-.88-.79-1.48-1.76-1.65-2.06-.17-.3-.02-.46.13-.61.14-.14.3-.35.45-.52.15-.17.2-.3.3-.5.1-.2.05-.37-.02-.52-.08-.15-.67-1.62-.92-2.22-.24-.6-.49-.51-.67-.52h-.57z"/></svg>`
   },
   'notion': {
     id: '3',
@@ -140,17 +140,15 @@ export const CANONICAL_LINKS_MAP: Record<string, Partial<LinkItem>> = {
     href: 'https://www.notion.so/',
     category: 'trabajo',
     colorClass: 'text-white hover:text-gray-300',
-    iconSvg: `<svg xmlns="http://www.w3.org/2000/svg" class="h-6 w-6" viewBox="0 0 24 24" fill="currentColor"><path d="M4.021 1.761A.97.97 0 0 0 3 2.754V21.36c0 .546.438.986.97.972.032.004.064.004.096 0h16.29a.952.952 0 0 0 .963-.951V2.623a.952.952 0 0 0-.963-.951H4.117a.65.65 0 0 0-.096.09zM5.38 4.28h2.24l6.983 11.233V4.28h2.096v15.226h-2.12L7.65 8.358v11.148H5.38V4.28z"/></svg>`
+    iconSvg: `<svg viewBox="0 0 24 24" class="w-full h-full fill-current" xmlns="http://www.w3.org/2000/svg"><path d="M4.459 4.208c.746.606 1.026.56 2.428.466l13.215-.793c.28 0 .047-.28-.046-.326L17.86 1.69c-.466-.373-.84-.466-1.586-.42L3.899 2.25c-.466.047-.56.28-.373.513l.933 1.445zm-.42 3.125v13.634c0 .84.42 1.12 1.306 1.073l14.195-.84c.886-.046.98-.56.98-1.213V6.353c0-.653-.28-.933-.886-.886L5.345 6.307c-.7.046-1.306.326-1.306 1.026zm12.37.933c.093.42 0 .84-.373.886l-.7.14v8.586c-.513.28-1.026.466-1.493.466-.793 0-1.026-.28-1.633-1.026l-4.76-7.464v7.324l1.4.326c0 .42-.326.746-.746.746H4.832c-.093-.42.093-.746.513-.793l.886-.187V9.387l-1.12-.093c0-.42.233-.746.653-.793l3.36-.233 5.087 7.79V9.107l-1.213-.14c0-.42.28-.746.7-.793l3.08-.233z"/></svg>`
   },
   'javer': {
     id: 'javer',
     name: 'Javer',
     href: 'https://portal.javer.net/Paginas/Index.aspx',
     category: 'trabajo',
-    colorClass: 'text-blue-500 hover:text-blue-400',
-    iconSvg: `<img src="/javer_premium.png" class="w-10 h-10 object-contain" />`,
-    outlineColor: '#f20202',
-    outlineWidth: 10
+    colorClass: 'text-red-600 hover:text-red-500',
+    iconSvg: `<svg class="w-full h-full" viewBox="0 0 24 24" fill="currentColor" xmlns="http://www.w3.org/2000/svg"><path d="M15.5 3H19v13.5c0 2.48-2.02 4.5-4.5 4.5S10 18.98 10 16.5V15h3v1.5c0 .83.67 1.5 1.5 1.5s1.5-.67 1.5-1.5V3z" /></svg>`
   },
   'flow': {
     id: 'flow',
@@ -266,8 +264,14 @@ export function normalizeAndDeduplicateLinksBar(links: LinkItem[]): LinkItem[] {
     const nameLower = item.name.trim().toLowerCase();
     const hrefNormalized = (item.href || '').trim().toLowerCase().replace(/\/$/, '');
 
-    // Exclude Compresor from linksBar (per user instruction)
+    // Exclude Compresor, CapCut and Maket AI from linksBar (per explicit user instruction)
     if (nameLower.includes('compresor') || item.id === 'compresor' || item.id === 'qa-2') {
+      continue;
+    }
+    if (nameLower.includes('capcut') || item.id === '11' || item.id === 'capcut') {
+      continue;
+    }
+    if (nameLower.includes('maket') || item.id === '10' || item.id === 'maket') {
       continue;
     }
     if (nameLower === 'renders remb' || nameLower === 'renders' || item.id === 'renders-remb' || (hrefNormalized && hrefNormalized.includes('renders%20remb'))) {
@@ -283,7 +287,12 @@ export function normalizeAndDeduplicateLinksBar(links: LinkItem[]): LinkItem[] {
       item.name = canonical.name || item.name;
       item.category = canonical.category || item.category;
       item.colorClass = canonical.colorClass || item.colorClass;
-      item.iconSvg = canonical.iconSvg || item.iconSvg;
+      // Always enforce authentic icons for canonical links (especially Javer, WhatsApp, Notion, Rendair)
+      if (nameLower === 'javer' || nameLower === 'whatsapp' || nameLower === 'notion' || nameLower === 'rendair' || !item.iconSvg) {
+        item.iconSvg = canonical.iconSvg!;
+      } else {
+        item.iconSvg = canonical.iconSvg || item.iconSvg;
+      }
       if (canonical.outlineColor) item.outlineColor = canonical.outlineColor;
       if (canonical.outlineWidth) item.outlineWidth = canonical.outlineWidth;
     }
@@ -330,7 +339,7 @@ export function normalizeAndDeduplicateLinksBar(links: LinkItem[]): LinkItem[] {
     result.push(item);
   }
 
-  // Ensure all authentic canonical links are always present in linksBar
+  // Ensure all authentic canonical links are always present in linksBar (excluding CapCut & Maket AI per user request)
   const MANDATORY_CANONICALS = [
     'javer',
     'makerworld',
@@ -338,21 +347,18 @@ export function normalizeAndDeduplicateLinksBar(links: LinkItem[]): LinkItem[] {
     'notion',
     'youtube',
     'flow',
-    'maket ai',
+    'rendair',
     'mercadolibre',
     'amazon',
     'pinterest',
     'facebook',
     'instagram',
-    'x',
-    'capcut',
-    'rendair'
+    'x'
   ];
 
   for (const key of MANDATORY_CANONICALS) {
     const isPresent = seenNames.has(key) || 
-      (key === 'mercadolibre' && seenNames.has('mercado libre')) ||
-      (key === 'maket ai' && (seenNames.has('maket') || seenNames.has('maket ai')));
+      (key === 'mercadolibre' && seenNames.has('mercado libre'));
 
     if (!isPresent) {
       const def = CANONICAL_LINKS_MAP[key];
@@ -372,28 +378,26 @@ export function normalizeAndDeduplicateLinksBar(links: LinkItem[]): LinkItem[] {
     }
   }
 
-  // Desired authentic visual order matching the original layout
+  // Desired authentic visual order matching the original layout with Rendair in centro de trabajos
   const DESIRED_ORDER = [
     'makerworld',
     'whatsapp',
     'notion',
     'youtube',
     'flow',
-    'maket ai',
+    'rendair',
     'mercadolibre',
     'amazon',
     'pinterest',
     'facebook',
     'instagram',
-    'x',
-    'capcut',
-    'rendair'
+    'x'
   ];
 
   // If the list is the canonical set, sort them in the exact order from the screenshot
   const isDefaultSet = result.every(item => {
     const n = (item.name || '').toLowerCase().trim();
-    return n === 'javer' || DESIRED_ORDER.includes(n) || n === 'mercado libre' || n === 'maket';
+    return n === 'javer' || DESIRED_ORDER.includes(n) || n === 'mercado libre';
   });
 
   if (isDefaultSet) {
@@ -401,7 +405,6 @@ export function normalizeAndDeduplicateLinksBar(links: LinkItem[]): LinkItem[] {
       const n = (item.name || '').toLowerCase().trim();
       if (n === 'javer') return -1;
       if (n === 'mercado libre') return DESIRED_ORDER.indexOf('mercadolibre');
-      if (n === 'maket') return DESIRED_ORDER.indexOf('maket ai');
       const idx = DESIRED_ORDER.indexOf(n);
       return idx !== -1 ? idx : 999;
     };
