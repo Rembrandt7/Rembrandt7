@@ -1,5 +1,5 @@
 // Rembrandt IA Studio - Service Worker
-const CACHE_NAME = 'rembrandt-pwa-v93';
+const CACHE_NAME = 'rembrandt-pwa-v94';
 const STATIC_ASSETS = [
   '/',
   '/index.html',
