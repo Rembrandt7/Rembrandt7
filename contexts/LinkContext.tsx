@@ -191,8 +191,6 @@ const INITIAL_CONFIG: AppConfig = {
         { id: 'qa-javer', name: 'Javer Data Center', href: 'https://aistudio.google.com/apps/3a3196da-cb37-40b8-9a5d-48e74634248d?showPreview=true&showAssistant=true', colorClass: 'hover:text-blue-400', iconSvg: '<svg class="w-full h-full" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg"><defs><linearGradient id="javer-dc-grad" x1="0%" y1="0%" x2="100%" y2="100%"><stop offset="0%" stop-color="#3b82f6" /><stop offset="50%" stop-color="#06b6d4" /><stop offset="100%" stop-color="#3b82f6" /></linearGradient></defs><rect x="3" y="3" width="18" height="18" rx="3" stroke="url(#javer-dc-grad)" stroke-width="2" /><line x1="3" y1="9" x2="21" y2="9" stroke="url(#javer-dc-grad)" stroke-width="1.5" /><line x1="3" y1="15" x2="21" y2="15" stroke="url(#javer-dc-grad)" stroke-width="1.5" stroke-dasharray="2 2" /><circle cx="7" cy="6" r="1" fill="#60a5fa" /><circle cx="11" cy="6" r="1" fill="#34d399" /><circle cx="7" cy="12" r="1" fill="#34d399" /><circle cx="11" cy="12" r="1" fill="#60a5fa" /><circle cx="7" cy="18" r="1" fill="#f43f5e" /><circle cx="11" cy="18" r="1" fill="#34d399" /><path d="M17 5v11a3 3 0 0 1-5 2.2" stroke="url(#javer-dc-grad)" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" /></svg>' },
         { id: 'qa-pdf-remb', name: 'PDF', href: 'https://pdf-remb.vercel.app/', colorClass: 'hover:text-rose-400', iconSvg: '<svg class="w-full h-full" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/><path d="M9 15v-4h2a1.5 1.5 0 0 1 0 3H9"/><path d="M15 11v4"/></svg>' },
         { id: 'qa-3', name: 'iLovePDF', href: 'https://www.ilovepdf.com/es', colorClass: 'hover:text-red-500', iconSvg: '<svg class="w-full h-full" viewBox="0 0 64 64" xmlns="http://www.w3.org/2000/svg"><rect width="56" height="56" x="4" y="4" rx="8" fill="currentColor"/><text x="32" y="42" fontFamily="Arial, sans-serif" fontSize="22" fontWeight="bold" fill="#111827" textAnchor="middle">PDF</text></svg>' },
-        { id: 'qa-4', name: 'Cotizador', href: 'https://cotizador-remb.vercel.app', colorClass: 'hover:text-lime-500', iconSvg: '<svg class="w-full h-full" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><line x1="12" y1="1" x2="12" y2="23"></line><path d="M17 5H9.5a3.5 3.5 0 0 0 0 7h5a3.5 3.5 0 0 1 0 7H6"></path></svg>' },
-        { id: 'qa-5', name: 'Listas Remb', href: 'https://listas-remb.vercel.app/', colorClass: 'hover:text-purple-400', iconSvg: '<svg class="w-full h-full" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M22 19a2 2 0 0 1-2 2H4a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h5l2 3h9a2 2 0 0 1 2 2z"></path><line x1="12" y1="11" x2="12" y2="17"></line><line x1="9" y1="14" x2="15" y2="14"></line></svg>' },
         { id: 'qa-6', name: 'Áreas Municipales', href: 'https://areas-municipales-laminas.vercel.app/', colorClass: 'hover:text-orange-500', iconSvg: '<svg class="w-full h-full" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M3 21h18v-8a2 2 0 0 0-2-2H5a2 2 0 0 0-2 2v8z" /><path d="M3 10a2 2 0 0 1 .7-1.7L12 3l8.3 5.3a2 2 0 0 1 .7 1.7V11H3V10z" /><line x1="9" y1="21" x2="9" y2="11" /><line x1="15" y1="21" x2="15" y2="11" /></svg>' },
         { id: 'qa-8', name: 'Convertio', href: 'https://convertio.co/es/download/e6b1e34a2e937c3a18305b732b341a602788c1/', colorClass: 'hover:text-red-400', iconSvg: '<svg class="w-full h-full" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M8 3v12" /><path d="M12 7L8 3L4 7" /><path d="M16 21V9" /><path d="M12 17l4 4l4-4" /></svg>' },
         { id: 'qa-11', name: 'Sherwin Williams', href: 'https://sherrywilliams.vercel.app', colorClass: 'hover:text-blue-500', iconSvg: '<svg class="w-full h-full" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M12 22a7 7 0 0 0 7-7c0-2-1-3.9-3-5.5s-3.5-4-4-6.5c-.5 2.5-2 4.9-4 6.5C6 11.1 5 13 5 15a7 7 0 0 0 7 7z" /></svg>' }
@@ -577,17 +575,19 @@ const normalizeConfigCategoriesAndQuickAccess = (cfg: any): boolean => {
 
   // 1. Normalize Quick Access in aiSidebar
   if (cfg.aiSidebar && Array.isArray(cfg.aiSidebar.quickAccess)) {
-    const obsoleteNames = ['svg generator', 'niveles', 'deberes', 'removedor de marcas de agua', 'vectorizar', 'renders remb', 'mixboard', 'compresor', 'rendair'];
+    const obsoleteNames = ['svg generator', 'niveles', 'deberes', 'removedor de marcas de agua', 'vectorizar', 'renders remb', 'mixboard', 'compresor', 'rendair', 'cotizador', 'listas remb', 'listas'];
     const originalLen = cfg.aiSidebar.quickAccess.length;
 
     cfg.aiSidebar.quickAccess = cfg.aiSidebar.quickAccess.filter((item: any) => {
       const name = (item.name || '').toLowerCase().trim();
       const href = (item.href || '').toLowerCase();
-      if (item.id === 'qa-renders-remb' || item.id === 'qa-2' || item.id === 'qa-1' || isMixboardItem(item) || isCompresorItem(item) || obsoleteNames.includes(name)) return false;
+      if (item.id === 'qa-renders-remb' || item.id === 'qa-2' || item.id === 'qa-1' || item.id === 'qa-4' || item.id === 'qa-5' || isMixboardItem(item) || isCompresorItem(item) || isCotizadorItem(item) || isListasRembItem(item) || obsoleteNames.includes(name)) return false;
       if (href.includes('f46f8639-4c97-4e29-9bdc-b99c2a46a091') || // svg generator
           href.includes('b1e55191-36d7-483b-b3fb-d8088b0a07c5') || // niveles
           href.includes('1hsivhk6jdb7s9ccuqgai1dvw7gppzzvl') || // deberes
           href.includes('0c58e0e4-a7ab-4a4e-a6d0-877702965d86') || // removedor
+          href.includes('cotizador-remb.vercel.app') ||
+          href.includes('listas-remb.vercel.app') ||
           href.includes('rendair.ai')) {
         return false;
       }
@@ -764,28 +764,19 @@ const ensureSherwinWilliamsLinkUpdated = (cfg: any): boolean => {
   };
 
   if (cfg.aiSidebar?.quickAccess && Array.isArray(cfg.aiSidebar.quickAccess)) {
+    const prevQALen = cfg.aiSidebar.quickAccess.length;
+    cfg.aiSidebar.quickAccess = cfg.aiSidebar.quickAccess.filter(
+      (item: any) => !isCotizadorItem(item) && !isListasRembItem(item) && !isCompresorItem(item) && item.id !== 'qa-4' && item.id !== 'qa-5' && !(item.name || '').toLowerCase().includes('cotizador') && !(item.name || '').toLowerCase().includes('listas')
+    );
+    if (cfg.aiSidebar.quickAccess.length !== prevQALen) {
+      updated = true;
+    }
     updateArray(cfg.aiSidebar.quickAccess);
     const hasSherwin = cfg.aiSidebar.quickAccess.some(isSherwinItem);
     if (!hasSherwin) {
       const defaultSherwin = INITIAL_CONFIG.aiSidebar.quickAccess.find(l => l.id === 'qa-11');
       if (defaultSherwin) {
         cfg.aiSidebar.quickAccess.push({ ...defaultSherwin, href: SHERWIN_WILLIAMS_URL });
-        updated = true;
-      }
-    }
-    const hasCotizador = cfg.aiSidebar.quickAccess.some(isCotizadorItem);
-    if (!hasCotizador) {
-      const defaultCotizador = INITIAL_CONFIG.aiSidebar.quickAccess.find(l => l.id === 'qa-4');
-      if (defaultCotizador) {
-        cfg.aiSidebar.quickAccess.push({ ...defaultCotizador, href: COTIZADOR_URL });
-        updated = true;
-      }
-    }
-    const hasListasRemb = cfg.aiSidebar.quickAccess.some(isListasRembItem);
-    if (!hasListasRemb) {
-      const defaultListasRemb = INITIAL_CONFIG.aiSidebar.quickAccess.find(l => l.id === 'qa-5');
-      if (defaultListasRemb) {
-        cfg.aiSidebar.quickAccess.push({ ...defaultListasRemb, name: 'Listas Remb', href: LISTAS_REMB_URL });
         updated = true;
       }
     }
@@ -1295,7 +1286,7 @@ export const LinkProvider: React.FC<{ children: React.ReactNode }> = ({ children
           finalConfig.aiSidebar.quickAccess = finalConfig.aiSidebar.quickAccess.filter((l: any) => {
             const name = (l.name || '').toLowerCase();
             const href = (l.href || '').toLowerCase();
-            return l.id !== 'qa-renders-remb' && l.id !== 'qa-2' && !name.includes('renders remb') && !name.includes('compresor') && !href.includes('renders%20remb') && !href.includes('compresor');
+            return l.id !== 'qa-renders-remb' && l.id !== 'qa-2' && l.id !== 'qa-4' && l.id !== 'qa-5' && !isCotizadorItem(l) && !isListasRembItem(l) && !name.includes('renders remb') && !name.includes('compresor') && !name.includes('cotizador') && !name.includes('listas') && !href.includes('renders%20remb') && !href.includes('compresor') && !href.includes('cotizador-remb') && !href.includes('listas-remb');
           });
           finalConfig.aiSidebar.quickAccess = sortQuickAccessByUsage(finalConfig.aiSidebar.quickAccess);
         }
@@ -1676,7 +1667,7 @@ export const LinkProvider: React.FC<{ children: React.ReactNode }> = ({ children
             parsed.aiSidebar.quickAccess = parsed.aiSidebar.quickAccess.filter((l: any) => {
               const name = (l.name || '').toLowerCase();
               const href = (l.href || '').toLowerCase();
-              return l.id !== 'qa-renders-remb' && l.id !== 'qa-2' && !name.includes('renders remb') && !name.includes('compresor') && !href.includes('renders%20remb') && !href.includes('compresor');
+              return l.id !== 'qa-renders-remb' && l.id !== 'qa-2' && l.id !== 'qa-4' && l.id !== 'qa-5' && !isCotizadorItem(l) && !isListasRembItem(l) && !name.includes('renders remb') && !name.includes('compresor') && !name.includes('cotizador') && !name.includes('listas') && !href.includes('renders%20remb') && !href.includes('compresor') && !href.includes('cotizador-remb') && !href.includes('listas-remb');
             });
             const hasJaver = parsed.aiSidebar.quickAccess.some((l: any) => l.name === 'Javer Data Center' || l.href.includes('3a3196da-cb37-40b8-9a5d-48e74634248d'));
             if (!hasJaver) {

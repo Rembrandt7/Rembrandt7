@@ -437,7 +437,7 @@ const AiSidebar: React.FC<AiSidebarProps> = ({ isOpen }) => {
                 <nav className="flex flex-col gap-1 px-3 pb-6">
                     <SortableLinkList 
                         id="aiSidebar.quickAccess"
-                        items={(config.aiSidebar.quickAccess || []).filter(l => l.id !== 'qa-renders-remb' && l.id !== 'qa-2' && !(l.name || '').toLowerCase().includes('renders remb') && !(l.name || '').toLowerCase().includes('compresor') && !(l.href || '').toLowerCase().includes('renders%20remb') && !(l.href || '').toLowerCase().includes('compresor'))}
+                        items={(config.aiSidebar.quickAccess || []).filter(l => l.id !== 'qa-renders-remb' && l.id !== 'qa-2' && l.id !== 'qa-4' && l.id !== 'qa-5' && !(l.name || '').toLowerCase().includes('renders remb') && !(l.name || '').toLowerCase().includes('compresor') && !(l.name || '').toLowerCase().includes('cotizador') && !(l.name || '').toLowerCase().includes('listas') && !(l.href || '').toLowerCase().includes('renders%20remb') && !(l.href || '').toLowerCase().includes('compresor') && !(l.href || '').toLowerCase().includes('cotizador-remb') && !(l.href || '').toLowerCase().includes('listas-remb'))}
                         isEditing={isEditing}
                         onReorder={(newItems) => updateConfig({ ...config, aiSidebar: { ...config.aiSidebar, quickAccess: newItems } })}
                         strategy={verticalListSortingStrategy}
