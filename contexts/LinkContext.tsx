@@ -286,60 +286,80 @@ const INITIAL_CONFIG: AppConfig = {
         items: [
             { id: 'ut-1-1', name: "Magic Eraser", description: "Quita marcas de agua y objetos de videos.", href: "https://magiceraser.org/es/remove-watermark-from-video/", colorClass: "hover:shadow-orange-500/20", iconSvg: '<svg class="w-full h-full text-orange-500" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round"><path d="M20 5H9l-7 7 7 7h11a2 2 0 0 0 2-2V7a2 2 0 0 0-2-2Z" /><line x1="18" y1="9" x2="12" y2="15" /><line x1="12" y1="9" x2="18" y2="15" /></svg>' },
             { id: 'ut-1-2', name: "WatermarkRemover", description: "Elimina marcas de agua de imágenes gratis.", href: "https://www.watermarkremover.io/es", colorClass: "hover:shadow-blue-500/20", iconSvg: '<svg class="w-full h-full text-blue-400" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round"><path d="M12 2L2 7l10 5 10-5-10-5zM2 17l10 5 10-5M2 12l10 5 10-5" /></svg>' },
-            { id: 'ut-1-3', name: "Letras (GenType)", description: "Crea alfabetos personalizados con IA.", href: "https://labs.google/gentype", colorClass: "hover:shadow-yellow-500/20", iconSvg: '<svg class="w-full h-full text-yellow-400" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round"><path d="M4 7V4h16v3" /><path d="M9 20h6" /><path d="M12 4v16" /></svg>' },
-            { id: 'ut-1-4', name: "Vectorizar", description: "Convierte imágenes a vectores.", href: "https://aistudio.google.com/apps/drive/1MqPBVGYa3rBl2lGs5-8DhKUIltCigjmI?showAssistant=true&showPreview=true&resourceKey=", colorClass: "hover:shadow-pink-500/20", iconSvg: '<svg class="w-full h-full text-pink-500" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M12 19l7-7 3 3-7 7-3-3z" /><path d="M18 13l-1.5-7.5L2 2l3.5 14.5L13 18l5-5z" /><path d="M2 2l7.586 7.586" /><circle cx="11" cy="11" r="2" /></svg>' },
-            { id: 'ut-1-5', name: "Upscale", description: "Mejorar resolución", href: "https://www.upscale.media/es/upload", colorClass: "hover:shadow-cyan-500/20", iconSvg: '<svg class="w-full h-full text-cyan-400" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><path d="M15 3h6v6M9 21H3v-6M21 3l-7 7M3 21l7-7"/></svg>' },
-            { id: 'ut-1-6', name: "Canva", description: "Diseño gráfico fácil", href: "https://www.canva.com/", colorClass: "hover:shadow-cyan-500/20", iconSvg: '<svg class="w-full h-full text-cyan-400" viewBox="0 0 24 24" fill="currentColor"><circle cx="12" cy="12" r="10"/></svg>' }
+            { id: 'ut-1-3', name: "Vectorizar", description: "Convierte imágenes a vectores.", href: "https://aistudio.google.com/apps/drive/1MqPBVGYa3rBl2lGs5-8DhKUIltCigjmI?showAssistant=true&showPreview=true&resourceKey=", colorClass: "hover:shadow-pink-500/20", iconSvg: '<svg class="w-full h-full text-pink-500" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M12 19l7-7 3 3-7 7-3-3z" /><path d="M18 13l-1.5-7.5L2 2l3.5 14.5L13 18l5-5z" /><path d="M2 2l7.586 7.586" /><circle cx="11" cy="11" r="2" /></svg>' },
+            { id: 'ut-1-4', name: "Upscale", description: "Mejorar resolución", href: "https://www.upscale.media/es/upload", colorClass: "hover:shadow-cyan-500/20", iconSvg: '<svg class="w-full h-full text-cyan-400" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><path d="M15 3h6v6M9 21H3v-6M21 3l-7 7M3 21l7-7"/></svg>' },
+            { id: 'ut-1-5', name: "Canva", description: "Diseño gráfico fácil", href: "https://www.canva.com/", colorClass: "hover:shadow-cyan-500/20", iconSvg: '<svg class="w-full h-full text-cyan-400" viewBox="0 0 24 24" fill="currentColor"><circle cx="12" cy="12" r="10"/></svg>' },
+            { id: 'ut-1-6', name: "Reve", description: "Plataforma de edición IA", href: "https://app.reve.com/home", colorClass: "hover:shadow-rose-500/20", iconSvg: '<svg class="w-full h-full text-rose-500" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"></path><path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"></path></svg>' },
+            { id: 'ut-1-7', name: "Editor Renders", description: "Edición y retoque de Renders", href: "https://aistudio.google.com/apps/drive/1nHX4gWa66Uh3UsHJ_hWK1tBHOlgo-0Q0?showPreview=true&showAssistant=true", colorClass: "hover:shadow-purple-500/20", iconSvg: '<svg class="w-full h-full text-purple-400" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M12 20h9" /><path d="M16.5 3.5a2.121 2.121 0 0 1 3 3L7 19l-4 1 1-4L16.5 3.5z" /></svg>' }
         ]
     },
     {
         id: 'ut-2',
-        title: 'Video & Audio',
+        title: 'Video & Animación',
         gradient: 'from-purple-500 to-indigo-600',
         iconSvg: '<svg xmlns="http://www.w3.org/2000/svg" class="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 10l4.553-2.276A1 1 0 0121 8.618v6.764a1 1 0 01-1.447.894L15 14M5 18h8a2 2 0 002-2V8a2 2 0 00-2-2H5a2 2 0 00-2 2v8a2 2 0 002 2z" /></svg>',
         items: [
             { id: 'ut-2-1', name: "Runway", description: "Generador de video", href: "https://runwayml.com/", colorClass: "hover:shadow-yellow-500/20", iconSvg: '<svg class="w-full h-full text-yellow-400" viewBox="0 0 24 24" fill="currentColor"><path d="M5.5 2C3.5 2 2 3.5 2 5.5v13C2 20.5 3.5 22 5.5 22h13c2 0 3.5-1.5 3.5-3.5v-13C22 3.5 20.5 2 18.5 2h-13zM8 7l10 5-10 5V7z"/></svg>' },
             { id: 'ut-2-2', name: "Kling AI", description: "Generador de video realista", href: "https://klingai.com/", colorClass: "hover:shadow-blue-500/20", iconSvg: '<svg class="w-full h-full text-blue-400" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><path d="M13 2L3 14h9l-1 8 10-12h-9l1-8z" /></svg>' },
-            { id: 'ut-2-3', name: "Suno", description: "Música IA", href: "https://suno.com/", colorClass: "hover:shadow-purple-500/20", iconSvg: '<svg class="w-full h-full text-purple-400" viewBox="0 0 24 24" fill="currentColor"><circle cx="12" cy="12" r="10" /><circle cx="12" cy="12" r="4" fill="black" /></svg>' },
-            { id: 'ut-2-4', name: "ElevenLabs", description: "Voces y locución IA", href: "https://elevenlabs.io/", colorClass: "hover:shadow-teal-500/20", iconSvg: '<svg class="w-full h-full text-teal-400" viewBox="0 0 24 24" fill="currentColor"><path d="M4 12v-4a8 8 0 0 1 16 0v4" stroke="currentColor" strokeWidth="2" fill="none" /><rect x="2" y="12" width="4" height="8" rx="1" /><rect x="18" y="12" width="4" height="8" rx="1" /></svg>' }
+            { id: 'ut-2-3', name: "Luma", description: "Dream Machine video IA", href: "https://lumalabs.ai/dream-machine", colorClass: "hover:shadow-emerald-500/20", iconSvg: '<svg class="w-full h-full text-emerald-400" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><path d="M12 2a10 10 0 1 0 10 10A10 10 0 0 0 12 2zm0 16a6 6 0 1 1 6-6 6 6 0 0 1-6 6z" /><path d="M12 8v4l3 3" /></svg>' },
+            { id: 'ut-2-4', name: "Digen", description: "Generador de video avatar", href: "https://digen.ai/es/explore", colorClass: "hover:shadow-purple-400/20", iconSvg: '<svg class="w-full h-full text-purple-300" viewBox="0 0 64 64" xmlns="http://www.w3.org/2000/svg"><circle cx="32" cy="32" r="28" fill="currentColor"/><text x="32" y="44" fontFamily="Arial, sans-serif" fontSize="32" fontWeight="bold" fill="black" textAnchor="middle">D</text></svg>' },
+            { id: 'ut-2-5', name: "Look X", description: "Imagen a Imagen arquitectónico", href: "https://www.lookx.ai/pc/gc/i2i", colorClass: "hover:shadow-rose-400/20", iconSvg: '<svg class="w-full h-full text-rose-400" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M12 2a7 7 0 0 1 7.08 7c0 1.27-.33 2.47-.9 3.52L12 22 5.82 12.52A7 7 0 0 1 12 2z"/><circle cx="12" cy="9" r="2.5"/></svg>' },
+            { id: 'ut-2-6', name: "Deevid", description: "Avatares y animación IA", href: "https://deevid.ai/es/ai-avatar", colorClass: "hover:shadow-red-400/20", iconSvg: '<svg class="w-full h-full text-red-400" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"></path><circle cx="12" cy="7" r="4"></circle></svg>' }
         ]
     },
     {
         id: 'ut-3',
-        title: 'Impresión 3D & CAD',
-        gradient: 'from-cyan-500 to-blue-600',
-        iconSvg: '<svg xmlns="http://www.w3.org/2000/svg" class="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M21 16V8a2 2 0 00-1-1.73l-7-4a2 2 0 00-2 0l-7 4A2 2 0 003 8v8a2 2 0 001 1.73l7 4a2 2 0 002 0l7-4A2 2 0 0021 16z" /></svg>',
+        title: 'Audio & Música',
+        gradient: 'from-emerald-400 to-teal-500',
+        iconSvg: '<svg xmlns="http://www.w3.org/2000/svg" class="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 19V6l12-3v13M9 19c0 1.105-1.343 2-3 2s-3-.895-3-2 1.343-2 3-2 3 .895 3 2zm12-3c0 1.105-1.343 2-3 2s-3-.895-3-2 1.343-2 3-2 3 .895 3 2zM9 10l12-3" /></svg>',
         items: [
-            { id: 'ut-3-sam', name: "Sam", description: "Segment Anything", href: "https://aidemos.meta.com/segment-anything/gallery/", colorClass: "hover:shadow-indigo-500/20", iconSvg: '<svg class="w-full h-full text-indigo-400" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M21 16V8a2 2 0 0 0-1-1.73l-7-4a2 2 0 0 0-2 0l-7 4A2 2 0 0 0 3 8v8a2 2 0 0 0 1 1.73l7 4a2 2 0 0 0 2 0l7-4A2 2 0 0 0 21 16z"></path><polyline points="3.27 6.96 12 12.01 20.73 6.96"></polyline><line x1="12" y1="22.08" x2="12" y2="12"></line></svg>' },
-            { id: 'ut-3-isoremb', name: "isoremb", description: "Isometrías Instalaciones", href: "https://isometrias-instalaciones.vercel.app/", colorClass: "hover:shadow-orange-500/20", iconSvg: '<svg class="w-full h-full text-orange-400" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><rect x="3" y="3" width="18" height="18" rx="4"></rect><path d="M7 7h10v10H7z"></path><path d="M7 12h10"></path></svg>' },
-            { id: 'ut-3-letras', name: "Letras", description: "ProLed3D Letras y Carteles", href: "https://proled3d.com/?lang=es", colorClass: "hover:shadow-pink-500/20", iconSvg: '<svg class="w-full h-full text-pink-400" viewBox="0 0 24 24" fill="currentColor"><path d="M9.93 13.5h4.14L12 7.98 9.93 13.5zM20 2H4c-1.1 0-2 .9-2 2v16c0 1.1.9 2 2 2h16c1.1 0 2-.9 2-2V4c0-1.1-.9-2-2-2zm-4.05 16.5l-1.14-3H9.17l-1.12 3H5.96l5.11-13h1.86l5.11 13h-2.09z"/></svg>' },
-            { id: 'ut-3-guilloche', name: "Guilloche", description: "Generador de Patrones", href: "https://guillochegenerator.com/", colorClass: "hover:shadow-teal-500/20", iconSvg: '<svg class="w-full h-full text-teal-300" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round"><circle cx="12" cy="12" r="9" /><ellipse cx="12" cy="12" rx="9" ry="4" transform="rotate(0 12 12)" /><ellipse cx="12" cy="12" rx="9" ry="4" transform="rotate(45 12 12)" /><ellipse cx="12" cy="12" rx="9" ry="4" transform="rotate(90 12 12)" /><ellipse cx="12" cy="12" rx="9" ry="4" transform="rotate(135 12 12)" /></svg>' },
-            { id: 'ut-3-stlbuddy', name: "STLBuddy", description: "Cortador y Divisor de Modelos 3D", href: "https://stlbuddy.com/model-splitter", colorClass: "hover:shadow-cyan-500/20", iconSvg: '<svg class="w-full h-full text-cyan-400" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><circle cx="6" cy="6" r="3"/><circle cx="6" cy="18" r="3"/><line x1="20" y1="4" x2="8.12" y2="15.88"/><line x1="14.47" y1="14.48" x2="20" y2="20"/><line x1="8.12" y1="8.12" x2="12" y2="12"/></svg>' }
+            { id: 'ut-3-1', name: "Suno", description: "Música IA y creación sonora", href: "https://suno.com/", colorClass: "hover:shadow-purple-500/20", iconSvg: '<svg class="w-full h-full text-purple-400" viewBox="0 0 24 24" fill="currentColor"><circle cx="12" cy="12" r="10" /><circle cx="12" cy="12" r="4" fill="black" /></svg>' },
+            { id: 'ut-3-2', name: "ElevenLabs", description: "Voces y locución IA", href: "https://elevenlabs.io/", colorClass: "hover:shadow-teal-500/20", iconSvg: '<svg class="w-full h-full text-teal-400" viewBox="0 0 24 24" fill="currentColor"><path d="M4 12v-4a8 8 0 0 1 16 0v4" stroke="currentColor" strokeWidth="2" fill="none" /><rect x="2" y="12" width="4" height="8" rx="1" /><rect x="18" y="12" width="4" height="8" rx="1" /></svg>' },
+            { id: 'ut-3-3', name: "Kyutai", description: "Conversación y audio en tiempo real", href: "https://kyutai.org/tts", colorClass: "hover:shadow-red-400/20", iconSvg: '<svg class="w-full h-full text-red-400" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M12 2a10 10 0 1 0 10 10A10 10 0 0 0 12 2zm0 14a4 4 0 1 1 4-4 4 4 0 0 1-4 4z"></path><path d="M12 8v8"></path></svg>' },
+            { id: 'ut-3-4', name: "LALAL.AI", description: "Separador de voz y música", href: "https://www.lalal.ai/es/", colorClass: "hover:shadow-cyan-400/20", iconSvg: '<svg class="w-full h-full text-cyan-400" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M2 10v4M6 6v12M10 3v18M14 8v8M18 5v14M22 10v4"/></svg>' }
         ]
     },
     {
         id: 'ut-4',
-        title: 'Desarrollo & Nube',
-        gradient: 'from-emerald-400 to-teal-600',
-        iconSvg: '<svg xmlns="http://www.w3.org/2000/svg" class="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M10 20l4-16m4 4l4 4-4 4M6 16l-4-4 4-4" /></svg>',
+        title: 'Impresión 3D & CAD',
+        gradient: 'from-cyan-500 to-blue-600',
+        iconSvg: '<svg xmlns="http://www.w3.org/2000/svg" class="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M21 16V8a2 2 0 00-1-1.73l-7-4a2 2 0 00-2 0l-7 4A2 2 0 003 8v8a2 2 0 001 1.73l7 4a2 2 0 002 0l7-4A2 2 0 0021 16z" /></svg>',
         items: [
-            { id: 'ut-4-1', name: "SUPABASE", description: "Base de datos y backend", href: "https://supabase.com/dashboard/project/humndjymddoitxxkgtyt/editor/17825?schema=public", colorClass: "hover:shadow-emerald-500/20", iconSvg: '<svg class="w-full h-full text-emerald-400" viewBox="0 0 24 24" fill="currentColor"><path d="M12 2L2 7l10 5 10-5-10-5zM2 17l10 5 10-5M2 12l10 5 10-5"/></svg>' },
-            { id: 'ut-4-2', name: "VERCEL", description: "Despliegues y hosting", href: "https://vercel.com/rembrandt7s-projects", colorClass: "hover:shadow-white/20", iconSvg: '<svg class="w-full h-full text-white" viewBox="0 0 24 24" fill="currentColor"><path d="M12 1L24 22H0L12 1z"/></svg>' },
-            { id: 'ut-4-3', name: "GITHUB", description: "Repositorios y control de versión", href: "https://github.com/", colorClass: "hover:shadow-gray-400/20", iconSvg: '<svg class="w-full h-full text-white" viewBox="0 0 24 24" fill="currentColor"><path d="M12 2A10 10 0 0 0 2 12c0 4.42 2.87 8.17 6.84 9.5.5.08.66-.23.66-.5v-1.69c-2.77.6-3.36-1.34-3.36-1.34-.46-1.16-1.11-1.47-1.11-1.47-.91-.62.07-.6.07-.6 1 .07 1.53 1.03 1.53 1.03.87 1.52 2.34 1.07 2.91.83.1-.65.35-1.09.63-1.34-2.22-.25-4.55-1.11-4.55-4.92 0-1.11.38-2 1.03-2.71-.1-.25-.45-1.29.1-2.64 0 0 .84-.27 2.75 1.02.79-.22 1.65-.33 2.5-.33.85 0 1.71.11 2.5.33 1.91-1.29 2.75-1.02 2.75-1.02.55 1.35.2 2.39.1 2.64.65.71 1.03 1.6 1.03 2.71 0 3.82-2.34 4.66-4.57 4.91.36.31.69.92.69 1.85V21c0 .27.16.59.67.5C19.14 20.16 22 16.42 22 12A10 10 0 0 0 12 2z"/></svg>' },
-            { id: 'ut-4-4', name: "Cursor", description: "Editor de código con IA", href: "https://www.cursor.com/", colorClass: "hover:shadow-indigo-500/20", iconSvg: '<svg class="w-full h-full text-indigo-400" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M3 3l7.07 16.97 2.51-7.39 7.39-2.51L3 3z"></path><path d="M13 13l6 6"></path></svg>' }
+            { id: 'ut-4-1', name: "Sam", description: "Segment Anything 3D", href: "https://aidemos.meta.com/segment-anything/gallery/", colorClass: "hover:shadow-indigo-500/20", iconSvg: '<svg class="w-full h-full text-indigo-400" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M21 16V8a2 2 0 0 0-1-1.73l-7-4a2 2 0 0 0-2 0l-7 4A2 2 0 0 0 3 8v8a2 2 0 0 0 1 1.73l7 4a2 2 0 0 0 2 0l7-4A2 2 0 0 0 21 16z"></path><polyline points="3.27 6.96 12 12.01 20.73 6.96"></polyline><line x1="12" y1="22.08" x2="12" y2="12"></line></svg>' },
+            { id: 'ut-4-2', name: "isoremb", description: "Isometrías Instalaciones", href: "https://isometrias-instalaciones.vercel.app/", colorClass: "hover:shadow-orange-500/20", iconSvg: '<svg class="w-full h-full text-orange-400" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><rect x="3" y="3" width="18" height="18" rx="4"></rect><path d="M7 7h10v10H7z"></path><path d="M7 12h10"></path></svg>' },
+            { id: 'ut-4-3', name: "Letras 3D", description: "ProLed3D Letras y Carteles", href: "https://proled3d.com/?lang=es", colorClass: "hover:shadow-pink-500/20", iconSvg: '<svg class="w-full h-full text-pink-400" viewBox="0 0 24 24" fill="currentColor"><path d="M9.93 13.5h4.14L12 7.98 9.93 13.5zM20 2H4c-1.1 0-2 .9-2 2v16c0 1.1.9 2 2 2h16c1.1 0 2-.9 2-2V4c0-1.1-.9-2-2-2zm-4.05 16.5l-1.14-3H9.17l-1.12 3H5.96l5.11-13h1.86l5.11 13h-2.09z"/></svg>' },
+            { id: 'ut-4-4', name: "Guilloche", description: "Generador de Patrones", href: "https://guillochegenerator.com/", colorClass: "hover:shadow-teal-500/20", iconSvg: '<svg class="w-full h-full text-teal-300" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round"><circle cx="12" cy="12" r="9" /><ellipse cx="12" cy="12" rx="9" ry="4" transform="rotate(0 12 12)" /><ellipse cx="12" cy="12" rx="9" ry="4" transform="rotate(45 12 12)" /><ellipse cx="12" cy="12" rx="9" ry="4" transform="rotate(90 12 12)" /><ellipse cx="12" cy="12" rx="9" ry="4" transform="rotate(135 12 12)" /></svg>' },
+            { id: 'ut-4-5', name: "STLBuddy", description: "Cortador y Divisor de Modelos 3D", href: "https://stlbuddy.com/model-splitter", colorClass: "hover:shadow-cyan-500/20", iconSvg: '<svg class="w-full h-full text-cyan-400" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><circle cx="6" cy="6" r="3"/><circle cx="6" cy="18" r="3"/><line x1="20" y1="4" x2="8.12" y2="15.88"/><line x1="14.47" y1="14.48" x2="20" y2="20"/><line x1="8.12" y1="8.12" x2="12" y2="12"/></svg>' },
+            { id: 'ut-4-6', name: "Snapmaker", description: "Luban CNC & 3D Slicer", href: "https://luban.snapmaker.com/", colorClass: "hover:shadow-emerald-500/20", iconSvg: '<svg class="w-full h-full text-emerald-400" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><rect x="3" y="3" width="18" height="18" rx="2"/><path d="M7 12h10M12 7v10"/></svg>' }
         ]
     },
     {
         id: 'ut-5',
-        title: 'Multiherramientas & IA',
+        title: 'Desarrollo & Nube',
+        gradient: 'from-blue-600 to-indigo-700',
+        iconSvg: '<svg xmlns="http://www.w3.org/2000/svg" class="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M10 20l4-16m4 4l4 4-4 4M6 16l-4-4 4-4" /></svg>',
+        items: [
+            { id: 'ut-5-1', name: "SUPABASE", description: "Base de datos y backend", href: "https://supabase.com/dashboard/project/humndjymddoitxxkgtyt/editor/17825?schema=public", colorClass: "hover:shadow-emerald-500/20", iconSvg: '<svg class="w-full h-full text-emerald-400" viewBox="0 0 24 24" fill="currentColor"><path d="M12 2L2 7l10 5 10-5-10-5zM2 17l10 5 10-5M2 12l10 5 10-5"/></svg>' },
+            { id: 'ut-5-2', name: "VERCEL", description: "Despliegues y hosting", href: "https://vercel.com/rembrandt7s-projects", colorClass: "hover:shadow-white/20", iconSvg: '<svg class="w-full h-full text-white" viewBox="0 0 24 24" fill="currentColor"><path d="M12 1L24 22H0L12 1z"/></svg>' },
+            { id: 'ut-5-3', name: "GITHUB", description: "Repositorios y control de versión", href: "https://github.com/", colorClass: "hover:shadow-gray-400/20", iconSvg: '<svg class="w-full h-full text-white" viewBox="0 0 24 24" fill="currentColor"><path d="M12 2A10 10 0 0 0 2 12c0 4.42 2.87 8.17 6.84 9.5.5.08.66-.23.66-.5v-1.69c-2.77.6-3.36-1.34-3.36-1.34-.46-1.16-1.11-1.47-1.11-1.47-.91-.62.07-.6.07-.6 1 .07 1.53 1.03 1.53 1.03.87 1.52 2.34 1.07 2.91.83.1-.65.35-1.09.63-1.34-2.22-.25-4.55-1.11-4.55-4.92 0-1.11.38-2 1.03-2.71-.1-.25-.45-1.29.1-2.64 0 0 .84-.27 2.75 1.02.79-.22 1.65-.33 2.5-.33.85 0 1.71.11 2.5.33 1.91-1.29 2.75-1.02 2.75-1.02.55 1.35.2 2.39.1 2.64.65.71 1.03 1.6 1.03 2.71 0 3.82-2.34 4.66-4.57 4.91.36.31.69.92.69 1.85V21c0 .27.16.59.67.5C19.14 20.16 22 16.42 22 12A10 10 0 0 0 12 2z"/></svg>' },
+            { id: 'ut-5-4', name: "Cursor", description: "Editor de código con IA", href: "https://www.cursor.com/", colorClass: "hover:shadow-indigo-500/20", iconSvg: '<svg class="w-full h-full text-indigo-400" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M3 3l7.07 16.97 2.51-7.39 7.39-2.51L3 3z"></path><path d="M13 13l6 6"></path></svg>' },
+            { id: 'ut-5-5', name: "Bolt", description: "Desarrollo full-stack en navegador", href: "https://bolt.new/", colorClass: "hover:shadow-blue-500/20", iconSvg: '<svg class="w-full h-full text-blue-400" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><polygon points="13 2 3 14 12 14 11 22 21 10 12 10 13 2"/></svg>' },
+            { id: 'ut-5-6', name: "Lovable", description: "Constructor de apps con IA", href: "https://lovable.dev/", colorClass: "hover:shadow-pink-500/20", iconSvg: '<svg class="w-full h-full text-pink-400" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M20.84 4.61a5.5 5.5 0 0 0-7.78 0L12 5.67l-1.06-1.06a5.5 5.5 0 0 0-7.78 7.78l1.06 1.06L12 21.23l7.78-7.78 1.06-1.06a5.5 5.5 0 0 0 0-7.78z"/></svg>' },
+            { id: 'ut-5-7', name: "v0", description: "Generador de UI con IA", href: "https://v0.dev/", colorClass: "hover:shadow-cyan-400/20", iconSvg: '<svg class="w-full h-full text-cyan-400" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><rect x="3" y="3" width="18" height="18" rx="2"/><path d="M9 9h6v6H9z"/></svg>' }
+        ]
+    },
+    {
+        id: 'ut-6',
+        title: 'IA & Productividad',
         gradient: 'from-amber-400 to-orange-500',
         iconSvg: '<svg xmlns="http://www.w3.org/2000/svg" class="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M11 4a2 2 0 114 0v1a1 1 0 001 1h3a1 1 0 011 1v3a1 1 0 01-1 1h-1a2 2 0 100 4h1a1 1 0 011 1v3a1 1 0 01-1 1h-3a1 1 0 01-1-1v-1a2 2 0 10-4 0v1a1 1 0 01-1 1H7a1 1 0 01-1-1v-3a1 1 0 00-1-1H4a2 2 0 110-4h1a1 1 0 001-1V7a1 1 0 011-1h3a1 1 0 001-1V4z" /></svg>',
         items: [
-            { id: 'ut-5-1', name: "Toolify", description: "Directorio de IA más guardadas", href: "https://www.toolify.ai/es/most-saved", colorClass: "hover:shadow-orange-500/20", iconSvg: '<svg class="w-full h-full text-orange-400" viewBox="0 0 24 24" fill="currentColor"><path d="M12 2L2 7l10 5 10-5-10-5zM2 17l10 5 10-5M2 12l10 5 10-5"/></svg>' },
-            { id: 'ut-5-2', name: "Freepik", description: "Recursos gráficos y Pikaso IA", href: "https://www.freepik.es/pikaso/spaces/a0530a3d-cd8c-4330-8475-2e9628101922", colorClass: "hover:shadow-blue-500/20", iconSvg: '<svg class="w-full h-full text-blue-400" viewBox="0 0 24 24" fill="currentColor"><circle cx="12" cy="12" r="10"/></svg>' },
-            { id: 'ut-5-3', name: "Krea", description: "Generador visual en tiempo real", href: "https://www.krea.ai/app", colorClass: "hover:shadow-purple-500/20", iconSvg: '<svg class="w-full h-full text-purple-400" viewBox="0 0 24 24" fill="currentColor"><circle cx="12" cy="12" r="10"/></svg>' },
-            { id: 'ut-5-4', name: "Wiki.IA", description: "Compilación de recursos de IA", href: "https://fmhy.vercel.app/ai", colorClass: "hover:shadow-emerald-500/20", iconSvg: '<svg class="w-full h-full text-emerald-400" viewBox="0 0 24 24" fill="currentColor"><circle cx="12" cy="12" r="10"/></svg>' },
-            { id: 'ut-5-5', name: "Gamma", description: "Presentaciones y documentos con IA", href: "https://gamma.app/", colorClass: "hover:shadow-indigo-500/20", iconSvg: '<svg class="w-full h-full text-indigo-400" viewBox="0 0 24 24" fill="currentColor"><circle cx="12" cy="12" r="10"/></svg>' }
+            { id: 'ut-6-1', name: "Toolify", description: "Directorio de IA más guardadas", href: "https://www.toolify.ai/es/most-saved", colorClass: "hover:shadow-orange-500/20", iconSvg: '<svg class="w-full h-full text-orange-400" viewBox="0 0 24 24" fill="currentColor"><path d="M12 2L2 7l10 5 10-5-10-5zM2 17l10 5 10-5M2 12l10 5 10-5"/></svg>' },
+            { id: 'ut-6-2', name: "Freepik", description: "Recursos gráficos y Pikaso IA", href: "https://www.freepik.es/pikaso/spaces/a0530a3d-cd8c-4330-8475-2e9628101922", colorClass: "hover:shadow-blue-500/20", iconSvg: '<svg class="w-full h-full text-blue-400" viewBox="0 0 24 24" fill="currentColor"><circle cx="12" cy="12" r="10"/></svg>' },
+            { id: 'ut-6-3', name: "Krea", description: "Generador visual en tiempo real", href: "https://www.krea.ai/app", colorClass: "hover:shadow-purple-500/20", iconSvg: '<svg class="w-full h-full text-purple-400" viewBox="0 0 24 24" fill="currentColor"><circle cx="12" cy="12" r="10"/></svg>' },
+            { id: 'ut-6-4', name: "Wiki.IA", description: "Compilación de recursos de IA", href: "https://fmhy.vercel.app/ai", colorClass: "hover:shadow-emerald-500/20", iconSvg: '<svg class="w-full h-full text-emerald-400" viewBox="0 0 24 24" fill="currentColor"><circle cx="12" cy="12" r="10"/></svg>' },
+            { id: 'ut-6-5', name: "Gamma", description: "Presentaciones y documentos con IA", href: "https://gamma.app/", colorClass: "hover:shadow-indigo-500/20", iconSvg: '<svg class="w-full h-full text-indigo-400" viewBox="0 0 24 24" fill="currentColor"><circle cx="12" cy="12" r="10"/></svg>' },
+            { id: 'ut-6-6', name: "Letras (GenType)", description: "Crea alfabetos personalizados con IA.", href: "https://labs.google/gentype", colorClass: "hover:shadow-yellow-500/20", iconSvg: '<svg class="w-full h-full text-yellow-400" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round"><path d="M4 7V4h16v3" /><path d="M9 20h6" /><path d="M12 4v16" /></svg>' }
         ]
     }
   ]
@@ -557,6 +577,140 @@ const isPdfRembItem = (item: any) => {
   );
 };
 
+// Normalizes, re-slots and strictly deduplicates usefulTools into exactly 6 uniform categories
+const normalizeAndDeduplicateUsefulTools = (currentTools: any[]): { tools: any[]; modified: boolean } => {
+  const canonicalCategories = JSON.parse(JSON.stringify(INITIAL_CONFIG.usefulTools));
+  const catMap: { [id: string]: any } = {};
+  canonicalCategories.forEach((cat: any) => {
+    catMap[cat.id] = { ...cat, items: [] };
+  });
+
+  const canonicalItemHome: { [key: string]: string } = {};
+  const canonicalItemDef: { [key: string]: any } = {};
+  canonicalCategories.forEach((cat: any) => {
+    (cat.items || []).forEach((it: any) => {
+      const normKey = (it.name || '').toLowerCase().trim();
+      canonicalItemHome[normKey] = cat.id;
+      canonicalItemDef[normKey] = it;
+    });
+  });
+
+  const seenItems = new Set<string>();
+  let modified = false;
+
+  if (!Array.isArray(currentTools) || currentTools.length !== 6 || currentTools.some(s => !catMap[s.id])) {
+    modified = true;
+  }
+
+  const getItemKey = (item: any): string => {
+    const name = (item?.name || '').toLowerCase().trim();
+    if (name.includes('magic eraser')) return 'magic eraser';
+    if (name.includes('watermark')) return 'watermarkremover';
+    if (name.includes('vectoriz')) return 'vectorizar';
+    if (name.includes('upscale')) return 'upscale';
+    if (name.includes('canva')) return 'canva';
+    if (name.includes('reve')) return 'reve';
+    if (name.includes('editor render')) return 'editor renders';
+    if (name.includes('runway')) return 'runway';
+    if (name.includes('kling')) return 'kling ai';
+    if (name.includes('luma')) return 'luma';
+    if (name.includes('digen')) return 'digen';
+    if (name.includes('look x') || name.includes('lookx')) return 'look x';
+    if (name.includes('deevid')) return 'deevid';
+    if (name.includes('suno')) return 'suno';
+    if (name.includes('eleven')) return 'elevenlabs';
+    if (name.includes('kyutai')) return 'kyutai';
+    if (name.includes('lalal')) return 'lalal.ai';
+    if (name === 'sam' || name.includes('segment anything')) return 'sam';
+    if (name.includes('isoremb') || name.includes('isometr')) return 'isoremb';
+    if (name.includes('proled') || name.includes('letras 3d')) return 'letras 3d';
+    if (name.includes('guilloche')) return 'guilloche';
+    if (name.includes('stlbuddy') || name.includes('stl buddy')) return 'stlbuddy';
+    if (name.includes('snapmaker') || name.includes('luban')) return 'snapmaker';
+    if (name.includes('supabase')) return 'supabase';
+    if (name.includes('vercel')) return 'vercel';
+    if (name.includes('github')) return 'github';
+    if (name.includes('cursor')) return 'cursor';
+    if (name.includes('bolt')) return 'bolt';
+    if (name.includes('lovable')) return 'lovable';
+    if (name === 'v0' || name.includes('v0.')) return 'v0';
+    if (name.includes('toolify')) return 'toolify';
+    if (name.includes('freepik') || name.includes('pikaso')) return 'freepik';
+    if (name.includes('krea')) return 'krea';
+    if (name.includes('wiki.ia') || name.includes('fmhy')) return 'wiki.ia';
+    if (name.includes('gamma')) return 'gamma';
+    if (name.includes('gentype') || (name.includes('letras') && !name.includes('3d'))) return 'letras (gentype)';
+    return name || (item?.href || '').toLowerCase().trim();
+  };
+
+  const getTargetCategory = (itemKey: string, originalSecId?: string, secTitle?: string): string => {
+    if (canonicalItemHome[itemKey]) {
+      return canonicalItemHome[itemKey];
+    }
+    const sTitle = (secTitle || '').toLowerCase();
+    if (sTitle.includes('audio') || sTitle.includes('sonido') || sTitle.includes('música') || sTitle.includes('musica')) return 'ut-3';
+    if (sTitle.includes('video') || sTitle.includes('animación') || sTitle.includes('animacion')) return 'ut-2';
+    if (sTitle.includes('3d') || sTitle.includes('cad') || sTitle.includes('impresión') || sTitle.includes('impresion')) return 'ut-4';
+    if (sTitle.includes('desarrollo') || sTitle.includes('nube') || sTitle.includes('código') || sTitle.includes('dev')) return 'ut-5';
+    if (sTitle.includes('diseño') || sTitle.includes('imagen') || sTitle.includes('foto')) return 'ut-1';
+    if (sTitle.includes('productividad') || sTitle.includes('ia') || sTitle.includes('multi')) return 'ut-6';
+    if (originalSecId && catMap[originalSecId]) return originalSecId;
+    return 'ut-6';
+  };
+
+  const isExcluded = (iname: string): boolean => {
+    const n = iname.toLowerCase().trim();
+    return n === 'word' || n === 'excel' || n === 'powerpoint' || n === 'gmail' || n === 'drive' || n === 'google drive' || n === 'capcut' || n === 'maket ia' || n === 'devdocs' || n === 'notebooklm' || n === 'perplexity';
+  };
+
+  // 1. Process current items and deduplicate strictly
+  if (Array.isArray(currentTools)) {
+    currentTools.forEach((sec: any) => {
+      const secTitle = sec.title || '';
+      (sec.items || []).forEach((item: any) => {
+        const iname = (item.name || '').trim();
+        const ihref = (item.href || '').trim();
+        if (!iname && !ihref) return;
+        if (isExcluded(iname)) {
+          modified = true;
+          return;
+        }
+
+        const key = getItemKey(item);
+        if (seenItems.has(key)) {
+          // Drop duplicate!
+          modified = true;
+          return;
+        }
+
+        const targetCatId = getTargetCategory(key, sec.id, secTitle);
+        seenItems.add(key);
+
+        const canonicalDef = canonicalItemDef[key];
+        const finalItem = canonicalDef
+          ? { ...canonicalDef, ...item, id: canonicalDef.id, iconSvg: canonicalDef.iconSvg, description: canonicalDef.description }
+          : item;
+        catMap[targetCatId].items.push(finalItem);
+      });
+    });
+  }
+
+  // 2. Guarantee every canonical item is present in its category
+  canonicalCategories.forEach((cat: any) => {
+    (cat.items || []).forEach((canItem: any) => {
+      const key = getItemKey(canItem);
+      if (!seenItems.has(key)) {
+        catMap[cat.id].items.push(canItem);
+        seenItems.add(key);
+        modified = true;
+      }
+    });
+  });
+
+  const finalSections = Object.values(catMap);
+  return { tools: finalSections, modified };
+};
+
 const normalizeConfigCategoriesAndQuickAccess = (cfg: any): boolean => {
   if (!cfg || typeof cfg !== 'object') return false;
   let modified = false;
@@ -641,72 +795,13 @@ const normalizeConfigCategoriesAndQuickAccess = (cfg: any): boolean => {
     });
   }
 
-  // 2. Consolidate usefulTools into 5 clean categories if legacy 8/9 categories present
+  // 2. Consolidate and deduplicate usefulTools into exactly 6 uniform categories
   if (cfg.usefulTools && Array.isArray(cfg.usefulTools)) {
-    const hasLegacyCategories = cfg.usefulTools.some((s: any) => 
-      s.id === 'ut-6' || s.id === 'ut-7' || s.id === 'ut-8' || s.id === 'ut-9' ||
-      s.title === 'Herramientas Útiles' || s.title === 'Google' || s.title === 'Varios' || s.title === 'Editores de Imágenes'
-    );
-
-    if (hasLegacyCategories) {
-      const defaultCategories = JSON.parse(JSON.stringify(INITIAL_CONFIG.usefulTools));
-      const catMap: { [id: string]: any } = {};
-      defaultCategories.forEach((cat: any) => {
-        catMap[cat.id] = { ...cat, items: [...(cat.items || [])] };
-      });
-
-      // Gather existing items and re-slot them
-      cfg.usefulTools.forEach((sec: any) => {
-        const secTitle = (sec.title || '').toLowerCase();
-        (sec.items || []).forEach((item: any) => {
-          const iname = (item.name || '').toLowerCase().trim();
-          const ihref = (item.href || '').toLowerCase();
-
-          // Exclude Google items that duplicate googleDock
-          if (secTitle.includes('google') || iname === 'word' || iname === 'excel' || iname === 'powerpoint' || iname === 'gmail' || iname === 'drive') {
-            return;
-          }
-
-          // Slot based on category or content
-          let targetCatId = 'ut-5'; // default multiherramientas
-          if (sec.id === 'ut-2' || secTitle.includes('imagen') || secTitle.includes('fotos') || iname.includes('render') || iname.includes('upscale') || iname.includes('canva') || iname.includes('reve') || iname.includes('vector')) {
-            targetCatId = 'ut-1';
-          } else if (sec.id === 'ut-3' || sec.id === 'ut-4' || secTitle.includes('video') || secTitle.includes('audio') || iname.includes('suno') || iname.includes('runway') || iname.includes('kling') || iname.includes('eleven')) {
-            targetCatId = 'ut-2';
-          } else if (sec.id === 'ut-5' || secTitle.includes('3d') || iname.includes('sam') || iname.includes('isoremb') || iname.includes('stlbuddy') || iname.includes('guilloche')) {
-            targetCatId = 'ut-3';
-          } else if (sec.id === 'ut-6' || secTitle.includes('program') || secTitle.includes('código') || iname.includes('supabase') || iname.includes('vercel') || iname.includes('github') || iname.includes('cursor') || iname.includes('bolt') || iname.includes('lovable')) {
-            targetCatId = 'ut-4';
-          }
-
-          const targetList = catMap[targetCatId]?.items;
-          if (targetList && !targetList.some((existing: any) => (existing.name || '').toLowerCase().trim() === iname || existing.href === item.href)) {
-            targetList.push(item);
-          }
-        });
-      });
-
-      cfg.usefulTools = Object.values(catMap);
+    const res = normalizeAndDeduplicateUsefulTools(cfg.usefulTools);
+    if (res.modified || JSON.stringify(cfg.usefulTools) !== JSON.stringify(res.tools)) {
+      cfg.usefulTools = res.tools;
       modified = true;
     }
-
-    const unwantedItemIds = new Set(['ut-1-7', 'ut-1-8', 'ut-2-luma', 'ut-2-capcut', 'ut-4-v0', 'ut-4-devdocs', 'ut-5-notebooklm', 'ut-5-perplexity']);
-    cfg.usefulTools.forEach((sec: any) => {
-      if (Array.isArray(sec.items)) {
-        const prevLen = sec.items.length;
-        sec.items = sec.items.filter((item: any) => !unwantedItemIds.has(item.id));
-        if (sec.items.length !== prevLen) modified = true;
-
-        sec.items.forEach((item: any) => {
-          if (item.name === 'Vectorizer AI') {
-            item.name = 'Vectorizar';
-            item.description = 'Convierte imágenes a vectores.';
-            item.href = 'https://aistudio.google.com/apps/drive/1MqPBVGYa3rBl2lGs5-8DhKUIltCigjmI?showAssistant=true&showPreview=true&resourceKey=';
-            modified = true;
-          }
-        });
-      }
-    });
   }
 
   // Ensure linksBar is always normalized, deduplicated, and synchronized with canonical icons
@@ -1596,21 +1691,7 @@ export const LinkProvider: React.FC<{ children: React.ReactNode }> = ({ children
           }
 
           if (parsed.usefulTools && Array.isArray(parsed.usefulTools)) {
-            const section3D = parsed.usefulTools.find((s: any) => s.id === 'ut-5');
-            if (section3D) {
-              if (section3D.title === '3D') section3D.title = 'Impresión 3D';
-              const default3D = INITIAL_CONFIG.usefulTools.find(s => s.id === 'ut-5')?.items || [];
-              default3D.forEach(defaultItem => {
-                if (!section3D.items.find((l: any) => l.name === defaultItem.name)) {
-                  section3D.items.push(defaultItem);
-                }
-              });
-              const mwItem = section3D.items.find((l: any) => l.name === 'MakerWorld');
-              if (mwItem) {
-                mwItem.href = 'https://makerworld.com/es';
-                mwItem.iconSvg = `<img src="/makerworld_premium.png" class="w-full h-full object-contain rounded-lg" alt="MakerWorld" />`;
-              }
-            }
+            normalizeConfigCategoriesAndQuickAccess(parsed);
           }
 
           // Ensure Gemini is removed from googleDock and placed in aiSidebar.models

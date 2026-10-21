@@ -98,7 +98,11 @@ import { PanchoState } from './components/Pancho/PanchoRobotAvatar';
 import { GlobalQuickIdeaModal } from './components/ListasRemb/GlobalQuickIdeaModal';
 
 import LinksBar from './components/LinksBar';
-import AiSidebar from './components/AiSidebar';
+import AiSidebar, { 
+  GEMINI_PREMIUM_ICON_SVG, 
+  CHATGPT_PREMIUM_ICON_SVG, 
+  CLAUDE_PREMIUM_ICON_SVG 
+} from './components/AiSidebar';
 import CalculatorWidget from './components/CalculatorWidget';
 import GoogleDock from './components/GoogleDock'; 
 import Clock from './components/common/Clock';
@@ -274,6 +278,55 @@ const MainLayout: React.FC = () => {
   const { config, updateConfig, isEditing, toggleEditing, saveToSupabase, fetchConfigFromSupabaseManual, updateNotifications, activeTabId, setActiveTabId, syncStatus } = useLinks();
   const { isMobile, isFoldUnfolded } = useDeviceLayout();
   const [previousActiveTabId, setPreviousActiveTabId] = useState<string>('email-gen');
+
+  const allAiModels = config.aiSidebar?.models || [];
+  const geminiItem = allAiModels.find(m => {
+    const name = (m.name || '').toLowerCase();
+    const href = (m.href || '').toLowerCase();
+    return name.includes('gemini') || href.includes('gemini.google.com') || m.id === 'ai-gemini' || m.id === 'gd-1';
+  }) || { id: 'ai-gemini', name: 'Gemini', href: 'https://gemini.google.com/app' };
+
+  const chatGptItem = allAiModels.find(m => {
+    const name = (m.name || '').toLowerCase();
+    const href = (m.href || '').toLowerCase();
+    return name.includes('chatgpt') || href.includes('chatgpt.com') || m.id === 'ai-1';
+  }) || { id: 'ai-1', name: 'ChatGPT', href: 'https://chatgpt.com/' };
+
+  const claudeItem = allAiModels.find(m => {
+    const name = (m.name || '').toLowerCase();
+    const href = (m.href || '').toLowerCase();
+    return name.includes('claude') || href.includes('claude.ai') || m.id === 'ai-5';
+  }) || { id: 'ai-5', name: 'Claude', href: 'https://claude.ai/new' };
+
+  const headerAiModels = [
+    {
+      id: geminiItem.id || 'ai-gemini',
+      name: geminiItem.name || 'Gemini',
+      href: geminiItem.href || 'https://gemini.google.com/app',
+      iconSvg: GEMINI_PREMIUM_ICON_SVG,
+      cardStyle: 'bg-gradient-to-br from-blue-600/30 via-indigo-600/25 to-pink-600/30 hover:from-blue-600/45 hover:via-purple-600/40 hover:to-pink-600/45 border-blue-400/40 hover:border-purple-300/80 shadow-[0_0_15px_rgba(78,135,245,0.25)] hover:shadow-[0_0_28px_rgba(168,85,247,0.65),0_0_12px_rgba(56,189,248,0.4)]',
+      iconGlow: 'drop-shadow(0 0 6px rgba(168,85,247,0.85)) drop-shadow(0 0 14px rgba(56,189,248,0.6))',
+      dotColor: 'bg-gradient-to-r from-cyan-400 via-purple-400 to-pink-500 shadow-[0_0_8px_rgba(168,85,247,0.8)]'
+    },
+    {
+      id: chatGptItem.id || 'ai-1',
+      name: chatGptItem.name || 'ChatGPT',
+      href: chatGptItem.href || 'https://chatgpt.com/',
+      iconSvg: CHATGPT_PREMIUM_ICON_SVG,
+      cardStyle: 'bg-gradient-to-br from-emerald-500/15 via-teal-500/10 to-emerald-600/20 hover:from-emerald-500/30 hover:via-teal-500/25 hover:to-emerald-600/35 border-emerald-500/30 hover:border-teal-300 shadow-[0_0_15px_rgba(16,185,129,0.2)] hover:shadow-[0_0_25px_rgba(16,185,129,0.5),0_0_10px_rgba(45,212,191,0.35)]',
+      iconGlow: 'drop-shadow(0 0 6px rgba(16,185,129,0.8)) drop-shadow(0 0 12px rgba(45,212,191,0.5))',
+      dotColor: 'bg-emerald-400 shadow-[0_0_8px_rgba(16,185,129,0.8)]'
+    },
+    {
+      id: claudeItem.id || 'ai-5',
+      name: claudeItem.name || 'Claude',
+      href: claudeItem.href || 'https://claude.ai/new',
+      iconSvg: CLAUDE_PREMIUM_ICON_SVG,
+      cardStyle: 'bg-gradient-to-br from-amber-500/20 via-orange-500/15 to-amber-600/25 hover:from-amber-500/35 hover:via-orange-500/30 hover:to-amber-600/40 border-amber-500/40 hover:border-orange-300/80 shadow-[0_0_15px_rgba(249,115,22,0.25)] hover:shadow-[0_0_28px_rgba(249,115,22,0.65),0_0_12px_rgba(251,146,60,0.4)]',
+      iconGlow: 'drop-shadow(0 0 6px rgba(249,115,22,0.85)) drop-shadow(0 0 14px rgba(251,146,60,0.6))',
+      dotColor: 'bg-gradient-to-r from-amber-400 to-orange-500 shadow-[0_0_8px_rgba(249,115,22,0.8)]'
+    }
+  ];
 
   const isDbTab = (t: { id?: string; label?: string; componentKey?: string }) => {
     if (!t) return false;
@@ -873,6 +926,33 @@ const MainLayout: React.FC = () => {
                         }}
                       />
                     </motion.button>
+
+                    {/* Modelos IA Principales (Gemini, ChatGPT, Claude) al lado del Logo Renders HDR */}
+                    <div className="flex items-center gap-1.5 p-1 bg-white/[0.04] border border-white/10 rounded-2xl backdrop-blur-md shadow-inner shrink-0 ml-1">
+                      {headerAiModels.map((ai) => (
+                        <a
+                          key={ai.id}
+                          href={ai.href}
+                          target="_blank"
+                          rel="noopener noreferrer"
+                          className={`relative flex items-center justify-center w-11 h-11 md:w-12 md:h-12 rounded-xl transition-all duration-300 group overflow-hidden border backdrop-blur-sm hover:-translate-y-0.5 active:translate-y-0 active:scale-95 ${ai.cardStyle}`}
+                          title={ai.name}
+                        >
+                          <div className="absolute inset-0 bg-gradient-to-tr from-transparent via-white/[0.15] to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-300 pointer-events-none" />
+                          <div
+                            className="w-6 h-6 md:w-7 md:h-7 flex-shrink-0 flex items-center justify-center transition-transform duration-200 group-hover:scale-115 relative z-10"
+                            style={{ filter: ai.iconGlow }}
+                            dangerouslySetInnerHTML={{ __html: ai.iconSvg }}
+                          />
+                          {/* Tooltip con nombre y glow */}
+                          <div className="absolute top-full mt-2 left-1/2 -translate-x-1/2 px-2.5 py-1 bg-gray-950/90 backdrop-blur-xl border border-white/15 text-white text-[11px] font-bold rounded-full opacity-0 group-hover:opacity-100 transition-all duration-200 pointer-events-none whitespace-nowrap z-50 shadow-[0_8px_25px_rgba(0,0,0,0.6)] scale-95 group-hover:scale-100 flex items-center gap-1.5">
+                            <span className={`w-1.5 h-1.5 rounded-full shrink-0 ${ai.dotColor}`} />
+                            <span>{ai.name}</span>
+                            <div className="absolute left-1/2 bottom-full -translate-x-1/2 translate-y-1 w-2 h-2 bg-gray-950/90 border-l border-t border-white/15 transform rotate-45" />
+                          </div>
+                        </a>
+                      ))}
+                    </div>
 
                     {/* Right-Shifted Reminder Display (Desplazado a la derecha junto al reloj) */}
                     <div className="hidden md:flex flex-1 max-w-xl ml-auto mr-2 justify-end">
