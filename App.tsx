@@ -98,7 +98,7 @@ import { PanchoState } from './components/Pancho/PanchoRobotAvatar';
 import { GlobalQuickIdeaModal } from './components/ListasRemb/GlobalQuickIdeaModal';
 
 import LinksBar from './components/LinksBar';
-import AiSidebar, { 
+import { 
   GEMINI_PREMIUM_ICON_SVG, 
   CHATGPT_PREMIUM_ICON_SVG, 
   CLAUDE_PREMIUM_ICON_SVG 
@@ -899,14 +899,14 @@ const MainLayout: React.FC = () => {
         {/* Sidebars container */}
         <div className={`fixed lg:static inset-y-0 left-0 z-50 flex h-full transform transition-transform duration-300 ease-in-out ${leftSidebarOpen ? 'translate-x-0' : '-translate-x-full lg:hidden'}`}>
           <GoogleDock />
-          <AiSidebar isOpen={true} /> {/* Always show inside the container when container is visible */}
+
         </div>
 
         <div className="flex-1 flex flex-col overflow-y-auto h-full relative w-full lg:w-auto">
           <ShortcutListener />
-          <div className="flex flex-col items-center p-2 sm:p-4 min-h-full pb-24"> 
+          <div className="flex flex-col items-center p-2 sm:p-4 min-h-full pb-24 w-full"> 
               {/* DESKTOP HEADER (Large screens >= 1024px) */}
-              <header className="hidden lg:flex w-full max-w-screen-2xl mb-2.5 pt-1.5 px-2 justify-between items-center gap-3">
+              <header className="hidden lg:flex w-full mb-2.5 pt-1.5 px-2 justify-between items-center gap-3">
                   {/* Floating Glass Capsule Header */}
                   <div className="w-full flex items-center justify-between gap-3 px-4 py-2 bg-gradient-to-r from-gray-950/80 via-gray-900/70 to-gray-950/80 backdrop-blur-xl border border-white/10 rounded-2xl shadow-[0_8px_30px_rgba(0,0,0,0.4)] min-h-[66px]">
                     {/* Brand Logo with Renders HDR Studio (Clickable for Zen Mode & Maximum Height) */}
@@ -1130,7 +1130,7 @@ const MainLayout: React.FC = () => {
                   </div>
               </header>
               
-              <div className="w-full max-w-screen-2xl flex-grow">
+              <div className="w-full flex-grow">
                   <main className="w-full pb-8">
                       {/* DESKTOP NAVIGATION TABS (>= 1024px) */}
                       <nav className="hidden lg:flex w-full mb-2 flex-wrap justify-center gap-1.5 items-center">
@@ -1272,7 +1272,7 @@ const MainLayout: React.FC = () => {
               exit={{ opacity: 0, y: -20, scale: 0.95 }}
               transition={{ type: 'spring', damping: 25, stiffness: 300 }}
               className={`fixed top-14 sm:top-16 ${
-                leftSidebarOpen ? 'lg:left-[338px]' : 'lg:left-6'
+                leftSidebarOpen ? 'lg:left-[96px]' : 'lg:left-6'
               } left-2 sm:left-4 w-[calc(100vw-16px)] sm:w-[480px] max-w-[480px] h-[78vh] sm:h-[680px] glass-panel-heavy rounded-3xl shadow-2xl flex flex-col z-50 overflow-hidden ring-1 ring-white/10 pointer-events-auto`}
             >
               <Suspense fallback={<TabLoadingFallback message="Cargando a Pancho 🐶..." />}>
