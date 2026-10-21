@@ -17,7 +17,6 @@ const INITIAL_TABS: TabConfig[] = [
     { id: 'teleprompter', label: 'Teleprompter', type: 'system', componentKey: 'Teleprompter', isVisible: true, icon: 'Music' },
     { id: 'cotizador', label: 'Cotizador', type: 'system', componentKey: 'Cotizador', isVisible: true, icon: 'Calculator' },
     { id: 'listas', label: 'Listas', type: 'system', componentKey: 'Listas', isVisible: true, icon: 'CheckSquare' },
-    { id: 'compresor', label: 'Compresor', type: 'system', componentKey: 'Compresor', isVisible: true, icon: 'Minimize2' },
 ];
 
 const isDeprecatedTab = (t: any) =>
@@ -25,7 +24,10 @@ const isDeprecatedTab = (t: any) =>
     t.id === 'video-gen' ||
     t.componentKey === 'Generador de Video' ||
     t.id === 'archivos' ||
-    t.componentKey === 'Archivos';
+    t.componentKey === 'Archivos' ||
+    t.id === 'compresor' ||
+    t.componentKey === 'Compresor' ||
+    (t.label || '').toLowerCase().includes('compresor');
 
 const INITIAL_CONFIG: AppConfig = {
   version: 2,
@@ -167,7 +169,6 @@ const INITIAL_CONFIG: AppConfig = {
         { id: 'qa-1', name: 'Rendair', href: 'https://rendair.ai/dashboard', colorClass: 'hover:text-teal-400', iconSvg: '<svg class="w-full h-full" viewBox="0 0 64 64" xmlns="http://www.w3.org/2000/svg"><circle cx="32" cy="32" r="28" fill="#4fd1c5"/><text x="32" y="42" fontFamily="Arial, sans-serif" fontSize="28" fontWeight="bold" fill="black" textAnchor="middle">r</text></svg>' },
         { id: 'qa-javer', name: 'Javer Data Center', href: 'https://aistudio.google.com/apps/3a3196da-cb37-40b8-9a5d-48e74634248d?showPreview=true&showAssistant=true', colorClass: 'hover:text-blue-400', iconSvg: '<svg class="w-full h-full" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg"><defs><linearGradient id="javer-dc-grad" x1="0%" y1="0%" x2="100%" y2="100%"><stop offset="0%" stop-color="#3b82f6" /><stop offset="50%" stop-color="#06b6d4" /><stop offset="100%" stop-color="#3b82f6" /></linearGradient></defs><rect x="3" y="3" width="18" height="18" rx="3" stroke="url(#javer-dc-grad)" stroke-width="2" /><line x1="3" y1="9" x2="21" y2="9" stroke="url(#javer-dc-grad)" stroke-width="1.5" /><line x1="3" y1="15" x2="21" y2="15" stroke="url(#javer-dc-grad)" stroke-width="1.5" stroke-dasharray="2 2" /><circle cx="7" cy="6" r="1" fill="#60a5fa" /><circle cx="11" cy="6" r="1" fill="#34d399" /><circle cx="7" cy="12" r="1" fill="#34d399" /><circle cx="11" cy="12" r="1" fill="#60a5fa" /><circle cx="7" cy="18" r="1" fill="#f43f5e" /><circle cx="11" cy="18" r="1" fill="#34d399" /><path d="M17 5v11a3 3 0 0 1-5 2.2" stroke="url(#javer-dc-grad)" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" /></svg>' },
         { id: 'qa-pdf-remb', name: 'PDF', href: 'https://pdf-remb.vercel.app/', colorClass: 'hover:text-rose-400', iconSvg: '<svg class="w-full h-full" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/><path d="M9 15v-4h2a1.5 1.5 0 0 1 0 3H9"/><path d="M15 11v4"/></svg>' },
-        { id: 'qa-2', name: 'Compresor', href: 'https://compresor-remb.vercel.app/', colorClass: 'hover:text-yellow-400', iconSvg: '<svg class="w-full h-full fill-none stroke-current stroke-2" viewBox="0 0 24 24" strokeLinecap="round" strokeLinejoin="round"><path d="M4 14h6m-6 4h6m6-10h4m-4 4h4M4 10l4-4m0 0l4 4m-4-4v12M20 14l-4 4m0 0l-4-4m4 4V6" /></svg>' },
         { id: 'qa-3', name: 'iLovePDF', href: 'https://www.ilovepdf.com/es', colorClass: 'hover:text-red-500', iconSvg: '<svg class="w-full h-full" viewBox="0 0 64 64" xmlns="http://www.w3.org/2000/svg"><rect width="56" height="56" x="4" y="4" rx="8" fill="currentColor"/><text x="32" y="42" fontFamily="Arial, sans-serif" fontSize="22" fontWeight="bold" fill="#111827" textAnchor="middle">PDF</text></svg>' },
         { id: 'qa-4', name: 'Cotizador', href: 'https://cotizador-remb.vercel.app', colorClass: 'hover:text-lime-500', iconSvg: '<svg class="w-full h-full" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><line x1="12" y1="1" x2="12" y2="23"></line><path d="M17 5H9.5a3.5 3.5 0 0 0 0 7h5a3.5 3.5 0 0 1 0 7H6"></path></svg>' },
         { id: 'qa-5', name: 'Listas Remb', href: 'https://listas-remb.vercel.app/', colorClass: 'hover:text-purple-400', iconSvg: '<svg class="w-full h-full" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M22 19a2 2 0 0 1-2 2H4a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h5l2 3h9a2 2 0 0 1 2 2z"></path><line x1="12" y1="11" x2="12" y2="17"></line><line x1="9" y1="14" x2="15" y2="14"></line></svg>' },
@@ -497,13 +498,13 @@ const normalizeConfigCategoriesAndQuickAccess = (cfg: any): boolean => {
 
   // 1. Normalize Quick Access in aiSidebar
   if (cfg.aiSidebar && Array.isArray(cfg.aiSidebar.quickAccess)) {
-    const obsoleteNames = ['svg generator', 'niveles', 'deberes', 'removedor de marcas de agua', 'vectorizar', 'renders remb', 'mixboard'];
+    const obsoleteNames = ['svg generator', 'niveles', 'deberes', 'removedor de marcas de agua', 'vectorizar', 'renders remb', 'mixboard', 'compresor'];
     const originalLen = cfg.aiSidebar.quickAccess.length;
 
     cfg.aiSidebar.quickAccess = cfg.aiSidebar.quickAccess.filter((item: any) => {
       const name = (item.name || '').toLowerCase().trim();
       const href = (item.href || '').toLowerCase();
-      if (item.id === 'qa-renders-remb' || isMixboardItem(item) || obsoleteNames.includes(name)) return false;
+      if (item.id === 'qa-renders-remb' || item.id === 'qa-2' || isMixboardItem(item) || isCompresorItem(item) || obsoleteNames.includes(name)) return false;
       if (href.includes('f46f8639-4c97-4e29-9bdc-b99c2a46a091') || // svg generator
           href.includes('b1e55191-36d7-483b-b3fb-d8088b0a07c5') || // niveles
           href.includes('1hsivhk6jdb7s9ccuqgai1dvw7gppzzvl') || // deberes
@@ -736,14 +737,6 @@ const ensureSherwinWilliamsLinkUpdated = (cfg: any): boolean => {
       const defaultListasRemb = INITIAL_CONFIG.aiSidebar.quickAccess.find(l => l.id === 'qa-5');
       if (defaultListasRemb) {
         cfg.aiSidebar.quickAccess.push({ ...defaultListasRemb, name: 'Listas Remb', href: LISTAS_REMB_URL });
-        updated = true;
-      }
-    }
-    const hasCompresor = cfg.aiSidebar.quickAccess.some(isCompresorItem);
-    if (!hasCompresor) {
-      const defaultCompresor = INITIAL_CONFIG.aiSidebar.quickAccess.find(l => l.id === 'qa-2');
-      if (defaultCompresor) {
-        cfg.aiSidebar.quickAccess.push({ ...defaultCompresor, href: COMPRESOR_URL });
         updated = true;
       }
     }
@@ -1044,19 +1037,7 @@ export const LinkProvider: React.FC<{ children: React.ReactNode }> = ({ children
             }
           }
 
-          if (!finalConfig.tabs.find((t: any) => t.id === 'compresor' || t.componentKey === 'Compresor')) {
-            const compresorTab = INITIAL_TABS.find(t => t.id === 'compresor');
-            if (compresorTab) {
-              const listasIdx = finalConfig.tabs.findIndex((t: any) => t.id === 'listas' || t.componentKey === 'Listas');
-              const cotIdx = finalConfig.tabs.findIndex((t: any) => t.id === 'cotizador' || t.componentKey === 'Cotizador');
-              const targetIdx = listasIdx !== -1 ? listasIdx : cotIdx;
-              if (targetIdx !== -1) {
-                finalConfig.tabs.splice(targetIdx + 1, 0, compresorTab);
-              } else {
-                finalConfig.tabs.push(compresorTab);
-              }
-            }
-          }
+          finalConfig.tabs = finalConfig.tabs.filter((t: any) => !isDeprecatedTab(t));
 
           // Unify Finanzas, Nutrición, Notas & Bóveda (Credenciales) into single 'Personal' tab
           const hasPersonalTab = finalConfig.tabs.some((t: any) => t.id === 'personal' || t.componentKey === 'Personal');
@@ -1235,7 +1216,7 @@ export const LinkProvider: React.FC<{ children: React.ReactNode }> = ({ children
           finalConfig.aiSidebar.quickAccess = finalConfig.aiSidebar.quickAccess.filter((l: any) => {
             const name = (l.name || '').toLowerCase();
             const href = (l.href || '').toLowerCase();
-            return l.id !== 'qa-renders-remb' && !name.includes('renders remb') && !href.includes('renders%20remb');
+            return l.id !== 'qa-renders-remb' && l.id !== 'qa-2' && !name.includes('renders remb') && !name.includes('compresor') && !href.includes('renders%20remb') && !href.includes('compresor');
           });
           finalConfig.aiSidebar.quickAccess = sortQuickAccessByUsage(finalConfig.aiSidebar.quickAccess);
         }
@@ -1379,19 +1360,7 @@ export const LinkProvider: React.FC<{ children: React.ReactNode }> = ({ children
               }
             }
 
-            if (!parsed.tabs.find((t: any) => t.id === 'compresor' || t.componentKey === 'Compresor')) {
-              const compresorTab = INITIAL_TABS.find(t => t.id === 'compresor');
-              if (compresorTab) {
-                const listasIdx = parsed.tabs.findIndex((t: any) => t.id === 'listas' || t.componentKey === 'Listas');
-                const cotIdx = parsed.tabs.findIndex((t: any) => t.id === 'cotizador' || t.componentKey === 'Cotizador');
-                const targetIdx = listasIdx !== -1 ? listasIdx : cotIdx;
-                if (targetIdx !== -1) {
-                  parsed.tabs.splice(targetIdx + 1, 0, compresorTab);
-                } else {
-                  parsed.tabs.push(compresorTab);
-                }
-              }
-            }
+            parsed.tabs = parsed.tabs.filter((t: any) => !isDeprecatedTab(t));
 
             // Unify Finanzas, Nutrición, Notas & Bóveda (Credenciales) into single 'Personal' tab
             const hasPersonalTab = parsed.tabs.some((t: any) => t.id === 'personal' || t.componentKey === 'Personal');
@@ -1628,7 +1597,7 @@ export const LinkProvider: React.FC<{ children: React.ReactNode }> = ({ children
             parsed.aiSidebar.quickAccess = parsed.aiSidebar.quickAccess.filter((l: any) => {
               const name = (l.name || '').toLowerCase();
               const href = (l.href || '').toLowerCase();
-              return l.id !== 'qa-renders-remb' && !name.includes('renders remb') && !href.includes('renders%20remb');
+              return l.id !== 'qa-renders-remb' && l.id !== 'qa-2' && !name.includes('renders remb') && !name.includes('compresor') && !href.includes('renders%20remb') && !href.includes('compresor');
             });
             const hasJaver = parsed.aiSidebar.quickAccess.some((l: any) => l.name === 'Javer Data Center' || l.href.includes('3a3196da-cb37-40b8-9a5d-48e74634248d'));
             if (!hasJaver) {

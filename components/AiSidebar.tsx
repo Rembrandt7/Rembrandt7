@@ -437,7 +437,7 @@ const AiSidebar: React.FC<AiSidebarProps> = ({ isOpen }) => {
                 <nav className="flex flex-col gap-1 px-3 pb-6">
                     <SortableLinkList 
                         id="aiSidebar.quickAccess"
-                        items={(config.aiSidebar.quickAccess || []).filter(l => l.id !== 'qa-renders-remb' && !(l.name || '').toLowerCase().includes('renders remb') && !(l.href || '').toLowerCase().includes('renders%20remb'))}
+                        items={(config.aiSidebar.quickAccess || []).filter(l => l.id !== 'qa-renders-remb' && l.id !== 'qa-2' && !(l.name || '').toLowerCase().includes('renders remb') && !(l.name || '').toLowerCase().includes('compresor') && !(l.href || '').toLowerCase().includes('renders%20remb') && !(l.href || '').toLowerCase().includes('compresor'))}
                         isEditing={isEditing}
                         onReorder={(newItems) => updateConfig({ ...config, aiSidebar: { ...config.aiSidebar, quickAccess: newItems } })}
                         strategy={verticalListSortingStrategy}

@@ -607,23 +607,12 @@ const MainLayout: React.FC = () => {
         updateConfig({ ...config, tabs: nextTabs });
       }
 
-      // Auto-add Compresor tab right after Listas if missing
-      const hasCompresorTab = config.tabs.some(t => t.id === 'compresor' || t.componentKey === 'Compresor');
-      if (!hasCompresorTab) {
-        const compresorTab: TabConfig = { id: 'compresor', label: 'Compresor', type: 'system', componentKey: 'Compresor', isVisible: true, icon: 'Minimize2' };
-        const nextTabs = [...config.tabs];
-        const listasIdx = nextTabs.findIndex(t => t.id === 'listas' || t.componentKey === 'Listas');
-        if (listasIdx !== -1) {
-          nextTabs.splice(listasIdx + 1, 0, compresorTab);
-        } else {
-          nextTabs.push(compresorTab);
-        }
-        updateConfig({ ...config, tabs: nextTabs });
-      }
-
-      // Auto-remove deprecated tabs (Renders, Video, Archivos, Dashboard, Ingeniero) from horizontal tabs bar
+      // Auto-remove deprecated tabs (Compresor, Renders, Video, Archivos, Dashboard, Ingeniero) from horizontal tabs bar
       const isRemovedTab = (t: { id?: string; label?: string; componentKey?: string }) =>
         isRenderTab(t) ||
+        t.id === 'compresor' ||
+        t.componentKey === 'Compresor' ||
+        (t.label || '').toLowerCase().includes('compresor') ||
         t.id === 'video-gen' ||
         t.componentKey === 'Generador de Video' ||
         t.id === 'archivos' ||
