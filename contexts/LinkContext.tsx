@@ -141,7 +141,7 @@ const INITIAL_CONFIG: AppConfig = {
         name: "Amazon",
         category: "compras",
         colorClass: "text-amber-400 hover:text-amber-300",
-        iconSvg: `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 100 100" class="w-full h-full"><defs><linearGradient id="amazon-bg-grad" x1="0%" y1="0%" x2="100%" y2="100%"><stop offset="0%" stop-color="#111822"/><stop offset="100%" stop-color="#1a222e"/></linearGradient></defs><rect width="100" height="100" rx="22" fill="url(#amazon-bg-grad)" stroke="#232f3e" stroke-width="1.5"/><rect x="4" y="4" width="92" height="92" rx="18" fill="none" stroke="rgba(255,255,255,0.06)" stroke-width="1"/><g transform="translate(50, 50) scale(0.68) translate(-50, -50)"><path d="M53.8 47.7c0 3.2.1 5.9-1.4 8.7-1.1 2.1-2.9 3.4-5 3.4-2.9 0-4.6-2.2-4.6-5.5 0-6.5 5.3-7.7 11-7.7v1.1zm7.3-19.4c-.4-.5-1.2-.4-1.7-.1-2.9 1.4-6.4 2-9.6 2-7.5 0-12.7-3.3-12.7-11.2 0-6.2 3.6-10.3 9.4-11.8 4.7-1.1 11-1.2 11-5.7 0-3.6-2.7-5.3-6.6-5.3-4.3 0-6.2 2-6.7 5.7 0 .7-.6 1.2-1.3 1.2l-6.8-.7c-.7-.1-1.2-.6-1.1-1.3.9-7.1 6.7-11.4 15.9-11.4 8.4 0 14.8 4.3 14.8 13v17c0 2.1.8 3.1 1.6 4.1.5.7.5 1.3 0 1.8l-5.8 4.8c-.6.5-1.1.4-1.6-.3-.6-.8-1.2-1.7-1.4-2.8z" fill="#FFFFFF" transform="translate(26, 16) scale(0.78)"/><path d="M22 66c13 8 31 8.8 47 2 1-.4 1.6.3.8 1.2-9 8-24 11-37 6-2-.8-2.8-2-.6-3 1.5-.7 3-1.2 4.6-1.7 1.2-.4 2.4.8 1.2 1.2-10 3.8-22 .7-27-7.4-.3-.5.2-1.1.8-.8 7 4 15 5.8 24 4.8 1.3-.2 1.3-1.9 0-1.7-8 1-16-.8-23-4.6-.6-.3-1.1.3-.8.8z" fill="#FF9900"/><path d="M68 67c-1-.4-2.8.3-4.1.9-.5.3-.4 1 .1 1.2 3.2 1.2 6.4 3.2 8.3 6.2.3.5 1 .3 1.1-.3.3-3.4-.1-7.4-2.2-10.4-.3-.5-1-.4-1.2.1-.6 1.7-1.2 3.5-2 5.3z" fill="#FF9900"/></g></svg>`
+        iconSvg: `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 100 100" class="w-full h-full"><defs><linearGradient id="amazon-bg-opt3" x1="0%" y1="0%" x2="100%" y2="100%"><stop offset="0%" stop-color="#1f2937"/><stop offset="100%" stop-color="#111827"/></linearGradient></defs><rect width="100" height="100" rx="24" fill="url(#amazon-bg-opt3)" stroke="rgba(255,255,255,0.12)" stroke-width="1.5"/><rect x="3" y="3" width="94" height="94" rx="21" fill="none" stroke="rgba(255,255,255,0.06)" stroke-width="1"/><path d="M26 26h10l6.5 28h27l5.5-20H39" stroke="#FFFFFF" stroke-width="4.5" stroke-linecap="round" stroke-linejoin="round"/><circle cx="45" cy="62" r="3.5" fill="#FFFFFF"/><circle cx="67" cy="62" r="3.5" fill="#FFFFFF"/><path d="M24 74c15 8 35 8.5 50 1.5" stroke="#FF9900" stroke-width="4.5" stroke-linecap="round"/><path d="M72 71l4 5.5-6.5.8" fill="#FF9900" stroke="#FF9900" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/></svg>`
     },
     {
         id: '5',
@@ -390,10 +390,38 @@ const INITIAL_CONFIG: AppConfig = {
         gradient: 'from-violet-500 to-cyan-500',
         iconSvg: '<svg viewBox="0 0 48 48" class="w-full h-full" fill="none" xmlns="http://www.w3.org/2000/svg"><defs><linearGradient id="cat-ias-glow" x1="0%" y1="0%" x2="100%" y2="100%"><stop offset="0%" stop-color="#a78bfa"/><stop offset="50%" stop-color="#8b5cf6"/><stop offset="100%" stop-color="#06b6d4"/></linearGradient></defs><circle cx="24" cy="24" r="18" fill="url(#cat-ias-glow)" fill-opacity="0.15" stroke="url(#cat-ias-glow)" stroke-width="2.2"/><circle cx="16" cy="18" r="3.5" fill="#c084fc"/><circle cx="32" cy="18" r="3.5" fill="#38bdf8"/><circle cx="24" cy="31" r="4" fill="#a855f7"/><circle cx="24" cy="13" r="2.5" fill="#67e8f9"/><line x1="16" y1="18" x2="24" y2="13" stroke="#c084fc" stroke-width="2"/><line x1="32" y1="18" x2="24" y2="13" stroke="#38bdf8" stroke-width="2"/><line x1="16" y1="18" x2="24" y2="31" stroke="#c084fc" stroke-width="2"/><line x1="32" y1="18" x2="24" y2="31" stroke="#38bdf8" stroke-width="2"/><path d="M24 19v6" stroke="#ffffff" stroke-width="2.2" stroke-linecap="round"/></svg>',
         items: [
-            { id: 'ut-8-1', name: "Qwen", description: "Modelo lingüístico y multimodal", href: "https://chat.qwen.ai/", colorClass: "hover:shadow-purple-500/20", iconSvg: '<svg class="w-full h-full" viewBox="0 0 64 64" xmlns="http://www.w3.org/2000/svg"><circle cx="32" cy="32" r="28" fill="#8b5cf6"/><text x="32" y="44" fontFamily="Arial, sans-serif" fontSize="32" fontWeight="bold" fill="white" textAnchor="middle">Q</text></svg>' },
-            { id: 'ut-8-2', name: "Grok", description: "IA con razonamiento en tiempo real", href: "https://grok.com/", colorClass: "hover:shadow-gray-400/20", iconSvg: '<svg class="w-full h-full fill-none stroke-current stroke-[8]" viewBox="0 0 64 64"><circle cx="32" cy="32" r="26" /><line x1="16" y1="48" x2="48" y2="16" strokeLinecap="round"/></svg>' },
-            { id: 'ut-8-3', name: "DeepSeek", description: "Razonamiento y código avanzado", href: "https://chat.deepseek.com/", colorClass: "hover:shadow-blue-500/20", iconSvg: '<svg class="w-full h-full fill-current text-blue-500" viewBox="0 0 24 24"><path d="M20 2H4c-1.1 0-2 .9-2 2v18l4-4h14c1.1 0 2-.9 2-2V4c0-1.1-.9-2-2-2zm0 14H6l-2 2V4h16v12z"/><path d="M12 6c-1.66 0-3 1.34-3 3s1.34 3 3 3 3-1.34 3-3-1.34-3-3-3zm0 4c-.55 0-1-.45-1-1s.45-1 1-1 1 .45 1 1-1 1 1z"/></svg>' },
-            { id: 'ut-8-4', name: "Meta AI", description: "Asistente inteligente y creativo", href: "https://meta.ai/", colorClass: "hover:shadow-purple-500/20", iconSvg: '<svg class="w-full h-full text-purple-400" viewBox="0 0 64 64" fill="none" xmlns="http://www.w3.org/2000/svg"><circle cx="32" cy="32" r="26" stroke="currentColor" strokeWidth="8" /></svg>' }
+            { 
+                id: 'ut-8-1', 
+                name: "Qwen", 
+                description: "Modelo lingüístico y multimodal de Alibaba", 
+                href: "https://chat.qwen.ai/", 
+                colorClass: "hover:border-purple-400 hover:shadow-[0_0_20px_rgba(168,85,247,0.4)]", 
+                iconSvg: '<svg viewBox="0 0 24 24" class="w-full h-full" fill="none" xmlns="http://www.w3.org/2000/svg"><defs><linearGradient id="qwen-official-grad" x1="0%" y1="0%" x2="100%" y2="100%"><stop offset="0%" stop-color="#c084fc"/><stop offset="50%" stop-color="#8b5cf6"/><stop offset="100%" stop-color="#6366f1"/></linearGradient></defs><path d="M19.713 2.825h-5.907c0-.251-.066-.503-.196-.728L12.819.728A1.46 1.46 0 0 0 11.559 0h-1.58c-.52 0-1 .275-1.26.728l-2.42 4.19a1.45 1.45 0 0 0 0 1.453l.791 1.37c.26.448.74.727 1.26.727h11.36c.52 0 1-.275 1.26-.728l.79-1.37a1.45 1.45 0 0 0 0-1.451l-.79-1.37a1.46 1.46 0 0 0-1.26-.728zM.195 9.905l2.951 5.115a1.46 1.46 0 0 0-.531.531l-.791 1.37a1.45 1.45 0 0 0 0 1.452l.79 1.37c.26.448.74.727 1.26.727h4.84c.52 0 1-.275 1.26-.728l.79-1.37a1.45 1.45 0 0 0 0-1.451L5.086 7.083a1.46 1.46 0 0 0-1.26-.728h-1.58c-.52 0-1 .276-1.26.728l-.79 1.37a1.45 1.45 0 0 0 0 1.452m15.888 13.367 2.951-5.115c.217.125.469.196.728.196h1.582c.52 0 1-.275 1.26-.728l.79-1.37a1.45 1.45 0 0 0 0-1.451l-2.42-4.191a1.46 1.46 0 0 0-1.259-.728h-1.582c-.52 0-1 .276-1.259.728l-5.678 9.838a1.45 1.45 0 0 0 0 1.452l.79 1.37c.26.448.74.727 1.26.727h1.582c.52 0 1-.275 1.26-.728z" fill="url(#qwen-official-grad)"/></svg>' 
+            },
+            { 
+                id: 'ut-8-2', 
+                name: "Grok", 
+                description: "IA de xAI con razonamiento en tiempo real", 
+                href: "https://grok.com/", 
+                colorClass: "hover:border-white/50 hover:shadow-[0_0_20px_rgba(255,255,255,0.3)]", 
+                iconSvg: '<svg viewBox="0 0 24 24" class="w-full h-full" fill="none" xmlns="http://www.w3.org/2000/svg"><rect width="24" height="24" rx="6" fill="#000000" stroke="#374151" stroke-width="1.2"/><path d="M9.27 15.29l7.978-5.897c.391-.29.95-.177 1.137.272.98 2.369.542 5.215-1.41 7.169-1.951 1.954-4.667 2.382-7.149 1.406l-2.711 1.257c3.889 2.661 8.611 2.003 11.562-.953 2.341-2.344 3.066-5.539 2.388-8.42l.006.007c-.983-4.232.242-5.924 2.75-9.383.06-.082.12-.164.179-.248l-3.301 3.305v-.01L9.267 15.292M7.623 16.723c-2.792-2.67-2.31-6.801.071-9.184 1.761-1.763 4.647-2.483 7.166-1.425l2.705-1.25a7.808 7.808 0 00-1.829-1A8.975 8.975 0 005.984 5.83c-2.533 2.536-3.33 6.436-1.962 9.764 1.022 2.487-.653 4.246-2.34 6.022-.599.63-1.199 1.259-1.682 1.925l7.62-6.815" fill="#ffffff" fill-rule="evenodd"/></svg>' 
+            },
+            { 
+                id: 'ut-8-3', 
+                name: "DeepSeek", 
+                description: "Razonamiento y código avanzado de DeepSeek", 
+                href: "https://chat.deepseek.com/", 
+                colorClass: "hover:border-blue-400 hover:shadow-[0_0_20px_rgba(59,130,246,0.4)]", 
+                iconSvg: '<svg viewBox="0 0 24 24" class="w-full h-full" fill="none" xmlns="http://www.w3.org/2000/svg"><rect width="24" height="24" rx="6" fill="#ffffff" stroke="#93c5fd" stroke-width="0.8"/><path d="M20.748 4.482c-.254-.124-.364.113-.512.234-.051.039-.094.09-.137.136-.372.397-.806.657-1.373.626-.829-.046-1.537.214-2.163.848-.133-.782-.575-1.248-1.247-1.548-.352-.156-.708-.311-.955-.65-.172-.241-.219-.51-.305-.774-.055-.16-.11-.323-.293-.35-.2-.031-.278.136-.356.276-.313.572-.434 1.202-.422 1.84.027 1.436.633 2.58 1.838 3.393.137.093.172.187.129.323-.082.28-.18.552-.266.833-.055.179-.137.217-.329.14a5.526 5.526 0 01-1.736-1.18c-.857-.828-1.631-1.742-2.597-2.458a11.365 11.365 0 00-.689-.471c-.985-.957.13-1.743.388-1.836.27-.098.093-.432-.779-.428-.872.004-1.67.295-2.687.684a3.055 3.055 0 01-.465.137 9.597 9.597 0 00-2.883-.102c-1.885.21-3.39 1.102-4.497 2.623C.082 8.606-.231 10.684.152 12.85c.403 2.284 1.569 4.175 3.36 5.653 1.858 1.533 3.997 2.284 6.438 2.14 1.482-.085 3.133-.284 4.994-1.86.47.234.962.327 1.78.397.63.059 1.236-.03 1.705-.128.735-.156.684-.837.419-.961-2.155-1.004-1.682-.595-2.113-.926 1.096-1.296 2.746-2.642 3.392-7.003.05-.347.007-.565 0-.845-.004-.17.035-.237.23-.256a4.173 4.173 0 001.545-.475c1.396-.763 1.96-2.015 2.093-3.517.02-.23-.004-.467-.247-.588zM10.581 16.5c-2.089-1.642-3.102-2.183-3.52-2.16-.392.024-.321.471-.235.763.09.288.207.486.371.739.114.167.192.416-.113.603-.673.416-1.842-.14-1.897-.167-1.361-.802-2.5-1.86-3.301-3.307-.774-1.393-1.224-2.887-1.298-4.482-.02-.386.093-.522.477-.592a4.696 4.696 0 011.529-.039c2.132.312 3.946 1.265 5.468 2.774.868.86 1.525 1.887 2.202 2.891.72 1.066 1.494 2.082 2.48 2.914.348.292.625.514.891.677-.802.09-2.14.11-3.054-.614zm1-6.44a.306.306 0 01.415-.287.302.302 0 01.2.288.306.306 0 01-.31.307.303.303 0 01-.304-.308zm3.11 1.596c-.2.081-.399.151-.59.16a1.245 1.245 0 01-.798-.254c-.274-.23-.47-.358-.552-.758a1.73 1.73 0 01.016-.588c.07-.327-.008-.537-.239-.727-.187-.156-.426-.199-.688-.199a.559.559 0 01-.254-.078c-.11-.054-.2-.19-.114-.358.028-.054.16-.186.192-.21.356-.202.767-.136 1.146.016.352.144.618.408 1.001.782.391.451.462.576.685.914.176.265.336.537.445.848.067.195-.019.354-.25.452z" fill="#0066FF"/></svg>' 
+            },
+            { 
+                id: 'ut-8-4', 
+                name: "Meta AI", 
+                description: "Asistente inteligente y creativo de Meta", 
+                href: "https://meta.ai/", 
+                colorClass: "hover:border-indigo-400 hover:shadow-[0_0_20px_rgba(99,102,241,0.4)]", 
+                iconSvg: '<svg viewBox="0 0 24 24" class="w-full h-full" fill="none" xmlns="http://www.w3.org/2000/svg"><defs><linearGradient id="meta-official-grad" x1="0%" y1="0%" x2="100%" y2="100%"><stop offset="0%" stop-color="#0082FB"/><stop offset="50%" stop-color="#0064E0"/><stop offset="100%" stop-color="#8b5cf6"/></linearGradient></defs><path d="M16.5 4C14.7 4 13.2 4.9 12 6.5C10.8 4.9 9.3 4 7.5 4C4.1 4 1.5 6.9 1.5 11.2C1.5 15.7 4.2 19 7.6 19C9.7 19 11.2 17.9 12 16.3C12.8 17.9 14.3 19 16.4 19C19.8 19 22.5 15.7 22.5 11.2C22.5 6.9 19.9 4 16.5 4ZM7.5 16.3C5.5 16.3 3.9 14.2 3.9 11.2C3.9 8.2 5.5 6.7 7.5 6.7C9.2 6.7 10.4 7.9 11.2 9.8L10.3 11.4C9.5 10.2 8.6 9.5 7.6 9.5C6.5 9.5 5.6 10.3 5.6 11.3C5.6 12.3 6.5 13.1 7.6 13.1C8.7 13.1 9.6 12.4 10.4 11.2L11.3 12.8C10.5 14.9 9.2 16.3 7.5 16.3ZM16.5 16.3C14.8 16.3 13.5 14.9 12.7 12.8L13.6 11.2C14.4 12.4 15.3 13.1 16.4 13.1C17.5 13.1 18.4 12.3 18.4 11.3C18.4 10.3 17.5 9.5 16.4 9.5C15.4 9.5 14.5 10.2 13.7 11.4L12.8 9.8C13.6 7.9 14.8 6.7 16.5 6.7C18.5 6.7 20.1 8.2 20.1 11.2C20.1 14.2 18.5 16.3 16.5 16.3Z" fill="url(#meta-official-grad)"/></svg>' 
+            }
         ]
     }
   ]
@@ -802,7 +830,7 @@ const normalizeAndDeduplicateUsefulTools = (currentTools: any[]): { tools: any[]
 
         const canonicalDef = canonicalItemDef[key];
         const finalItem = canonicalDef
-          ? { ...canonicalDef, ...item, id: canonicalDef.id, iconSvg: canonicalDef.iconSvg, description: canonicalDef.description }
+          ? { ...canonicalDef, ...item, id: canonicalDef.id, iconSvg: canonicalDef.iconSvg, description: canonicalDef.description, colorClass: canonicalDef.colorClass || item.colorClass }
           : item;
         catMap[targetCatId].items.push(finalItem);
       });
@@ -966,6 +994,13 @@ const ensureSherwinWilliamsLinkUpdated = (cfg: any): boolean => {
         }
         if (item.href !== LISTAS_REMB_URL) {
           item.href = LISTAS_REMB_URL;
+          updated = true;
+        }
+      }
+      if (item.id === 'amazon' || (item.name || '').toLowerCase() === 'amazon' || (item.href || '').includes('amazon.com')) {
+        const newAmazonSvg = `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 100 100" class="w-full h-full"><defs><linearGradient id="amazon-bg-opt3" x1="0%" y1="0%" x2="100%" y2="100%"><stop offset="0%" stop-color="#1f2937"/><stop offset="100%" stop-color="#111827"/></linearGradient></defs><rect width="100" height="100" rx="24" fill="url(#amazon-bg-opt3)" stroke="rgba(255,255,255,0.12)" stroke-width="1.5"/><rect x="3" y="3" width="94" height="94" rx="21" fill="none" stroke="rgba(255,255,255,0.06)" stroke-width="1"/><path d="M26 26h10l6.5 28h27l5.5-20H39" stroke="#FFFFFF" stroke-width="4.5" stroke-linecap="round" stroke-linejoin="round"/><circle cx="45" cy="62" r="3.5" fill="#FFFFFF"/><circle cx="67" cy="62" r="3.5" fill="#FFFFFF"/><path d="M24 74c15 8 35 8.5 50 1.5" stroke="#FF9900" stroke-width="4.5" stroke-linecap="round"/><path d="M72 71l4 5.5-6.5.8" fill="#FF9900" stroke="#FF9900" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/></svg>`;
+        if (item.iconSvg !== newAmazonSvg) {
+          item.iconSvg = newAmazonSvg;
           updated = true;
         }
       }
