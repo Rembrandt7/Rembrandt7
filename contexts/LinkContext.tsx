@@ -282,7 +282,7 @@ const INITIAL_CONFIG: AppConfig = {
         id: 'ut-1',
         title: 'Diseño & Imagen',
         gradient: 'from-pink-500 to-rose-600',
-        iconSvg: '<svg xmlns="http://www.w3.org/2000/svg" class="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 16l4.586-4.586a2 2 0 012.828 0L16 16m-2-2l1.586-1.586a2 2 0 012.828 0L20 14m-6-6h.01M6 20h12a2 2 0 002-2V6a2 2 0 00-2-2H6a2 2 0 00-2 2v12a2 2 0 002 2z" /></svg>',
+        iconSvg: '<svg viewBox="0 0 48 48" class="w-full h-full" fill="none" xmlns="http://www.w3.org/2000/svg"><defs><linearGradient id="cat-design-glow" x1="0%" y1="0%" x2="100%" y2="100%"><stop offset="0%" stop-color="#fb7185"/><stop offset="50%" stop-color="#f43f5e"/><stop offset="100%" stop-color="#be123c"/></linearGradient><linearGradient id="cat-design-spark" x1="0%" y1="100%" x2="100%" y2="0%"><stop offset="0%" stop-color="#fda4af"/><stop offset="100%" stop-color="#ffffff"/></linearGradient></defs><rect x="4" y="6" width="40" height="32" rx="10" fill="url(#cat-design-glow)" fill-opacity="0.18" stroke="url(#cat-design-glow)" stroke-width="2.2"/><circle cx="16" cy="18" r="4.5" fill="url(#cat-design-spark)"/><path d="M8 32l9.5-9.5a2 2 0 0 1 2.8 0L27 29l4.5-4.5a2 2 0 0 1 2.8 0L40 30" stroke="url(#cat-design-glow)" stroke-width="2.6" stroke-linecap="round" stroke-linejoin="round"/><path d="M35 10l1.8 3.5L40 15l-3.2 1.5L35 20l-1.8-3.5L30 15l3.2-1.5z" fill="url(#cat-design-spark)"/><circle cx="38" cy="22" r="1.5" fill="#fda4af"/></svg>',
         items: [
             { id: 'ut-1-1', name: "Magic Eraser", description: "Quita marcas de agua y objetos de videos.", href: "https://magiceraser.org/es/remove-watermark-from-video/", colorClass: "hover:shadow-orange-500/20", iconSvg: '<svg class="w-full h-full text-orange-500" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round"><path d="M20 5H9l-7 7 7 7h11a2 2 0 0 0 2-2V7a2 2 0 0 0-2-2Z" /><line x1="18" y1="9" x2="12" y2="15" /><line x1="12" y1="9" x2="18" y2="15" /></svg>' },
             { id: 'ut-1-2', name: "WatermarkRemover", description: "Elimina marcas de agua de imágenes gratis.", href: "https://www.watermarkremover.io/es", colorClass: "hover:shadow-blue-500/20", iconSvg: '<svg class="w-full h-full text-blue-400" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round"><path d="M12 2L2 7l10 5 10-5-10-5zM2 17l10 5 10-5M2 12l10 5 10-5" /></svg>' },
@@ -290,30 +290,28 @@ const INITIAL_CONFIG: AppConfig = {
             { id: 'ut-1-4', name: "Upscale", description: "Mejorar resolución", href: "https://www.upscale.media/es/upload", colorClass: "hover:shadow-cyan-500/20", iconSvg: '<svg class="w-full h-full text-cyan-400" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><path d="M15 3h6v6M9 21H3v-6M21 3l-7 7M3 21l7-7"/></svg>' },
             { id: 'ut-1-5', name: "Canva", description: "Diseño gráfico fácil", href: "https://www.canva.com/", colorClass: "hover:shadow-cyan-500/20", iconSvg: '<svg class="w-full h-full text-cyan-400" viewBox="0 0 24 24" fill="currentColor"><circle cx="12" cy="12" r="10"/></svg>' },
             { id: 'ut-1-6', name: "Reve", description: "Plataforma de edición IA", href: "https://app.reve.com/home", colorClass: "hover:shadow-rose-500/20", iconSvg: '<svg class="w-full h-full text-rose-500" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"></path><path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"></path></svg>' },
-            { id: 'ut-1-7', name: "Editor Renders", description: "Edición y retoque de Renders", href: "https://aistudio.google.com/apps/drive/1nHX4gWa66Uh3UsHJ_hWK1tBHOlgo-0Q0?showPreview=true&showAssistant=true", colorClass: "hover:shadow-purple-500/20", iconSvg: '<svg class="w-full h-full text-purple-400" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M12 20h9" /><path d="M16.5 3.5a2.121 2.121 0 0 1 3 3L7 19l-4 1 1-4L16.5 3.5z" /></svg>' },
-            { id: 'ut-1-8', name: "SeaArt", description: "Arte generativo con IA", href: "https://www.seaart.ai/es/create/image?id=f8172af6747ec762bcf847bd60fdf7cd&model_ver_no=2c39fe1f-f5d6-4b50-a273-499677f2f7a9", colorClass: "hover:shadow-indigo-500/20", iconSvg: '<svg class="w-full h-full text-indigo-400" viewBox="0 0 64 64" xmlns="http://www.w3.org/2000/svg"><circle cx="32" cy="32" r="28" fill="currentColor"/><text x="32" y="44" fontFamily="Arial, sans-serif" fontSize="32" fontWeight="bold" fill="black" textAnchor="middle">S</text></svg>' }
+            { id: 'ut-1-7', name: "Editor Renders", description: "Edición y retoque de Renders", href: "https://aistudio.google.com/apps/drive/1nHX4gWa66Uh3UsHJ_hWK1tBHOlgo-0Q0?showPreview=true&showAssistant=true", colorClass: "hover:shadow-purple-500/20", iconSvg: '<svg class="w-full h-full text-purple-400" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M12 20h9" /><path d="M16.5 3.5a2.121 2.121 0 0 1 3 3L7 19l-4 1 1-4L16.5 3.5z" /></svg>' }
         ]
     },
     {
         id: 'ut-2',
         title: 'Video & Animación',
         gradient: 'from-purple-500 to-indigo-600',
-        iconSvg: '<svg xmlns="http://www.w3.org/2000/svg" class="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 10l4.553-2.276A1 1 0 0121 8.618v6.764a1 1 0 01-1.447.894L15 14M5 18h8a2 2 0 002-2V8a2 2 0 00-2-2H5a2 2 0 00-2 2v8a2 2 0 002 2z" /></svg>',
+        iconSvg: '<svg viewBox="0 0 48 48" class="w-full h-full" fill="none" xmlns="http://www.w3.org/2000/svg"><defs><linearGradient id="cat-video-glow" x1="0%" y1="0%" x2="100%" y2="100%"><stop offset="0%" stop-color="#c084fc"/><stop offset="50%" stop-color="#818cf8"/><stop offset="100%" stop-color="#4f46e5"/></linearGradient></defs><rect x="5" y="8" width="38" height="32" rx="10" fill="url(#cat-video-glow)" fill-opacity="0.18" stroke="url(#cat-video-glow)" stroke-width="2.2"/><path d="M5 19h38" stroke="url(#cat-video-glow)" stroke-width="2.2"/><path d="M13 8l4 11M23 8l4 11M33 8l4 11" stroke="url(#cat-video-glow)" stroke-width="2.2" stroke-linecap="round"/><polygon points="21,24 31,30 21,36" fill="#a5b4fc"/><circle cx="36" cy="33" r="2" fill="#c084fc"/><circle cx="12" cy="33" r="1.5" fill="#818cf8"/></svg>',
         items: [
             { id: 'ut-2-1', name: "Runway", description: "Generador de video", href: "https://runwayml.com/", colorClass: "hover:shadow-yellow-500/20", iconSvg: '<svg class="w-full h-full text-yellow-400" viewBox="0 0 24 24" fill="currentColor"><path d="M5.5 2C3.5 2 2 3.5 2 5.5v13C2 20.5 3.5 22 5.5 22h13c2 0 3.5-1.5 3.5-3.5v-13C22 3.5 20.5 2 18.5 2h-13zM8 7l10 5-10 5V7z"/></svg>' },
             { id: 'ut-2-2', name: "Kling AI", description: "Generador de video realista", href: "https://klingai.com/", colorClass: "hover:shadow-blue-500/20", iconSvg: '<svg class="w-full h-full text-blue-400" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><path d="M13 2L3 14h9l-1 8 10-12h-9l1-8z" /></svg>' },
             { id: 'ut-2-3', name: "Luma", description: "Dream Machine video IA", href: "https://lumalabs.ai/dream-machine", colorClass: "hover:shadow-emerald-500/20", iconSvg: '<svg class="w-full h-full text-emerald-400" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><path d="M12 2a10 10 0 1 0 10 10A10 10 0 0 0 12 2zm0 16a6 6 0 1 1 6-6 6 6 0 0 1-6 6z" /><path d="M12 8v4l3 3" /></svg>' },
-            { id: 'ut-2-4', name: "Digen", description: "Generador de video avatar", href: "https://digen.ai/es/explore", colorClass: "hover:shadow-purple-400/20", iconSvg: '<svg class="w-full h-full text-purple-300" viewBox="0 0 64 64" xmlns="http://www.w3.org/2000/svg"><circle cx="32" cy="32" r="28" fill="currentColor"/><text x="32" y="44" fontFamily="Arial, sans-serif" fontSize="32" fontWeight="bold" fill="black" textAnchor="middle">D</text></svg>' },
-            { id: 'ut-2-5', name: "Look X", description: "Imagen a Imagen arquitectónico", href: "https://www.lookx.ai/pc/gc/i2i", colorClass: "hover:shadow-rose-400/20", iconSvg: '<svg class="w-full h-full text-rose-400" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M12 2a7 7 0 0 1 7.08 7c0 1.27-.33 2.47-.9 3.52L12 22 5.82 12.52A7 7 0 0 1 12 2z"/><circle cx="12" cy="9" r="2.5"/></svg>' },
-            { id: 'ut-2-6', name: "Deevid", description: "Avatares y animación IA", href: "https://deevid.ai/es/ai-avatar", colorClass: "hover:shadow-red-400/20", iconSvg: '<svg class="w-full h-full text-red-400" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"></path><circle cx="12" cy="7" r="4"></circle></svg>' },
-            { id: 'ut-2-7', name: "Prompt Video", description: "Generador de prompts de video", href: "https://www.clicmayores.com/xprompt.html", colorClass: "hover:shadow-orange-500/20", iconSvg: '<svg class="w-full h-full text-orange-400" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><rect x="2" y="2" width="20" height="20" rx="2.18" ry="2.18"></rect><line x1="7" y1="2" x2="7" y2="22"></line><line x1="17" y1="2" x2="17" y2="22"></line><line x1="2" y1="12" x2="22" y2="12"></line><line x1="2" y1="7" x2="7" y2="7"></line><line x1="2" y1="17" x2="7" y2="17"></line><line x1="17" y1="17" x2="22" y2="17"></line><line x1="17" y1="7" x2="22" y2="7"></line></svg>' }
+            { id: 'ut-2-4', name: "Look X", description: "Imagen a Imagen arquitectónico", href: "https://www.lookx.ai/pc/gc/i2i", colorClass: "hover:shadow-rose-400/20", iconSvg: '<svg class="w-full h-full text-rose-400" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M12 2a7 7 0 0 1 7.08 7c0 1.27-.33 2.47-.9 3.52L12 22 5.82 12.52A7 7 0 0 1 12 2z"/><circle cx="12" cy="9" r="2.5"/></svg>' },
+            { id: 'ut-2-5', name: "Deevid", description: "Avatares y animación IA", href: "https://deevid.ai/es/ai-avatar", colorClass: "hover:shadow-red-400/20", iconSvg: '<svg class="w-full h-full text-red-400" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"></path><circle cx="12" cy="7" r="4"></circle></svg>' },
+            { id: 'ut-2-6', name: "Prompt Video", description: "Generador de prompts de video", href: "https://www.clicmayores.com/xprompt.html", colorClass: "hover:shadow-orange-500/20", iconSvg: '<svg class="w-full h-full text-orange-400" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><rect x="2" y="2" width="20" height="20" rx="2.18" ry="2.18"></rect><line x1="7" y1="2" x2="7" y2="22"></line><line x1="17" y1="2" x2="17" y2="22"></line><line x1="2" y1="12" x2="22" y2="12"></line><line x1="2" y1="7" x2="7" y2="7"></line><line x1="2" y1="17" x2="7" y2="17"></line><line x1="17" y1="17" x2="22" y2="17"></line><line x1="17" y1="7" x2="22" y2="7"></line></svg>' }
         ]
     },
     {
         id: 'ut-3',
         title: 'Audio & Música',
         gradient: 'from-emerald-400 to-teal-500',
-        iconSvg: '<svg xmlns="http://www.w3.org/2000/svg" class="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 19V6l12-3v13M9 19c0 1.105-1.343 2-3 2s-3-.895-3-2 1.343-2 3-2 3 .895 3 2zm12-3c0 1.105-1.343 2-3 2s-3-.895-3-2 1.343-2 3-2 3 .895 3 2zM9 10l12-3" /></svg>',
+        iconSvg: '<svg viewBox="0 0 48 48" class="w-full h-full" fill="none" xmlns="http://www.w3.org/2000/svg"><defs><linearGradient id="cat-audio-glow" x1="0%" y1="0%" x2="100%" y2="100%"><stop offset="0%" stop-color="#34d399"/><stop offset="50%" stop-color="#14b8a6"/><stop offset="100%" stop-color="#0891b2"/></linearGradient></defs><path d="M9 25a15 15 0 0 1 30 0" stroke="url(#cat-audio-glow)" stroke-width="2.6" stroke-linecap="round"/><rect x="6" y="24" width="7" height="13" rx="3.5" fill="url(#cat-audio-glow)"/><rect x="35" y="24" width="7" height="13" rx="3.5" fill="url(#cat-audio-glow)"/><path d="M19 28v-4M23 33v-14M27 31v-10M31 28v-4" stroke="#5eead4" stroke-width="2.6" stroke-linecap="round"/><circle cx="24" cy="9" r="2" fill="#2dd4bf"/></svg>',
         items: [
             { id: 'ut-3-1', name: "Suno", description: "Música IA y creación sonora", href: "https://suno.com/", colorClass: "hover:shadow-purple-500/20", iconSvg: '<svg class="w-full h-full text-purple-400" viewBox="0 0 24 24" fill="currentColor"><circle cx="12" cy="12" r="10" /><circle cx="12" cy="12" r="4" fill="black" /></svg>' },
             { id: 'ut-3-2', name: "ElevenLabs", description: "Voces y locución IA", href: "https://elevenlabs.io/", colorClass: "hover:shadow-teal-500/20", iconSvg: '<svg class="w-full h-full text-teal-400" viewBox="0 0 24 24" fill="currentColor"><path d="M4 12v-4a8 8 0 0 1 16 0v4" stroke="currentColor" strokeWidth="2" fill="none" /><rect x="2" y="12" width="4" height="8" rx="1" /><rect x="18" y="12" width="4" height="8" rx="1" /></svg>' },
@@ -325,9 +323,9 @@ const INITIAL_CONFIG: AppConfig = {
     },
     {
         id: 'ut-4',
-        title: 'Impresión 3D & CAD',
+        title: 'Arquitectura',
         gradient: 'from-cyan-500 to-blue-600',
-        iconSvg: '<svg xmlns="http://www.w3.org/2000/svg" class="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M21 16V8a2 2 0 00-1-1.73l-7-4a2 2 0 00-2 0l-7 4A2 2 0 003 8v8a2 2 0 001 1.73l7 4a2 2 0 002 0l7-4A2 2 0 0021 16z" /></svg>',
+        iconSvg: '<svg viewBox="0 0 48 48" class="w-full h-full" fill="none" xmlns="http://www.w3.org/2000/svg"><defs><linearGradient id="cat-arch-glow" x1="0%" y1="0%" x2="100%" y2="100%"><stop offset="0%" stop-color="#38bdf8"/><stop offset="50%" stop-color="#0ea5e9"/><stop offset="100%" stop-color="#2563eb"/></linearGradient></defs><path d="M6 40h36" stroke="url(#cat-arch-glow)" stroke-width="2.6" stroke-linecap="round"/><path d="M11 40V16l13-10 13 10v24" stroke="url(#cat-arch-glow)" stroke-width="2.2" fill="url(#cat-arch-glow)" fill-opacity="0.15"/><line x1="24" y1="6" x2="24" y2="40" stroke="url(#cat-arch-glow)" stroke-width="1.8" stroke-dasharray="2 2"/><rect x="15" y="20" width="5" height="7" rx="1.5" fill="#7dd3fc"/><rect x="28" y="20" width="5" height="7" rx="1.5" fill="#7dd3fc"/><rect x="15" y="30" width="5" height="7" rx="1.5" fill="#7dd3fc"/><rect x="28" y="30" width="5" height="7" rx="1.5" fill="#7dd3fc"/><circle cx="24" cy="12" r="2" fill="#bae6fd"/></svg>',
         items: [
             { id: 'ut-4-1', name: "Sam", description: "Segment Anything 3D", href: "https://aidemos.meta.com/segment-anything/gallery/", colorClass: "hover:shadow-indigo-500/20", iconSvg: '<svg class="w-full h-full text-indigo-400" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M21 16V8a2 2 0 0 0-1-1.73l-7-4a2 2 0 0 0-2 0l-7 4A2 2 0 0 0 3 8v8a2 2 0 0 0 1 1.73l7 4a2 2 0 0 0 2 0l7-4A2 2 0 0 0 21 16z"></path><polyline points="3.27 6.96 12 12.01 20.73 6.96"></polyline><line x1="12" y1="22.08" x2="12" y2="12"></line></svg>' },
             { id: 'ut-4-2', name: "isoremb", description: "Isometrías Instalaciones", href: "https://isometrias-instalaciones.vercel.app/", colorClass: "hover:shadow-orange-500/20", iconSvg: '<svg class="w-full h-full text-orange-400" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><rect x="3" y="3" width="18" height="18" rx="4"></rect><path d="M7 7h10v10H7z"></path><path d="M7 12h10"></path></svg>' },
@@ -341,7 +339,7 @@ const INITIAL_CONFIG: AppConfig = {
         id: 'ut-5',
         title: 'Desarrollo & Nube',
         gradient: 'from-blue-600 to-indigo-700',
-        iconSvg: '<svg xmlns="http://www.w3.org/2000/svg" class="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M10 20l4-16m4 4l4 4-4 4M6 16l-4-4 4-4" /></svg>',
+        iconSvg: '<svg viewBox="0 0 48 48" class="w-full h-full" fill="none" xmlns="http://www.w3.org/2000/svg"><defs><linearGradient id="cat-dev-glow" x1="0%" y1="0%" x2="100%" y2="100%"><stop offset="0%" stop-color="#60a5fa"/><stop offset="50%" stop-color="#6366f1"/><stop offset="100%" stop-color="#7c3aed"/></linearGradient></defs><path d="M14 34h20a10 10 0 0 0 1.5-19.9A13 13 0 0 0 11.2 18 8 8 0 0 0 14 34z" fill="url(#cat-dev-glow)" fill-opacity="0.16" stroke="url(#cat-dev-glow)" stroke-width="2.2"/><path d="M19 22l-4 4 4 4M29 22l4 4-4 4M25 20l-2 12" stroke="#93c5fd" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"/></svg>',
         items: [
             { id: 'ut-5-1', name: "SUPABASE", description: "Base de datos y backend", href: "https://supabase.com/dashboard/project/humndjymddoitxxkgtyt/editor/17825?schema=public", colorClass: "hover:shadow-emerald-500/20", iconSvg: '<svg class="w-full h-full text-emerald-400" viewBox="0 0 24 24" fill="currentColor"><path d="M12 2L2 7l10 5 10-5-10-5zM2 17l10 5 10-5M2 12l10 5 10-5"/></svg>' },
             { id: 'ut-5-2', name: "VERCEL", description: "Despliegues y hosting", href: "https://vercel.com/rembrandt7s-projects", colorClass: "hover:shadow-white/20", iconSvg: '<svg class="w-full h-full text-white" viewBox="0 0 24 24" fill="currentColor"><path d="M12 1L24 22H0L12 1z"/></svg>' },
@@ -357,9 +355,9 @@ const INITIAL_CONFIG: AppConfig = {
     },
     {
         id: 'ut-6',
-        title: 'IA & Productividad',
+        title: 'Productividad',
         gradient: 'from-amber-400 to-orange-500',
-        iconSvg: '<svg xmlns="http://www.w3.org/2000/svg" class="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M11 4a2 2 0 114 0v1a1 1 0 001 1h3a1 1 0 011 1v3a1 1 0 01-1 1h-1a2 2 0 100 4h1a1 1 0 011 1v3a1 1 0 01-1 1h-3a1 1 0 01-1-1v-1a2 2 0 10-4 0v1a1 1 0 01-1 1H7a1 1 0 01-1-1v-3a1 1 0 00-1-1H4a2 2 0 110-4h1a1 1 0 001-1V7a1 1 0 011-1h3a1 1 0 001-1V4z" /></svg>',
+        iconSvg: '<svg viewBox="0 0 48 48" class="w-full h-full" fill="none" xmlns="http://www.w3.org/2000/svg"><defs><linearGradient id="cat-prod-glow" x1="0%" y1="0%" x2="100%" y2="100%"><stop offset="0%" stop-color="#fde047"/><stop offset="50%" stop-color="#f59e0b"/><stop offset="100%" stop-color="#ea580c"/></linearGradient><linearGradient id="cat-prod-bolt" x1="0%" y1="0%" x2="100%" y2="100%"><stop offset="0%" stop-color="#ffffff"/><stop offset="40%" stop-color="#fef08a"/><stop offset="100%" stop-color="#f59e0b"/></linearGradient></defs><rect x="6" y="6" width="36" height="36" rx="11" fill="url(#cat-prod-glow)" fill-opacity="0.15" stroke="url(#cat-prod-glow)" stroke-width="2.2"/><path d="M27 9L15 24h9l-3 15 15-18h-10l4-12z" fill="url(#cat-prod-bolt)" stroke="#ea580c" stroke-width="1.2" stroke-linejoin="round"/><circle cx="37" cy="11" r="2" fill="#fde047"/><path d="M10 37l3-3M35 37l3-3" stroke="url(#cat-prod-glow)" stroke-width="2" stroke-linecap="round"/></svg>',
         items: [
             { id: 'ut-6-1', name: "Toolify", description: "Directorio de IA más guardadas", href: "https://www.toolify.ai/es/most-saved", colorClass: "hover:shadow-orange-500/20", iconSvg: '<svg class="w-full h-full text-orange-400" viewBox="0 0 24 24" fill="currentColor"><path d="M12 2L2 7l10 5 10-5-10-5zM2 17l10 5 10-5M2 12l10 5 10-5"/></svg>' },
             { id: 'ut-6-2', name: "Freepik", description: "Recursos gráficos y Pikaso IA", href: "https://www.freepik.es/pikaso/spaces/a0530a3d-cd8c-4330-8475-2e9628101922", colorClass: "hover:shadow-blue-500/20", iconSvg: '<svg class="w-full h-full text-blue-400" viewBox="0 0 24 24" fill="currentColor"><circle cx="12" cy="12" r="10"/></svg>' },
@@ -369,7 +367,33 @@ const INITIAL_CONFIG: AppConfig = {
             { id: 'ut-6-6', name: "Letras (GenType)", description: "Crea alfabetos personalizados con IA.", href: "https://labs.google/gentype", colorClass: "hover:shadow-yellow-500/20", iconSvg: '<svg class="w-full h-full text-yellow-400" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round"><path d="M4 7V4h16v3" /><path d="M9 20h6" /><path d="M12 4v16" /></svg>' },
             { id: 'ut-6-7', name: "Lovable", description: "Constructor de apps con IA", href: "https://lovable.dev/", colorClass: "hover:shadow-pink-500/20", iconSvg: '<svg class="w-full h-full text-pink-400" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M20.84 4.61a5.5 5.5 0 0 0-7.78 0L12 5.67l-1.06-1.06a5.5 5.5 0 0 0-7.78 7.78l1.06 1.06L12 21.23l7.78-7.78 1.06-1.06a5.5 5.5 0 0 0 0-7.78z"/></svg>' },
             { id: 'ut-6-8', name: "Higgsfield", description: "IA de video y animación", href: "https://higgsfield.ai/", colorClass: "hover:shadow-purple-500/20", iconSvg: '<svg class="w-full h-full text-purple-400" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2"/></svg>' },
-            { id: 'ut-6-9', name: "lovart", description: "Suite creativa de arte con IA", href: "https://www.lovart.ai/home?ls=1", colorClass: "hover:shadow-rose-500/20", iconSvg: '<svg class="w-full h-full text-rose-400" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M12 21.35l-1.45-1.32C5.4 15.36 2 12.28 2 8.5 2 5.42 4.42 3 7.5 3c1.74 0 3.41.81 4.5 2.09C13.09 3.81 14.76 3 16.5 3 19.58 3 22 5.42 22 8.5c0 3.78-3.4 6.86-8.55 11.54L12 21.35z"/></svg>' }
+            { id: 'ut-6-9', name: "lovart", description: "Suite creativa de arte con IA", href: "https://www.lovart.ai/home?ls=1", colorClass: "hover:shadow-rose-500/20", iconSvg: '<svg class="w-full h-full text-rose-400" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M12 21.35l-1.45-1.32C5.4 15.36 2 12.28 2 8.5 2 5.42 4.42 3 7.5 3c1.74 0 3.41.81 4.5 2.09C13.09 3.81 14.76 3 16.5 3 19.58 3 22 5.42 22 8.5c0 3.78-3.4 6.86-8.55 11.54L12 21.35z"/></svg>' },
+            { id: 'ut-6-10', name: "Comfy", description: "Flujos de trabajo y nodos IA", href: "https://cloud.comfy.org/", colorClass: "hover:shadow-emerald-500/20", iconSvg: '<svg class="w-full h-full text-emerald-400" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><circle cx="12" cy="12" r="3"/><circle cx="5" cy="8" r="2"/><circle cx="19" cy="8" r="2"/><circle cx="8" cy="19" r="2"/><circle cx="16" cy="19" r="2"/><line x1="7" y1="9" x2="10" y2="11"/><line x1="17" y1="9" x2="14" y2="11"/><line x1="9" y1="17" x2="11" y2="14"/><line x1="15" y1="17" x2="13" y2="14"/></svg>' }
+        ]
+    },
+    {
+        id: 'ut-7',
+        title: 'Más',
+        gradient: 'from-fuchsia-500 to-rose-500',
+        iconSvg: '<svg viewBox="0 0 48 48" class="w-full h-full" fill="none" xmlns="http://www.w3.org/2000/svg"><defs><linearGradient id="cat-mas-glow" x1="0%" y1="0%" x2="100%" y2="100%"><stop offset="0%" stop-color="#f472b6"/><stop offset="50%" stop-color="#ec4899"/><stop offset="100%" stop-color="#db2777"/></linearGradient></defs><rect x="7" y="7" width="14" height="14" rx="4" fill="url(#cat-mas-glow)" fill-opacity="0.2" stroke="url(#cat-mas-glow)" stroke-width="2"/><rect x="27" y="7" width="14" height="14" rx="4" fill="url(#cat-mas-glow)" fill-opacity="0.2" stroke="url(#cat-mas-glow)" stroke-width="2"/><rect x="7" y="27" width="14" height="14" rx="4" fill="url(#cat-mas-glow)" fill-opacity="0.2" stroke="url(#cat-mas-glow)" stroke-width="2"/><rect x="27" y="27" width="14" height="14" rx="4" fill="url(#cat-mas-glow)" stroke="url(#cat-mas-glow)" stroke-width="2"/><path d="M34 30v8M30 34h8" stroke="#ffffff" stroke-width="2.5" stroke-linecap="round"/><circle cx="14" cy="14" r="2" fill="#f472b6"/><circle cx="34" cy="14" r="2" fill="#f472b6"/><circle cx="14" cy="34" r="2" fill="#f472b6"/></svg>',
+        items: [
+            { id: 'ut-7-1', name: "Digen", description: "Generador de video avatar", href: "https://digen.ai/es/explore", colorClass: "hover:shadow-purple-400/20", iconSvg: '<svg class="w-full h-full text-purple-300" viewBox="0 0 64 64" xmlns="http://www.w3.org/2000/svg"><circle cx="32" cy="32" r="28" fill="currentColor"/><text x="32" y="44" fontFamily="Arial, sans-serif" fontSize="32" fontWeight="bold" fill="black" textAnchor="middle">D</text></svg>' },
+            { id: 'ut-7-2', name: "a2e", description: "Generador de video y animación", href: "https://a2e.ai/", colorClass: "hover:shadow-cyan-400/20", iconSvg: '<svg class="w-full h-full text-cyan-400" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><polygon points="12 2 2 7 12 12 22 7 12 2"/><polyline points="2 17 12 22 22 17"/><polyline points="2 12 12 17 22 12"/></svg>' },
+            { id: 'ut-7-3', name: "Omnicreator", description: "Suite de creación de contenido", href: "https://omnicreator.net/es", colorClass: "hover:shadow-amber-500/20", iconSvg: '<svg class="w-full h-full text-amber-400" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><circle cx="12" cy="12" r="9"/><circle cx="12" cy="12" r="4"/><path d="M12 3v3M12 18v3M3 12h3M18 12h3"/></svg>' },
+            { id: 'ut-7-4', name: "SeaArt", description: "Arte generativo con IA", href: "https://www.seaart.ai/es/create/image?id=f8172af6747ec762bcf847bd60fdf7cd&model_ver_no=2c39fe1f-f5d6-4b50-a273-499677f2f7a9", colorClass: "hover:shadow-indigo-500/20", iconSvg: '<svg class="w-full h-full text-indigo-400" viewBox="0 0 64 64" xmlns="http://www.w3.org/2000/svg"><circle cx="32" cy="32" r="28" fill="currentColor"/><text x="32" y="44" fontFamily="Arial, sans-serif" fontSize="32" fontWeight="bold" fill="black" textAnchor="middle">S</text></svg>' },
+            { id: 'ut-7-5', name: "tensorart", description: "Modelos y plantillas de arte IA", href: "https://tensor.art/es-ES/template/892333693933191976", colorClass: "hover:shadow-rose-500/20", iconSvg: '<svg class="w-full h-full text-rose-400" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><rect x="3" y="3" width="18" height="18" rx="4"/><circle cx="9" cy="9" r="2"/><circle cx="15" cy="15" r="2"/><line x1="9" y1="9" x2="15" y2="15"/></svg>' }
+        ]
+    },
+    {
+        id: 'ut-8',
+        title: 'IAs',
+        gradient: 'from-violet-500 to-cyan-500',
+        iconSvg: '<svg viewBox="0 0 48 48" class="w-full h-full" fill="none" xmlns="http://www.w3.org/2000/svg"><defs><linearGradient id="cat-ias-glow" x1="0%" y1="0%" x2="100%" y2="100%"><stop offset="0%" stop-color="#a78bfa"/><stop offset="50%" stop-color="#8b5cf6"/><stop offset="100%" stop-color="#06b6d4"/></linearGradient></defs><circle cx="24" cy="24" r="18" fill="url(#cat-ias-glow)" fill-opacity="0.15" stroke="url(#cat-ias-glow)" stroke-width="2.2"/><circle cx="16" cy="18" r="3.5" fill="#c084fc"/><circle cx="32" cy="18" r="3.5" fill="#38bdf8"/><circle cx="24" cy="31" r="4" fill="#a855f7"/><circle cx="24" cy="13" r="2.5" fill="#67e8f9"/><line x1="16" y1="18" x2="24" y2="13" stroke="#c084fc" stroke-width="2"/><line x1="32" y1="18" x2="24" y2="13" stroke="#38bdf8" stroke-width="2"/><line x1="16" y1="18" x2="24" y2="31" stroke="#c084fc" stroke-width="2"/><line x1="32" y1="18" x2="24" y2="31" stroke="#38bdf8" stroke-width="2"/><path d="M24 19v6" stroke="#ffffff" stroke-width="2.2" stroke-linecap="round"/></svg>',
+        items: [
+            { id: 'ut-8-1', name: "Qwen", description: "Modelo lingüístico y multimodal", href: "https://chat.qwen.ai/", colorClass: "hover:shadow-purple-500/20", iconSvg: '<svg class="w-full h-full" viewBox="0 0 64 64" xmlns="http://www.w3.org/2000/svg"><circle cx="32" cy="32" r="28" fill="#8b5cf6"/><text x="32" y="44" fontFamily="Arial, sans-serif" fontSize="32" fontWeight="bold" fill="white" textAnchor="middle">Q</text></svg>' },
+            { id: 'ut-8-2', name: "Grok", description: "IA con razonamiento en tiempo real", href: "https://grok.com/", colorClass: "hover:shadow-gray-400/20", iconSvg: '<svg class="w-full h-full fill-none stroke-current stroke-[8]" viewBox="0 0 64 64"><circle cx="32" cy="32" r="26" /><line x1="16" y1="48" x2="48" y2="16" strokeLinecap="round"/></svg>' },
+            { id: 'ut-8-3', name: "DeepSeek", description: "Razonamiento y código avanzado", href: "https://chat.deepseek.com/", colorClass: "hover:shadow-blue-500/20", iconSvg: '<svg class="w-full h-full fill-current text-blue-500" viewBox="0 0 24 24"><path d="M20 2H4c-1.1 0-2 .9-2 2v18l4-4h14c1.1 0 2-.9 2-2V4c0-1.1-.9-2-2-2zm0 14H6l-2 2V4h16v12z"/><path d="M12 6c-1.66 0-3 1.34-3 3s1.34 3 3 3 3-1.34 3-3-1.34-3-3-3zm0 4c-.55 0-1-.45-1-1s.45-1 1-1 1 .45 1 1-1 1 1z"/></svg>' },
+            { id: 'ut-8-4', name: "Meta AI", description: "Asistente inteligente y creativo", href: "https://meta.ai/", colorClass: "hover:shadow-purple-500/20", iconSvg: '<svg class="w-full h-full text-purple-400" viewBox="0 0 64 64" fill="none" xmlns="http://www.w3.org/2000/svg"><circle cx="32" cy="32" r="26" stroke="currentColor" strokeWidth="8" /></svg>' }
         ]
     }
   ]
@@ -587,7 +611,7 @@ const isPdfRembItem = (item: any) => {
   );
 };
 
-// Normalizes, re-slots and strictly deduplicates usefulTools into exactly 6 uniform categories
+// Normalizes, re-slots and strictly deduplicates usefulTools into exactly 8 uniform categories
 const normalizeAndDeduplicateUsefulTools = (currentTools: any[]): { tools: any[]; modified: boolean } => {
   const canonicalCategories = JSON.parse(JSON.stringify(INITIAL_CONFIG.usefulTools));
   const catMap: { [id: string]: any } = {};
@@ -608,7 +632,7 @@ const normalizeAndDeduplicateUsefulTools = (currentTools: any[]): { tools: any[]
   const seenItems = new Set<string>();
   let modified = false;
 
-  if (!Array.isArray(currentTools) || currentTools.length !== 6 || currentTools.some(s => !catMap[s.id])) {
+  if (!Array.isArray(currentTools) || currentTools.length !== 8 || currentTools.some(s => !catMap[s.id])) {
     modified = true;
   }
 
@@ -657,6 +681,11 @@ const normalizeAndDeduplicateUsefulTools = (currentTools: any[]): { tools: any[]
     if (name.includes('tempemail') || name.includes('temp-mail') || name.includes('correo temp')) return 'tempemail';
     if (name.includes('tarjeta')) return 'tarjetas';
     if (name.includes('render') && !name.includes('editor render')) return 'render';
+    if (name.includes('comfy')) return 'comfy';
+    if (name.includes('qwen')) return 'qwen';
+    if (name.includes('grok')) return 'grok';
+    if (name.includes('deepseek')) return 'deepseek';
+    if (name.includes('meta ai') || href.includes('meta.ai')) return 'meta ai';
     if (name.includes('lovable')) return 'lovable';
     if (name.includes('higgsfield')) return 'higgsfield';
     if (name.includes('lovart')) return 'lovart';
@@ -670,33 +699,39 @@ const normalizeAndDeduplicateUsefulTools = (currentTools: any[]): { tools: any[]
   };
 
   const getTargetCategory = (itemKey: string, originalSecId?: string, secTitle?: string): string => {
-    if (canonicalItemHome[itemKey]) {
-      return canonicalItemHome[itemKey];
-    }
     // Specific explicit reroutings requested by user
+    if (itemKey === 'digen' || itemKey === 'a2e' || itemKey === 'omnicreator' || itemKey === 'seaart' || itemKey === 'tensorart') {
+      return 'ut-7'; // Más
+    }
+    if (itemKey === 'qwen' || itemKey === 'grok' || itemKey === 'deepseek' || itemKey === 'meta ai') {
+      return 'ut-8'; // IAs
+    }
+    if (itemKey === 'comfy') {
+      return 'ut-6'; // Productividad
+    }
     if (itemKey === 'iconos' || itemKey === 'tempemail' || itemKey === 'tarjetas' || itemKey === 'render') {
       return 'ut-5'; // Desarrollo & Nube
     }
     if (itemKey === 'lovable' || itemKey === 'higgsfield' || itemKey === 'lovart') {
-      return 'ut-6'; // IA & Productividad
-    }
-    if (itemKey === 'seaart' || itemKey === 'tensorart') {
-      return 'ut-1'; // Diseño & Imagen
-    }
-    if (itemKey === 'a2e' || itemKey === 'omnicreator') {
-      return 'ut-2'; // Video & Animación
+      return 'ut-6'; // Productividad
     }
     if (itemKey === 'sam' || itemKey === 'isoremb' || itemKey === '3dcamara' || itemKey === 'texturas ia' || itemKey === 'json dna' || itemKey === 'roboneo') {
-      return 'ut-4'; // Impresión 3D & CAD
+      return 'ut-4'; // Arquitectura
+    }
+
+    if (canonicalItemHome[itemKey]) {
+      return canonicalItemHome[itemKey];
     }
 
     const sTitle = (secTitle || '').toLowerCase();
+    if (sTitle.includes('más') || sTitle.includes('mas')) return 'ut-7';
+    if (sTitle === 'ias' || sTitle === 'ia' || sTitle.includes('inteligencia')) return 'ut-8';
     if (sTitle.includes('audio') || sTitle.includes('sonido') || sTitle.includes('música') || sTitle.includes('musica')) return 'ut-3';
     if (sTitle.includes('video') || sTitle.includes('animación') || sTitle.includes('animacion')) return 'ut-2';
-    if (sTitle.includes('3d') || sTitle.includes('cad') || sTitle.includes('impresión') || sTitle.includes('impresion')) return 'ut-4';
+    if (sTitle.includes('arquitectura') || sTitle.includes('3d') || sTitle.includes('cad') || sTitle.includes('impresión') || sTitle.includes('impresion')) return 'ut-4';
     if (sTitle.includes('desarrollo') || sTitle.includes('nube') || sTitle.includes('código') || sTitle.includes('dev') || sTitle.includes('programación') || sTitle.includes('programacion')) return 'ut-5';
     if (sTitle.includes('diseño') || sTitle.includes('imagen') || sTitle.includes('foto')) return 'ut-1';
-    if (sTitle.includes('productividad') || sTitle.includes('ia') || sTitle.includes('multi')) return 'ut-6';
+    if (sTitle.includes('productividad')) return 'ut-6';
     if (originalSecId && catMap[originalSecId]) return originalSecId;
     return 'ut-6';
   };
@@ -874,7 +909,7 @@ const normalizeConfigCategoriesAndQuickAccess = (cfg: any): boolean => {
     });
   }
 
-  // 2. Consolidate and deduplicate usefulTools into exactly 6 uniform categories
+  // 2. Consolidate and deduplicate usefulTools into exactly 8 uniform categories
   if (cfg.usefulTools && Array.isArray(cfg.usefulTools)) {
     const res = normalizeAndDeduplicateUsefulTools(cfg.usefulTools);
     if (res.modified || JSON.stringify(cfg.usefulTools) !== JSON.stringify(res.tools)) {
