@@ -1,5 +1,5 @@
 // Rembrandt IA Studio - Service Worker (Optimized build - Zero Remotion)
-const CACHE_NAME = 'rembrandt-pwa-v102';
+const CACHE_NAME = 'rembrandt-pwa-v103';
 const STATIC_ASSETS = [
   '/',
   '/index.html',

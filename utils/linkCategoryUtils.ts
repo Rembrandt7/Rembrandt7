@@ -132,7 +132,9 @@ export const CANONICAL_LINKS_MAP: Record<string, Partial<LinkItem>> = {
     href: 'https://web.whatsapp.com/',
     category: 'social',
     colorClass: 'text-green-500 hover:text-green-400',
-    iconSvg: `<svg viewBox="0 0 24 24" class="w-full h-full fill-current" xmlns="http://www.w3.org/2000/svg"><path d="M12.04 2c-5.46 0-9.91 4.45-9.91 9.91 0 1.75.46 3.45 1.32 4.95L2.05 22l5.25-1.38c1.45.79 3.08 1.21 4.74 1.21 5.46 0 9.91-4.45 9.91-9.91 0-2.65-1.03-5.14-2.9-7.01A9.816 9.816 0 0 0 12.04 2m.01 1.67c2.2 0 4.26.86 5.82 2.42a8.225 8.225 0 0 1 2.41 5.83c0 4.54-3.7 8.24-8.24 8.24-1.48 0-2.93-.4-4.2-1.15l-.3-.18-3.12.82.83-3.04-.2-.31a8.196 8.196 0 0 1-1.26-4.38c0-4.54 3.7-8.24 8.24-8.24m-3.53 3.63c-.19 0-.52.07-.79.37-.27.3-1.04 1.02-1.04 2.48 0 1.47 1.07 2.89 1.21 3.09.15.2 2.1 3.2 5.08 4.49 2.49 1.07 2.99.86 3.53.81.54-.05 1.74-.71 1.99-1.4.24-.68.24-1.27.17-1.4-.07-.12-.27-.2-.56-.34-.3-.15-1.74-.86-2.01-.96-.27-.1-.47-.15-.67.15-.2.3-.77.96-.94 1.16-.17.2-.34.22-.64.07-.3-.15-1.26-.46-2.39-1.48-.88-.79-1.48-1.76-1.65-2.06-.17-.3-.02-.46.13-.61.14-.14.3-.35.45-.52.15-.17.2-.3.3-.5.1-.2.05-.37-.02-.52-.08-.15-.67-1.62-.92-2.22-.24-.6-.49-.51-.67-.52h-.57z"/></svg>`
+    iconSvg: `<svg viewBox="0 0 64 64" class="w-full h-full" xmlns="http://www.w3.org/2000/svg"><defs><linearGradient id="wa-green-bg" x1="0%" y1="0%" x2="100%" y2="100%"><stop offset="0%" stop-color="#2be06e"/><stop offset="60%" stop-color="#22c55e"/><stop offset="100%" stop-color="#15803d"/></linearGradient></defs><rect x="2" y="2" width="60" height="60" rx="16" fill="url(#wa-green-bg)" stroke="#86efac" stroke-width="1.2" stroke-opacity="0.5"/><g transform="translate(13, 13) scale(1.583)"><path fill="#ffffff" d="M12.04 2c-5.46 0-9.91 4.45-9.91 9.91 0 1.75.46 3.45 1.32 4.95L2.05 22l5.25-1.38c1.45.79 3.08 1.21 4.74 1.21 5.46 0 9.91-4.45 9.91-9.91 0-2.65-1.03-5.14-2.9-7.01A9.816 9.816 0 0 0 12.04 2m.01 1.67c2.2 0 4.26.86 5.82 2.42a8.225 8.225 0 0 1 2.41 5.83c0 4.54-3.7 8.24-8.24 8.24-1.48 0-2.93-.4-4.2-1.15l-.3-.18-3.12.82.83-3.04-.2-.31a8.196 8.196 0 0 1-1.26-4.38c0-4.54 3.7-8.24 8.24-8.24m-3.53 3.63c-.19 0-.52.07-.79.37-.27.3-1.04 1.02-1.04 2.48 0 1.47 1.07 2.89 1.21 3.09.15.2 2.1 3.2 5.08 4.49 2.49 1.07 2.99.86 3.53.81.54-.05 1.74-.71 1.99-1.4.24-.68.24-1.27.17-1.4-.07-.12-.27-.2-.56-.34-.3-.15-1.74-.86-2.01-.96-.27-.1-.47-.15-.67.15-.2.3-.77.96-.94 1.16-.17.2-.34.22-.64.07-.3-.15-1.26-.46-2.39-1.48-.88-.79-1.48-1.76-1.65-2.06-.17-.3-.02-.46.13-.61.14-.14.3-.35.45-.52.15-.17.2-.3.3-.5.1-.2.05-.37-.02-.52-.08-.15-.67-1.62-.92-2.22-.24-.6-.49-.51-.67-.52h-.57z"/></g></svg>`,
+    outlineColor: '#22c55e',
+    outlineWidth: 8
   },
   'notion': {
     id: '3',
@@ -140,7 +142,9 @@ export const CANONICAL_LINKS_MAP: Record<string, Partial<LinkItem>> = {
     href: 'https://www.notion.so/',
     category: 'trabajo',
     colorClass: 'text-white hover:text-gray-300',
-    iconSvg: `<svg viewBox="0 0 24 24" class="w-full h-full fill-current" xmlns="http://www.w3.org/2000/svg"><path d="M4.459 4.208c.746.606 1.026.56 2.428.466l13.215-.793c.28 0 .047-.28-.046-.326L17.86 1.69c-.466-.373-.84-.466-1.586-.42L3.899 2.25c-.466.047-.56.28-.373.513l.933 1.445zm-.42 3.125v13.634c0 .84.42 1.12 1.306 1.073l14.195-.84c.886-.046.98-.56.98-1.213V6.353c0-.653-.28-.933-.886-.886L5.345 6.307c-.7.046-1.306.326-1.306 1.026zm12.37.933c.093.42 0 .84-.373.886l-.7.14v8.586c-.513.28-1.026.466-1.493.466-.793 0-1.026-.28-1.633-1.026l-4.76-7.464v7.324l1.4.326c0 .42-.326.746-.746.746H4.832c-.093-.42.093-.746.513-.793l.886-.187V9.387l-1.12-.093c0-.42.233-.746.653-.793l3.36-.233 5.087 7.79V9.107l-1.213-.14c0-.42.28-.746.7-.793l3.08-.233z"/></svg>`
+    iconSvg: `<svg viewBox="0 0 64 64" class="w-full h-full" xmlns="http://www.w3.org/2000/svg"><defs><linearGradient id="notion-bg" x1="0%" y1="0%" x2="100%" y2="100%"><stop offset="0%" stop-color="#26221f"/><stop offset="50%" stop-color="#1c1917"/><stop offset="100%" stop-color="#0f0e0d"/></linearGradient></defs><rect x="2" y="2" width="60" height="60" rx="16" fill="url(#notion-bg)" stroke="#f59e0b" stroke-width="1.6" stroke-opacity="0.6"/><g transform="translate(13, 13) scale(1.583)"><path fill="#ffffff" d="M4.459 4.208c.746.606 1.026.56 2.428.466l13.215-.793c.28 0 .047-.28-.046-.326L17.86 1.69c-.466-.373-.84-.466-1.586-.42L3.899 2.25c-.466.047-.56.28-.373.513l.933 1.445zm-.42 3.125v13.634c0 .84.42 1.12 1.306 1.073l14.195-.84c.886-.046.98-.56.98-1.213V6.353c0-.653-.28-.933-.886-.886L5.345 6.307c-.7.046-1.306.326-1.306 1.026zm12.37.933c.093.42 0 .84-.373.886l-.7.14v8.586c-.513.28-1.026.466-1.493.466-.793 0-1.026-.28-1.633-1.026l-4.76-7.464v7.324l1.4.326c0 .42-.326.746-.746.746H4.832c-.093-.42.093-.746.513-.793l.886-.187V9.387l-1.12-.093c0-.42.233-.746.653-.793l3.36-.233 5.087 7.79V9.107l-1.213-.14c0-.42.28-.746.7-.793l3.08-.233z"/></g></svg>`,
+    outlineColor: '#f59e0b',
+    outlineWidth: 8
   },
   'javer': {
     id: 'javer',
@@ -148,7 +152,9 @@ export const CANONICAL_LINKS_MAP: Record<string, Partial<LinkItem>> = {
     href: 'https://portal.javer.net/Paginas/Index.aspx',
     category: 'trabajo',
     colorClass: 'text-red-600 hover:text-red-500',
-    iconSvg: `<svg class="w-full h-full" viewBox="0 0 24 24" fill="currentColor" xmlns="http://www.w3.org/2000/svg"><path d="M15.5 3H19v13.5c0 2.48-2.02 4.5-4.5 4.5S10 18.98 10 16.5V15h3v1.5c0 .83.67 1.5 1.5 1.5s1.5-.67 1.5-1.5V3z" /></svg>`
+    iconSvg: `<svg viewBox="0 0 64 64" class="w-full h-full" xmlns="http://www.w3.org/2000/svg"><defs><linearGradient id="jav-bg" x1="0%" y1="0%" x2="100%" y2="100%"><stop offset="0%" stop-color="#2a080c"/><stop offset="50%" stop-color="#180406"/><stop offset="100%" stop-color="#0a0102"/></linearGradient><linearGradient id="jav-grad-red" x1="0%" y1="0%" x2="100%" y2="100%"><stop offset="0%" stop-color="#ff3b44"/><stop offset="30%" stop-color="#e11d24"/><stop offset="100%" stop-color="#b91319"/></linearGradient></defs><rect x="2" y="2" width="60" height="60" rx="16" fill="url(#jav-bg)" stroke="#e11d24" stroke-width="1.6" stroke-opacity="0.8"/><g transform="translate(12.5, 12.5) scale(0.228)"><path d="M 111.0 0.0 L 60.0 0.0 L 54.0 7.0 L 43.0 24.0 L 20.0 55.0 L 1.0 83.0 L 54.0 82.0 L 110.0 3.0 Z" fill="url(#jav-grad-red)" /><path d="M 126.0 21.0 L 123.0 24.0 L 119.0 31.0 L 72.0 97.0 L 66.0 104.0 L 15.0 104.0 L 20.0 113.0 L 28.0 123.0 L 80.0 123.0 L 138.0 41.0 L 138.0 39.0 Z" fill="url(#jav-grad-red)" /><path d="M 148.0 54.0 L 146.0 55.0 L 139.0 66.0 L 88.0 137.0 L 37.0 137.0 L 48.0 154.0 L 102.0 155.0 L 159.0 75.0 L 160.0 72.0 Z" fill="url(#jav-grad-red)" /><path d="M 170.0 89.0 L 161.0 89.0 L 120.0 148.0 L 107.0 165.0 L 65.0 165.0 L 61.0 171.0 L 112.0 171.0 L 120.0 161.0 L 131.0 144.0 L 151.0 117.0 L 157.0 107.0 Z" fill="url(#jav-grad-red)" /></g></svg>`,
+    outlineColor: '#ef4444',
+    outlineWidth: 8
   },
   'flow': {
     id: 'flow',
@@ -176,8 +182,8 @@ export const CANONICAL_LINKS_MAP: Record<string, Partial<LinkItem>> = {
     href: 'https://rendair.ai/dashboard',
     category: 'trabajo',
     colorClass: 'hover:text-teal-400',
-    iconSvg: `<svg class="w-full h-full" viewBox="0 0 64 64" xmlns="http://www.w3.org/2000/svg"><circle cx="32" cy="32" r="28" fill="#4fd1c5"/><text x="32" y="42" fontFamily="Arial, sans-serif" fontSize="28" fontWeight="bold" fill="black" textAnchor="middle">r</text></svg>`,
-    outlineColor: '#4fd1c5',
+    iconSvg: `<svg viewBox="0 0 64 64" class="w-full h-full" xmlns="http://www.w3.org/2000/svg"><rect x="2" y="2" width="60" height="60" rx="16" fill="#0c1017" stroke="#10b981" stroke-width="1.8" stroke-opacity="0.6"/><rect x="21" y="20" width="10" height="24" rx="5" fill="#ffffff"/><rect x="35" y="20" width="10" height="10" rx="5" fill="#ffffff"/></svg>`,
+    outlineColor: '#10b981',
     outlineWidth: 8
   },
   'pinterest': {
