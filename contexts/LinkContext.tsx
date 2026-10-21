@@ -188,7 +188,6 @@ const INITIAL_CONFIG: AppConfig = {
         outlineWidth: 8
     }
   ],
-  ],
 
   aiSidebar: {
     models: [
