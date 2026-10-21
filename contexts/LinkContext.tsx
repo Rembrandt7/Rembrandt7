@@ -489,6 +489,64 @@ const isMixboardItem = (item: any) => {
   return item.id === 'gd-14' || name.includes('mixboard') || href.includes('mixboard');
 };
 
+const isSherwinItem = (item: any) => {
+  if (!item || typeof item !== 'object') return false;
+  const name = (item.name || '').toLowerCase();
+  const href = (item.href || '').toLowerCase();
+  return (
+    item.id === 'qa-11' ||
+    name.includes('sherwin') ||
+    name.includes('sherry') ||
+    href.includes('1us6w9obhdw-pwzrgijw1g5er1qdltnCD'.toLowerCase())
+  );
+};
+
+const isCotizadorItem = (item: any) => {
+  if (!item || typeof item !== 'object') return false;
+  const name = (item.name || '').toLowerCase();
+  const href = (item.href || '').toLowerCase();
+  return (
+    item.id === 'qa-4' ||
+    name.includes('cotizador') ||
+    href.includes('1k2aqbzly96killedyp5jljx92eqjuuoj')
+  );
+};
+
+const isListasRembItem = (item: any) => {
+  if (!item || typeof item !== 'object') return false;
+  const name = (item.name || '').toLowerCase();
+  const href = (item.href || '').toLowerCase();
+  return (
+    item.id === 'qa-5' ||
+    name.includes('organizador') ||
+    name.includes('listas remb') ||
+    href.includes('1edmjF7bfonjwakuisxzlevdfvm4sobo3'.toLowerCase())
+  );
+};
+
+const isCompresorItem = (item: any) => {
+  if (!item || typeof item !== 'object') return false;
+  const name = (item.name || '').toLowerCase();
+  const href = (item.href || '').toLowerCase();
+  return (
+    item.id === 'qa-2' ||
+    name.includes('compresor') ||
+    href.includes('1sqllos1puc_ggsliqmhQetfrwl-8hifk'.toLowerCase())
+  );
+};
+
+const isPdfRembItem = (item: any) => {
+  if (!item || typeof item !== 'object') return false;
+  const name = (item.name || '').toLowerCase().trim();
+  const href = (item.href || '').toLowerCase();
+  return (
+    item.id === 'qa-pdf-remb' ||
+    name === 'pdf' ||
+    name === 'pdf remb' ||
+    href.includes('pdf-remb.vercel.app')
+  );
+};
+
 const normalizeConfigCategoriesAndQuickAccess = (cfg: any): boolean => {
   if (!cfg || typeof cfg !== 'object') return false;
   let modified = false;
@@ -682,64 +740,6 @@ const normalizeConfigCategoriesAndQuickAccess = (cfg: any): boolean => {
 const ensureSherwinWilliamsLinkUpdated = (cfg: any): boolean => {
   if (!cfg || typeof cfg !== 'object') return false;
   let updated = false;
-
-  const isSherwinItem = (item: any) => {
-    if (!item || typeof item !== 'object') return false;
-    const name = (item.name || '').toLowerCase();
-    const href = (item.href || '').toLowerCase();
-    return (
-      item.id === 'qa-11' ||
-      name.includes('sherwin') ||
-      name.includes('sherry') ||
-      href.includes('1us6w9obhdw-pwzrgijw1g5er1qdltnCD'.toLowerCase())
-    );
-  };
-
-  const isCotizadorItem = (item: any) => {
-    if (!item || typeof item !== 'object') return false;
-    const name = (item.name || '').toLowerCase();
-    const href = (item.href || '').toLowerCase();
-    return (
-      item.id === 'qa-4' ||
-      name.includes('cotizador') ||
-      href.includes('1k2aqbzly96killedyp5jljx92eqjuuoj')
-    );
-  };
-
-  const isListasRembItem = (item: any) => {
-    if (!item || typeof item !== 'object') return false;
-    const name = (item.name || '').toLowerCase();
-    const href = (item.href || '').toLowerCase();
-    return (
-      item.id === 'qa-5' ||
-      name.includes('organizador') ||
-      name.includes('listas remb') ||
-      href.includes('1edmjF7bfonjwakuisxzlevdfvm4sobo3'.toLowerCase())
-    );
-  };
-
-  const isCompresorItem = (item: any) => {
-    if (!item || typeof item !== 'object') return false;
-    const name = (item.name || '').toLowerCase();
-    const href = (item.href || '').toLowerCase();
-    return (
-      item.id === 'qa-2' ||
-      name.includes('compresor') ||
-      href.includes('1sqllos1puc_ggsliqmhQetfrwl-8hifk'.toLowerCase())
-    );
-  };
-
-  const isPdfRembItem = (item: any) => {
-    if (!item || typeof item !== 'object') return false;
-    const name = (item.name || '').toLowerCase().trim();
-    const href = (item.href || '').toLowerCase();
-    return (
-      item.id === 'qa-pdf-remb' ||
-      name === 'pdf' ||
-      name === 'pdf remb' ||
-      href.includes('pdf-remb.vercel.app')
-    );
-  };
 
   const updateArray = (arr?: any[]) => {
     if (!Array.isArray(arr)) return;
