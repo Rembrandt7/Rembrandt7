@@ -60,20 +60,24 @@ const INITIAL_CONFIG: AppConfig = {
     personal: ""
   }, linksBar: [
     {
-        id: '1',
-        href: "https://www.mercadolibre.com.mx/",
-        name: "Mercado Libre",
-        category: "compras",
-        colorClass: "text-yellow-400 hover:text-yellow-300",
-        iconSvg: `<img src="/mercadolibre_premium.png" class="w-10 h-10 object-contain" />`
+        id: 'javer',
+        href: "https://portal.javer.net/Paginas/Index.aspx",
+        name: "Javer",
+        category: "trabajo",
+        colorClass: "text-blue-500 hover:text-blue-400",
+        iconSvg: `<img src="/javer_premium.png" class="w-10 h-10 object-contain" />`,
+        outlineColor: '#f20202',
+        outlineWidth: 10
     },
     {
-        id: 'amazon',
-        href: "https://www.amazon.com.mx/",
-        name: "Amazon",
-        category: "compras",
-        colorClass: "text-amber-400 hover:text-amber-300",
-        iconSvg: `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 100 100" class="w-full h-full"><defs><linearGradient id="amazon-bg-grad" x1="0%" y1="0%" x2="100%" y2="100%"><stop offset="0%" stop-color="#111822"/><stop offset="100%" stop-color="#1a222e"/></linearGradient></defs><rect width="100" height="100" rx="22" fill="url(#amazon-bg-grad)" stroke="#232f3e" stroke-width="1.5"/><rect x="4" y="4" width="92" height="92" rx="18" fill="none" stroke="rgba(255,255,255,0.06)" stroke-width="1"/><g transform="translate(50, 50) scale(0.68) translate(-50, -50)"><path d="M53.8 47.7c0 3.2.1 5.9-1.4 8.7-1.1 2.1-2.9 3.4-5 3.4-2.9 0-4.6-2.2-4.6-5.5 0-6.5 5.3-7.7 11-7.7v1.1zm7.3-19.4c-.4-.5-1.2-.4-1.7-.1-2.9 1.4-6.4 2-9.6 2-7.5 0-12.7-3.3-12.7-11.2 0-6.2 3.6-10.3 9.4-11.8 4.7-1.1 11-1.2 11-5.7 0-3.6-2.7-5.3-6.6-5.3-4.3 0-6.2 2-6.7 5.7 0 .7-.6 1.2-1.3 1.2l-6.8-.7c-.7-.1-1.2-.6-1.1-1.3.9-7.1 6.7-11.4 15.9-11.4 8.4 0 14.8 4.3 14.8 13v17c0 2.1.8 3.1 1.6 4.1.5.7.5 1.3 0 1.8l-5.8 4.8c-.6.5-1.1.4-1.6-.3-.6-.8-1.2-1.7-1.4-2.8z" fill="#FFFFFF" transform="translate(26, 16) scale(0.78)"/><path d="M22 66c13 8 31 8.8 47 2 1-.4 1.6.3.8 1.2-9 8-24 11-37 6-2-.8-2.8-2-.6-3 1.5-.7 3-1.2 4.6-1.7 1.2-.4 2.4.8 1.2 1.2-10 3.8-22 .7-27-7.4-.3-.5.2-1.1.8-.8 7 4 15 5.8 24 4.8 1.3-.2 1.3-1.9 0-1.7-8 1-16-.8-23-4.6-.6-.3-1.1.3-.8.8z" fill="#FF9900"/><path d="M68 67c-1-.4-2.8.3-4.1.9-.5.3-.4 1 .1 1.2 3.2 1.2 6.4 3.2 8.3 6.2.3.5 1 .3 1.1-.3.3-3.4-.1-7.4-2.2-10.4-.3-.5-1-.4-1.2.1-.6 1.7-1.2 3.5-2 5.3z" fill="#FF9900"/></g></svg>`
+        id: 'makerworld',
+        href: "https://makerworld.com/es",
+        name: "MakerWorld",
+        category: "trabajo",
+        colorClass: "text-teal-400 hover:text-teal-300",
+        iconSvg: `<img src="/makerworld_premium.png" class="w-10 h-10 object-contain rounded-xl" />`,
+        outlineColor: '#10b981',
+        outlineWidth: 10
     },
     {
         id: '2',
@@ -92,14 +96,12 @@ const INITIAL_CONFIG: AppConfig = {
         iconSvg: `<svg xmlns="http://www.w3.org/2000/svg" class="h-6 w-6" viewBox="0 0 24 24" fill="currentColor"><path d="M4.021 1.761A.97.97 0 0 0 3 2.754V21.36c0 .546.438.986.97.972.032.004.064.004.096 0h16.29a.952.952 0 0 0 .963-.951V2.623a.952.952 0 0 0-.963-.951H4.117a.65.65 0 0 0-.096.09zM5.38 4.28h2.24l6.983 11.233V4.28h2.096v15.226h-2.12L7.65 8.358v11.148H5.38V4.28z"/></svg>`
     },
     {
-        id: 'javer',
-        href: "https://portal.javer.net/Paginas/Index.aspx",
-        name: "Javer",
-        category: "trabajo",
-        colorClass: "text-blue-500 hover:text-blue-400",
-        iconSvg: `<img src="/javer_premium.png" class="w-10 h-10 object-contain" />`,
-        outlineColor: '#f20202',
-        outlineWidth: 10
+        id: 'youtube',
+        href: "https://www.youtube.com/",
+        name: "YouTube",
+        category: "social",
+        colorClass: "text-red-600 hover:text-red-500",
+        iconSvg: `<svg viewBox="0 0 24 24" class="w-8 h-8 fill-current"><path d="M23.498 6.186a3.016 3.016 0 0 0-2.122-2.136C19.505 3.545 12 3.545 12 3.545s-7.505 0-9.377.505A3.017 3.017 0 0 0 .502 6.186C0 8.07 0 12 0 12s0 3.93.502 5.814a3.016 3.016 0 0 0 2.122 2.136c1.871.505 9.376.505 9.376.505s7.505 0 9.377-.505a3.015 3.015 0 0 0 2.122-2.136C24 15.93 24 12 24 12s0-3.93-.502-5.814zM9.545 15.568V8.432L15.818 12l-6.273 3.568z"/></svg>`
     },
     {
         id: 'flow',
@@ -112,26 +114,29 @@ const INITIAL_CONFIG: AppConfig = {
         outlineWidth: 15
     },
     {
-        id: 'makerworld',
-        href: "https://makerworld.com/es",
-        name: "MakerWorld",
+        id: '10',
+        href: "https://app.maket.ai/dashboard",
+        name: "Maket AI",
         category: "trabajo",
-        colorClass: "text-teal-400 hover:text-teal-300",
-        iconSvg: `<img src="/makerworld_premium.png" class="w-10 h-10 object-contain rounded-xl" />`,
-        outlineColor: '#10b981',
-        outlineWidth: 10
+        colorClass: "text-sky-400 hover:text-sky-300",
+        iconSvg: `<svg viewBox="0 0 100 100" class="w-full h-full p-0.5" xmlns="http://www.w3.org/2000/svg"><defs><linearGradient id="maket-bp-bg" x1="0%" y1="0%" x2="100%" y2="100%"><stop offset="0%" stop-color="#0b1e36"/><stop offset="50%" stop-color="#072a4a"/><stop offset="100%" stop-color="#034373"/></linearGradient><pattern id="maket-bp-grid" width="10" height="10" patternUnits="userSpaceOnUse"><path d="M 10 0 L 0 0 0 10" fill="none" stroke="#38bdf8" stroke-width="0.6" stroke-opacity="0.25"/></pattern></defs><rect width="100" height="100" rx="22" fill="url(#maket-bp-bg)" stroke="#38bdf8" stroke-width="1.5" stroke-opacity="0.4"/><rect x="5" y="5" width="90" height="90" rx="17" fill="url(#maket-bp-grid)"/><rect x="20" y="20" width="60" height="56" rx="2" fill="none" stroke="#38bdf8" stroke-width="3.5" stroke-linejoin="round"/><line x1="20" y1="48" x2="52" y2="48" stroke="#7dd3fc" stroke-width="3" stroke-linecap="square"/><line x1="52" y1="48" x2="52" y2="76" stroke="#7dd3fc" stroke-width="3" stroke-linecap="square"/><line x1="52" y1="36" x2="80" y2="36" stroke="#7dd3fc" stroke-width="3" stroke-linecap="square"/><line x1="36" y1="48" x2="48" y2="48" stroke="#ffffff" stroke-width="2.5" stroke-linecap="round"/><path d="M 36 48 A 12 12 0 0 0 48 36" fill="none" stroke="#bae6fd" stroke-width="1.5" stroke-dasharray="2.5,2"/><line x1="30" y1="20" x2="46" y2="20" stroke="#ffffff" stroke-width="3.5"/><line x1="20" y1="83" x2="80" y2="83" stroke="#93c5fd" stroke-width="1.2"/><line x1="20" y1="80" x2="20" y2="86" stroke="#93c5fd" stroke-width="1.5"/><line x1="80" y1="80" x2="80" y2="86" stroke="#93c5fd" stroke-width="1.5"/><polygon points="20,83 24,81.5 24,84.5" fill="#93c5fd"/><polygon points="80,83 76,81.5 76,84.5" fill="#93c5fd"/><circle cx="70" cy="27" r="5" fill="#072a4a" stroke="#38bdf8" stroke-width="1"/><polygon points="70,23 72,27 70,26" fill="#38bdf8"/><polygon points="70,23 68,27 70,26" fill="#ffffff"/></svg>`
     },
     {
-        id: 'rendair',
-        href: "https://rendair.ai/dashboard",
-        name: "Rendair",
-        category: "trabajo",
-        colorClass: "hover:text-teal-400",
-        iconSvg: `<svg class="w-full h-full" viewBox="0 0 64 64" xmlns="http://www.w3.org/2000/svg"><circle cx="32" cy="32" r="28" fill="#4fd1c5"/><text x="32" y="42" fontFamily="Arial, sans-serif" fontSize="28" fontWeight="bold" fill="black" textAnchor="middle">r</text></svg>`,
-        outlineColor: '#4fd1c5',
-        outlineWidth: 8
+        id: '1',
+        href: "https://www.mercadolibre.com.mx/",
+        name: "Mercado Libre",
+        category: "compras",
+        colorClass: "text-yellow-400 hover:text-yellow-300",
+        iconSvg: `<img src="/mercadolibre_premium.png" class="w-10 h-10 object-contain" />`
     },
-
+    {
+        id: 'amazon',
+        href: "https://www.amazon.com.mx/",
+        name: "Amazon",
+        category: "compras",
+        colorClass: "text-amber-400 hover:text-amber-300",
+        iconSvg: `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 100 100" class="w-full h-full"><defs><linearGradient id="amazon-bg-grad" x1="0%" y1="0%" x2="100%" y2="100%"><stop offset="0%" stop-color="#111822"/><stop offset="100%" stop-color="#1a222e"/></linearGradient></defs><rect width="100" height="100" rx="22" fill="url(#amazon-bg-grad)" stroke="#232f3e" stroke-width="1.5"/><rect x="4" y="4" width="92" height="92" rx="18" fill="none" stroke="rgba(255,255,255,0.06)" stroke-width="1"/><g transform="translate(50, 50) scale(0.68) translate(-50, -50)"><path d="M53.8 47.7c0 3.2.1 5.9-1.4 8.7-1.1 2.1-2.9 3.4-5 3.4-2.9 0-4.6-2.2-4.6-5.5 0-6.5 5.3-7.7 11-7.7v1.1zm7.3-19.4c-.4-.5-1.2-.4-1.7-.1-2.9 1.4-6.4 2-9.6 2-7.5 0-12.7-3.3-12.7-11.2 0-6.2 3.6-10.3 9.4-11.8 4.7-1.1 11-1.2 11-5.7 0-3.6-2.7-5.3-6.6-5.3-4.3 0-6.2 2-6.7 5.7 0 .7-.6 1.2-1.3 1.2l-6.8-.7c-.7-.1-1.2-.6-1.1-1.3.9-7.1 6.7-11.4 15.9-11.4 8.4 0 14.8 4.3 14.8 13v17c0 2.1.8 3.1 1.6 4.1.5.7.5 1.3 0 1.8l-5.8 4.8c-.6.5-1.1.4-1.6-.3-.6-.8-1.2-1.7-1.4-2.8z" fill="#FFFFFF" transform="translate(26, 16) scale(0.78)"/><path d="M22 66c13 8 31 8.8 47 2 1-.4 1.6.3.8 1.2-9 8-24 11-37 6-2-.8-2.8-2-.6-3 1.5-.7 3-1.2 4.6-1.7 1.2-.4 2.4.8 1.2 1.2-10 3.8-22 .7-27-7.4-.3-.5.2-1.1.8-.8 7 4 15 5.8 24 4.8 1.3-.2 1.3-1.9 0-1.7-8 1-16-.8-23-4.6-.6-.3-1.1.3-.8.8z" fill="#FF9900"/><path d="M68 67c-1-.4-2.8.3-4.1.9-.5.3-.4 1 .1 1.2 3.2 1.2 6.4 3.2 8.3 6.2.3.5 1 .3 1.1-.3.3-3.4-.1-7.4-2.2-10.4-.3-.5-1-.4-1.2.1-.6 1.7-1.2 3.5-2 5.3z" fill="#FF9900"/></g></svg>`
+    },
     {
         id: '5',
         href: "https://www.pinterest.com.mx/Rembrandtro/pines-creados/",
@@ -164,6 +169,25 @@ const INITIAL_CONFIG: AppConfig = {
         colorClass: "text-white hover:text-gray-300",
         iconSvg: `<svg xmlns="http://www.w3.org/2000/svg" className="h-6 w-6" viewBox="0 0 24 24" fill="currentColor"><path d="M18.244 2.25h3.308l-7.227 7.688 8.502 11.25h-6.657l-5.214-6.817L4.99 21.188H1.68l7.73-8.235L1.254 2.25H8.08l4.713 6.231zm-1.161 17.52h1.833L7.084 4.126H5.117z"/></svg>`
     },
+    {
+        id: '11',
+        href: "https://www.capcut.com/my-edit?start_tab=video",
+        name: "CapCut",
+        category: "trabajo",
+        colorClass: "text-cyan-400 hover:text-cyan-300",
+        iconSvg: `<svg viewBox="0 0 100 100" class="w-full h-full" xmlns="http://www.w3.org/2000/svg"><defs><linearGradient id="capcut-tile-bg" x1="0%" y1="0%" x2="100%" y2="100%"><stop offset="0%" stop-color="#0a0a0f"/><stop offset="50%" stop-color="#12131a"/><stop offset="100%" stop-color="#181a24"/></linearGradient><linearGradient id="capcut-blade-top" x1="0%" y1="0%" x2="100%" y2="100%"><stop offset="0%" stop-color="#ffffff"/><stop offset="100%" stop-color="#e2e8f0"/></linearGradient></defs><rect width="100" height="100" rx="22" fill="url(#capcut-tile-bg)" stroke="#272935" stroke-width="1.5"/><rect x="4" y="4" width="92" height="92" rx="19" fill="none" stroke="rgba(255,255,255,0.06)" stroke-width="1"/><g transform="translate(50, 50) scale(0.68) translate(-50, -50)"><path d="M 23 27 C 21.5 27 20 28.5 20 30.5 L 20 37 C 20 38.5 20.8 39.8 22.2 40.5 L 50 56.5 L 77.8 40.5 C 79.2 39.8 80 38.5 80 37 L 80 30.5 C 80 28.5 78.5 27 77 27 C 76 27 75 27.5 74.2 28 L 50 42 L 25.8 28 C 25 72.5 24 73 23 73 Z" fill="url(#capcut-blade-top)"/><path d="M 23 73 C 21.5 73 20 71.5 20 69.5 L 20 63 C 20 61.5 20.8 60.2 22.2 59.5 L 50 43.5 L 77.8 59.5 C 79.2 60.2 80 61.5 80 63 L 80 69.5 C 80 71.5 78.5 73 77 73 C 76 73 75 72.5 74.2 72 L 50 58 L 25.8 72 C 25 72.5 24 73 23 73 Z" fill="url(#capcut-blade-top)"/></g></svg>`
+    },
+    {
+        id: 'rendair',
+        href: "https://rendair.ai/dashboard",
+        name: "Rendair",
+        category: "trabajo",
+        colorClass: "hover:text-teal-400",
+        iconSvg: `<svg class="w-full h-full" viewBox="0 0 64 64" xmlns="http://www.w3.org/2000/svg"><circle cx="32" cy="32" r="28" fill="#4fd1c5"/><text x="32" y="42" fontFamily="Arial, sans-serif" fontSize="28" fontWeight="bold" fill="black" textAnchor="middle">r</text></svg>`,
+        outlineColor: '#4fd1c5',
+        outlineWidth: 8
+    }
+  ],
   ],
 
   aiSidebar: {
