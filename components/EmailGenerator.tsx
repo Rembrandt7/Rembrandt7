@@ -1062,6 +1062,13 @@ const EmailGenerator: React.FC<EmailGeneratorProps> = ({ attachedImages, onAttac
         return list;
     }, [sortedContacts, favorites]);
 
+    const favoriteContacts = useMemo(() => {
+        return sortedContacts.filter(c => {
+            const cName = String(getDBValue(c, 'cliente') || '').trim();
+            return favorites.some(f => f.trim() === cName) || cName.toLowerCase().includes('erik');
+        });
+    }, [sortedContacts, favorites]);
+
     const getPresetGreeting = useCallback(() => {
         if (customGreeting && customGreeting.trim()) {
             return customGreeting.trim();
@@ -3696,7 +3703,8 @@ const EmailGenerator: React.FC<EmailGeneratorProps> = ({ attachedImages, onAttac
             {/* ========================================================================= */}
             {isDesktopMode && (
                 <>
-                    <div className="bg-gray-900/80 backdrop-blur-xl p-3.5 sm:p-4 rounded-2xl border border-purple-500/25 mb-5 shadow-xl space-y-3">
+                    {activeMode === 'quick' && (
+                        <div className="bg-gray-900/80 backdrop-blur-xl p-3.5 sm:p-4 rounded-2xl border border-purple-500/25 mb-5 shadow-xl space-y-3">
                 {/* Fila principal (Modo Entregas 0s): Indicador Para + Chip Destinatario Activo + Búsqueda Rápida + Acciones */}
                 {activeMode === 'quick' && (
                 <div className="flex flex-nowrap items-center justify-between gap-2 overflow-x-auto no-scrollbar py-0.5">
@@ -4280,6 +4288,7 @@ const EmailGenerator: React.FC<EmailGeneratorProps> = ({ attachedImages, onAttac
                     )}
                 </AnimatePresence>
             </div>
+            )}
 
             {/* ========================================================================= */}
             {/* MODO 1: REDACTOR LIBRE CON IA (PANTALLA DIVIDIDA: ENTRADA / RESULTADOS) */}
@@ -4316,14 +4325,57 @@ const EmailGenerator: React.FC<EmailGeneratorProps> = ({ attachedImages, onAttac
 
                                 {/* 2. PANEL AL LADO: FILA SUPERIOR + FILA INFERIOR */}
                                 <div className="flex flex-col justify-between gap-1.5 flex-grow min-w-0">
-                                    {/* FILA SUPERIOR: PARA + SELECTOR CON PESTAÑITA + H/M + APODO */}
-                                    <div className="flex items-center gap-1.5 flex-wrap">
-                                        {/* CHIP PARA CON CORREO Y COPIAR */}
-                                        <div className="flex items-center gap-1.5 bg-gray-800/90 border border-purple-500/30 rounded-xl px-2.5 h-8 shrink-0 shadow-inner">
-                                            <span className="text-[11px] font-black uppercase tracking-wider text-purple-300">Para:</span>
-                                            <span className="text-xs font-black text-white whitespace-nowrap truncate max-w-[110px] sm:max-w-[150px]">
-                                                {recipientTitle ? `${recipientTitle} ` : ''}{recipientName || 'Sin destinatario'}
+                                    {/* FILA SUPERIOR: PARA UNIFICADO CON PESTAÑA + H/M + APODO (TODO EN UN SOLO RENGLÓN) */}
+                                    <div className="flex items-center gap-2 flex-nowrap overflow-x-auto no-scrollbar py-0.5">
+                                        {/* 1. CONTROL UNIFICADO: 'PARA:' + PESTAÑA DESPLEGABLE + BOTÓN COPIAR */}
+                                        <div className="flex items-center bg-gray-800/90 hover:bg-gray-800 border border-purple-500/40 focus-within:border-purple-400 rounded-xl px-2 h-8 shadow-inner shrink-0 transition-colors" title="Haz clic en la pestaña para elegir o cambiar el contacto destinatario">
+                                            <span className="text-[11px] font-black uppercase tracking-wider text-purple-300 mr-1.5 shrink-0 flex items-center gap-1">
+                                                <Users size={12} className="text-purple-400" />
+                                                Para:
                                             </span>
+                                            <div className="relative flex items-center">
+                                                <select
+                                                    value={selectedContactIndex}
+                                                    onChange={handleContactSelect}
+                                                    className="h-7 bg-transparent text-xs text-white font-black appearance-none outline-none cursor-pointer pr-5 max-w-[170px] sm:max-w-[220px] truncate"
+                                                >
+                                                    <option value="" className="bg-gray-900 text-gray-300 font-bold">
+                                                        {recipientName ? `${recipientTitle ? recipientTitle + ' ' : ''}${recipientName}` : 'Seleccionar contacto...'}
+                                                    </option>
+                                                    {favoriteContacts.length > 0 && (
+                                                        <optgroup label="⭐ CONTACTOS FAVORITOS" className="bg-amber-950 text-amber-300 font-black">
+                                                            {favoriteContacts.map((c, idx) => {
+                                                                const originalIdx = sortedContacts.findIndex(sc => getDBValue(sc, 'cliente') === getDBValue(c, 'cliente'));
+                                                                const val = originalIdx !== -1 ? String(originalIdx) : '';
+                                                                return (
+                                                                    <option 
+                                                                        key={`fav-${idx}`} 
+                                                                        value={val}
+                                                                        className="bg-amber-950 text-amber-200 font-bold py-1"
+                                                                    >
+                                                                        ⭐ {getDBValue(c, 'cliente')} {getDBValue(c, 'puesto') ? `• ${getDBValue(c, 'puesto')}` : ''}
+                                                                    </option>
+                                                                );
+                                                            })}
+                                                        </optgroup>
+                                                    )}
+                                                    <optgroup label="TODOS LOS CONTACTOS" className="bg-gray-900 text-gray-300 font-bold">
+                                                        {sortedContacts.map((c, i) => {
+                                                            const isFav = favorites.some(f => f.trim() === String(getDBValue(c, 'cliente') || '').trim());
+                                                            return (
+                                                                <option 
+                                                                    key={i} 
+                                                                    value={i} 
+                                                                    className={isFav ? "bg-amber-950/70 text-amber-200 font-semibold" : "bg-gray-900 text-gray-200"}
+                                                                >
+                                                                    {isFav ? '⭐ ' : ''}{getDBValue(c, 'cliente')} {getDBValue(c, 'puesto') ? `(${getDBValue(c, 'puesto')})` : ''}
+                                                                </option>
+                                                            );
+                                                        })}
+                                                    </optgroup>
+                                                </select>
+                                                <span className="absolute right-0 pointer-events-none text-purple-400 text-[10px]">▼</span>
+                                            </div>
                                             {fullRecipientEmail && (
                                                 <button
                                                     type="button"
@@ -4331,7 +4383,7 @@ const EmailGenerator: React.FC<EmailGeneratorProps> = ({ attachedImages, onAttac
                                                         navigator.clipboard.writeText(fullRecipientEmail);
                                                         toast.success("Correo copiado al portapapeles");
                                                     }}
-                                                    className="text-gray-400 hover:text-purple-300 transition-colors p-0.5 cursor-pointer shrink-0"
+                                                    className="text-gray-400 hover:text-purple-300 transition-colors p-1 ml-1 cursor-pointer shrink-0"
                                                     title={`Copiar correo: ${fullRecipientEmail}`}
                                                 >
                                                     <Copy size={12} />
@@ -4339,27 +4391,7 @@ const EmailGenerator: React.FC<EmailGeneratorProps> = ({ attachedImages, onAttac
                                             )}
                                         </div>
 
-                                        {/* SELECTOR DE CONTACTO CON PESTAÑITA */}
-                                        <div className="relative shrink-0" title="Seleccionar contacto de la lista">
-                                            <select
-                                                value={selectedContactIndex}
-                                                onChange={handleContactSelect}
-                                                className="h-8 pl-2 pr-6 bg-gray-800/90 hover:bg-gray-800 border border-gray-700 rounded-xl text-xs text-white font-bold appearance-none outline-none focus:border-purple-500 cursor-pointer max-w-[140px] sm:max-w-[170px] truncate"
-                                            >
-                                                <option value="">Contactos ({sortedContacts.length})...</option>
-                                                {sortedContacts.map((c, i) => (
-                                                    <option key={i} value={i}>
-                                                        {favorites.some(f => f.trim() === String(getDBValue(c, 'cliente') || '').trim()) ? '★ ' : ''}
-                                                        {getDBValue(c, 'cliente')}
-                                                    </option>
-                                                ))}
-                                            </select>
-                                            <div className="absolute right-2 top-1/2 -translate-y-1/2 pointer-events-none text-gray-400 text-[10px]">
-                                                ▼
-                                            </div>
-                                        </div>
-
-                                        {/* SELECTOR DE GÉNERO H / M */}
+                                        {/* 2. SELECTOR DE GÉNERO H / M */}
                                         <div className="flex items-center bg-gray-800/90 border border-gray-700/80 rounded-xl p-0.5 shrink-0 h-8" title="Selecciona si es Hombre o Mujer">
                                             <button
                                                 type="button"
@@ -4383,7 +4415,7 @@ const EmailGenerator: React.FC<EmailGeneratorProps> = ({ attachedImages, onAttac
                                             </button>
                                         </div>
 
-                                        {/* CONTROL DE APODO */}
+                                        {/* 3. CONTROL DE APODO EN EL MISMO RENGLÓN */}
                                         <div className={`flex items-center gap-1 px-2 py-0.5 rounded-xl border transition-all shrink-0 h-8 ${
                                             useNickname 
                                                 ? 'bg-yellow-500/10 border-yellow-500/40 text-yellow-300 shadow-sm' 
@@ -4404,7 +4436,7 @@ const EmailGenerator: React.FC<EmailGeneratorProps> = ({ attachedImages, onAttac
                                                 onChange={(e) => setRecipientNickname(e.target.value)}
                                                 placeholder="Apodo..."
                                                 disabled={!useNickname}
-                                                className={`bg-transparent text-xs font-bold outline-none w-14 sm:w-16 whitespace-nowrap ${
+                                                className={`bg-transparent text-xs font-bold outline-none w-14 sm:w-20 whitespace-nowrap ${
                                                     useNickname ? 'text-yellow-200 placeholder-yellow-500/40' : 'text-gray-500 opacity-50 cursor-not-allowed'
                                                 }`}
                                             />
@@ -4852,36 +4884,6 @@ const EmailGenerator: React.FC<EmailGeneratorProps> = ({ attachedImages, onAttac
                                     </div>
                                 </div>
 
-                                {/* PANEL DE COMPRESOR DESPLEGABLE ABAJO */}
-                                <AnimatePresence>
-                                    {showCompresor && (
-                                         <motion.div
-                                             initial={{ height: 0, opacity: 0 }}
-                                             animate={{ height: 'auto', opacity: 1 }}
-                                             exit={{ height: 0, opacity: 0 }}
-                                             className="overflow-hidden"
-                                         >
-                                             <div className="p-3 bg-gray-950 rounded-2xl border-2 border-purple-500/40 shadow-2xl space-y-2">
-                                                 <div className="flex items-center justify-between pb-2 border-b border-gray-800">
-                                                     <span className="text-xs font-black uppercase text-purple-300 tracking-wider flex items-center gap-2">
-                                                         🗜️ Compresor de Planos, PDFs e Imágenes
-                                                     </span>
-                                                     <button
-                                                         type="button"
-                                                         onClick={() => setShowCompresor(false)}
-                                                         className="text-gray-400 hover:text-white text-xs font-bold px-2 py-0.5 bg-gray-800 rounded-lg cursor-pointer"
-                                                     >
-                                                         ✕ Cerrar Compresor
-                                                     </button>
-                                                 </div>
-                                                 <React.Suspense fallback={<div className="p-6 text-center text-gray-400"><Spinner size="3" /></div>}>
-                                                     <CompresorTab />
-                                                 </React.Suspense>
-                                             </div>
-                                         </motion.div>
-                                    )}
-                                </AnimatePresence>
-
                                 {/* Parámetros: Proyecto, Tono, Longitud */}
                                 <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 pt-1">
                                     <div>
@@ -5120,6 +5122,36 @@ const EmailGenerator: React.FC<EmailGeneratorProps> = ({ attachedImages, onAttac
                             </div>
                         )}
                     </div>
+
+                    {/* PANEL DE COMPRESOR A TODO LO ANCHO EN LA PARTE DE ABAJO */}
+                    <AnimatePresence>
+                        {showCompresor && (
+                            <motion.div
+                                initial={{ height: 0, opacity: 0 }}
+                                animate={{ height: 'auto', opacity: 1 }}
+                                exit={{ height: 0, opacity: 0 }}
+                                className="col-span-1 lg:col-span-12 w-full overflow-hidden pt-2"
+                            >
+                                <div className="p-4 sm:p-5 bg-gray-950/95 backdrop-blur-xl rounded-2xl border-2 border-purple-500/40 shadow-2xl space-y-3">
+                                    <div className="flex items-center justify-between pb-3 border-b border-gray-800">
+                                        <span className="text-sm font-black uppercase text-purple-300 tracking-wider flex items-center gap-2">
+                                            🗜️ Compresor de Planos, PDFs e Imágenes (Todo el ancho)
+                                        </span>
+                                        <button
+                                            type="button"
+                                            onClick={() => setShowCompresor(false)}
+                                            className="text-gray-400 hover:text-white text-xs font-bold px-3 py-1 bg-gray-800 hover:bg-gray-700 rounded-lg cursor-pointer transition-colors"
+                                        >
+                                            ✕ Cerrar Compresor
+                                        </button>
+                                    </div>
+                                    <React.Suspense fallback={<div className="p-8 text-center text-gray-400"><Spinner size="3" /></div>}>
+                                        <CompresorTab />
+                                    </React.Suspense>
+                                </div>
+                            </motion.div>
+                        )}
+                    </AnimatePresence>
                 </div>
             )}
 
