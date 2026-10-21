@@ -73,7 +73,7 @@ const INITIAL_CONFIG: AppConfig = {
         name: "Amazon",
         category: "compras",
         colorClass: "text-amber-400 hover:text-amber-300",
-        iconSvg: `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 100 100" class="w-full h-full"><defs><linearGradient id="amazon-bg-grad" x1="0%" y1="0%" x2="100%" y2="100%"><stop offset="0%" stop-color="#111822"/><stop offset="100%" stop-color="#1a222e"/></linearGradient></defs><rect width="100" height="100" rx="22" fill="url(#amazon-bg-grad)" stroke="#232f3e" stroke-width="1.5"/><rect x="4" y="4" width="92" height="92" rx="18" fill="none" stroke="rgba(255,255,255,0.06)" stroke-width="1"/><g transform="translate(50, 50) scale(0.68) translate(-50, -50)"><path d="M53.8 47.7c0 3.2.1 5.9-1.4 8.7-1.1 2.1-2.9 3.4-5 3.4-2.9 0-4.6-2.2-4.6-5.5 0-6.5 5.3-7.7 11-7.7v1.1zm7.3-19.4c-.4-.5-1.2-.4-1.7-.1-2.9 1.4-6.4 2-9.6 2-7.5 0-12.7-3.3-12.7-11.2 0-6.2 3.6-10.3 9.4-11.8 4.7-1.1 11-1.2 11-5.7 0-3.6-2.7-5.3-6.6-5.3-4.3 0-6.2 2-6.7 5.7 0 .7-.6 1.2-1.3 1.2l-6.8-.7c-.7-.1-1.2-.6-1.1-1.3.9-7.1 6.7-11.4 15.9-11.4 8.4 0 14.8 4.3 14.8 13v17c0 2.1.8 3.1 1.6 4.1.5.7.5 1.3 0 1.8l-5.8 4.8c-.6.5-1.1.4-1.6-.3-.6-.8-1.2-1.7-1.4-2.8z" fill="#FFFFFF" transform="translate(26, 16) scale(0.78)"/><path d="M22 66c13 8 31 8.8 47 2 1-.4 1.6.3.8 1.2-9 8-24 11-37 6-2-.8-2.8-2-.6-3 1.5-.7 3-1.2 4.6-1.7 1.2-.4 2.4.8 1.2 1.2-10 3.8-22 .7-27-7.4-.3-.5.2-1.1.8-.8 7 4 15 5.8 24 4.8 1.3-.2 1.3-1.9 0-1.7-8 1-16-.8-23-4.6-.6-.3-1.1.3-.8.8z" fill="#FF9900"/><path d="M68 67c-1-.4-2.8.3-4.1.9-.5.3-.4 1 .1 1.2 3.2 1.2 6.4 3.2 8.3 6.2.3.5 1 .3 1.1-.3.3-3.4-.1-7.4-2.2-10.4-.3-.5-1-.4-1.2.1-.6 1.7-1.2 3.5-2 5.3z" fill="#FF9900"/></g></svg>`
+        iconSvg: `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 64 64" class="w-full h-full"><rect width="64" height="64" rx="14" fill="#131921" stroke="#374151" stroke-width="1.5"/><path d="M26 36c0 2.2.1 4-1 5.8-.7 1.4-1.9 2.2-3.3 2.2-2 0-3-1.5-3-3.6 0-4.3 3.5-5.1 7.3-5.1v.7zm4.7-12.9c-.3-.3-.8-.3-1.1-.1-1.9 1-4.2 1.4-6.3 1.4-5 0-8.4-2.1-8.4-7.4 0-4.1 2.4-6.8 6.3-7.8 3.1-.8 7.3-.8 7.3-3.8 0-2.4-1.8-3.5-4.4-3.5-2.8 0-4.1 1.4-4.4 3.8 0 .5-.4.8-.9.8l-4.5-.5c-.5-.1-.8-.4-.7-.9.6-4.7 4.5-7.6 10.5-7.6 5.6 0 9.9 2.8 9.9 8.6v11.3c0 1.4.5 2.1 1.1 2.7.3.5.3.9 0 1.2l-3.8 3.2c-.4.3-.8.3-1.1-.2-.4-.5-.8-1.2-1-1.8z" fill="#FFFFFF" transform="translate(10, 8) scale(0.7)"/><path d="M15 46c10.5 5 23 5 34 0 1.2-.5 2 .4 1 1.2-6.5 5.5-17 7-25.5 4-2-.6-3.5-1.5-1.5-2.2 1-.3 2.5-.5 3.5-.8.8-.2 1.5.5.8.8-6.5 2.5-13.5.5-17-4.5-.2-.3.1-.7.5-.5z" fill="#FF9900"/><path d="M49 44c-.7-.3-1.8.2-2.7.6-.3.2-.3.7.1.8 2.1.8 4.2 2.1 5.5 4 .2.3.7.2.8-.2.2-2.2 0-4.8-1.4-6.7-.2-.3-.7-.3-.8.1-.4 1.1-.8 2.3-1.5 3.4z" fill="#FF9900"/></svg>`
     },
     {
         id: '2',
@@ -127,7 +127,7 @@ const INITIAL_CONFIG: AppConfig = {
         name: "Rendair",
         category: "trabajo",
         colorClass: "text-teal-400 hover:text-teal-300",
-        iconSvg: `<svg class="w-full h-full" viewBox="0 0 64 64" xmlns="http://www.w3.org/2000/svg"><circle cx="32" cy="32" r="28" fill="#4fd1c5"/><text x="32" y="42" fontFamily="Arial, sans-serif" fontSize="28" fontWeight="bold" fill="black" textAnchor="middle">r</text></svg>`,
+        iconSvg: `<svg viewBox="0 0 64 64" class="w-full h-full" xmlns="http://www.w3.org/2000/svg"><defs><linearGradient id="rendair-grad" x1="0%" y1="0%" x2="100%" y2="100%"><stop offset="0%" stop-color="#22d3ee"/><stop offset="100%" stop-color="#0284c7"/></linearGradient></defs><rect x="4" y="4" width="56" height="56" rx="16" fill="#0f172a" stroke="url(#rendair-grad)" stroke-width="2.5"/><path d="M22 45V19h12.5a8.5 8.5 0 0 1 8.5 8.5c0 4.1-2.9 7.6-7 8.3L44 45h-6l-7-8.5H28V45H22zm6-14.5h6.5a2.5 2.5 0 0 0 0-5H28v5z" fill="url(#rendair-grad)"/><circle cx="47" cy="17" r="3.5" fill="#38bdf8"/></svg>`,
         outlineColor: '#4fd1c5',
         outlineWidth: 10
     },
@@ -176,7 +176,7 @@ const INITIAL_CONFIG: AppConfig = {
         { id: 'ai-4', name: 'DeepSeek', href: 'https://chat.deepseek.com/', colorClass: 'text-blue-600 hover:text-blue-500', iconSvg: '<svg class="w-full h-full fill-current" viewBox="0 0 24 24"><path d="M20 2H4c-1.1 0-2 .9-2 2v18l4-4h14c1.1 0 2-.9 2-2V4c0-1.1-.9-2-2-2zm0 14H6l-2 2V4h16v12z"/><path d="M12 6c-1.66 0-3 1.34-3 3s1.34 3 3 3 3-1.34 3-3-1.34-3-3-3zm0 4c-.55 0-1-.45-1-1s.45-1 1-1 1 .45 1 1-1 1 1z"/></svg>' }
     ],
     quickAccess: [
-        { id: 'qa-1', name: 'Rendair', href: 'https://rendair.ai/dashboard', colorClass: 'hover:text-teal-400', iconSvg: '<svg class="w-full h-full" viewBox="0 0 64 64" xmlns="http://www.w3.org/2000/svg"><circle cx="32" cy="32" r="28" fill="#4fd1c5"/><text x="32" y="42" fontFamily="Arial, sans-serif" fontSize="28" fontWeight="bold" fill="black" textAnchor="middle">r</text></svg>' },
+        { id: 'qa-1', name: 'Rendair', href: 'https://rendair.ai/dashboard', colorClass: 'hover:text-teal-400', iconSvg: '<svg viewBox="0 0 64 64" class="w-full h-full" xmlns="http://www.w3.org/2000/svg"><defs><linearGradient id="rendair-grad-qa" x1="0%" y1="0%" x2="100%" y2="100%"><stop offset="0%" stop-color="#22d3ee"/><stop offset="100%" stop-color="#0284c7"/></linearGradient></defs><rect x="4" y="4" width="56" height="56" rx="16" fill="#0f172a" stroke="url(#rendair-grad-qa)" stroke-width="2.5"/><path d="M22 45V19h12.5a8.5 8.5 0 0 1 8.5 8.5c0 4.1-2.9 7.6-7 8.3L44 45h-6l-7-8.5H28V45H22zm6-14.5h6.5a2.5 2.5 0 0 0 0-5H28v5z" fill="url(#rendair-grad-qa)"/><circle cx="47" cy="17" r="3.5" fill="#38bdf8"/></svg>' },
         { id: 'qa-javer', name: 'Javer Data Center', href: 'https://aistudio.google.com/apps/3a3196da-cb37-40b8-9a5d-48e74634248d?showPreview=true&showAssistant=true', colorClass: 'hover:text-blue-400', iconSvg: '<svg class="w-full h-full" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg"><defs><linearGradient id="javer-dc-grad" x1="0%" y1="0%" x2="100%" y2="100%"><stop offset="0%" stop-color="#3b82f6" /><stop offset="50%" stop-color="#06b6d4" /><stop offset="100%" stop-color="#3b82f6" /></linearGradient></defs><rect x="3" y="3" width="18" height="18" rx="3" stroke="url(#javer-dc-grad)" stroke-width="2" /><line x1="3" y1="9" x2="21" y2="9" stroke="url(#javer-dc-grad)" stroke-width="1.5" /><line x1="3" y1="15" x2="21" y2="15" stroke="url(#javer-dc-grad)" stroke-width="1.5" stroke-dasharray="2 2" /><circle cx="7" cy="6" r="1" fill="#60a5fa" /><circle cx="11" cy="6" r="1" fill="#34d399" /><circle cx="7" cy="12" r="1" fill="#34d399" /><circle cx="11" cy="12" r="1" fill="#60a5fa" /><circle cx="7" cy="18" r="1" fill="#f43f5e" /><circle cx="11" cy="18" r="1" fill="#34d399" /><path d="M17 5v11a3 3 0 0 1-5 2.2" stroke="url(#javer-dc-grad)" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" /></svg>' },
         { id: 'qa-pdf-remb', name: 'PDF', href: 'https://pdf-remb.vercel.app/', colorClass: 'hover:text-rose-400', iconSvg: '<svg class="w-full h-full" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/><path d="M9 15v-4h2a1.5 1.5 0 0 1 0 3H9"/><path d="M15 11v4"/></svg>' },
         { id: 'qa-3', name: 'iLovePDF', href: 'https://www.ilovepdf.com/es', colorClass: 'hover:text-red-500', iconSvg: '<svg class="w-full h-full" viewBox="0 0 64 64" xmlns="http://www.w3.org/2000/svg"><rect width="56" height="56" x="4" y="4" rx="8" fill="currentColor"/><text x="32" y="42" fontFamily="Arial, sans-serif" fontSize="22" fontWeight="bold" fill="#111827" textAnchor="middle">PDF</text></svg>' },
@@ -490,6 +490,64 @@ const isMixboardItem = (item: any) => {
   return item.id === 'gd-14' || name.includes('mixboard') || href.includes('mixboard');
 };
 
+const isSherwinItem = (item: any) => {
+  if (!item || typeof item !== 'object') return false;
+  const name = (item.name || '').toLowerCase();
+  const href = (item.href || '').toLowerCase();
+  return (
+    item.id === 'qa-11' ||
+    name.includes('sherwin') ||
+    name.includes('sherry') ||
+    href.includes('1us6w9obhdw-pwzrgijw1g5er1qdltnCD'.toLowerCase())
+  );
+};
+
+const isCotizadorItem = (item: any) => {
+  if (!item || typeof item !== 'object') return false;
+  const name = (item.name || '').toLowerCase();
+  const href = (item.href || '').toLowerCase();
+  return (
+    item.id === 'qa-4' ||
+    name.includes('cotizador') ||
+    href.includes('1k2aqbzly96killedyp5jljx92eqjuuoj')
+  );
+};
+
+const isListasRembItem = (item: any) => {
+  if (!item || typeof item !== 'object') return false;
+  const name = (item.name || '').toLowerCase();
+  const href = (item.href || '').toLowerCase();
+  return (
+    item.id === 'qa-5' ||
+    name.includes('organizador') ||
+    name.includes('listas remb') ||
+    href.includes('1edmjF7bfonjwakuisxzlevdfvm4sobo3'.toLowerCase())
+  );
+};
+
+const isCompresorItem = (item: any) => {
+  if (!item || typeof item !== 'object') return false;
+  const name = (item.name || '').toLowerCase();
+  const href = (item.href || '').toLowerCase();
+  return (
+    item.id === 'qa-2' ||
+    name.includes('compresor') ||
+    href.includes('1sqllos1puc_ggsliqmhQetfrwl-8hifk'.toLowerCase())
+  );
+};
+
+const isPdfRembItem = (item: any) => {
+  if (!item || typeof item !== 'object') return false;
+  const name = (item.name || '').toLowerCase().trim();
+  const href = (item.href || '').toLowerCase();
+  return (
+    item.id === 'qa-pdf-remb' ||
+    name === 'pdf' ||
+    name === 'pdf remb' ||
+    href.includes('pdf-remb.vercel.app')
+  );
+};
+
 const normalizeConfigCategoriesAndQuickAccess = (cfg: any): boolean => {
   if (!cfg || typeof cfg !== 'object') return false;
   let modified = false;
@@ -646,64 +704,6 @@ const ensureSherwinWilliamsLinkUpdated = (cfg: any): boolean => {
   if (!cfg || typeof cfg !== 'object') return false;
   let updated = false;
 
-  const isSherwinItem = (item: any) => {
-    if (!item || typeof item !== 'object') return false;
-    const name = (item.name || '').toLowerCase();
-    const href = (item.href || '').toLowerCase();
-    return (
-      item.id === 'qa-11' ||
-      name.includes('sherwin') ||
-      name.includes('sherry') ||
-      href.includes('1us6w9obhdw-pwzrgijw1g5er1qdltnCD'.toLowerCase())
-    );
-  };
-
-  const isCotizadorItem = (item: any) => {
-    if (!item || typeof item !== 'object') return false;
-    const name = (item.name || '').toLowerCase();
-    const href = (item.href || '').toLowerCase();
-    return (
-      item.id === 'qa-4' ||
-      name.includes('cotizador') ||
-      href.includes('1k2aqbzly96killedyp5jljx92eqjuuoj')
-    );
-  };
-
-  const isListasRembItem = (item: any) => {
-    if (!item || typeof item !== 'object') return false;
-    const name = (item.name || '').toLowerCase();
-    const href = (item.href || '').toLowerCase();
-    return (
-      item.id === 'qa-5' ||
-      name.includes('organizador') ||
-      name.includes('listas remb') ||
-      href.includes('1edmjF7bfonjwakuisxzlevdfvm4sobo3'.toLowerCase())
-    );
-  };
-
-  const isCompresorItem = (item: any) => {
-    if (!item || typeof item !== 'object') return false;
-    const name = (item.name || '').toLowerCase();
-    const href = (item.href || '').toLowerCase();
-    return (
-      item.id === 'qa-2' ||
-      name.includes('compresor') ||
-      href.includes('1sqllos1puc_ggsliqmhQetfrwl-8hifk'.toLowerCase())
-    );
-  };
-
-  const isPdfRembItem = (item: any) => {
-    if (!item || typeof item !== 'object') return false;
-    const name = (item.name || '').toLowerCase().trim();
-    const href = (item.href || '').toLowerCase();
-    return (
-      item.id === 'qa-pdf-remb' ||
-      name === 'pdf' ||
-      name === 'pdf remb' ||
-      href.includes('pdf-remb.vercel.app')
-    );
-  };
-
   const updateArray = (arr?: any[]) => {
     if (!Array.isArray(arr)) return;
     arr.forEach(item => {
@@ -776,6 +776,23 @@ const ensureSherwinWilliamsLinkUpdated = (cfg: any): boolean => {
         updated = true;
       }
     }
+    const hasRendairQA = cfg.aiSidebar.quickAccess.some((l: any) => l.id === 'qa-1' || (l.name || '').toLowerCase() === 'rendair');
+    if (!hasRendairQA) {
+      const defaultRendairQA = INITIAL_CONFIG.aiSidebar.quickAccess.find(l => l.id === 'qa-1');
+      if (defaultRendairQA) {
+        cfg.aiSidebar.quickAccess.unshift(defaultRendairQA);
+        updated = true;
+      }
+    } else {
+      const qaItem = cfg.aiSidebar.quickAccess.find((l: any) => l.id === 'qa-1' || (l.name || '').toLowerCase() === 'rendair');
+      if (qaItem && (qaItem.iconSvg || '').includes('textAnchor="middle"')) {
+        const defaultRendairQA = INITIAL_CONFIG.aiSidebar.quickAccess.find(l => l.id === 'qa-1');
+        if (defaultRendairQA) {
+          qaItem.iconSvg = defaultRendairQA.iconSvg;
+          updated = true;
+        }
+      }
+    }
   }
 
   if (Array.isArray(cfg.googleDock)) {
@@ -792,6 +809,15 @@ const ensureSherwinWilliamsLinkUpdated = (cfg: any): boolean => {
       if (defaultRendair) {
         cfg.linksBar.push(defaultRendair);
         updated = true;
+      }
+    } else {
+      const lbItem = cfg.linksBar.find((l: any) => l.id === 'rendair' || (l.name || '').toLowerCase() === 'rendair');
+      if (lbItem && (lbItem.iconSvg || '').includes('textAnchor="middle"')) {
+        const defaultRendair = INITIAL_CONFIG.linksBar.find(l => l.id === 'rendair');
+        if (defaultRendair) {
+          lbItem.iconSvg = defaultRendair.iconSvg;
+          updated = true;
+        }
       }
     }
   }
