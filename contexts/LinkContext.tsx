@@ -73,7 +73,7 @@ const INITIAL_CONFIG: AppConfig = {
         name: "Amazon",
         category: "compras",
         colorClass: "text-amber-400 hover:text-amber-300",
-        iconSvg: `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 64 64" class="w-full h-full"><rect width="64" height="64" rx="14" fill="#131921" stroke="#374151" stroke-width="1.5"/><path d="M26 36c0 2.2.1 4-1 5.8-.7 1.4-1.9 2.2-3.3 2.2-2 0-3-1.5-3-3.6 0-4.3 3.5-5.1 7.3-5.1v.7zm4.7-12.9c-.3-.3-.8-.3-1.1-.1-1.9 1-4.2 1.4-6.3 1.4-5 0-8.4-2.1-8.4-7.4 0-4.1 2.4-6.8 6.3-7.8 3.1-.8 7.3-.8 7.3-3.8 0-2.4-1.8-3.5-4.4-3.5-2.8 0-4.1 1.4-4.4 3.8 0 .5-.4.8-.9.8l-4.5-.5c-.5-.1-.8-.4-.7-.9.6-4.7 4.5-7.6 10.5-7.6 5.6 0 9.9 2.8 9.9 8.6v11.3c0 1.4.5 2.1 1.1 2.7.3.5.3.9 0 1.2l-3.8 3.2c-.4.3-.8.3-1.1-.2-.4-.5-.8-1.2-1-1.8z" fill="#FFFFFF" transform="translate(10, 8) scale(0.7)"/><path d="M15 46c10.5 5 23 5 34 0 1.2-.5 2 .4 1 1.2-6.5 5.5-17 7-25.5 4-2-.6-3.5-1.5-1.5-2.2 1-.3 2.5-.5 3.5-.8.8-.2 1.5.5.8.8-6.5 2.5-13.5.5-17-4.5-.2-.3.1-.7.5-.5z" fill="#FF9900"/><path d="M49 44c-.7-.3-1.8.2-2.7.6-.3.2-.3.7.1.8 2.1.8 4.2 2.1 5.5 4 .2.3.7.2.8-.2.2-2.2 0-4.8-1.4-6.7-.2-.3-.7-.3-.8.1-.4 1.1-.8 2.3-1.5 3.4z" fill="#FF9900"/></svg>`
+        iconSvg: `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 100 100" class="w-full h-full"><defs><linearGradient id="amazon-bg-grad" x1="0%" y1="0%" x2="100%" y2="100%"><stop offset="0%" stop-color="#111822"/><stop offset="100%" stop-color="#1a222e"/></linearGradient></defs><rect width="100" height="100" rx="22" fill="url(#amazon-bg-grad)" stroke="#232f3e" stroke-width="1.5"/><rect x="4" y="4" width="92" height="92" rx="18" fill="none" stroke="rgba(255,255,255,0.06)" stroke-width="1"/><g transform="translate(50, 50) scale(0.68) translate(-50, -50)"><path d="M53.8 47.7c0 3.2.1 5.9-1.4 8.7-1.1 2.1-2.9 3.4-5 3.4-2.9 0-4.6-2.2-4.6-5.5 0-6.5 5.3-7.7 11-7.7v1.1zm7.3-19.4c-.4-.5-1.2-.4-1.7-.1-2.9 1.4-6.4 2-9.6 2-7.5 0-12.7-3.3-12.7-11.2 0-6.2 3.6-10.3 9.4-11.8 4.7-1.1 11-1.2 11-5.7 0-3.6-2.7-5.3-6.6-5.3-4.3 0-6.2 2-6.7 5.7 0 .7-.6 1.2-1.3 1.2l-6.8-.7c-.7-.1-1.2-.6-1.1-1.3.9-7.1 6.7-11.4 15.9-11.4 8.4 0 14.8 4.3 14.8 13v17c0 2.1.8 3.1 1.6 4.1.5.7.5 1.3 0 1.8l-5.8 4.8c-.6.5-1.1.4-1.6-.3-.6-.8-1.2-1.7-1.4-2.8z" fill="#FFFFFF" transform="translate(26, 16) scale(0.78)"/><path d="M22 66c13 8 31 8.8 47 2 1-.4 1.6.3.8 1.2-9 8-24 11-37 6-2-.8-2.8-2-.6-3 1.5-.7 3-1.2 4.6-1.7 1.2-.4 2.4.8 1.2 1.2-10 3.8-22 .7-27-7.4-.3-.5.2-1.1.8-.8 7 4 15 5.8 24 4.8 1.3-.2 1.3-1.9 0-1.7-8 1-16-.8-23-4.6-.6-.3-1.1.3-.8.8z" fill="#FF9900"/><path d="M68 67c-1-.4-2.8.3-4.1.9-.5.3-.4 1 .1 1.2 3.2 1.2 6.4 3.2 8.3 6.2.3.5 1 .3 1.1-.3.3-3.4-.1-7.4-2.2-10.4-.3-.5-1-.4-1.2.1-.6 1.7-1.2 3.5-2 5.3z" fill="#FF9900"/></g></svg>`
     },
     {
         id: '2',
@@ -126,10 +126,10 @@ const INITIAL_CONFIG: AppConfig = {
         href: "https://rendair.ai/dashboard",
         name: "Rendair",
         category: "trabajo",
-        colorClass: "text-teal-400 hover:text-teal-300",
-        iconSvg: `<svg viewBox="0 0 64 64" class="w-full h-full" xmlns="http://www.w3.org/2000/svg"><defs><linearGradient id="rendair-grad" x1="0%" y1="0%" x2="100%" y2="100%"><stop offset="0%" stop-color="#22d3ee"/><stop offset="100%" stop-color="#0284c7"/></linearGradient></defs><rect x="4" y="4" width="56" height="56" rx="16" fill="#0f172a" stroke="url(#rendair-grad)" stroke-width="2.5"/><path d="M22 45V19h12.5a8.5 8.5 0 0 1 8.5 8.5c0 4.1-2.9 7.6-7 8.3L44 45h-6l-7-8.5H28V45H22zm6-14.5h6.5a2.5 2.5 0 0 0 0-5H28v5z" fill="url(#rendair-grad)"/><circle cx="47" cy="17" r="3.5" fill="#38bdf8"/></svg>`,
+        colorClass: "hover:text-teal-400",
+        iconSvg: `<svg class="w-full h-full" viewBox="0 0 64 64" xmlns="http://www.w3.org/2000/svg"><circle cx="32" cy="32" r="28" fill="#4fd1c5"/><text x="32" y="42" fontFamily="Arial, sans-serif" fontSize="28" fontWeight="bold" fill="black" textAnchor="middle">r</text></svg>`,
         outlineColor: '#4fd1c5',
-        outlineWidth: 10
+        outlineWidth: 8
     },
 
     {
@@ -566,17 +566,18 @@ const normalizeConfigCategoriesAndQuickAccess = (cfg: any): boolean => {
 
   // 1. Normalize Quick Access in aiSidebar
   if (cfg.aiSidebar && Array.isArray(cfg.aiSidebar.quickAccess)) {
-    const obsoleteNames = ['svg generator', 'niveles', 'deberes', 'removedor de marcas de agua', 'vectorizar', 'renders remb', 'mixboard', 'compresor'];
+    const obsoleteNames = ['svg generator', 'niveles', 'deberes', 'removedor de marcas de agua', 'vectorizar', 'renders remb', 'mixboard', 'compresor', 'rendair'];
     const originalLen = cfg.aiSidebar.quickAccess.length;
 
     cfg.aiSidebar.quickAccess = cfg.aiSidebar.quickAccess.filter((item: any) => {
       const name = (item.name || '').toLowerCase().trim();
       const href = (item.href || '').toLowerCase();
-      if (item.id === 'qa-renders-remb' || item.id === 'qa-2' || isMixboardItem(item) || isCompresorItem(item) || obsoleteNames.includes(name)) return false;
+      if (item.id === 'qa-renders-remb' || item.id === 'qa-2' || item.id === 'qa-1' || isMixboardItem(item) || isCompresorItem(item) || obsoleteNames.includes(name)) return false;
       if (href.includes('f46f8639-4c97-4e29-9bdc-b99c2a46a091') || // svg generator
           href.includes('b1e55191-36d7-483b-b3fb-d8088b0a07c5') || // niveles
           href.includes('1hsivhk6jdb7s9ccuqgai1dvw7gppzzvl') || // deberes
-          href.includes('0c58e0e4-a7ab-4a4e-a6d0-877702965d86')) { // removedor
+          href.includes('0c58e0e4-a7ab-4a4e-a6d0-877702965d86') || // removedor
+          href.includes('rendair.ai')) {
         return false;
       }
       return true;
@@ -695,6 +696,15 @@ const normalizeConfigCategoriesAndQuickAccess = (cfg: any): boolean => {
         });
       }
     });
+  }
+
+  // Ensure linksBar is always normalized, deduplicated, and synchronized with canonical icons
+  if (Array.isArray(cfg.linksBar)) {
+    const originalJson = JSON.stringify(cfg.linksBar);
+    cfg.linksBar = normalizeAndDeduplicateLinksBar(cfg.linksBar);
+    if (JSON.stringify(cfg.linksBar) !== originalJson) {
+      modified = true;
+    }
   }
 
   return modified;
