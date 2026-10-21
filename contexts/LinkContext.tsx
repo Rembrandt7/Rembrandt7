@@ -121,6 +121,16 @@ const INITIAL_CONFIG: AppConfig = {
         outlineColor: '#10b981',
         outlineWidth: 10
     },
+    {
+        id: 'rendair',
+        href: "https://rendair.ai/dashboard",
+        name: "Rendair",
+        category: "trabajo",
+        colorClass: "text-teal-400 hover:text-teal-300",
+        iconSvg: `<svg class="w-full h-full" viewBox="0 0 64 64" xmlns="http://www.w3.org/2000/svg"><circle cx="32" cy="32" r="28" fill="#4fd1c5"/><text x="32" y="42" fontFamily="Arial, sans-serif" fontSize="28" fontWeight="bold" fill="black" textAnchor="middle">r</text></svg>`,
+        outlineColor: '#4fd1c5',
+        outlineWidth: 10
+    },
 
     {
         id: '5',
@@ -268,11 +278,9 @@ const INITIAL_CONFIG: AppConfig = {
             { id: 'ut-1-1', name: "Magic Eraser", description: "Quita marcas de agua y objetos de videos.", href: "https://magiceraser.org/es/remove-watermark-from-video/", colorClass: "hover:shadow-orange-500/20", iconSvg: '<svg class="w-full h-full text-orange-500" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round"><path d="M20 5H9l-7 7 7 7h11a2 2 0 0 0 2-2V7a2 2 0 0 0-2-2Z" /><line x1="18" y1="9" x2="12" y2="15" /><line x1="12" y1="9" x2="18" y2="15" /></svg>' },
             { id: 'ut-1-2', name: "WatermarkRemover", description: "Elimina marcas de agua de imágenes gratis.", href: "https://www.watermarkremover.io/es", colorClass: "hover:shadow-blue-500/20", iconSvg: '<svg class="w-full h-full text-blue-400" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round"><path d="M12 2L2 7l10 5 10-5-10-5zM2 17l10 5 10-5M2 12l10 5 10-5" /></svg>' },
             { id: 'ut-1-3', name: "Letras (GenType)", description: "Crea alfabetos personalizados con IA.", href: "https://labs.google/gentype", colorClass: "hover:shadow-yellow-500/20", iconSvg: '<svg class="w-full h-full text-yellow-400" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round"><path d="M4 7V4h16v3" /><path d="M9 20h6" /><path d="M12 4v16" /></svg>' },
-            { id: 'ut-1-4', name: "Vectorizer AI", description: "Convierte imágenes a vectores SVG con IA.", href: "https://vectorizer.ai/", colorClass: "hover:shadow-pink-500/20", iconSvg: '<svg class="w-full h-full text-pink-500" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M12 19l7-7 3 3-7 7-3-3z" /><path d="M18 13l-1.5-7.5L2 2l3.5 14.5L13 18l5-5z" /><path d="M2 2l7.586 7.586" /><circle cx="11" cy="11" r="2" /></svg>' },
-            { id: 'ut-1-5', name: "Upscale", description: "Mejorar resolución con IA", href: "https://www.upscale.media/es/upload", colorClass: "hover:shadow-cyan-500/20", iconSvg: '<svg class="w-full h-full text-cyan-400" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><path d="M15 3h6v6M9 21H3v-6M21 3l-7 7M3 21l7-7"/></svg>' },
-            { id: 'ut-1-6', name: "Canva", description: "Diseño gráfico fácil", href: "https://www.canva.com/", colorClass: "hover:shadow-teal-500/20", iconSvg: '<svg class="w-full h-full text-teal-400" viewBox="0 0 24 24" fill="currentColor"><circle cx="12" cy="12" r="10"/></svg>' },
-            { id: 'ut-1-7', name: "Photopea", description: "Editor avanzado de imágenes en línea", href: "https://www.photopea.com/", colorClass: "hover:shadow-emerald-500/20", iconSvg: '<svg class="w-full h-full text-emerald-400" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><rect x="3" y="3" width="18" height="18" rx="2" ry="2"/><circle cx="8.5" cy="8.5" r="1.5"/><polyline points="21 15 16 10 5 21"/></svg>' },
-            { id: 'ut-1-8', name: "SAM Segment", description: "Segment Anything de Meta", href: "https://aidemos.meta.com/segment-anything/gallery/", colorClass: "hover:shadow-indigo-500/20", iconSvg: '<svg class="w-full h-full text-indigo-400" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M21 16V8a2 2 0 0 0-1-1.73l-7-4a2 2 0 0 0-2 0l-7 4A2 2 0 0 0 3 8v8a2 2 0 0 0 1 1.73l7 4a2 2 0 0 0 2 0l7-4A2 2 0 0 0 21 16z"></path><polyline points="3.27 6.96 12 12.01 20.73 6.96"></polyline><line x1="12" y1="22.08" x2="12" y2="12"></line></svg>' }
+            { id: 'ut-1-4', name: "Vectorizar", description: "Convierte imágenes a vectores.", href: "https://aistudio.google.com/apps/drive/1MqPBVGYa3rBl2lGs5-8DhKUIltCigjmI?showAssistant=true&showPreview=true&resourceKey=", colorClass: "hover:shadow-pink-500/20", iconSvg: '<svg class="w-full h-full text-pink-500" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M12 19l7-7 3 3-7 7-3-3z" /><path d="M18 13l-1.5-7.5L2 2l3.5 14.5L13 18l5-5z" /><path d="M2 2l7.586 7.586" /><circle cx="11" cy="11" r="2" /></svg>' },
+            { id: 'ut-1-5', name: "Upscale", description: "Mejorar resolución", href: "https://www.upscale.media/es/upload", colorClass: "hover:shadow-cyan-500/20", iconSvg: '<svg class="w-full h-full text-cyan-400" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><path d="M15 3h6v6M9 21H3v-6M21 3l-7 7M3 21l7-7"/></svg>' },
+            { id: 'ut-1-6', name: "Canva", description: "Diseño gráfico fácil", href: "https://www.canva.com/", colorClass: "hover:shadow-cyan-500/20", iconSvg: '<svg class="w-full h-full text-cyan-400" viewBox="0 0 24 24" fill="currentColor"><circle cx="12" cy="12" r="10"/></svg>' }
         ]
     },
     {
@@ -283,9 +291,7 @@ const INITIAL_CONFIG: AppConfig = {
         items: [
             { id: 'ut-2-1', name: "Runway", description: "Generador de video", href: "https://runwayml.com/", colorClass: "hover:shadow-yellow-500/20", iconSvg: '<svg class="w-full h-full text-yellow-400" viewBox="0 0 24 24" fill="currentColor"><path d="M5.5 2C3.5 2 2 3.5 2 5.5v13C2 20.5 3.5 22 5.5 22h13c2 0 3.5-1.5 3.5-3.5v-13C22 3.5 20.5 2 18.5 2h-13zM8 7l10 5-10 5V7z"/></svg>' },
             { id: 'ut-2-2', name: "Kling AI", description: "Generador de video realista", href: "https://klingai.com/", colorClass: "hover:shadow-blue-500/20", iconSvg: '<svg class="w-full h-full text-blue-400" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><path d="M13 2L3 14h9l-1 8 10-12h-9l1-8z" /></svg>' },
-            { id: 'ut-2-luma', name: "Luma Dream", description: "Luma Dream Machine Video", href: "https://lumalabs.ai/dream-machine", colorClass: "hover:shadow-purple-500/20", iconSvg: '<svg class="w-full h-full text-purple-400" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><polygon points="12 2 2 7 12 12 22 7 12 2"></polygon><polyline points="2 17 12 22 22 17"></polyline><polyline points="2 12 12 17 22 12"></polyline></svg>' },
-            { id: 'ut-2-capcut', name: "CapCut Web", description: "Editor de video en línea", href: "https://www.capcut.com/editor", colorClass: "hover:shadow-cyan-500/20", iconSvg: '<svg class="w-full h-full text-cyan-400" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><rect x="2" y="2" width="20" height="20" rx="2.18" ry="2.18"/><line x1="7" y1="2" x2="7" y2="22"/><line x1="17" y1="2" x2="17" y2="22"/><line x1="2" y1="12" x2="22" y2="12"/></svg>' },
-            { id: 'ut-2-3', name: "Suno", description: "Música IA", href: "https://suno.com/", colorClass: "hover:shadow-pink-500/20", iconSvg: '<svg class="w-full h-full text-pink-400" viewBox="0 0 24 24" fill="currentColor"><circle cx="12" cy="12" r="10" /><circle cx="12" cy="12" r="4" fill="black" /></svg>' },
+            { id: 'ut-2-3', name: "Suno", description: "Música IA", href: "https://suno.com/", colorClass: "hover:shadow-purple-500/20", iconSvg: '<svg class="w-full h-full text-purple-400" viewBox="0 0 24 24" fill="currentColor"><circle cx="12" cy="12" r="10" /><circle cx="12" cy="12" r="4" fill="black" /></svg>' },
             { id: 'ut-2-4', name: "ElevenLabs", description: "Voces y locución IA", href: "https://elevenlabs.io/", colorClass: "hover:shadow-teal-500/20", iconSvg: '<svg class="w-full h-full text-teal-400" viewBox="0 0 24 24" fill="currentColor"><path d="M4 12v-4a8 8 0 0 1 16 0v4" stroke="currentColor" strokeWidth="2" fill="none" /><rect x="2" y="12" width="4" height="8" rx="1" /><rect x="18" y="12" width="4" height="8" rx="1" /></svg>' }
         ]
     },
@@ -295,12 +301,11 @@ const INITIAL_CONFIG: AppConfig = {
         gradient: 'from-cyan-500 to-blue-600',
         iconSvg: '<svg xmlns="http://www.w3.org/2000/svg" class="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M21 16V8a2 2 0 00-1-1.73l-7-4a2 2 0 00-2 0l-7 4A2 2 0 003 8v8a2 2 0 001 1.73l7 4a2 2 0 002 0l7-4A2 2 0 0021 16z" /></svg>',
         items: [
-            { id: 'ut-3-makerworld', name: "MakerWorld", description: "Modelos 3D listos para imprimir", href: "https://makerworld.com/es", colorClass: "hover:shadow-emerald-500/20", iconSvg: '<svg class="w-full h-full text-emerald-400" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><circle cx="12" cy="12" r="10"/><path d="M8 12l3 3 5-5"/></svg>' },
-            { id: 'ut-3-stlbuddy', name: "STLBuddy", description: "Cortador y Divisor de Modelos 3D", href: "https://stlbuddy.com/model-splitter", colorClass: "hover:shadow-cyan-500/20", iconSvg: '<svg class="w-full h-full text-cyan-400" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><circle cx="6" cy="6" r="3"/><circle cx="6" cy="18" r="3"/><line x1="20" y1="4" x2="8.12" y2="15.88"/><line x1="14.47" y1="14.48" x2="20" y2="20"/><line x1="8.12" y1="8.12" x2="12" y2="12"/></svg>' },
+            { id: 'ut-3-sam', name: "Sam", description: "Segment Anything", href: "https://aidemos.meta.com/segment-anything/gallery/", colorClass: "hover:shadow-indigo-500/20", iconSvg: '<svg class="w-full h-full text-indigo-400" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M21 16V8a2 2 0 0 0-1-1.73l-7-4a2 2 0 0 0-2 0l-7 4A2 2 0 0 0 3 8v8a2 2 0 0 0 1 1.73l7 4a2 2 0 0 0 2 0l7-4A2 2 0 0 0 21 16z"></path><polyline points="3.27 6.96 12 12.01 20.73 6.96"></polyline><line x1="12" y1="22.08" x2="12" y2="12"></line></svg>' },
             { id: 'ut-3-isoremb', name: "isoremb", description: "Isometrías Instalaciones", href: "https://isometrias-instalaciones.vercel.app/", colorClass: "hover:shadow-orange-500/20", iconSvg: '<svg class="w-full h-full text-orange-400" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><rect x="3" y="3" width="18" height="18" rx="4"></rect><path d="M7 7h10v10H7z"></path><path d="M7 12h10"></path></svg>' },
-            { id: 'ut-3-letras', name: "Letras (ProLed)", description: "ProLed3D Letras y Carteles", href: "https://proled3d.com/?lang=es", colorClass: "hover:shadow-pink-500/20", iconSvg: '<svg class="w-full h-full text-pink-400" viewBox="0 0 24 24" fill="currentColor"><path d="M9.93 13.5h4.14L12 7.98 9.93 13.5zM20 2H4c-1.1 0-2 .9-2 2v16c0 1.1.9 2 2 2h16c1.1 0 2-.9 2-2V4c0-1.1-.9-2-2-2zm-4.05 16.5l-1.14-3H9.17l-1.12 3H5.96l5.11-13h1.86l5.11 13h-2.09z"/></svg>' },
+            { id: 'ut-3-letras', name: "Letras", description: "ProLed3D Letras y Carteles", href: "https://proled3d.com/?lang=es", colorClass: "hover:shadow-pink-500/20", iconSvg: '<svg class="w-full h-full text-pink-400" viewBox="0 0 24 24" fill="currentColor"><path d="M9.93 13.5h4.14L12 7.98 9.93 13.5zM20 2H4c-1.1 0-2 .9-2 2v16c0 1.1.9 2 2 2h16c1.1 0 2-.9 2-2V4c0-1.1-.9-2-2-2zm-4.05 16.5l-1.14-3H9.17l-1.12 3H5.96l5.11-13h1.86l5.11 13h-2.09z"/></svg>' },
             { id: 'ut-3-guilloche', name: "Guilloche", description: "Generador de Patrones", href: "https://guillochegenerator.com/", colorClass: "hover:shadow-teal-500/20", iconSvg: '<svg class="w-full h-full text-teal-300" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round"><circle cx="12" cy="12" r="9" /><ellipse cx="12" cy="12" rx="9" ry="4" transform="rotate(0 12 12)" /><ellipse cx="12" cy="12" rx="9" ry="4" transform="rotate(45 12 12)" /><ellipse cx="12" cy="12" rx="9" ry="4" transform="rotate(90 12 12)" /><ellipse cx="12" cy="12" rx="9" ry="4" transform="rotate(135 12 12)" /></svg>' },
-            { id: 'ut-3-tripo', name: "Tripo 3D", description: "Generador 3D con IA", href: "https://www.tripo3d.ai/", colorClass: "hover:shadow-blue-500/20", iconSvg: '<svg class="w-full h-full text-blue-400" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><polygon points="12 2 22 8.5 22 15.5 12 22 2 15.5 2 8.5 12 2"/></svg>' }
+            { id: 'ut-3-stlbuddy', name: "STLBuddy", description: "Cortador y Divisor de Modelos 3D", href: "https://stlbuddy.com/model-splitter", colorClass: "hover:shadow-cyan-500/20", iconSvg: '<svg class="w-full h-full text-cyan-400" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><circle cx="6" cy="6" r="3"/><circle cx="6" cy="18" r="3"/><line x1="20" y1="4" x2="8.12" y2="15.88"/><line x1="14.47" y1="14.48" x2="20" y2="20"/><line x1="8.12" y1="8.12" x2="12" y2="12"/></svg>' }
         ]
     },
     {
@@ -312,9 +317,7 @@ const INITIAL_CONFIG: AppConfig = {
             { id: 'ut-4-1', name: "SUPABASE", description: "Base de datos y backend", href: "https://supabase.com/dashboard/project/humndjymddoitxxkgtyt/editor/17825?schema=public", colorClass: "hover:shadow-emerald-500/20", iconSvg: '<svg class="w-full h-full text-emerald-400" viewBox="0 0 24 24" fill="currentColor"><path d="M12 2L2 7l10 5 10-5-10-5zM2 17l10 5 10-5M2 12l10 5 10-5"/></svg>' },
             { id: 'ut-4-2', name: "VERCEL", description: "Despliegues y hosting", href: "https://vercel.com/rembrandt7s-projects", colorClass: "hover:shadow-white/20", iconSvg: '<svg class="w-full h-full text-white" viewBox="0 0 24 24" fill="currentColor"><path d="M12 1L24 22H0L12 1z"/></svg>' },
             { id: 'ut-4-3', name: "GITHUB", description: "Repositorios y control de versión", href: "https://github.com/", colorClass: "hover:shadow-gray-400/20", iconSvg: '<svg class="w-full h-full text-white" viewBox="0 0 24 24" fill="currentColor"><path d="M12 2A10 10 0 0 0 2 12c0 4.42 2.87 8.17 6.84 9.5.5.08.66-.23.66-.5v-1.69c-2.77.6-3.36-1.34-3.36-1.34-.46-1.16-1.11-1.47-1.11-1.47-.91-.62.07-.6.07-.6 1 .07 1.53 1.03 1.53 1.03.87 1.52 2.34 1.07 2.91.83.1-.65.35-1.09.63-1.34-2.22-.25-4.55-1.11-4.55-4.92 0-1.11.38-2 1.03-2.71-.1-.25-.45-1.29.1-2.64 0 0 .84-.27 2.75 1.02.79-.22 1.65-.33 2.5-.33.85 0 1.71.11 2.5.33 1.91-1.29 2.75-1.02 2.75-1.02.55 1.35.2 2.39.1 2.64.65.71 1.03 1.6 1.03 2.71 0 3.82-2.34 4.66-4.57 4.91.36.31.69.92.69 1.85V21c0 .27.16.59.67.5C19.14 20.16 22 16.42 22 12A10 10 0 0 0 12 2z"/></svg>' },
-            { id: 'ut-4-4', name: "Cursor", description: "Editor de código con IA", href: "https://www.cursor.com/", colorClass: "hover:shadow-indigo-500/20", iconSvg: '<svg class="w-full h-full text-indigo-400" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M3 3l7.07 16.97 2.51-7.39 7.39-2.51L3 3z"></path><path d="M13 13l6 6"></path></svg>' },
-            { id: 'ut-4-v0', name: "v0.dev", description: "Generador de UI con IA de Vercel", href: "https://v0.dev/", colorClass: "hover:shadow-zinc-400/20", iconSvg: '<svg class="w-full h-full text-white" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><polygon points="12 2 2 7 12 12 22 7 12 2"/><polyline points="2 17 12 22 22 17"/></svg>' },
-            { id: 'ut-4-devdocs', name: "DevDocs", description: "Documentación rápida para desarrolladores", href: "https://devdocs.io/", colorClass: "hover:shadow-teal-400/20", iconSvg: '<svg class="w-full h-full text-teal-300" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><path d="M4 19.5A2.5 2.5 0 0 1 6.5 17H20"/><path d="M6.5 2H20v20H6.5A2.5 2.5 0 0 1 4 19.5v-15A2.5 2.5 0 0 1 6.5 2z"/></svg>' }
+            { id: 'ut-4-4', name: "Cursor", description: "Editor de código con IA", href: "https://www.cursor.com/", colorClass: "hover:shadow-indigo-500/20", iconSvg: '<svg class="w-full h-full text-indigo-400" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M3 3l7.07 16.97 2.51-7.39 7.39-2.51L3 3z"></path><path d="M13 13l6 6"></path></svg>' }
         ]
     },
     {
@@ -323,11 +326,9 @@ const INITIAL_CONFIG: AppConfig = {
         gradient: 'from-amber-400 to-orange-500',
         iconSvg: '<svg xmlns="http://www.w3.org/2000/svg" class="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M11 4a2 2 0 114 0v1a1 1 0 001 1h3a1 1 0 011 1v3a1 1 0 01-1 1h-1a2 2 0 100 4h1a1 1 0 011 1v3a1 1 0 01-1 1h-3a1 1 0 01-1-1v-1a2 2 0 10-4 0v1a1 1 0 01-1 1H7a1 1 0 01-1-1v-3a1 1 0 00-1-1H4a2 2 0 110-4h1a1 1 0 001-1V7a1 1 0 011-1h3a1 1 0 001-1V4z" /></svg>',
         items: [
-            { id: 'ut-5-notebooklm', name: "NotebookLM", description: "Investigación y análisis con IA de Google", href: "https://notebooklm.google.com/", colorClass: "hover:shadow-blue-500/20", iconSvg: '<svg class="w-full h-full text-blue-400" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><path d="M2 3h6a4 4 0 0 1 4 4v14a3 3 0 0 0-3-3H2z"/><path d="M22 3h-6a4 4 0 0 0-4 4v14a3 3 0 0 1 3-3h7z"/></svg>' },
-            { id: 'ut-5-perplexity', name: "Perplexity", description: "Buscador con IA y fuentes citadas", href: "https://www.perplexity.ai/", colorClass: "hover:shadow-teal-500/20", iconSvg: '<svg class="w-full h-full text-teal-400" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><circle cx="12" cy="12" r="10"/><path d="m4.93 4.93 4.24 4.24"/><path d="m14.83 9.17 4.24-4.24"/><path d="m14.83 14.83 4.24 4.24"/><path d="m9.17 14.83-4.24 4.24"/></svg>' },
             { id: 'ut-5-1', name: "Toolify", description: "Directorio de IA más guardadas", href: "https://www.toolify.ai/es/most-saved", colorClass: "hover:shadow-orange-500/20", iconSvg: '<svg class="w-full h-full text-orange-400" viewBox="0 0 24 24" fill="currentColor"><path d="M12 2L2 7l10 5 10-5-10-5zM2 17l10 5 10-5M2 12l10 5 10-5"/></svg>' },
-            { id: 'ut-5-2', name: "Freepik Pikaso", description: "Recursos gráficos y generador visual", href: "https://www.freepik.es/pikaso", colorClass: "hover:shadow-blue-500/20", iconSvg: '<svg class="w-full h-full text-blue-400" viewBox="0 0 24 24" fill="currentColor"><circle cx="12" cy="12" r="10"/></svg>' },
-            { id: 'ut-5-3', name: "Krea AI", description: "Generador visual en tiempo real", href: "https://www.krea.ai/app", colorClass: "hover:shadow-purple-500/20", iconSvg: '<svg class="w-full h-full text-purple-400" viewBox="0 0 24 24" fill="currentColor"><circle cx="12" cy="12" r="10"/></svg>' },
+            { id: 'ut-5-2', name: "Freepik", description: "Recursos gráficos y Pikaso IA", href: "https://www.freepik.es/pikaso/spaces/a0530a3d-cd8c-4330-8475-2e9628101922", colorClass: "hover:shadow-blue-500/20", iconSvg: '<svg class="w-full h-full text-blue-400" viewBox="0 0 24 24" fill="currentColor"><circle cx="12" cy="12" r="10"/></svg>' },
+            { id: 'ut-5-3', name: "Krea", description: "Generador visual en tiempo real", href: "https://www.krea.ai/app", colorClass: "hover:shadow-purple-500/20", iconSvg: '<svg class="w-full h-full text-purple-400" viewBox="0 0 24 24" fill="currentColor"><circle cx="12" cy="12" r="10"/></svg>' },
             { id: 'ut-5-4', name: "Wiki.IA", description: "Compilación de recursos de IA", href: "https://fmhy.vercel.app/ai", colorClass: "hover:shadow-emerald-500/20", iconSvg: '<svg class="w-full h-full text-emerald-400" viewBox="0 0 24 24" fill="currentColor"><circle cx="12" cy="12" r="10"/></svg>' },
             { id: 'ut-5-5', name: "Gamma", description: "Presentaciones y documentos con IA", href: "https://gamma.app/", colorClass: "hover:shadow-indigo-500/20", iconSvg: '<svg class="w-full h-full text-indigo-400" viewBox="0 0 24 24" fill="currentColor"><circle cx="12" cy="12" r="10"/></svg>' }
         ]
@@ -489,64 +490,6 @@ const isMixboardItem = (item: any) => {
   return item.id === 'gd-14' || name.includes('mixboard') || href.includes('mixboard');
 };
 
-const isSherwinItem = (item: any) => {
-  if (!item || typeof item !== 'object') return false;
-  const name = (item.name || '').toLowerCase();
-  const href = (item.href || '').toLowerCase();
-  return (
-    item.id === 'qa-11' ||
-    name.includes('sherwin') ||
-    name.includes('sherry') ||
-    href.includes('1us6w9obhdw-pwzrgijw1g5er1qdltnCD'.toLowerCase())
-  );
-};
-
-const isCotizadorItem = (item: any) => {
-  if (!item || typeof item !== 'object') return false;
-  const name = (item.name || '').toLowerCase();
-  const href = (item.href || '').toLowerCase();
-  return (
-    item.id === 'qa-4' ||
-    name.includes('cotizador') ||
-    href.includes('1k2aqbzly96killedyp5jljx92eqjuuoj')
-  );
-};
-
-const isListasRembItem = (item: any) => {
-  if (!item || typeof item !== 'object') return false;
-  const name = (item.name || '').toLowerCase();
-  const href = (item.href || '').toLowerCase();
-  return (
-    item.id === 'qa-5' ||
-    name.includes('organizador') ||
-    name.includes('listas remb') ||
-    href.includes('1edmjF7bfonjwakuisxzlevdfvm4sobo3'.toLowerCase())
-  );
-};
-
-const isCompresorItem = (item: any) => {
-  if (!item || typeof item !== 'object') return false;
-  const name = (item.name || '').toLowerCase();
-  const href = (item.href || '').toLowerCase();
-  return (
-    item.id === 'qa-2' ||
-    name.includes('compresor') ||
-    href.includes('1sqllos1puc_ggsliqmhQetfrwl-8hifk'.toLowerCase())
-  );
-};
-
-const isPdfRembItem = (item: any) => {
-  if (!item || typeof item !== 'object') return false;
-  const name = (item.name || '').toLowerCase().trim();
-  const href = (item.href || '').toLowerCase();
-  return (
-    item.id === 'qa-pdf-remb' ||
-    name === 'pdf' ||
-    name === 'pdf remb' ||
-    href.includes('pdf-remb.vercel.app')
-  );
-};
-
 const normalizeConfigCategoriesAndQuickAccess = (cfg: any): boolean => {
   if (!cfg || typeof cfg !== 'object') return false;
   let modified = false;
@@ -676,62 +619,6 @@ const normalizeConfigCategoriesAndQuickAccess = (cfg: any): boolean => {
       cfg.usefulTools = Object.values(catMap);
       modified = true;
     }
-
-    // 3. Sanitize and enrich usefulTools items
-    cfg.usefulTools.forEach((sec: any) => {
-      if (Array.isArray(sec.items)) {
-        sec.items.forEach((item: any) => {
-          const href = (item.href || '').toLowerCase();
-          const iname = (item.name || '').toLowerCase().trim();
-          // Update broken Google Drive AI studio vectorizer link
-          if (href.includes('1mqpbvgya3rbl2lgs5-8dhkutiltcigjmi') || iname === 'vectorizar') {
-            item.name = 'Vectorizer AI';
-            item.href = 'https://vectorizer.ai/';
-            item.description = 'Convierte imágenes a vectores SVG con IA.';
-            modified = true;
-          }
-          // Clean private space url in Freepik
-          if (href.includes('freepik.es/pikaso/spaces/')) {
-            item.href = 'https://www.freepik.es/pikaso';
-            modified = true;
-          }
-        });
-      }
-    });
-
-    // Relocate SAM from 3D (ut-3) to Diseño (ut-1) if present in ut-3
-    const ut3 = cfg.usefulTools.find((s: any) => s.id === 'ut-3');
-    const ut1 = cfg.usefulTools.find((s: any) => s.id === 'ut-1');
-    if (ut3 && Array.isArray(ut3.items) && ut1 && Array.isArray(ut1.items)) {
-      const samIdx = ut3.items.findIndex((i: any) => (i.name || '').toLowerCase() === 'sam');
-      if (samIdx !== -1) {
-        const [samItem] = ut3.items.splice(samIdx, 1);
-        if (!ut1.items.some((i: any) => (i.name || '').toLowerCase().includes('sam'))) {
-          ut1.items.push({ ...samItem, name: 'SAM Segment', description: 'Segment Anything de Meta' });
-        }
-        modified = true;
-      }
-    }
-
-    // Safely merge newly recommended tools if they are not already present
-    INITIAL_CONFIG.usefulTools.forEach((defaultSec: any) => {
-      const targetSec = cfg.usefulTools.find((s: any) => s.id === defaultSec.id);
-      if (targetSec && Array.isArray(targetSec.items)) {
-        defaultSec.items.forEach((defItem: any) => {
-          const defName = (defItem.name || '').toLowerCase().trim();
-          const defHref = (defItem.href || '').toLowerCase().trim();
-          const exists = targetSec.items.some((curr: any) => {
-            const currName = (curr.name || '').toLowerCase().trim();
-            const currHref = (curr.href || '').toLowerCase().trim();
-            return currName === defName || currHref === defHref;
-          });
-          if (!exists) {
-            targetSec.items.push(defItem);
-            modified = true;
-          }
-        });
-      }
-    });
   }
 
   return modified;
@@ -740,6 +627,64 @@ const normalizeConfigCategoriesAndQuickAccess = (cfg: any): boolean => {
 const ensureSherwinWilliamsLinkUpdated = (cfg: any): boolean => {
   if (!cfg || typeof cfg !== 'object') return false;
   let updated = false;
+
+  const isSherwinItem = (item: any) => {
+    if (!item || typeof item !== 'object') return false;
+    const name = (item.name || '').toLowerCase();
+    const href = (item.href || '').toLowerCase();
+    return (
+      item.id === 'qa-11' ||
+      name.includes('sherwin') ||
+      name.includes('sherry') ||
+      href.includes('1us6w9obhdw-pwzrgijw1g5er1qdltnCD'.toLowerCase())
+    );
+  };
+
+  const isCotizadorItem = (item: any) => {
+    if (!item || typeof item !== 'object') return false;
+    const name = (item.name || '').toLowerCase();
+    const href = (item.href || '').toLowerCase();
+    return (
+      item.id === 'qa-4' ||
+      name.includes('cotizador') ||
+      href.includes('1k2aqbzly96killedyp5jljx92eqjuuoj')
+    );
+  };
+
+  const isListasRembItem = (item: any) => {
+    if (!item || typeof item !== 'object') return false;
+    const name = (item.name || '').toLowerCase();
+    const href = (item.href || '').toLowerCase();
+    return (
+      item.id === 'qa-5' ||
+      name.includes('organizador') ||
+      name.includes('listas remb') ||
+      href.includes('1edmjF7bfonjwakuisxzlevdfvm4sobo3'.toLowerCase())
+    );
+  };
+
+  const isCompresorItem = (item: any) => {
+    if (!item || typeof item !== 'object') return false;
+    const name = (item.name || '').toLowerCase();
+    const href = (item.href || '').toLowerCase();
+    return (
+      item.id === 'qa-2' ||
+      name.includes('compresor') ||
+      href.includes('1sqllos1puc_ggsliqmhQetfrwl-8hifk'.toLowerCase())
+    );
+  };
+
+  const isPdfRembItem = (item: any) => {
+    if (!item || typeof item !== 'object') return false;
+    const name = (item.name || '').toLowerCase().trim();
+    const href = (item.href || '').toLowerCase();
+    return (
+      item.id === 'qa-pdf-remb' ||
+      name === 'pdf' ||
+      name === 'pdf remb' ||
+      href.includes('pdf-remb.vercel.app')
+    );
+  };
 
   const updateArray = (arr?: any[]) => {
     if (!Array.isArray(arr)) return;
@@ -822,6 +767,16 @@ const ensureSherwinWilliamsLinkUpdated = (cfg: any): boolean => {
   }
 
   updateArray(cfg.linksBar);
+  if (Array.isArray(cfg.linksBar)) {
+    const hasRendair = cfg.linksBar.some((l: any) => l.id === 'rendair' || (l.name || '').toLowerCase() === 'rendair' || (l.href || '').toLowerCase().includes('rendair.ai'));
+    if (!hasRendair) {
+      const defaultRendair = INITIAL_CONFIG.linksBar.find(l => l.id === 'rendair');
+      if (defaultRendair) {
+        cfg.linksBar.push(defaultRendair);
+        updated = true;
+      }
+    }
+  }
   updateArray(cfg.googleDock);
   if (Array.isArray(cfg.rightSidebar)) {
     cfg.rightSidebar.forEach((sec: any) => updateArray(sec?.items));
