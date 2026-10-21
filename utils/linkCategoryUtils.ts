@@ -124,7 +124,9 @@ export const CANONICAL_LINKS_MAP: Record<string, Partial<LinkItem>> = {
     href: 'https://www.amazon.com.mx/',
     category: 'compras',
     colorClass: 'text-amber-400 hover:text-amber-300',
-    iconSvg: `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 100 100" class="w-full h-full"><defs><linearGradient id="amazon-bg-opt3" x1="0%" y1="0%" x2="100%" y2="100%"><stop offset="0%" stop-color="#1f2937"/><stop offset="100%" stop-color="#111827"/></linearGradient></defs><rect width="100" height="100" rx="24" fill="url(#amazon-bg-opt3)" stroke="rgba(255,255,255,0.12)" stroke-width="1.5"/><rect x="3" y="3" width="94" height="94" rx="21" fill="none" stroke="rgba(255,255,255,0.06)" stroke-width="1"/><path d="M26 26h10l6.5 28h27l5.5-20H39" stroke="#FFFFFF" stroke-width="4.5" stroke-linecap="round" stroke-linejoin="round"/><circle cx="45" cy="62" r="3.5" fill="#FFFFFF"/><circle cx="67" cy="62" r="3.5" fill="#FFFFFF"/><path d="M24 74c15 8 35 8.5 50 1.5" stroke="#FF9900" stroke-width="4.5" stroke-linecap="round"/><path d="M72 71l4 5.5-6.5.8" fill="#FF9900" stroke="#FF9900" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/></svg>`
+    iconSvg: `<svg viewBox="0 0 64 64" class="w-full h-full" xmlns="http://www.w3.org/2000/svg"><defs><linearGradient id="amz-bg" x1="0%" y1="0%" x2="100%" y2="100%"><stop offset="0%" stop-color="#1f2937"/><stop offset="50%" stop-color="#131921"/><stop offset="100%" stop-color="#0f1111"/></linearGradient><linearGradient id="amz-smile" x1="0%" y1="0%" x2="100%" y2="0%"><stop offset="0%" stop-color="#ff9900"/><stop offset="100%" stop-color="#ffb84d"/></linearGradient></defs><rect x="2" y="2" width="60" height="60" rx="16" fill="url(#amz-bg)" stroke="#ff9900" stroke-width="1.6" stroke-opacity="0.6"/><g transform="translate(13, 10.5) scale(0.085)"><path fill="#ffffff" d="M257.2 162.7c-48.7 1.8-169.5 15.5-169.5 117.5 0 109.5 138.3 114 183.5 43.2 6.5 10.2 35.4 37.5 45.3 46.8l56.8-56S341 288.9 341 261.4V114.3C341 89 316.5 32 228.7 32 140.7 32 94 87 94 136.3l73.5 6.8c16.3-49.5 54.2-49.5 54.2-49.5 40.7-.1 35.5 29.8 35.5 69.1zm0 86.8c0 80-84.2 68-84.2 17.2 0-47.2 50.5-56.7 84.2-57.8v40.6z"/><path fill="url(#amz-smile)" d="M393.2 410.3c-7.7 10-70 67-174.5 67S34.2 408.5 9.7 379c-6.8-7.7 1-11.3 5.5-8.3C88.5 415.2 203 488.5 387.7 401c7.5-3.7 13.3 2 5.5 12zM433 412.5c-6.5 15.8-16 26.8-21.2 31-5.5 4.5-9.5 2.7-6.5-3.8s19.3-46.5 12.7-55c-6.5-8.3-37-4.3-48-3.2-10.8 1-13 2-14-.3-2.3-5.7 21.7-15.5 37.5-17.5 15.7-1.8 41-.8 46 5.7 3.7 5.1 0 27.1-6.5 43.1z"/></g></svg>`,
+    outlineColor: '#ff9900',
+    outlineWidth: 8
   },
   'whatsapp': {
     id: '2',
@@ -293,8 +295,8 @@ export function normalizeAndDeduplicateLinksBar(links: LinkItem[]): LinkItem[] {
       item.name = canonical.name || item.name;
       item.category = canonical.category || item.category;
       item.colorClass = canonical.colorClass || item.colorClass;
-      // Always enforce authentic icons for canonical links (especially Javer, WhatsApp, Notion, Rendair)
-      if (nameLower === 'javer' || nameLower === 'whatsapp' || nameLower === 'notion' || nameLower === 'rendair' || !item.iconSvg) {
+      // Always enforce authentic icons for canonical links (especially Javer, WhatsApp, Notion, Rendair, Amazon)
+      if (nameLower === 'javer' || nameLower === 'whatsapp' || nameLower === 'notion' || nameLower === 'rendair' || nameLower === 'amazon' || !item.iconSvg) {
         item.iconSvg = canonical.iconSvg!;
       } else {
         item.iconSvg = canonical.iconSvg || item.iconSvg;

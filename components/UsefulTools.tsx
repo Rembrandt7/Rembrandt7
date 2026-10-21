@@ -57,13 +57,13 @@ const QuickAccessCard: React.FC<{
     };
 
     return (
-        <div className="relative group shrink-0">
+        <div className="relative group w-full">
             <a
                 href={item.href}
                 target={internalTabId ? undefined : "_blank"}
                 rel="noopener noreferrer"
                 onClick={handleClick}
-                className={`flex items-center gap-2.5 px-3 py-2 rounded-xl transition-all duration-200 bg-white/[0.03] hover:bg-white/[0.09] border border-white/[0.06] hover:border-emerald-400/40 hover:shadow-[0_0_18px_rgba(16,185,129,0.3)] hover:-translate-y-0.5 group shrink-0 backdrop-blur-sm ${item.colorClass || ''} ${isEditing ? 'opacity-60 cursor-default' : ''}`}
+                className={`flex items-center gap-2.5 px-3 py-2.5 rounded-xl transition-all duration-200 bg-white/[0.04] hover:bg-white/[0.09] border border-white/[0.08] hover:border-emerald-400/50 hover:shadow-[0_0_18px_rgba(16,185,129,0.3)] hover:-translate-y-0.5 group w-full backdrop-blur-sm ${item.colorClass || ''} ${isEditing ? 'opacity-60 cursor-default' : ''}`}
             >
                 <div 
                     className="w-6 h-6 shrink-0 flex items-center justify-center transition-transform duration-200 group-hover:scale-110 drop-shadow [&>svg]:w-full [&>svg]:h-full"
@@ -72,7 +72,7 @@ const QuickAccessCard: React.FC<{
                     }}
                     dangerouslySetInnerHTML={{ __html: item.iconSvg }}
                 />
-                <span className="font-semibold text-xs text-gray-200 group-hover:text-white truncate whitespace-nowrap tracking-tight">
+                <span className="font-semibold text-xs text-gray-200 group-hover:text-white truncate whitespace-nowrap tracking-tight flex-1">
                     {item.name}
                 </span>
 
@@ -519,9 +519,23 @@ export const UsefulTools: React.FC = () => {
     const [viewMode, setViewMode] = useState<'boxes' | 'all'>('boxes');
     const [searchQuery, setSearchQuery] = useState('');
 
-    // Lista de Accesos Rápidos
+    // Lista de Accesos Rápidos filtrada
     const quickAccessList = useMemo(() => {
-        return config.aiSidebar?.quickAccess || [];
+        const raw = config.aiSidebar?.quickAccess || [];
+        return raw.filter((l: LinkItem) => 
+            l.id !== 'qa-renders-remb' && 
+            l.id !== 'qa-2' && 
+            l.id !== 'qa-4' && 
+            l.id !== 'qa-5' && 
+            !(l.name || '').toLowerCase().includes('renders remb') && 
+            !(l.name || '').toLowerCase().includes('compresor') && 
+            !(l.name || '').toLowerCase().includes('cotizador') && 
+            !(l.name || '').toLowerCase().includes('listas') && 
+            !(l.href || '').toLowerCase().includes('renders%20remb') && 
+            !(l.href || '').toLowerCase().includes('compresor') && 
+            !(l.href || '').toLowerCase().includes('cotizador-remb') && 
+            !(l.href || '').toLowerCase().includes('listas-remb')
+        );
     }, [config.aiSidebar?.quickAccess]);
 
     const handleQuickAccessClick = (id: string) => {
@@ -810,34 +824,32 @@ export const UsefulTools: React.FC = () => {
                 </div>
 
                 {quickAccessList.length > 0 ? (
-                    <div className="w-full overflow-x-auto scrollbar-none py-1 px-0.5">
-                        <SortableLinkList
-                            id="aiSidebar.quickAccess"
-                            items={quickAccessList}
-                            isEditing={isEditing}
-                            onReorder={(newItems) => updateConfig(prev => ({
-                                ...prev,
-                                aiSidebar: {
-                                    ...(prev.aiSidebar || { models: [] }),
-                                    quickAccess: newItems
-                                }
-                            }))}
-                            strategy={horizontalListSortingStrategy}
-                            className="flex items-center gap-2.5 min-w-max"
-                            itemClassName="shrink-0"
-                            renderItem={(qaItem) => (
-                                <QuickAccessCard
-                                    key={qaItem.id}
-                                    item={qaItem}
-                                    isEditing={isEditing}
-                                    onSelectInternalTab={setActiveTabId}
-                                    onClick={handleQuickAccessClick}
-                                    onEdit={(i) => openModal('quickAccess', i)}
-                                    onDelete={handleDeleteQuickAccess}
-                                />
-                            )}
-                        />
-                    </div>
+                    <SortableLinkList
+                        id="aiSidebar.quickAccess"
+                        items={quickAccessList}
+                        isEditing={isEditing}
+                        onReorder={(newItems) => updateConfig(prev => ({
+                            ...prev,
+                            aiSidebar: {
+                                ...(prev.aiSidebar || { models: [] }),
+                                quickAccess: newItems
+                            }
+                        }))}
+                        strategy={rectSortingStrategy}
+                        className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-6 gap-2.5 w-full"
+                        itemClassName="w-full"
+                        renderItem={(qaItem) => (
+                            <QuickAccessCard
+                                key={qaItem.id}
+                                item={qaItem}
+                                isEditing={isEditing}
+                                onSelectInternalTab={setActiveTabId}
+                                onClick={handleQuickAccessClick}
+                                onEdit={(i) => openModal('quickAccess', i)}
+                                onDelete={handleDeleteQuickAccess}
+                            />
+                        )}
+                    />
                 ) : (
                     <p className="text-xs text-gray-500 italic py-2 text-center">
                         No hay accesos rápidos configurados.

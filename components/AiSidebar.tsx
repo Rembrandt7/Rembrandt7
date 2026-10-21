@@ -399,51 +399,11 @@ const AiSidebar: React.FC<AiSidebarProps> = ({ isOpen }) => {
                             />
                         )}
                     />
-                </nav>
-
-                {/* Sección Más Útiles */}
-                <div className="sticky top-0 z-10 bg-black/40 backdrop-blur-xl border-y border-white/5 p-4 mt-2 mb-2 flex justify-between items-center">
-                    <h2 className="text-xs font-black uppercase tracking-widest text-transparent bg-clip-text bg-gradient-to-r from-green-400 to-emerald-500">
-                        Accesos Rápidos
-                    </h2>
-                    {isEditing && (
-                        <div className="flex items-center gap-2">
-                            <button 
-                                onClick={handleResetQuickAccessCounters} 
-                                className="text-gray-400 hover:text-amber-400 transition-colors p-1"
-                                title="Reiniciar contadores de clics"
-                            >
-                                <RotateCcw size={14} />
-                            </button>
-                            <button onClick={() => openModal('quickAccess')} className="text-green-500 hover:text-green-400 p-1">
-                                <Plus size={16} />
-                            </button>
+                    {otherModels.length === 0 && (
+                        <div className="px-3 py-6 text-center text-[11px] text-gray-500 italic">
+                            Los modelos IA están organizados en Herramientas (categoría IAs) y en la barra superior.
                         </div>
                     )}
-                </div>
-
-                <nav className="flex flex-col gap-1 px-3 pb-6">
-                    <SortableLinkList 
-                        id="aiSidebar.quickAccess"
-                        items={(config.aiSidebar.quickAccess || []).filter(l => l.id !== 'qa-renders-remb' && l.id !== 'qa-2' && l.id !== 'qa-4' && l.id !== 'qa-5' && !(l.name || '').toLowerCase().includes('renders remb') && !(l.name || '').toLowerCase().includes('compresor') && !(l.name || '').toLowerCase().includes('cotizador') && !(l.name || '').toLowerCase().includes('listas') && !(l.href || '').toLowerCase().includes('renders%20remb') && !(l.href || '').toLowerCase().includes('compresor') && !(l.href || '').toLowerCase().includes('cotizador-remb') && !(l.href || '').toLowerCase().includes('listas-remb'))}
-                        isEditing={isEditing}
-                        onReorder={(newItems) => updateConfig({ ...config, aiSidebar: { ...config.aiSidebar, quickAccess: newItems } })}
-                        strategy={verticalListSortingStrategy}
-                        className="flex flex-col gap-1"
-                        itemClassName="w-full"
-                        renderItem={(item) => (
-                            <AiSidebarItem 
-                                key={item.id} 
-                                item={item} 
-                                isEditing={isEditing}
-                                showClickBadge={true}
-                                onClick={() => handleQuickAccessClick(item.id)}
-                                onSelectInternalTab={setActiveTabId}
-                                onEdit={(i) => openModal('quickAccess', i)}
-                                onDelete={(id) => handleDeleteLink(id, 'quickAccess')}
-                            />
-                        )}
-                    />
                 </nav>
             </div>
 
