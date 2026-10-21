@@ -1,6 +1,12 @@
 {
   "version": 2,
   "framework": "vite",
+  "git": {
+    "deploymentEnabled": {
+      "main": true,
+      "main-Rembrandt7": false
+    }
+  },
   "rewrites": [
     { "source": "/api/health", "destination": "/api/health.ts" },
     { "source": "/api/diagnostic", "destination": "/api/diagnostic.ts" },

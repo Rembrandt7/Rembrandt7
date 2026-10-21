@@ -33,7 +33,7 @@ Cada vez que el usuario solicite un cambio o nueva funcionalidad, **NO** des por
 2. **Commit y Push a GitHub**:
    - Ejecutar `git add .`
    - Ejecutar `git commit -m "<mensaje descriptivo>"`
-   - Ejecutar `git push origin main` (y `git push origin HEAD:main-Rembrandt7`)
+   - Ejecutar `git push origin main` (única rama de producción; no enviar a main-Rembrandt7 para evitar duplicar almacenamiento y despliegues en Vercel)
 
 3. **Verificación de Despliegue en Vercel**:
    - Monitorear el estado del commit mediante la API de GitHub:
