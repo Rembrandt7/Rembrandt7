@@ -19,6 +19,8 @@ import { getFriendlyAiErrorMessage, isQuotaError, isUnavailableError } from '../
 import { generateContentWithFallback, getGeminiClient, GEMINI_MODELS } from '../services/geminiService';
 import { useDeviceLayout } from '../hooks/useDeviceLayout';
 
+const CompresorTab = React.lazy(() => import('./CompresorTab'));
+
 export interface RealAttachmentFile {
   id: string;
   name: string;
@@ -548,6 +550,8 @@ const EmailGenerator: React.FC<EmailGeneratorProps> = ({ attachedImages, onAttac
     const fileListInputRef = useRef<HTMLInputElement>(null);
     const [ccRecipients, setCcRecipients] = useState<{ name: string; email: string }[]>([]);
     const [showCcSelector, setShowCcSelector] = useState(false);
+    const [showCompresor, setShowCompresor] = useState(false);
+    const [customGreeting, setCustomGreeting] = useState<string>('');
     const smartDeadlines = useMemo(() => getSmartDeadlines(), []);
 
     const [customPresets, setCustomPresets] = useState<QuickPreset[]>(() => {
@@ -1059,6 +1063,9 @@ const EmailGenerator: React.FC<EmailGeneratorProps> = ({ attachedImages, onAttac
     }, [sortedContacts, favorites]);
 
     const getPresetGreeting = useCallback(() => {
+        if (customGreeting && customGreeting.trim()) {
+            return customGreeting.trim();
+        }
         const hour = new Date().getHours();
         const timeGreeting = hour < 12 ? 'Buen día' : hour < 19 ? 'Buenas tardes' : 'Buenas noches';
         
@@ -1067,7 +1074,7 @@ const EmailGenerator: React.FC<EmailGeneratorProps> = ({ attachedImages, onAttac
             ? effectiveNickname 
             : (recipientName ? (recipientTitle ? `${recipientTitle} ${recipientName}` : recipientName) : '');
         return finalRecipient ? `${timeGreeting} ${finalRecipient}` : timeGreeting;
-    }, [useNickname, recipientNickname, recipientName, recipientTitle]);
+    }, [customGreeting, useNickname, recipientNickname, recipientName, recipientTitle]);
 
     const toggleDeliverable = useCallback((item: DeliverableType) => {
         setActivePresetId(null);
@@ -3690,7 +3697,8 @@ const EmailGenerator: React.FC<EmailGeneratorProps> = ({ attachedImages, onAttac
             {isDesktopMode && (
                 <>
                     <div className="bg-gray-900/80 backdrop-blur-xl p-3.5 sm:p-4 rounded-2xl border border-purple-500/25 mb-5 shadow-xl space-y-3">
-                {/* Fila principal: Indicador Para + Chip Destinatario Activo + Búsqueda Rápida + Acciones */}
+                {/* Fila principal (Modo Entregas 0s): Indicador Para + Chip Destinatario Activo + Búsqueda Rápida + Acciones */}
+                {activeMode === 'quick' && (
                 <div className="flex flex-nowrap items-center justify-between gap-2 overflow-x-auto no-scrollbar py-0.5">
                     
                     {/* Destinatario Activo con Saludo y Correo */}
@@ -3897,6 +3905,7 @@ const EmailGenerator: React.FC<EmailGeneratorProps> = ({ attachedImages, onAttac
                             </div>
                         </div>
                 </div>
+                )}
 
                 {/* Formulario dedicado para Agregar Nuevo Contacto */}
                 <AnimatePresence>
@@ -4087,6 +4096,7 @@ const EmailGenerator: React.FC<EmailGeneratorProps> = ({ attachedImages, onAttac
                                 })}
                             </div>
                         )}
+                        {activeMode === 'quick' && (
                         <div className="flex items-center gap-2 ml-auto">
                             <button
                                 type="button"
@@ -4104,6 +4114,7 @@ const EmailGenerator: React.FC<EmailGeneratorProps> = ({ attachedImages, onAttac
                                 Saludo activo: <strong className="text-purple-300 font-bold not-italic">"{getPresetGreeting()}:"</strong>
                             </div>
                         </div>
+                        )}
                     </div>
 
                     {/* Barra desplegable de selección de CC (Copia) en 1 Clic */}
@@ -4278,44 +4289,247 @@ const EmailGenerator: React.FC<EmailGeneratorProps> = ({ attachedImages, onAttac
                     {/* PANEL IZQUIERDO: REDACCIÓN LIBRE Y PARÁMETROS */}
                     <div className="lg:col-span-6 space-y-4">
                         <div id="section-redactor-libre" className="bg-gray-900/60 rounded-2xl border border-purple-500/30 p-4 sm:p-5 shadow-xl space-y-4">
-                            <div className="flex items-center justify-between pb-3 border-b border-gray-800/80">
-                                <div className="flex items-center gap-2.5">
-                                    <div className="p-2 bg-gradient-to-r from-purple-600 to-indigo-600 rounded-xl text-white shadow-md">
-                                        <Sparkles size={16} />
-                                    </div>
-                                    <div>
-                                        <h3 className="text-sm font-black text-white uppercase tracking-wider flex items-center gap-2">
-                                            <span>1. Redactor Libre con IA</span>
-                                            <span className="text-[10px] font-bold text-purple-400 bg-purple-500/10 px-2 py-0.5 rounded-full border border-purple-500/20">Ctrl Autocompletar</span>
-                                        </h3>
-                                        <p className="text-[11px] text-gray-400">Escribe o dicta tu idea; la IA redactará correo y WhatsApp ejecutivos</p>
-                                    </div>
-                                </div>
-                                <div className="flex items-center gap-2">
-                                    <button
-                                        type="button"
-                                        onClick={toggleListening}
-                                        title={isListening ? "Detener dictado" : "Dictar con micrófono"}
-                                        className={`px-3 py-1.5 rounded-lg text-xs font-black uppercase tracking-wider flex items-center gap-1.5 transition-all shadow-md cursor-pointer ${
-                                            isListening 
-                                                ? 'bg-red-600 text-white animate-pulse shadow-red-500/30' 
-                                                : 'bg-gray-800 hover:bg-purple-600/30 hover:border-purple-500/50 text-purple-400 border border-gray-700'
-                                        }`}
-                                    >
+                            {/* ENCABEZADO REORGANIZADO: BOTÓN DICTAR GRANDE + DESTINATARIO, SELECTOR, GÉNERO, APODO, CC, SALUDO, GENERAR */}
+                            <div className="flex items-stretch gap-3 pb-3 border-b border-gray-800/80">
+                                {/* 1. BOTÓN DICTAR CUADRADO Y GRANDE (REEMPLAZA LA ESTRELLA) */}
+                                <button
+                                    type="button"
+                                    onClick={toggleListening}
+                                    title={isListening ? "Detener dictado por voz" : "Presiona para dictar tu idea por voz"}
+                                    className={`w-16 h-16 sm:w-20 sm:h-20 shrink-0 rounded-2xl flex flex-col items-center justify-center transition-all cursor-pointer select-none ${
+                                        isListening
+                                            ? 'bg-red-600 hover:bg-red-500 text-white animate-pulse border-2 border-red-300 shadow-xl shadow-red-500/50 scale-105'
+                                            : 'bg-gradient-to-br from-purple-600 via-indigo-600 to-purple-700 hover:from-purple-500 hover:to-indigo-500 text-white border-2 border-purple-400/40 shadow-xl shadow-purple-600/30 hover:scale-[1.03] active:scale-95'
+                                    }`}
+                                >
+                                    <div className="flex items-center justify-center">
                                         {isListening ? (
-                                            <>
-                                                <MicOff size={14} className="animate-spin" />
-                                                <span>Escuchando...</span>
-                                            </>
+                                            <MicOff size={24} className="animate-spin text-white" />
                                         ) : (
-                                            <>
-                                                <Mic size={14} />
-                                                <span>Dictar</span>
-                                            </>
+                                            <Mic size={24} className="text-white drop-shadow" />
                                         )}
-                                    </button>
+                                    </div>
+                                    <span className="text-[10px] sm:text-[11px] font-black uppercase mt-1 tracking-wider leading-none">
+                                        {isListening ? 'Escuchando' : 'Dictar'}
+                                    </span>
+                                </button>
+
+                                {/* 2. PANEL AL LADO: FILA SUPERIOR + FILA INFERIOR */}
+                                <div className="flex flex-col justify-between gap-1.5 flex-grow min-w-0">
+                                    {/* FILA SUPERIOR: PARA + SELECTOR CON PESTAÑITA + H/M + APODO */}
+                                    <div className="flex items-center gap-1.5 flex-wrap">
+                                        {/* CHIP PARA CON CORREO Y COPIAR */}
+                                        <div className="flex items-center gap-1.5 bg-gray-800/90 border border-purple-500/30 rounded-xl px-2.5 h-8 shrink-0 shadow-inner">
+                                            <span className="text-[11px] font-black uppercase tracking-wider text-purple-300">Para:</span>
+                                            <span className="text-xs font-black text-white whitespace-nowrap truncate max-w-[110px] sm:max-w-[150px]">
+                                                {recipientTitle ? `${recipientTitle} ` : ''}{recipientName || 'Sin destinatario'}
+                                            </span>
+                                            {fullRecipientEmail && (
+                                                <button
+                                                    type="button"
+                                                    onClick={() => {
+                                                        navigator.clipboard.writeText(fullRecipientEmail);
+                                                        toast.success("Correo copiado al portapapeles");
+                                                    }}
+                                                    className="text-gray-400 hover:text-purple-300 transition-colors p-0.5 cursor-pointer shrink-0"
+                                                    title={`Copiar correo: ${fullRecipientEmail}`}
+                                                >
+                                                    <Copy size={12} />
+                                                </button>
+                                            )}
+                                        </div>
+
+                                        {/* SELECTOR DE CONTACTO CON PESTAÑITA */}
+                                        <div className="relative shrink-0" title="Seleccionar contacto de la lista">
+                                            <select
+                                                value={selectedContactIndex}
+                                                onChange={handleContactSelect}
+                                                className="h-8 pl-2 pr-6 bg-gray-800/90 hover:bg-gray-800 border border-gray-700 rounded-xl text-xs text-white font-bold appearance-none outline-none focus:border-purple-500 cursor-pointer max-w-[140px] sm:max-w-[170px] truncate"
+                                            >
+                                                <option value="">Contactos ({sortedContacts.length})...</option>
+                                                {sortedContacts.map((c, i) => (
+                                                    <option key={i} value={i}>
+                                                        {favorites.some(f => f.trim() === String(getDBValue(c, 'cliente') || '').trim()) ? '★ ' : ''}
+                                                        {getDBValue(c, 'cliente')}
+                                                    </option>
+                                                ))}
+                                            </select>
+                                            <div className="absolute right-2 top-1/2 -translate-y-1/2 pointer-events-none text-gray-400 text-[10px]">
+                                                ▼
+                                            </div>
+                                        </div>
+
+                                        {/* SELECTOR DE GÉNERO H / M */}
+                                        <div className="flex items-center bg-gray-800/90 border border-gray-700/80 rounded-xl p-0.5 shrink-0 h-8" title="Selecciona si es Hombre o Mujer">
+                                            <button
+                                                type="button"
+                                                onClick={() => setRecipientGender('M')}
+                                                className={`px-2 h-full rounded-lg text-xs font-black transition-all cursor-pointer flex items-center gap-1 ${
+                                                    recipientGender === 'M' ? 'bg-blue-600 text-white shadow ring-1 ring-blue-400' : 'text-gray-400 hover:text-white'
+                                                }`}
+                                                title="Hombre"
+                                            >
+                                                <span>👨 H</span>
+                                            </button>
+                                            <button
+                                                type="button"
+                                                onClick={() => setRecipientGender('F')}
+                                                className={`px-2 h-full rounded-lg text-xs font-black transition-all cursor-pointer flex items-center gap-1 ${
+                                                    recipientGender === 'F' ? 'bg-pink-600 text-white shadow ring-1 ring-pink-400' : 'text-gray-400 hover:text-white'
+                                                }`}
+                                                title="Mujer"
+                                            >
+                                                <span>👩 M</span>
+                                            </button>
+                                        </div>
+
+                                        {/* CONTROL DE APODO */}
+                                        <div className={`flex items-center gap-1 px-2 py-0.5 rounded-xl border transition-all shrink-0 h-8 ${
+                                            useNickname 
+                                                ? 'bg-yellow-500/10 border-yellow-500/40 text-yellow-300 shadow-sm' 
+                                                : 'bg-gray-800/80 border-gray-700 text-gray-400'
+                                        }`} title="Apodo para dirigirse a este contacto">
+                                            <button
+                                                type="button"
+                                                onClick={() => setUseNickname(!useNickname)}
+                                                className={`text-[10px] font-black uppercase px-1.5 py-0.5 rounded cursor-pointer transition-colors shrink-0 ${
+                                                    useNickname ? 'bg-yellow-500/20 text-yellow-300' : 'bg-gray-700 text-gray-400'
+                                                }`}
+                                            >
+                                                {useNickname ? '🏷️ Apodo' : 'Formal'}
+                                            </button>
+                                            <input
+                                                type="text"
+                                                value={recipientNickname}
+                                                onChange={(e) => setRecipientNickname(e.target.value)}
+                                                placeholder="Apodo..."
+                                                disabled={!useNickname}
+                                                className={`bg-transparent text-xs font-bold outline-none w-14 sm:w-16 whitespace-nowrap ${
+                                                    useNickname ? 'text-yellow-200 placeholder-yellow-500/40' : 'text-gray-500 opacity-50 cursor-not-allowed'
+                                                }`}
+                                            />
+                                        </div>
+                                    </div>
+
+                                    {/* FILA INFERIOR (CHIQUITO): CC + SALUDO EDITABLE + BOTON + CONTACTO + GENERAR */}
+                                    <div className="flex items-center gap-1.5 flex-wrap">
+                                        {/* BOTÓN + CC */}
+                                        <button
+                                            type="button"
+                                            onClick={() => setShowCcSelector(!showCcSelector)}
+                                            className={`px-2 h-7 rounded-lg text-[10.5px] font-bold transition-all cursor-pointer flex items-center gap-1 border shrink-0 ${
+                                                ccRecipients.length > 0
+                                                    ? 'bg-blue-600/20 text-blue-300 border-blue-500/40'
+                                                    : 'bg-gray-800/80 text-gray-400 hover:text-white border-gray-700/70'
+                                            }`}
+                                            title="Agregar destinatarios en Copia (CC)"
+                                        >
+                                            <span>👥 + CC {ccRecipients.length > 0 ? `(${ccRecipients.length})` : ''}</span>
+                                        </button>
+
+                                        {/* SALUDO EDITABLE */}
+                                        <div className="flex items-center gap-1 bg-gray-800/80 px-2 h-7 rounded-lg border border-gray-700/70 text-[10.5px] text-gray-400 shrink-0">
+                                            <span className="text-gray-500">Saludo:</span>
+                                            <input
+                                                type="text"
+                                                value={customGreeting !== '' ? customGreeting : getPresetGreeting()}
+                                                onChange={(e) => setCustomGreeting(e.target.value)}
+                                                className="bg-transparent text-purple-300 font-bold outline-none text-[11px] w-28 sm:w-36 truncate"
+                                                placeholder={getPresetGreeting()}
+                                                title="Edita el saludo inicial para este mensaje"
+                                            />
+                                        </div>
+
+                                        {/* BOTÓN + CONTACTO */}
+                                        <button
+                                            type="button"
+                                            onClick={() => {
+                                                const next = !isNewContactMode;
+                                                setIsNewContactMode(next);
+                                                if (next) {
+                                                    setSelectedContactIndex('');
+                                                    setRecipientName('');
+                                                    setRecipientNickname('');
+                                                    setRecipientEmailUser('');
+                                                    setRecipientTitle('Arq.');
+                                                    setShowRecipientDetails(false);
+                                                }
+                                            }}
+                                            className={`px-2 h-7 rounded-lg border text-[10.5px] font-black uppercase transition-all cursor-pointer flex items-center gap-1 shrink-0 ${
+                                                isNewContactMode 
+                                                    ? 'bg-indigo-600 text-white border-indigo-400 shadow-md ring-1 ring-indigo-300' 
+                                                    : 'bg-gray-800 text-indigo-300 border-indigo-500/40 hover:bg-gray-700 hover:text-white'
+                                            }`}
+                                            title="Agregar un nuevo contacto"
+                                        >
+                                            <span>➕ Contacto</span>
+                                        </button>
+
+                                        {/* BOTÓN GENERAR */}
+                                        <button
+                                            type="button"
+                                            onClick={() => handleGenerate()}
+                                            disabled={isLoading}
+                                            className="px-3 h-7 bg-gradient-to-r from-purple-600 via-indigo-600 to-blue-600 hover:from-purple-500 hover:to-blue-500 text-white rounded-lg font-black text-[11px] uppercase tracking-wider shadow-md flex items-center gap-1.5 active:scale-95 transition-all disabled:opacity-50 cursor-pointer shrink-0 ml-auto"
+                                            title="Generar correo y WhatsApp con IA"
+                                        >
+                                            {isLoading ? <RefreshCw className="animate-spin" size={12}/> : <><Sparkles size={12}/> <span>Generar</span></>}
+                                        </button>
+                                    </div>
                                 </div>
                             </div>
+
+                            {/* SELECTOR DESPLEGABLE DE CC EN REDACTOR LIBRE */}
+                            <AnimatePresence>
+                                {showCcSelector && (
+                                    <motion.div
+                                        initial={{ height: 0, opacity: 0 }}
+                                        animate={{ height: 'auto', opacity: 1 }}
+                                        exit={{ height: 0, opacity: 0 }}
+                                        className="overflow-hidden"
+                                    >
+                                        <div className="p-2.5 bg-gray-950/80 rounded-xl border border-blue-500/30 flex items-center justify-between gap-2 flex-wrap">
+                                            <div className="flex items-center gap-1.5 flex-wrap">
+                                                <span className="text-[10px] font-black uppercase tracking-wider text-blue-400 mr-1">
+                                                    En Copia (CC):
+                                                </span>
+                                                {sortedContacts.map((c, idx) => {
+                                                    const cName = String(getDBValue(c, 'cliente') || '').trim();
+                                                    const rawMail = String(getDBValue(c, 'correo') || '').trim();
+                                                    if (!rawMail) return null;
+                                                    const cMail = rawMail.includes('@') ? rawMail : `${rawMail}@javer.com.mx`;
+                                                    const isSelected = ccRecipients.some(cc => cc.email.toLowerCase() === cMail.toLowerCase());
+
+                                                    return (
+                                                        <button
+                                                            key={idx}
+                                                            type="button"
+                                                            onClick={() => toggleCcRecipient(cName, cMail)}
+                                                            className={`px-2 py-0.5 rounded-lg text-[10px] font-bold transition-all cursor-pointer flex items-center gap-1 ${
+                                                                isSelected
+                                                                    ? 'bg-blue-600 text-white shadow-sm ring-1 ring-blue-400'
+                                                                    : 'bg-gray-800 text-gray-400 hover:text-white border border-gray-700/60'
+                                                            }`}
+                                                        >
+                                                            <span>{isSelected ? '✓' : '+'}</span>
+                                                            <span className="truncate max-w-[100px]">{cName.split(' ')[0]}</span>
+                                                        </button>
+                                                    );
+                                                })}
+                                            </div>
+                                            {ccRecipients.length > 0 && (
+                                                <button
+                                                    type="button"
+                                                    onClick={() => setCcRecipients([])}
+                                                    className="text-[10px] text-red-400 hover:text-red-300 font-bold cursor-pointer"
+                                                >
+                                                    Limpiar CC
+                                                </button>
+                                            )}
+                                        </div>
+                                    </motion.div>
+                                )}
+                            </AnimatePresence>
 
                             <div className="space-y-4">
                                 {/* PRIORIDAD MICRÓFONO EN CELULAR (SOLO MÓVIL / APP) */}
@@ -4523,88 +4737,99 @@ const EmailGenerator: React.FC<EmailGeneratorProps> = ({ attachedImages, onAttac
                                     )}
                                 </div>
 
-                                {/* Barra de Archivos Adjuntos Reales (.DWG / .PDF / .STL / .XLSX) + Links en Nube + Chips de Fecha Compromiso */}
-                                <div className="p-3 bg-gray-950/60 rounded-xl border border-gray-800 space-y-2.5">
-                                    {/* Selector y gestor de archivos adjuntos reales */}
-                                    <div className="flex items-center justify-between gap-2 flex-wrap">
+                                {/* FILA UNIFICADA: ADJUNTAR + COMPRESOR (IZQ) Y FECHA COMPROMISO EN PILA (DER) */}
+                                <div className="p-3 bg-gray-950/60 rounded-xl border border-gray-800 flex flex-col sm:flex-row sm:items-start justify-between gap-3">
+                                    {/* IZQUIERDA: BOTÓN ADJUNTAR + BOTÓN COMPRESOR + SUBIR NUBE */}
+                                    <div className="flex-1 space-y-2 min-w-0">
                                         <div className="flex items-center gap-2 flex-wrap">
+                                            {/* BOTÓN ADJUNTAR ARCHIVOS */}
                                             <button
                                                 type="button"
                                                 onClick={() => fileListInputRef.current?.click()}
-                                                className="px-2.5 py-1.5 bg-indigo-600/20 hover:bg-indigo-600/40 text-indigo-300 hover:text-white rounded-lg text-[11px] font-bold border border-indigo-500/30 transition-all cursor-pointer flex items-center gap-1.5"
-                                                title="Selecciona o arrastra tus archivos (.pdf, .dwg, .stl, .xlsx, imágenes) para adjuntarlos al correo y listar sus nombres"
+                                                className="px-2.5 py-1.5 bg-indigo-600/20 hover:bg-indigo-600/40 text-indigo-300 hover:text-white rounded-lg text-[11px] font-bold border border-indigo-500/30 transition-all cursor-pointer flex items-center gap-1.5 shadow-sm"
+                                                title="Selecciona tus archivos (.pdf, .dwg, .stl, .xlsx, imágenes)"
                                             >
                                                 <Paperclip size={12} />
                                                 <span>📎 Adjuntar Archivos (.PDF / .DWG / .STL)</span>
                                             </button>
+
+                                            {/* BOTÓN COMPRESOR (ABRE ABAJO LA PESTAÑA DE COMPRESOR) */}
+                                            <button
+                                                type="button"
+                                                onClick={() => setShowCompresor(!showCompresor)}
+                                                className={`px-2.5 py-1.5 rounded-lg text-[11px] font-bold border transition-all cursor-pointer flex items-center gap-1.5 shadow-sm ${
+                                                    showCompresor 
+                                                        ? 'bg-purple-600 text-white border-purple-400 shadow-purple-600/30' 
+                                                        : 'bg-purple-600/20 hover:bg-purple-600/40 text-purple-300 hover:text-white border-purple-500/30'
+                                                }`}
+                                                title="Abrir u ocultar la pestaña de compresor de archivos abajo"
+                                            >
+                                                <span>🗜️ Compresor</span>
+                                                <span>{showCompresor ? '▲' : '▼'}</span>
+                                            </button>
+
                                             {(realAttachments.length > 0 || attachedImages.length > 0) && (
                                                 <button
                                                     type="button"
                                                     disabled={isUploadingAttachments}
                                                     onClick={handleUploadAttachmentsToCloud}
                                                     className="px-2.5 py-1.5 bg-cyan-600/20 hover:bg-cyan-600/40 text-cyan-300 hover:text-white rounded-lg text-[11px] font-bold border border-cyan-500/30 transition-all cursor-pointer flex items-center gap-1.5 disabled:opacity-50"
-                                                    title="Subir archivos adjuntos a Supabase y pegar automáticamente los enlaces de descarga directa en el correo y WhatsApp"
+                                                    title="Subir archivos adjuntos a Supabase y pegar links en el mensaje"
                                                 >
                                                     <UploadCloud size={12} />
-                                                    <span>{isUploadingAttachments ? 'Subiendo...' : '☁️ Subir y Pegar Links en Nube'}</span>
+                                                    <span>{isUploadingAttachments ? 'Subiendo...' : '☁️ Subir y Pegar Links'}</span>
                                                 </button>
                                             )}
-                                            <span className="text-[10px] text-gray-500 hidden sm:inline">
-                                                {realAttachments.length > 0
-                                                    ? `${realAttachments.length} archivo(s) listos para adjuntar`
-                                                    : 'Se adjuntan en .EML, Nube o Envío Directo'}
-                                            </span>
                                         </div>
+
                                         {attachedFileNames.length > 0 && (
-                                            <button
-                                                type="button"
-                                                onClick={clearAllAttachedFiles}
-                                                className="text-[10px] text-red-400 hover:text-red-300 font-bold cursor-pointer"
-                                            >
-                                                Quitar todos
-                                            </button>
+                                            <div className="flex flex-wrap gap-1.5 pt-0.5">
+                                                {attachedFileNames.map((fn, idx) => (
+                                                    <span
+                                                        key={idx}
+                                                        className="inline-flex items-center gap-1.5 px-2 py-0.5 bg-indigo-950/70 border border-indigo-500/30 rounded-md text-[10.5px] font-mono text-indigo-200"
+                                                    >
+                                                        <Paperclip size={10} className="text-indigo-400 shrink-0" />
+                                                        <span className="truncate max-w-[160px]">{fn}</span>
+                                                        <button
+                                                            type="button"
+                                                            onClick={() => removeAttachedFileByName(fn)}
+                                                            className="text-gray-400 hover:text-red-300 font-bold cursor-pointer"
+                                                        >
+                                                            ✕
+                                                        </button>
+                                                    </span>
+                                                ))}
+                                                <button
+                                                    type="button"
+                                                    onClick={clearAllAttachedFiles}
+                                                    className="text-[10px] text-red-400 hover:text-red-300 font-bold cursor-pointer ml-1 self-center"
+                                                >
+                                                    Quitar todos
+                                                </button>
+                                            </div>
                                         )}
                                     </div>
 
-                                    {attachedFileNames.length > 0 && (
-                                        <div className="flex flex-wrap gap-1.5 pt-0.5">
-                                            {attachedFileNames.map((fn, idx) => (
-                                                <span
-                                                    key={idx}
-                                                    className="inline-flex items-center gap-1.5 px-2 py-0.5 bg-indigo-950/70 border border-indigo-500/30 rounded-md text-[10.5px] font-mono text-indigo-200"
-                                                >
-                                                    <Paperclip size={10} className="text-indigo-400 shrink-0" />
-                                                    <span className="truncate max-w-[180px]">{fn}</span>
-                                                    <button
-                                                        type="button"
-                                                        onClick={() => removeAttachedFileByName(fn)}
-                                                        className="text-gray-400 hover:text-red-300 font-bold cursor-pointer"
-                                                    >
-                                                        ✕
-                                                    </button>
-                                                </span>
-                                            ))}
-                                        </div>
-                                    )}
-
-                                    {/* Chips Inteligentes de Fecha Compromiso */}
-                                    <div className="pt-2 border-t border-gray-800/80 space-y-1.5">
-                                        <div className="flex items-center justify-between gap-2 flex-wrap">
+                                    {/* DERECHA: FECHA COMPROMISO ACOMODADO EN PILA */}
+                                    <div className="shrink-0 flex flex-col gap-1 sm:border-l sm:border-gray-800 sm:pl-3">
+                                        <div className="flex items-center justify-between gap-1">
                                             <span className="text-[10px] font-bold uppercase tracking-wider text-amber-400 flex items-center gap-1">
                                                 <Clock size={11} />
-                                                <span>🗓️ Fecha Compromiso (1 Clic):</span>
+                                                <span>🗓️ Fecha Compromiso:</span>
                                             </span>
                                             {deadline && (
                                                 <button
                                                     type="button"
                                                     onClick={() => setDeadline('')}
                                                     className="text-[9.5px] text-red-400 hover:text-red-300 font-bold cursor-pointer"
+                                                    title="Quitar fecha seleccionada"
                                                 >
-                                                    Quitar fecha ({deadline})
+                                                    ✕
                                                 </button>
                                             )}
                                         </div>
-                                        <div className="flex flex-wrap gap-1.5">
+                                        <div className="grid grid-cols-2 gap-1 max-w-[240px]">
                                             {smartDeadlines.map(sd => {
                                                 const isSelected = deadline === sd.value;
                                                 return (
@@ -4612,12 +4837,12 @@ const EmailGenerator: React.FC<EmailGeneratorProps> = ({ attachedImages, onAttac
                                                         key={sd.label}
                                                         type="button"
                                                         onClick={() => setDeadline(isSelected ? '' : sd.value)}
-                                                        className={`px-2 py-1 rounded-lg text-[10.5px] font-bold transition-all cursor-pointer border ${
+                                                        className={`px-2 py-1 rounded-lg text-[10px] font-bold transition-all cursor-pointer border text-center truncate ${
                                                             isSelected
                                                                 ? 'bg-amber-500 text-slate-950 border-amber-400 shadow-sm'
                                                                 : 'bg-gray-900 text-gray-300 hover:text-white border-gray-700/80 hover:bg-gray-800'
                                                         }`}
-                                                        title={`Insertar fecha compromiso: ${sd.value}`}
+                                                        title={`Fecha compromiso: ${sd.value}`}
                                                     >
                                                         {sd.label}
                                                     </button>
@@ -4626,6 +4851,36 @@ const EmailGenerator: React.FC<EmailGeneratorProps> = ({ attachedImages, onAttac
                                         </div>
                                     </div>
                                 </div>
+
+                                {/* PANEL DE COMPRESOR DESPLEGABLE ABAJO */}
+                                <AnimatePresence>
+                                    {showCompresor && (
+                                         <motion.div
+                                             initial={{ height: 0, opacity: 0 }}
+                                             animate={{ height: 'auto', opacity: 1 }}
+                                             exit={{ height: 0, opacity: 0 }}
+                                             className="overflow-hidden"
+                                         >
+                                             <div className="p-3 bg-gray-950 rounded-2xl border-2 border-purple-500/40 shadow-2xl space-y-2">
+                                                 <div className="flex items-center justify-between pb-2 border-b border-gray-800">
+                                                     <span className="text-xs font-black uppercase text-purple-300 tracking-wider flex items-center gap-2">
+                                                         🗜️ Compresor de Planos, PDFs e Imágenes
+                                                     </span>
+                                                     <button
+                                                         type="button"
+                                                         onClick={() => setShowCompresor(false)}
+                                                         className="text-gray-400 hover:text-white text-xs font-bold px-2 py-0.5 bg-gray-800 rounded-lg cursor-pointer"
+                                                     >
+                                                         ✕ Cerrar Compresor
+                                                     </button>
+                                                 </div>
+                                                 <React.Suspense fallback={<div className="p-6 text-center text-gray-400"><Spinner size="3" /></div>}>
+                                                     <CompresorTab />
+                                                 </React.Suspense>
+                                             </div>
+                                         </motion.div>
+                                    )}
+                                </AnimatePresence>
 
                                 {/* Parámetros: Proyecto, Tono, Longitud */}
                                 <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 pt-1">
