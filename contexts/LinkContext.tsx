@@ -619,6 +619,24 @@ const normalizeConfigCategoriesAndQuickAccess = (cfg: any): boolean => {
       cfg.usefulTools = Object.values(catMap);
       modified = true;
     }
+
+    const unwantedItemIds = new Set(['ut-1-7', 'ut-1-8', 'ut-2-luma', 'ut-2-capcut', 'ut-4-v0', 'ut-4-devdocs', 'ut-5-notebooklm', 'ut-5-perplexity']);
+    cfg.usefulTools.forEach((sec: any) => {
+      if (Array.isArray(sec.items)) {
+        const prevLen = sec.items.length;
+        sec.items = sec.items.filter((item: any) => !unwantedItemIds.has(item.id));
+        if (sec.items.length !== prevLen) modified = true;
+
+        sec.items.forEach((item: any) => {
+          if (item.name === 'Vectorizer AI') {
+            item.name = 'Vectorizar';
+            item.description = 'Convierte imágenes a vectores.';
+            item.href = 'https://aistudio.google.com/apps/drive/1MqPBVGYa3rBl2lGs5-8DhKUIltCigjmI?showAssistant=true&showPreview=true&resourceKey=';
+            modified = true;
+          }
+        });
+      }
+    });
   }
 
   return modified;
