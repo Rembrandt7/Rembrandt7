@@ -43,3 +43,17 @@ Cada vez que el usuario solicite un cambio o nueva funcionalidad, **NO** des por
 
 4. **Entrega al Usuario**:
    - Solo confirmar que la tarea está completada UNA VEZ que el cambio esté verificado en vivo en Vercel.
+
+---
+
+## 3. Regla Obligatoria de Control de Peso y Almacenamiento en Vercel (Hobby / Free Tier)
+
+Para evitar rebasar los límites gratuitos de Vercel (10 GB de Function Storage / Deployment Storage):
+
+1. **Alerta Previa Obligatoria por Aumento Significativo de Peso**:
+   - Siempre que el usuario solicite un cambio, funcionalidad o nueva librería, **DEBES evaluar previamente el impacto en el tamaño del proyecto y de las Serverless Functions**.
+   - Si una librería o cambio va a aumentar significativamente el peso (ej. herramientas de renderizado de video, emuladores de navegador como Puppeteer/Playwright, modelos pesados de IA locales o SDKs masivos mayores a 10 MB), **ESTÁ ESTRICTAMENTE PROHIBIDO instalarlo o ejecutarlo directamente**.
+   - **DEBES avisar al usuario primero**, explicándole cuánto aumentará el tamaño aproximado, los riesgos en los límites de Vercel y proponiendo alternativas ligeras basadas en APIs externas o procesamiento en el navegador antes de proceder.
+
+2. **Cero Ramas de Previsualización Innecesarias**:
+   - Desplegar siempre y exclusivamente a `main`. Nunca enviar a ramas preview como `main-Rembrandt7` para evitar duplicar almacenamiento y ejecuciones en Vercel.
