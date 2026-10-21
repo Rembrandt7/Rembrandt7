@@ -1,4 +1,4 @@
-import React, { useState, useRef, useEffect, useCallback, useMemo } from 'react';
+import React, { useState, useMemo } from 'react';
 import { useLinks } from '../contexts/LinkContext';
 import { LinkItem } from '../types';
 import { LinkEditorModal } from './common/LinkEditorModal';
@@ -12,14 +12,192 @@ import {
     X, 
     Layers, 
     Sparkles, 
+    Zap,
     ExternalLink 
 } from 'lucide-react';
 import { SortableLinkList } from './common/SortableLinkList';
-import { rectSortingStrategy } from '@dnd-kit/sortable';
+import { rectSortingStrategy, horizontalListSortingStrategy } from '@dnd-kit/sortable';
 import { toast } from 'sonner';
 import { getInternalTabForLink } from '../utils/appLinkUtils';
+import { recordQuickAccessClick } from '../utils/quickAccessUtils';
 
-// Card individual de cada herramienta/acceso directo
+// Card de Acceso Rápido para la hilera superior
+const QuickAccessCard: React.FC<{
+    item: LinkItem;
+    isEditing: boolean;
+    onEdit: (item: LinkItem) => void;
+    onDelete: (id: string) => void;
+    onClick: (id: string) => void;
+    onSelectInternalTab?: (tabId: string) => void;
+}> = ({ item, isEditing, onEdit, onDelete, onClick, onSelectInternalTab }) => {
+    const internalTabId = getInternalTabForLink(item);
+
+    const handleClick = (e: React.MouseEvent) => {
+        if (isEditing) {
+            e.preventDefault();
+            return;
+        }
+        onClick(item.id);
+
+        if (internalTabId && onSelectInternalTab) {
+            e.preventDefault();
+            onSelectInternalTab(internalTabId);
+            return;
+        }
+
+        if (item.id === 'qa-renders-remb' || (item.name || '').toLowerCase().includes('renders remb')) {
+            const localPath = "C:\\Users\\rblanco\\OneDrive - Servicios Administrativos Javer, S.A. DE C.V\\Renders Remb";
+            try {
+                if (navigator.clipboard && navigator.clipboard.writeText) {
+                    navigator.clipboard.writeText(localPath);
+                    toast.success("Abriendo Renders Remb... ¡Ruta local copiada al portapapeles!");
+                }
+            } catch (err) {}
+        }
+    };
+
+    return (
+        <div className="relative group shrink-0">
+            <a
+                href={item.href}
+                target={internalTabId ? undefined : "_blank"}
+                rel="noopener noreferrer"
+                onClick={handleClick}
+                className={`flex items-center gap-2.5 px-3 py-2 rounded-xl transition-all duration-200 bg-white/[0.03] hover:bg-white/[0.09] border border-white/[0.06] hover:border-emerald-400/40 hover:shadow-[0_0_18px_rgba(16,185,129,0.3)] hover:-translate-y-0.5 group shrink-0 backdrop-blur-sm ${item.colorClass || ''} ${isEditing ? 'opacity-60 cursor-default' : ''}`}
+            >
+                <div 
+                    className="w-6 h-6 shrink-0 flex items-center justify-center transition-transform duration-200 group-hover:scale-110 drop-shadow [&>svg]:w-full [&>svg]:h-full"
+                    style={{
+                        filter: item.outlineColor && item.outlineWidth ? `drop-shadow(0 0 ${item.outlineWidth}px ${item.outlineColor})` : undefined
+                    }}
+                    dangerouslySetInnerHTML={{ __html: item.iconSvg }}
+                />
+                <span className="font-semibold text-xs text-gray-200 group-hover:text-white truncate whitespace-nowrap tracking-tight">
+                    {item.name}
+                </span>
+
+                {typeof item.clickCount === 'number' && item.clickCount > 0 && (
+                    <span 
+                        className="text-[10px] font-mono font-bold px-1.5 py-0.5 rounded-full bg-white/[0.06] text-gray-400 group-hover:text-emerald-300 group-hover:bg-emerald-500/15 border border-white/5 shrink-0 shadow-sm"
+                        title={`Usado ${item.clickCount} ${item.clickCount === 1 ? 'vez' : 'veces'}`}
+                    >
+                        {item.clickCount}
+                    </span>
+                )}
+            </a>
+
+            {isEditing && (
+                <div className="absolute top-1 right-1 flex gap-0.5 z-10 opacity-0 group-hover:opacity-100 transition-opacity">
+                    <button 
+                        onPointerDown={(e) => e.stopPropagation()}
+                        onClick={(e) => { e.stopPropagation(); e.preventDefault(); onEdit(item); }}
+                        className="p-1 bg-blue-600 rounded-full text-white hover:bg-blue-500 shadow-md"
+                        title="Editar"
+                    >
+                        <Edit size={10} />
+                    </button>
+                    <button 
+                        onPointerDown={(e) => e.stopPropagation()}
+                        onClick={(e) => { e.stopPropagation(); e.preventDefault(); onDelete(item.id); }}
+                        className="p-1 bg-red-600 rounded-full text-white hover:bg-red-500 shadow-md"
+                        title="Eliminar"
+                    >
+                        <Trash2 size={10} />
+                    </button>
+                </div>
+            )}
+        </div>
+    );
+};
+
+// Card de IA con estilo, iconos y brillos de barra lateral
+const IaToolCard: React.FC<{ 
+    item: LinkItem; 
+    isEditing: boolean;
+    onEdit: (item: LinkItem) => void;
+    onDelete: (id: string) => void;
+}> = ({ item, isEditing, onEdit, onDelete }) => {
+    const nameLower = (item.name || '').toLowerCase();
+    
+    // Asignación de brillos y bordes de marca idénticos a barra lateral
+    let brandGlow = 'hover:border-purple-400/80 hover:shadow-[0_0_24px_rgba(168,85,247,0.45)]';
+    let iconDropGlow = 'drop-shadow(0 0 8px rgba(168,85,247,0.8))';
+
+    if (nameLower.includes('grok')) {
+        brandGlow = 'hover:border-white/60 hover:shadow-[0_0_24px_rgba(255,255,255,0.35)]';
+        iconDropGlow = 'drop-shadow(0 0 6px rgba(255,255,255,0.7))';
+    } else if (nameLower.includes('deepseek')) {
+        brandGlow = 'hover:border-blue-400/80 hover:shadow-[0_0_24px_rgba(59,130,246,0.5)]';
+        iconDropGlow = 'drop-shadow(0 0 8px rgba(59,130,246,0.85))';
+    } else if (nameLower.includes('meta')) {
+        brandGlow = 'hover:border-indigo-400/80 hover:shadow-[0_0_24px_rgba(99,102,241,0.45)]';
+        iconDropGlow = 'drop-shadow(0 0 8px rgba(99,102,241,0.8))';
+    }
+
+    return (
+        <div className="relative group w-full">
+            <a 
+                href={item.href} 
+                target="_blank" 
+                rel="noopener noreferrer" 
+                onClick={(e) => {
+                    if (isEditing) e.preventDefault();
+                }}
+                className={`flex items-center gap-3.5 px-4 py-3 rounded-2xl transition-all duration-300 bg-gradient-to-r from-gray-900/90 via-gray-850/80 to-gray-900/90 hover:from-gray-800/95 hover:to-gray-850/95 border border-white/[0.08] backdrop-blur-md shadow-lg hover:-translate-y-1 group w-full ${brandGlow} ${isEditing ? 'opacity-60 pointer-events-none' : ''}`}
+            >
+                {/* Icono con brillo de neón */}
+                <div 
+                    className="w-8 h-8 sm:w-9 sm:h-9 flex-shrink-0 flex items-center justify-center transition-transform duration-300 group-hover:scale-115 [&>svg]:w-full [&>svg]:h-full" 
+                    style={{
+                        filter: iconDropGlow
+                    }}
+                    dangerouslySetInnerHTML={{ __html: item.iconSvg }} 
+                />
+                
+                {/* Nombre y descripción */}
+                <div className="flex-1 min-w-0 text-left">
+                    <h3 className="font-extrabold text-sm sm:text-base text-white tracking-wide truncate">
+                        {item.name}
+                    </h3>
+                    {item.description && (
+                        <p className="text-[11px] text-gray-400 group-hover:text-gray-300 truncate mt-0.5">
+                            {item.description}
+                        </p>
+                    )}
+                </div>
+
+                {/* Flecha indicadora externa */}
+                <ExternalLink size={14} className="text-gray-500 group-hover:text-white transition-colors shrink-0 opacity-70 group-hover:opacity-100" />
+            </a>
+
+            {/* Acciones en modo edición */}
+            {isEditing && (
+                <div className="absolute top-2 right-2 flex gap-1 z-20">
+                    <button 
+                        onPointerDown={(e) => e.stopPropagation()}
+                        onMouseDown={(e) => e.stopPropagation()}
+                        onClick={(e) => { e.preventDefault(); e.stopPropagation(); onEdit(item); }}
+                        className="p-1 bg-blue-600 rounded-full text-white hover:bg-blue-500 shadow-md"
+                        title="Editar"
+                    >
+                        <Edit size={11} />
+                    </button>
+                    <button 
+                        onPointerDown={(e) => e.stopPropagation()}
+                        onMouseDown={(e) => e.stopPropagation()}
+                        onClick={(e) => { e.preventDefault(); e.stopPropagation(); onDelete(item.id); }}
+                        className="p-1 bg-red-600 rounded-full text-white hover:bg-red-500 shadow-md"
+                        title="Eliminar"
+                    >
+                        <Trash2 size={11} />
+                    </button>
+                </div>
+            )}
+        </div>
+    );
+};
+
+// Card individual estándar de herramienta
 const ToolCard: React.FC<{ 
     item: LinkItem; 
     isEditing: boolean;
@@ -47,7 +225,6 @@ const ToolCard: React.FC<{
                 }}
                 className={`group relative flex flex-col items-center justify-center p-2.5 sm:p-3 bg-gradient-to-b from-gray-800/85 via-gray-850/90 to-gray-900/95 hover:from-gray-750/95 hover:to-gray-850 rounded-2xl transition-all duration-200 border border-white/[0.08] hover:border-white/30 hover:shadow-[0_8px_24px_rgba(0,0,0,0.5)] hover:-translate-y-1 w-full h-full backdrop-blur-sm ${item.colorClass || ''} ${isEditing ? 'opacity-60 pointer-events-none' : ''}`}
             >
-                {/* Icono de la herramienta */}
                 <div 
                     className="w-7 h-7 sm:w-8 sm:h-8 mb-1.5 transform transition-transform group-hover:scale-115 duration-200 flex items-center justify-center [&>svg]:w-full [&>svg]:h-full flex-shrink-0 filter drop-shadow-md" 
                     style={{
@@ -56,12 +233,10 @@ const ToolCard: React.FC<{
                     dangerouslySetInnerHTML={{ __html: item.iconSvg }} 
                 />
                 
-                {/* Nombre de la herramienta */}
                 <h3 className="text-[10.5px] sm:text-[11.5px] font-semibold text-gray-200 group-hover:text-white text-center leading-tight truncate w-full px-0.5">
                     {item.name}
                 </h3>
                 
-                {/* Descripción breve si existe */}
                 {item.description && (
                     <p className="text-[8.5px] sm:text-[9.5px] text-gray-400 group-hover:text-gray-300 text-center line-clamp-1 w-full mt-0.5 px-0.5 font-normal">
                         {item.description}
@@ -69,7 +244,6 @@ const ToolCard: React.FC<{
                 )}
             </a>
 
-            {/* Botones de acción en modo edición */}
             <div className="absolute top-1 right-1 flex gap-0.5 z-10 opacity-0 group-hover:opacity-100 transition-opacity">
                 <button 
                     onPointerDown={(e) => e.stopPropagation()}
@@ -94,7 +268,7 @@ const ToolCard: React.FC<{
     );
 };
 
-// Cuadro principal de categoría con Icono Grande ("cuadro con el icono grande y que si le pico se despliege")
+// Cuadro principal de categoría con Icono Grande
 interface CategoryBoxProps {
     section: {
         id: string;
@@ -129,10 +303,8 @@ const CategoryBox: React.FC<CategoryBoxProps> = ({
                     : 'bg-gradient-to-b from-gray-900/80 via-gray-850/70 to-gray-950/85 hover:from-gray-800/90 hover:to-gray-900/95 border border-white/[0.09] hover:border-white/35 hover:shadow-xl hover:-translate-y-1'
             }`}
         >
-            {/* Halo sutil de fondo según gradiente de categoría */}
             <div className={`absolute -inset-1 opacity-15 group-hover:opacity-30 blur-xl bg-gradient-to-r ${section.gradient || 'from-blue-500 to-indigo-600'} transition-opacity pointer-events-none`} />
 
-            {/* Indicador de edición */}
             {isEditing && (
                 <div 
                     onClick={(e) => e.stopPropagation()} 
@@ -162,7 +334,6 @@ const CategoryBox: React.FC<CategoryBoxProps> = ({
                 </div>
             )}
 
-            {/* Icono Grande */}
             <div className="relative w-14 h-14 sm:w-16 sm:h-16 flex items-center justify-center p-2.5 rounded-2xl bg-white/[0.06] border border-white/10 group-hover:border-white/25 group-hover:bg-white/[0.1] transition-all duration-300 group-hover:scale-110 shadow-inner drop-shadow-lg [&>svg]:w-full [&>svg]:h-full">
                 <div 
                     className="w-full h-full flex items-center justify-center"
@@ -170,14 +341,12 @@ const CategoryBox: React.FC<CategoryBoxProps> = ({
                 />
             </div>
 
-            {/* Título de la categoría */}
             <div className="mt-3 text-center w-full min-w-0">
                 <h3 className={`text-xs sm:text-sm font-extrabold tracking-wide text-transparent bg-clip-text bg-gradient-to-r ${section.gradient || 'from-white to-gray-300'} truncate w-full px-1`}>
                     {section.title}
                 </h3>
             </div>
 
-            {/* Fila inferior: Contador y estado de despliegue */}
             <div className="mt-2.5 flex items-center justify-between w-full pt-2 border-t border-white/[0.06] text-[10px] text-gray-300">
                 <span className="font-mono font-semibold px-2 py-0.5 rounded-full bg-white/[0.06] border border-white/10">
                     {section.items.length} {section.items.length === 1 ? 'herramienta' : 'herramientas'}
@@ -192,7 +361,7 @@ const CategoryBox: React.FC<CategoryBoxProps> = ({
     );
 };
 
-// Panel desplegado para mostrar las herramientas de la categoría seleccionada
+// Panel desplegado para mostrar las herramientas
 interface ExpandedSectionPanelProps {
     section: {
         id: string;
@@ -224,9 +393,10 @@ const ExpandedSectionPanel: React.FC<ExpandedSectionPanelProps> = ({
     onReorder,
     onSelectInternalTab,
 }) => {
+    const isIaCategory = section.id === 'ut-8' || section.title.toLowerCase() === 'ias';
+
     return (
         <div className="w-full bg-gradient-to-b from-gray-900/90 via-gray-900/80 to-gray-950/95 border-2 border-white/20 rounded-3xl p-4 sm:p-5 shadow-2xl backdrop-blur-xl transition-all duration-300 animate-in fade-in-50 zoom-in-95">
-            {/* Encabezado del panel desplegado */}
             <div className="flex items-center justify-between pb-3.5 mb-4 border-b border-white/10">
                 <div className="flex items-center gap-3 overflow-hidden min-w-0">
                     <div 
@@ -243,7 +413,9 @@ const ExpandedSectionPanel: React.FC<ExpandedSectionPanelProps> = ({
                             </span>
                         </div>
                         <p className="text-[11px] text-gray-400 truncate">
-                            Haz clic en cualquier herramienta para abrirla en una pestaña nueva o interna.
+                            {isIaCategory 
+                                ? 'Modelos de Inteligencia Artificial con acceso rápido directo.' 
+                                : 'Haz clic en cualquier herramienta para abrirla en una pestaña nueva o interna.'}
                         </p>
                     </div>
                 </div>
@@ -276,7 +448,6 @@ const ExpandedSectionPanel: React.FC<ExpandedSectionPanelProps> = ({
                         </div>
                     )}
 
-                    {/* Botón para contraer/cerrar */}
                     <button
                         onClick={onClose}
                         className="flex items-center gap-1 text-xs font-medium text-gray-300 hover:text-white px-3 py-1.5 rounded-xl bg-white/[0.06] hover:bg-white/[0.12] border border-white/10 transition-all hover:scale-105 active:scale-95"
@@ -288,7 +459,6 @@ const ExpandedSectionPanel: React.FC<ExpandedSectionPanelProps> = ({
                 </div>
             </div>
 
-            {/* Cuadrícula de accesos directos / herramientas */}
             {section.items.length > 0 ? (
                 <SortableLinkList 
                     id={`usefulTools.${idx}`}
@@ -296,17 +466,29 @@ const ExpandedSectionPanel: React.FC<ExpandedSectionPanelProps> = ({
                     isEditing={isEditing}
                     onReorder={(newItems) => onReorder(section.id, newItems)}
                     strategy={rectSortingStrategy}
-                    className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-6 xl:grid-cols-7 2xl:grid-cols-8 gap-2.5 sm:gap-3 w-full"
+                    className={isIaCategory 
+                        ? "grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3 w-full" 
+                        : "grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-6 xl:grid-cols-7 2xl:grid-cols-8 gap-2.5 sm:gap-3 w-full"}
                     itemClassName="w-full h-full"
                     renderItem={(tool) => (
-                        <ToolCard 
-                            key={tool.id} 
-                            item={tool} 
-                            isEditing={isEditing}
-                            onSelectInternalTab={onSelectInternalTab}
-                            onEdit={(i) => onOpenModal(section.id, i)}
-                            onDelete={(id) => onDeleteLink(id, section.id)}
-                        />
+                        isIaCategory ? (
+                            <IaToolCard 
+                                key={tool.id} 
+                                item={tool} 
+                                isEditing={isEditing}
+                                onEdit={(i) => onOpenModal(section.id, i)}
+                                onDelete={(id) => onDeleteLink(id, section.id)}
+                            />
+                        ) : (
+                            <ToolCard 
+                                key={tool.id} 
+                                item={tool} 
+                                isEditing={isEditing}
+                                onSelectInternalTab={onSelectInternalTab}
+                                onEdit={(i) => onOpenModal(section.id, i)}
+                                onDelete={(id) => onDeleteLink(id, section.id)}
+                            />
+                        )
                     )}
                 />
             ) : (
@@ -333,14 +515,38 @@ export const UsefulTools: React.FC = () => {
     const [currentLink, setCurrentLink] = useState<LinkItem | null>(null);
     const [activeSectionId, setActiveSectionId] = useState<string | null>(null);
     
-    // Categoría actualmente desplegada (o null si todas están contraídas)
     const [expandedCategoryId, setExpandedCategoryId] = useState<string | null>(null);
-    
-    // Modo de vista: 'boxes' (cuadros desplegables individuales) o 'all' (todas abiertas)
     const [viewMode, setViewMode] = useState<'boxes' | 'all'>('boxes');
-    
-    // Filtro de búsqueda rápida
     const [searchQuery, setSearchQuery] = useState('');
+
+    // Lista de Accesos Rápidos
+    const quickAccessList = useMemo(() => {
+        return config.aiSidebar?.quickAccess || [];
+    }, [config.aiSidebar?.quickAccess]);
+
+    const handleQuickAccessClick = (id: string) => {
+        updateConfig((prev) => {
+            const currentList = prev.aiSidebar?.quickAccess || [];
+            const sorted = recordQuickAccessClick(currentList, id);
+            return {
+                ...prev,
+                aiSidebar: {
+                    ...prev.aiSidebar,
+                    quickAccess: sorted
+                }
+            };
+        });
+    };
+
+    const handleDeleteQuickAccess = (id: string) => {
+        updateConfig((prev) => ({
+            ...prev,
+            aiSidebar: {
+                ...prev.aiSidebar,
+                quickAccess: (prev.aiSidebar?.quickAccess || []).filter(item => item.id !== id)
+            }
+        }));
+    };
 
     const handleSaveLink = (item: LinkItem, targetSection?: string) => {
         updateConfig((prev) => {
@@ -348,35 +554,39 @@ export const UsefulTools: React.FC = () => {
             
             const currentSectionIndex = newConfig.usefulTools.findIndex((s: any) => s.id === activeSectionId);
             const currentSecPath = currentSectionIndex !== -1 ? `usefulTools.${currentSectionIndex}` : null;
-            const finalTarget = targetSection || currentSecPath || 'linksBar';
+            const finalTarget = targetSection || (activeSectionId === 'quickAccess' ? 'aiSidebar.quickAccess' : currentSecPath) || 'linksBar';
             
             let isNew = false;
             let targetName = '';
 
-            if (currentSecPath && finalTarget !== currentSecPath) {
-                newConfig.usefulTools[currentSectionIndex].items = newConfig.usefulTools[currentSectionIndex].items.filter((l: LinkItem) => l.id !== item.id);
-            }
-            
-            if (finalTarget === 'linksBar') {
-                targetName = 'Barra Central';
-                const idx = newConfig.linksBar.findIndex((l: any) => l.id === item.id);
-                if (idx !== -1) newConfig.linksBar[idx] = item;
-                else { newConfig.linksBar.push({ ...item, id: item.id || `link-${Date.now()}` }); isNew = true; }
-            } else if (finalTarget === 'googleDock') {
-                targetName = 'Google Dock';
-                const idx = newConfig.googleDock.findIndex((l: any) => l.id === item.id);
-                if (idx !== -1) newConfig.googleDock[idx] = item;
-                else { newConfig.googleDock.push({ ...item, id: item.id || `gd-${Date.now()}` }); isNew = true; }
-            } else if (finalTarget.startsWith('usefulTools.')) {
-                const idx = parseInt(finalTarget.split('.')[1]);
-                if (newConfig.usefulTools[idx]) {
-                    targetName = newConfig.usefulTools[idx].title;
-                    const itemIdx = newConfig.usefulTools[idx].items.findIndex((l: any) => l.id === item.id);
-                    if (itemIdx !== -1) {
-                        newConfig.usefulTools[idx].items[itemIdx] = item;
-                    } else {
-                        newConfig.usefulTools[idx].items.push({ ...item, id: item.id || `ut-item-${Date.now()}` }); 
-                        isNew = true; 
+            if (finalTarget === 'aiSidebar.quickAccess') {
+                targetName = 'Accesos Rápidos';
+                if (!newConfig.aiSidebar) newConfig.aiSidebar = { models: [], quickAccess: [] };
+                if (!newConfig.aiSidebar.quickAccess) newConfig.aiSidebar.quickAccess = [];
+                const idx = newConfig.aiSidebar.quickAccess.findIndex((l: any) => l.id === item.id);
+                if (idx !== -1) newConfig.aiSidebar.quickAccess[idx] = item;
+                else { newConfig.aiSidebar.quickAccess.push({ ...item, id: item.id || `qa-${Date.now()}` }); isNew = true; }
+            } else {
+                if (currentSecPath && finalTarget !== currentSecPath) {
+                    newConfig.usefulTools[currentSectionIndex].items = newConfig.usefulTools[currentSectionIndex].items.filter((l: LinkItem) => l.id !== item.id);
+                }
+                
+                if (finalTarget === 'linksBar') {
+                    targetName = 'Barra Central';
+                    const idx = newConfig.linksBar.findIndex((l: any) => l.id === item.id);
+                    if (idx !== -1) newConfig.linksBar[idx] = item;
+                    else { newConfig.linksBar.push({ ...item, id: item.id || `link-${Date.now()}` }); isNew = true; }
+                } else if (finalTarget.startsWith('usefulTools.')) {
+                    const idx = parseInt(finalTarget.split('.')[1]);
+                    if (newConfig.usefulTools[idx]) {
+                        targetName = newConfig.usefulTools[idx].title;
+                        const itemIdx = newConfig.usefulTools[idx].items.findIndex((l: any) => l.id === item.id);
+                        if (itemIdx !== -1) {
+                            newConfig.usefulTools[idx].items[itemIdx] = item;
+                        } else {
+                            newConfig.usefulTools[idx].items.push({ ...item, id: item.id || `ut-item-${Date.now()}` }); 
+                            isNew = true; 
+                        }
                     }
                 }
             }
@@ -468,12 +678,10 @@ export const UsefulTools: React.FC = () => {
         }));
     };
 
-    // Alternar el despliegue de una categoría al hacer clic en su cuadro
     const handleToggleCategory = (sectionId: string) => {
         setExpandedCategoryId(prev => prev === sectionId ? null : sectionId);
     };
 
-    // Sección actualmente expandida
     const expandedSection = useMemo(() => {
         if (!expandedCategoryId) return null;
         return config.usefulTools.find(s => s.id === expandedCategoryId) || null;
@@ -484,7 +692,6 @@ export const UsefulTools: React.FC = () => {
         return config.usefulTools.findIndex(s => s.id === expandedCategoryId);
     }, [config.usefulTools, expandedCategoryId]);
 
-    // Filtrado en búsqueda rápida
     const searchResults = useMemo(() => {
         const q = searchQuery.toLowerCase().trim();
         if (!q) return null;
@@ -504,13 +711,14 @@ export const UsefulTools: React.FC = () => {
     }, [config.usefulTools, searchQuery]);
 
     const sectionIndex = config.usefulTools.findIndex(s => s.id === activeSectionId);
-    const modalCurrentSection = sectionIndex !== -1 ? `usefulTools.${sectionIndex}` : undefined;
+    const modalCurrentSection = activeSectionId === 'quickAccess' 
+        ? 'aiSidebar.quickAccess' 
+        : (sectionIndex !== -1 ? `usefulTools.${sectionIndex}` : undefined);
 
     return (
         <div className="w-full px-2 py-3 sm:px-4 sm:py-4 overflow-y-auto min-h-full">
             {/* Barra superior de control y búsqueda */}
-            <div className="flex flex-col sm:flex-row items-center justify-between gap-2.5 mb-4 pb-3 border-b border-white/[0.08]">
-                {/* Título de la pestaña / descripción */}
+            <div className="flex flex-col sm:flex-row items-center justify-between gap-2.5 mb-3.5 pb-3 border-b border-white/[0.08]">
                 <div className="flex items-center gap-2 w-full sm:w-auto">
                     <div className="p-2 bg-gradient-to-br from-indigo-500/20 to-purple-500/20 border border-white/10 rounded-xl text-indigo-400">
                         <Sparkles size={18} />
@@ -528,9 +736,7 @@ export const UsefulTools: React.FC = () => {
                     </div>
                 </div>
 
-                {/* Acciones: Búsqueda rápida, toggle de vista, y nueva sección */}
                 <div className="flex items-center gap-2 w-full sm:w-auto justify-end">
-                    {/* Input de búsqueda */}
                     <div className="relative w-full sm:w-56">
                         <Search size={14} className="absolute left-2.5 top-1/2 -translate-y-1/2 text-gray-400" />
                         <input
@@ -550,7 +756,6 @@ export const UsefulTools: React.FC = () => {
                         )}
                     </div>
 
-                    {/* Botón para alternar Ver Todas / Vista Cuadros */}
                     <button
                         onClick={() => setViewMode(prev => prev === 'boxes' ? 'all' : 'boxes')}
                         className={`flex items-center gap-1.5 px-3 py-1.5 text-xs font-semibold rounded-xl border transition-all ${
@@ -576,7 +781,71 @@ export const UsefulTools: React.FC = () => {
                 </div>
             </div>
 
-            {/* Vista de Resultados de Búsqueda si hay query */}
+            {/* HILERA DE ACCESOS RÁPIDOS ARRIBA DE HERRAMIENTAS */}
+            <div className="mb-4 bg-gradient-to-r from-gray-950/90 via-gray-900/85 to-gray-950/90 border border-white/10 rounded-2xl p-3 shadow-xl backdrop-blur-xl">
+                <div className="flex items-center justify-between mb-2 px-1">
+                    <div className="flex items-center gap-2">
+                        <span className="w-2 h-2 rounded-full bg-emerald-400 animate-pulse shadow-[0_0_8px_rgba(52,211,153,0.8)]" />
+                        <h2 className="text-xs font-black uppercase tracking-widest text-transparent bg-clip-text bg-gradient-to-r from-emerald-400 via-teal-300 to-cyan-400 flex items-center gap-1.5">
+                            <Zap size={13} className="text-emerald-400" />
+                            <span>Accesos Rápidos</span>
+                        </h2>
+                    </div>
+
+                    <div className="flex items-center gap-2">
+                        <span className="text-[10px] text-gray-400 font-mono">
+                            {quickAccessList.length} accesos directos
+                        </span>
+                        {isEditing && (
+                            <button
+                                onClick={() => openModal('quickAccess')}
+                                className="flex items-center gap-1 text-[11px] font-semibold text-emerald-400 hover:text-emerald-300 px-2 py-1 rounded-lg bg-emerald-500/10 hover:bg-emerald-500/20 border border-emerald-500/30 transition-colors"
+                                title="Agregar acceso rápido"
+                            >
+                                <Plus size={12} />
+                                <span>Agregar</span>
+                            </button>
+                        )}
+                    </div>
+                </div>
+
+                {quickAccessList.length > 0 ? (
+                    <div className="w-full overflow-x-auto scrollbar-none py-1 px-0.5">
+                        <SortableLinkList
+                            id="aiSidebar.quickAccess"
+                            items={quickAccessList}
+                            isEditing={isEditing}
+                            onReorder={(newItems) => updateConfig(prev => ({
+                                ...prev,
+                                aiSidebar: {
+                                    ...(prev.aiSidebar || { models: [] }),
+                                    quickAccess: newItems
+                                }
+                            }))}
+                            strategy={horizontalListSortingStrategy}
+                            className="flex items-center gap-2.5 min-w-max"
+                            itemClassName="shrink-0"
+                            renderItem={(qaItem) => (
+                                <QuickAccessCard
+                                    key={qaItem.id}
+                                    item={qaItem}
+                                    isEditing={isEditing}
+                                    onSelectInternalTab={setActiveTabId}
+                                    onClick={handleQuickAccessClick}
+                                    onEdit={(i) => openModal('quickAccess', i)}
+                                    onDelete={handleDeleteQuickAccess}
+                                />
+                            )}
+                        />
+                    </div>
+                ) : (
+                    <p className="text-xs text-gray-500 italic py-2 text-center">
+                        No hay accesos rápidos configurados.
+                    </p>
+                )}
+            </div>
+
+            {/* Resultados de Búsqueda si hay query */}
             {searchResults && (
                 <div className="mb-6 bg-gray-900/90 border border-indigo-500/30 rounded-2xl p-4 shadow-xl backdrop-blur-md">
                     <div className="flex items-center justify-between pb-2 mb-3 border-b border-white/10">
@@ -613,7 +882,7 @@ export const UsefulTools: React.FC = () => {
                 </div>
             )}
 
-            {/* GRILLA DE CUADROS CON ICONOS GRANDES (Los 8 principales) */}
+            {/* GRILLA DE CUADROS CON ICONOS GRANDES (Las 8 principales) */}
             <div className="mb-5">
                 <div className="grid grid-cols-2 sm:grid-cols-4 lg:grid-cols-4 xl:grid-cols-8 gap-2.5 sm:gap-3 w-full">
                     {config.usefulTools.map((section) => (
@@ -631,10 +900,7 @@ export const UsefulTools: React.FC = () => {
                 </div>
             </div>
 
-            {/* ÁREA DESPLEGABLE:
-                Si viewMode es 'boxes': Muestra el panel desplegado de la categoría seleccionada.
-                Si viewMode es 'all': Muestra todas las categorías desplegadas una tras otra.
-            */}
+            {/* ÁREA DESPLEGABLE */}
             {viewMode === 'boxes' && expandedSection && (
                 <div className="mt-4 pb-8">
                     <ExpandedSectionPanel

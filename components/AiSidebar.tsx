@@ -359,7 +359,8 @@ const AiSidebar: React.FC<AiSidebarProps> = ({ isOpen }) => {
         const isGem = name.includes('gemini') || href.includes('gemini.google.com') || m.id === 'ai-gemini' || m.id === 'gd-1' || m.id === geminiItem.id;
         const isGpt = name.includes('chatgpt') || href.includes('chatgpt.com') || m.id === 'ai-1' || m.id === chatGptItem.id;
         const isCld = name.includes('claude') || href.includes('claude.ai') || m.id === 'ai-5' || m.id === claudeItem.id;
-        return !isGem && !isGpt && !isCld;
+        const isMovedToTools = name.includes('qwen') || name.includes('grok') || name.includes('deepseek') || name.includes('meta ai') || href.includes('qwen.ai') || href.includes('grok.com') || href.includes('deepseek.com') || href.includes('meta.ai');
+        return !isGem && !isGpt && !isCld && !isMovedToTools;
     });
 
     return (
