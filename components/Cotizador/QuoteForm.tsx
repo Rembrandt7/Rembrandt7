@@ -9,8 +9,16 @@ import {
   listStorageFiles, 
   getPublicUrl,
   uploadDefaultConfigsToCloud,
-  fetchDefaultConfigsFromCloud
+  fetchDefaultConfigsFromCloud,
+  saveInicioFacturaToCloud,
+  saveInicioFacturaBackupToCloud,
+  fetchInicioFacturaBackupFromCloud,
+  getFolioCounterFromCloud,
+  saveFolioCounterToCloud,
+  getHighestFolioFromCloud,
+  saveInvoiceToCloud
 } from './services/supabaseService';
+import { RotateCcw, Camera } from 'lucide-react';
 import LoadingSpinner from './LoadingSpinner';
 import DefaultConfigsModal from './DefaultConfigsModal';
 import { SavedInvoicesModal } from './SavedInvoicesModal';
@@ -231,12 +239,143 @@ const QuoteForm: React.FC<QuoteFormProps> = ({ onGenerateQuote, initialDetails }
   const [showCalculator, setShowCalculator] = useState(false);
   const [calcDisplay, setCalcDisplay] = useState('');
 
+  // Folio Consecutivo (5 dígitos, empieza en 01000 y nunca se repite)
+  const [currentFolio, setCurrentFolio] = useState<string>(() => {
+    try {
+      const saved = localStorage.getItem('rembrandt_quote_folio_counter');
+      if (saved) {
+        const num = parseInt(saved, 10);
+        if (!isNaN(num)) return String(num).padStart(5, '0');
+      }
+    } catch {}
+    return '01000';
+  });
+
+  const pdfInvoiceInputRef = useRef<HTMLInputElement>(null);
+
+  useEffect(() => {
+    getHighestFolioFromCloud().then(nextFolioNum => {
+      if (nextFolioNum && nextFolioNum >= 1000) {
+        const folioStr = String(nextFolioNum).padStart(5, '0');
+        setCurrentFolio(folioStr);
+        localStorage.setItem('rembrandt_quote_folio_counter', nextFolioNum.toString());
+      }
+    });
+  }, []);
+
+  const handleUploadPdfInvoice = async (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+
+    try {
+      const arrayBuffer = await file.arrayBuffer();
+      const decoder = new TextDecoder('latin1');
+      const rawText = decoder.decode(arrayBuffer);
+
+      let parsedDetails: Partial<QuoteDetails> | null = null;
+
+      // 1. Metadatos incrustados en /Keywords
+      const keywordsMatch = rawText.match(/\/Keywords\s*\((.*?)\)/s);
+      if (keywordsMatch && keywordsMatch[1]) {
+        try {
+          const unescaped = keywordsMatch[1]
+            .replace(/\\([()\\])/g, '$1')
+            .replace(/\\r/g, '\r')
+            .replace(/\\n/g, '\n');
+          parsedDetails = JSON.parse(unescaped);
+        } catch (err) {
+          console.warn("No se pudo parsear JSON de /Keywords:", err);
+        }
+      }
+
+      // 2. Metadatos en XMP
+      if (!parsedDetails) {
+        const xmpMatch = rawText.match(/<pdf:Keywords>(.*?)<\/pdf:Keywords>/s);
+        if (xmpMatch && xmpMatch[1]) {
+          try {
+            parsedDetails = JSON.parse(xmpMatch[1]);
+          } catch (e) {}
+        }
+      }
+
+      // 3. Extracción por texto visible
+      if (!parsedDetails) {
+        const folioMatch = rawText.match(/Folio:\s*(\d{5})/i);
+        const extractedFolio = folioMatch ? folioMatch[1] : undefined;
+
+        const projMatch = rawText.match(/Proyecto:\s*([^\n\r]+)/i);
+        const extractedProj = projMatch ? projMatch[1].trim() : file.name.replace(/\.pdf$/i, '');
+
+        const clientMatch = rawText.match(/Cliente:\s*([^\n\r]+)/i) || rawText.match(/Para:\s*([^\n\r]+)/i);
+        const extractedClient = clientMatch ? clientMatch[1].trim() : '';
+
+        parsedDetails = {
+          projectName: extractedProj,
+          recipientName: extractedClient,
+          folio: extractedFolio
+        };
+      }
+
+      if (parsedDetails) {
+        setDetails(prev => ({
+          ...prev,
+          ...parsedDetails,
+          folio: parsedDetails?.folio || prev.folio || currentFolio
+        }));
+        alert(`¡Factura PDF importada exitosamente! ${parsedDetails.folio ? `(Folio respetado: ${parsedDetails.folio})` : ''}`);
+      } else {
+        alert("No se pudieron extraer datos del PDF. Verifica el archivo.");
+      }
+    } catch (err: any) {
+      console.error("Error al leer PDF:", err);
+      alert("Error al procesar el archivo PDF: " + err.message);
+    } finally {
+      e.target.value = '';
+    }
+  };
+
+  const handleSaveBackupDayBefore = async () => {
+    try {
+      const ok = await saveInicioFacturaBackupToCloud(details);
+      if (ok) {
+        alert("¡Copia de seguridad 'Respaldo Día Anterior' guardada y sincronizada en Supabase con éxito!");
+      } else {
+        alert("Error al conectar con Supabase para respaldar.");
+      }
+    } catch (e: any) {
+      alert("Error: " + e.message);
+    }
+  };
+
+  const handleRestoreBackupDayBefore = async () => {
+    if (!confirm("¿Deseas restaurar el Respaldo del Día Anterior de Inicio Factura guardado en Supabase? Se reemplazarán los datos actuales en el editor.")) {
+      return;
+    }
+    try {
+      const backupData = await fetchInicioFacturaBackupFromCloud();
+      if (backupData) {
+        setDetails(prev => ({
+          ...prev,
+          ...backupData,
+          logoB64: backupData.logoB64 || prev.logoB64,
+          signatureB64: backupData.signatureB64 || prev.signatureB64
+        }));
+        alert("¡Respaldo del Día Anterior restaurado en el editor!");
+      } else {
+        alert("No se encontró ningún respaldo del día anterior en Supabase.");
+      }
+    } catch (e: any) {
+      alert("Error al restaurar respaldo: " + e.message);
+    }
+  };
+
   const [collapsedSections, setCollapsedSections] = useState({
     client: false,
     services: false,
     terms: false,
     branding: true,
-    fiscal: true
+    fiscal: true,
+    database: true
   });
   
   const [showDataManager, setShowDataManager] = useState(false);
@@ -806,17 +945,47 @@ const QuoteForm: React.FC<QuoteFormProps> = ({ onGenerateQuote, initialDetails }
       exportDataAsCsvFile(csvContent, "base_datos_cotizador.csv");
   };
 
-  const handleSaveQuote = () => {
+    const handleSaveQuote = async () => {
+    // Asignar folio consecutivo si no lo tiene
+    let folioToUse = details.folio;
+    if (!folioToUse) {
+      folioToUse = currentFolio;
+      setDetails(prev => ({ ...prev, folio: folioToUse }));
+    }
+
     const dataToSave = {
         version: 2,
         timestamp: new Date().toISOString(),
-        details: details,
+        details: { ...details, folio: folioToUse },
         library: library 
     };
-    const clean = (str: string) => str.replace(/[^a-z0-9áéíóúñÁÉÍÓÚÑ ]/gi, '').trim();
+    const clean = (str: string) => str.replace(/[^a-z0-9áéíóúñÁÉÍÓÚÑ \-_]/gi, '').trim();
     const p = clean(details.projectName) || 'Proyecto';
     const c = clean(details.recipientName) || 'Cliente';
-    downloadJSON(dataToSave, `Cotizacion Para ${p} de ${c}.json`);
+    const folOnly = (folioToUse || '01000').replace(/[^0-9]/g, '').padStart(5, '0');
+    downloadJSON(dataToSave, `${c} - ${p} - ${folOnly}.json`);
+
+    // Incrementar folio consecutivo (5 dígitos, empieza en 01000)
+    const nextNum = parseInt(folOnly, 10) + 1;
+    const nextStr = String(nextNum).padStart(5, '0');
+    setCurrentFolio(nextStr);
+    localStorage.setItem('rembrandt_quote_folio_counter', nextNum.toString());
+    saveFolioCounterToCloud(nextNum);
+
+    // Guardar también en Supabase de forma comprimida
+    try {
+      await saveInvoiceToCloud({
+        id: `fac_${Date.now()}`,
+        projectName: details.projectName || 'Proyecto sin título',
+        clientName: details.recipientName || 'Cliente',
+        date: details.invoiceDate || new Date().toISOString(),
+        total: Math.round(totals.total * 100) / 100,
+        data: { ...details, folio: folOnly },
+        updatedAt: new Date().toISOString()
+      });
+    } catch (e) {
+      console.warn("Auto-guardado en Supabase falló:", e);
+    }
   };
 
   const handleDbModalOpen = () => {
@@ -1019,6 +1188,16 @@ const QuoteForm: React.FC<QuoteFormProps> = ({ onGenerateQuote, initialDetails }
         setDetails(freshState);
         localStorage.removeItem(STORAGE_KEYS.DRAFT);
         setUseCustomDeliveryTime(false);
+
+        // Consultar el folio más alto registrado en facturas para la nueva cotización
+        getHighestFolioFromCloud().then(nextFolioNum => {
+          if (nextFolioNum && nextFolioNum >= 1000) {
+            const folioStr = String(nextFolioNum).padStart(5, '0');
+            setCurrentFolio(folioStr);
+            setDetails(p => ({ ...p, folio: folioStr }));
+            localStorage.setItem('rembrandt_quote_folio_counter', nextFolioNum.toString());
+          }
+        });
 
         if (activeProfile.signatureB64 && activeProfile.signatureB64.startsWith('http')) {
           fetchImageFromUrl(activeProfile.signatureB64)
@@ -1239,7 +1418,14 @@ const QuoteForm: React.FC<QuoteFormProps> = ({ onGenerateQuote, initialDetails }
       addToLibrary(details.recipientName, 'clients');
       extractWordsAndAdd(details.projectName, 'projects');
       details.activities.forEach(act => addToLibrary(act.name, 'activities'));
-      onGenerateQuote(details);
+      
+      const folioToUse = details.folio || currentFolio;
+      const finalDetails = {
+        ...details,
+        folio: folioToUse
+      };
+      setDetails(finalDetails);
+      onGenerateQuote(finalDetails);
     }
   };
 
@@ -1255,13 +1441,19 @@ const QuoteForm: React.FC<QuoteFormProps> = ({ onGenerateQuote, initialDetails }
 
   const handleLoadFromModal = (quoteData: QuoteDetails) => {
     setDetails(quoteData);
+    if (quoteData.folio) {
+      setCurrentFolio(quoteData.folio);
+    }
     localStorage.setItem(STORAGE_KEYS.DRAFT, JSON.stringify(quoteData));
-    setStyleToast({ message: "¡Factura cargada en el editor!", type: 'success' });
+    setStyleToast({ message: `¡Factura cargada en el editor! (Folio: ${quoteData.folio || '01000'})`, type: 'success' });
     setTimeout(() => setStyleToast(null), 3500);
   };
 
   const handlePreviewFromModal = (quoteData: QuoteDetails) => {
     setDetails(quoteData);
+    if (quoteData.folio) {
+      setCurrentFolio(quoteData.folio);
+    }
     onGenerateQuote(quoteData);
   };
 
@@ -1580,158 +1772,150 @@ const QuoteForm: React.FC<QuoteFormProps> = ({ onGenerateQuote, initialDetails }
 
         <form onSubmit={handleSubmit} className="flex flex-col w-full gap-4 sm:gap-6">
             {/* ========================================================================= */}
-            {/* BARRA SUPERIOR INTEGRADA HORIZONTAL (REEMPLAZA EL PANEL VERTICAL)         */}
-            {/* ========================================================================= */}
-            <div className="w-full bg-[#0d1527] border border-slate-800/90 rounded-2xl p-3 sm:p-4 shadow-xl backdrop-blur-md flex flex-col xl:flex-row items-stretch xl:items-center justify-between gap-3 sm:gap-4 sticky top-2 z-30">
+            {/* BARRA SUPERIOR INTEGRADA HORIZONTAL (UN SOLO RENGLÓN) */}
+            <div className="w-full bg-[#0d1527] border border-slate-800/90 rounded-2xl px-3 py-2 shadow-xl backdrop-blur-md flex flex-row items-center justify-between gap-2 overflow-x-auto no-scrollbar sticky top-2 z-30">
                 {/* 1. HERRAMIENTAS Y ACCIONES DEL EDITOR (HORIZONTAL) */}
-                <div className="flex-1 min-w-0 flex flex-col sm:flex-row items-start sm:items-center gap-2.5 sm:gap-3 flex-wrap">
-                    <div className="flex items-center gap-2 shrink-0 pr-2 sm:border-r border-slate-700/80">
-                        <div className="flex flex-col">
-                            <h2 className="text-xs font-bold text-slate-200 flex items-center gap-1.5 uppercase tracking-wider">
-                                <span className="w-2 h-2 rounded-full bg-emerald-400 animate-pulse shadow-[0_0_8px_rgba(52,211,153,0.8)]" />
-                                Editor
-                            </h2>
-                            <span className="text-[10px] text-emerald-400 font-mono">
-                                Auto-guardado
-                            </span>
-                        </div>
+                <div className="flex items-center gap-1.5 shrink-0">
+                    
+                    {/* INDICADOR COMPACTO: EDITOR */}
+                    <div className="flex items-center gap-1.5 px-2 py-1 bg-slate-900/90 rounded-lg border border-slate-800 text-xs shrink-0 select-none" title="Editor con auto-guardado activo">
+                        <span className="w-2 h-2 rounded-full bg-emerald-400 animate-pulse shadow-[0_0_8px_rgba(52,211,153,0.8)]" />
+                        <span className="font-bold text-slate-200 uppercase tracking-wider text-[11px]">Editor</span>
                     </div>
 
                     <input type="file" ref={fileInputRef} onChange={handleLoadJSON} accept=".json" className="hidden" />
+                    <input type="file" ref={pdfInvoiceInputRef} onChange={handleUploadPdfInvoice} accept=".pdf" className="hidden" />
 
-                    <div className="flex flex-wrap items-center gap-1.5">
-                        {/* CLOUD BUTTON */}
-                        <button 
-                            type="button" 
-                            onClick={() => setShowCloudModal(true)} 
-                            className={`flex items-center gap-1.5 text-xs px-2.5 py-1.5 rounded-lg font-semibold transition-all border shadow-sm cursor-pointer ${cloudConfig.isConnected ? 'bg-emerald-500/15 text-emerald-300 border-emerald-500/30 hover:bg-emerald-500/25' : 'bg-slate-800 text-slate-300 border-slate-700 hover:bg-slate-700'}`}
-                            title="Conectar a Nube (Supabase)"
-                        >
-                            {isSyncing ? (
-                                <LoadingSpinner /> 
-                            ) : (
-                                <svg xmlns="http://www.w3.org/2000/svg" className="h-3.5 w-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M3 15a4 4 0 004 4h9a5 5 0 10-.1-9.999 5.002 5.002 0 10-9.78 2.096A4.001 4.001 0 003 15z" /></svg>
-                            )}
-                            <span>{cloudConfig.isConnected ? 'Nube OK' : 'Nube'}</span>
-                        </button>
-
-                        {/* NUEVO: INICIO FACTURA (PLANTILLA BASE SUPABASE) */}
-                        <button 
-                            type="button" 
-                            onClick={() => setShowInicioFacturaModal(true)} 
-                            className="flex items-center gap-1 text-xs px-2.5 py-1.5 rounded-lg font-semibold bg-gradient-to-r from-amber-500/20 to-orange-500/20 hover:from-amber-500/30 hover:to-orange-500/30 text-amber-200 border border-amber-500/40 shadow-sm transition-all cursor-pointer"
-                            title="Plantilla Base 'Inicio Factura' guardada en Supabase"
-                        >
-                            <span>🏛️</span>
-                            <span>Inicio Factura</span>
-                        </button>
-
-                        {/* NUEVO: FACTURAS GUARDADAS EN SUPABASE */}
-                        <button 
-                            type="button" 
-                            onClick={() => setShowSavedInvoicesModal(true)} 
-                            className="flex items-center gap-1 text-xs px-2.5 py-1.5 rounded-lg font-semibold bg-blue-500/15 hover:bg-blue-500/25 text-blue-300 border border-blue-500/30 shadow-sm transition-all cursor-pointer"
-                            title="Abrir o modificar facturas guardadas en Supabase"
-                        >
-                            <span>📁</span>
-                            <span>Facturas</span>
-                        </button>
-
-                        {/* DATOS BUTTON */}
-                        <button type="button" onClick={() => setShowDataManager(true)} className="flex items-center gap-1 text-xs bg-indigo-500/15 text-indigo-300 hover:bg-indigo-500/25 font-semibold px-2.5 py-1.5 rounded-lg transition-colors border border-indigo-500/30 cursor-pointer" title="Administrar base de datos y catálogos">
-                            <span>📚</span>
-                            <span>Datos</span>
-                        </button>
-
-                        {/* GUARDAR ESTILO BUTTON */}
-                        <button 
-                            type="button" 
-                            onClick={handleOpenSaveStyleModal} 
-                            className="flex items-center gap-1 text-xs bg-teal-500/15 text-teal-300 hover:bg-teal-500/25 font-semibold px-2.5 py-1.5 rounded-lg transition-colors border border-teal-500/30 cursor-pointer"
-                            title="Guardar configuración actual como nuevo Estilo predeterminado"
-                        >
-                            <span>💾</span>
-                            <span>Guardar Estilo</span>
-                        </button>
-
-                        {/* ESTILOS BUTTON */}
+                    {/* BOTÓN DIVIDIDO EN 2: [ 🎨 Estilos | 💾 ] */}
+                    <div className="flex items-center rounded-lg border border-amber-500/40 bg-amber-500/10 overflow-hidden shrink-0 shadow-sm" title="Administrar y Guardar Estilos">
                         <button 
                             type="button" 
                             onClick={() => setShowDefaultConfigsModal(true)} 
-                            className="flex items-center gap-1 text-xs bg-amber-500/15 text-amber-300 hover:bg-amber-500/25 font-semibold px-2.5 py-1.5 rounded-lg transition-colors border border-amber-500/30 cursor-pointer"
+                            className="flex items-center gap-1 text-xs text-amber-300 hover:text-white hover:bg-amber-500/20 font-semibold px-2.5 py-1.5 transition-colors cursor-pointer"
                             title="Administrar Estilos, plantillas y respaldos"
                         >
                             <span>🎨</span>
                             <span>Estilos</span>
                         </button>
-                        
-                        {/* CARGAR BUTTON */}
-                        <button type="button" onClick={handleLoadJSONClick} className="flex items-center gap-1 text-xs bg-slate-800 text-slate-200 hover:bg-slate-700 font-semibold px-2.5 py-1.5 rounded-lg transition-colors border border-slate-700 cursor-pointer">
-                            <svg xmlns="http://www.w3.org/2000/svg" className="h-3.5 w-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-8l-4 4m0 0L8 8m4-4v12" /></svg>
-                            <span>Cargar</span>
-                        </button>
-                        
-                        {/* GUARDAR BUTTON */}
+                        <div className="w-px h-4 bg-amber-500/30" />
                         <button 
                             type="button" 
-                            onClick={handleSaveQuote} 
-                            disabled={!isFormValid} 
-                            className="flex items-center gap-1 text-xs bg-blue-600/20 text-blue-300 hover:bg-blue-600/30 font-semibold border border-blue-500/30 px-2.5 py-1.5 rounded-lg transition-colors disabled:opacity-40 cursor-pointer"
+                            onClick={async () => {
+                                handleOpenSaveStyleModal();
+                                try {
+                                    await saveInicioFacturaToCloud(details);
+                                } catch (e) {}
+                            }} 
+                            className="px-2 py-1.5 text-amber-300 hover:text-white hover:bg-amber-500/25 transition-colors cursor-pointer flex items-center justify-center"
+                            title="Guardar estilo actual como plantilla de Inicio Factura en Supabase"
                         >
-                            <svg xmlns="http://www.w3.org/2000/svg" className="h-3.5 w-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M8 7H5a2 2 0 00-2 2v9a2 2 0 002 2h14a2 2 0 002-2V9a2 2 0 00-2-2h-3m-1 4l-3 3m0 0l-3-3m3 3V4" /></svg>
-                            <span>Guardar</span>
-                        </button>
-
-                        {/* LIMPIAR BUTTON */}
-                        <button type="button" onClick={handleClearDraft} className="flex items-center gap-1 text-xs text-rose-400 hover:text-rose-300 bg-rose-500/15 hover:bg-rose-500/25 border border-rose-500/30 px-2.5 py-1.5 rounded-lg transition-colors font-semibold cursor-pointer" title="Borrar formulario e iniciar nuevo">
-                            <span>🗑️</span>
-                            <span>Limpiar</span>
-                        </button>
-
-                        {/* SYNC BD BUTTON */}
-                        <button 
-                            type="button" 
-                            onClick={handleDbModalOpen}
-                            className="flex items-center gap-1 text-xs bg-yellow-500/20 text-yellow-300 border border-yellow-500/40 hover:bg-yellow-500/30 font-semibold px-2.5 py-1.5 rounded-lg transition-colors cursor-pointer"
-                            title="Actualizar Base de Datos"
-                        >
-                            <svg xmlns="http://www.w3.org/2000/svg" className="h-3.5 w-3.5 fill-current text-yellow-400" viewBox="0 0 20 20">
-                                <path fillRule="evenodd" d="M11.3 1.046A1 1 0 0112 2v5h4a1 1 0 01.82 1.573l-7 10A1 1 0 018 18v-5H4a1 1 0 01-.82-1.573l7-10a1 1 0 011.12-.38z" clipRule="evenodd" />
-                            </svg>
-                            <span>Sync BD</span>
+                            <span className="text-xs">💾</span>
                         </button>
                     </div>
+
+                    {/* BOTÓN ACTUALIZAR (REEMPLAZA LIMPIAR, CON TEXTO EN HOVER) */}
+                    <button 
+                        type="button" 
+                        onClick={handleClearDraft} 
+                        className="p-1.5 text-slate-400 hover:text-white bg-slate-800/80 hover:bg-slate-700 border border-slate-700/80 rounded-lg transition-all font-semibold cursor-pointer shrink-0 group relative flex items-center justify-center" 
+                        title="Actualizar / Iniciar nueva cotización"
+                    >
+                        <RotateCcw className="w-3.5 h-3.5 group-hover:-rotate-90 transition-transform duration-300" />
+                    </button>
+
+                    <div className="h-4 w-px bg-slate-700/60 mx-0.5 shrink-0 hidden sm:block" />
+
+                    {/* INICIO FACTURA (PLANTILLA BASE SUPABASE) */}
+                    <button 
+                        type="button" 
+                        onClick={() => setShowInicioFacturaModal(true)} 
+                        className="flex items-center gap-1 text-xs px-2.5 py-1.5 rounded-lg font-semibold bg-gradient-to-r from-amber-500/15 to-orange-500/15 hover:from-amber-500/25 hover:to-orange-500/25 text-amber-200 border border-amber-500/30 shadow-sm transition-all cursor-pointer shrink-0"
+                        title="Plantilla Base 'Inicio Factura' guardada en Supabase"
+                    >
+                        <span>🏛️</span>
+                        <span>Inicio Factura</span>
+                    </button>
+
+                    {/* FACTURAS GUARDADAS EN SUPABASE */}
+                    <button 
+                        type="button" 
+                        onClick={() => setShowSavedInvoicesModal(true)} 
+                        className="flex items-center gap-1 text-xs px-2.5 py-1.5 rounded-lg font-semibold bg-blue-500/15 hover:bg-blue-500/25 text-blue-300 border border-blue-500/30 shadow-sm transition-all cursor-pointer shrink-0"
+                        title="Abrir o modificar facturas guardadas en Supabase"
+                    >
+                        <span>📁</span>
+                        <span>Facturas</span>
+                    </button>
+
+                    {/* SUBIR PDF: CÁMARA CON TEXTO EN HOVER */}
+                    <button 
+                        type="button" 
+                        onClick={() => pdfInvoiceInputRef.current?.click()} 
+                        className="p-1.5 rounded-lg bg-purple-500/15 hover:bg-purple-500/25 text-purple-300 border border-purple-500/30 shadow-sm transition-all cursor-pointer shrink-0 group relative flex items-center justify-center"
+                        title="Subir PDF de Factura para autocompletar campos respetando Folio"
+                    >
+                        <Camera className="w-3.5 h-3.5 group-hover:scale-110 transition-transform" />
+                    </button>
+
+                    {/* CARGAR JSON */}
+                    <button 
+                        type="button" 
+                        onClick={handleLoadJSONClick} 
+                        className="flex items-center gap-1 text-xs bg-slate-800 text-slate-300 hover:text-white hover:bg-slate-700 font-semibold px-2 py-1.5 rounded-lg transition-colors border border-slate-700 cursor-pointer shrink-0"
+                        title="Cargar respaldo JSON"
+                    >
+                        <span>Cargar</span>
+                    </button>
+                    
+                    {/* GUARDAR FACTURA (INCREMENTA FOLIO) */}
+                    <button 
+                        type="button" 
+                        onClick={handleSaveQuote} 
+                        disabled={!isFormValid} 
+                        className="flex items-center gap-1 text-xs bg-blue-600/20 text-blue-300 hover:bg-blue-600/30 font-semibold border border-blue-500/30 px-2.5 py-1.5 rounded-lg transition-colors disabled:opacity-40 cursor-pointer shrink-0"
+                        title="Guardar Factura (Incrementa folio consecutivo y respalda en Supabase)"
+                    >
+                        <svg xmlns="http://www.w3.org/2000/svg" className="h-3.5 w-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M8 7H5a2 2 0 00-2 2v9a2 2 0 002 2h14a2 2 0 002-2V9a2 2 0 00-2-2h-3m-1 4l-3 3m0 0l-3-3m3 3V4" /></svg>
+                        <span>Guardar</span>
+                    </button>
                 </div>
 
-                {/* 2. DATOS BANCARIOS (FORMATO HORIZONTAL CON DROPDOWNS / POPOVERS) */}
-                <div className="flex items-center gap-2 bg-slate-950/80 p-1.5 sm:p-2 rounded-xl border border-slate-800 shrink-0">
-                    <span className="text-[10px] font-bold uppercase tracking-wider text-slate-400 px-1 hidden md:inline">Bancos:</span>
+                {/* 2. DATOS BANCARIOS (SOLO ICONOS SANTANDER Y HSBC CON POPOVER) + VISTA PREVIA */}
+                <div className="flex items-center gap-2 shrink-0">
                     
-                    {/* SANTANDER */}
+                    {/* SANTANDER: BOTÓN CÁPSULA CON LOGO OFICIAL + TEXTO */}
                     <div className="relative">
                         <button 
                             type="button" 
                             onClick={() => toggleBankDetails('santander')} 
-                            className={`flex items-center gap-1.5 px-2.5 py-1.5 rounded-lg text-xs font-bold transition-all border cursor-pointer ${
+                            className={`h-9 sm:h-10 px-2.5 sm:px-3 rounded-xl flex items-center gap-2 transition-all border cursor-pointer group ${
                                 visibleBank === 'santander' 
-                                    ? 'bg-red-600/30 text-white border-red-500 ring-1 ring-red-400' 
-                                    : 'bg-slate-900 text-slate-200 border-slate-700 hover:bg-slate-800'
+                                    ? 'bg-gradient-to-r from-red-600 to-red-700 text-white border-red-400 ring-2 ring-red-400 shadow-lg shadow-red-900/50 scale-105' 
+                                    : 'bg-slate-900/90 text-slate-200 border-slate-700 hover:border-red-500 hover:bg-red-600/15 hover:scale-[1.02] shadow-sm'
                             }`}
+                            title="Datos Bancarios: Santander (Haz clic para ver/copiar)"
                         >
-                            <div className="w-5 h-5 rounded-full bg-red-600 flex items-center justify-center text-white font-black text-[10px] shadow-sm">S</div>
-                            <span>Santander</span>
-                            <svg className={`w-3.5 h-3.5 text-slate-400 transform transition-transform ${visibleBank === 'santander' ? 'rotate-180' : ''}`} fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 9l-7 7-7-7" /></svg>
+                            <div className="w-5 h-5 sm:w-6 sm:h-6 rounded-lg bg-red-600 flex items-center justify-center p-0.5 shadow-sm shrink-0 group-hover:scale-110 transition-transform">
+                                <svg className="w-full h-full fill-white" viewBox="0 0 44 42">
+                                    <path d="M 31.5,19.5 C 31.4,18 31,16.5 30.2,15.2 L 23.4,3.3 C 22.9,2.4 22.5,1.4 22.3,0.4 L 22,0.9 c -1.7,2.9 -1.7,6.6 0,9.5 l 5.5,9.5 c 1.7,2.9 1.7,6.6 0,9.5 l -0.3,0.5 c -0.2,-1 -0.6,-2 -1.1,-2.9 l -5,-8.7 -3.2,-5.6 C 17.4,11.8 17,10.8 16.8,9.8 l -0.3,0.5 c -1.7,2.9 -1.7,6.5 0,9.5 v 0 l 5.5,9.5 c 1.7,2.9 1.7,6.6 0,9.5 l -0.3,0.5 c -0.2,-1 -0.6,-2 -1.1,-2.9 L 13.7,24.5 C 12.8,22.9 12.4,21.1 12.4,19.3 5.1,21.2 0,25.3 0,30 0,36.6 9.8,41.9 21.9,41.9 34,41.9 43.8,36.6 43.8,30 43.9,25.5 38.9,21.4 31.5,19.5 Z"/>
+                                </svg>
+                            </div>
+                            <span className="text-xs font-bold tracking-wide text-slate-200 group-hover:text-white whitespace-nowrap">Santander</span>
                         </button>
 
                         {/* POPOVER SANTANDER */}
                         {visibleBank === 'santander' && (
-                            <div className="absolute top-full mt-2 left-0 sm:right-0 sm:left-auto w-72 bg-slate-900 border border-slate-700 rounded-xl shadow-2xl p-3 z-50 text-xs space-y-2 animate-in fade-in zoom-in-95">
+                            <div className="absolute top-full mt-2 right-0 w-72 bg-slate-900 border border-slate-700 rounded-xl shadow-2xl p-3 z-50 text-xs space-y-2 animate-in fade-in zoom-in-95">
                                 <div className="flex items-center justify-between border-b border-slate-800 pb-1.5">
                                     <span className="font-bold text-white flex items-center gap-1.5">
-                                        <span className="w-4 h-4 rounded-full bg-red-600 flex items-center justify-center text-[9px] text-white font-bold">S</span>
+                                        <div className="w-5 h-5 rounded-md bg-red-600 flex items-center justify-center p-0.5 shadow-sm">
+                                            <svg className="w-full h-full fill-white" viewBox="0 0 44 42">
+                                                <path d="M 31.5,19.5 C 31.4,18 31,16.5 30.2,15.2 L 23.4,3.3 C 22.9,2.4 22.5,1.4 22.3,0.4 L 22,0.9 c -1.7,2.9 -1.7,6.6 0,9.5 l 5.5,9.5 c 1.7,2.9 1.7,6.6 0,9.5 l -0.3,0.5 c -0.2,-1 -0.6,-2 -1.1,-2.9 l -5,-8.7 -3.2,-5.6 C 17.4,11.8 17,10.8 16.8,9.8 l -0.3,0.5 c -1.7,2.9 -1.7,6.5 0,9.5 v 0 l 5.5,9.5 c 1.7,2.9 1.7,6.6 0,9.5 l -0.3,0.5 c -0.2,-1 -0.6,-2 -1.1,-2.9 L 13.7,24.5 C 12.8,22.9 12.4,21.1 12.4,19.3 5.1,21.2 0,25.3 0,30 0,36.6 9.8,41.9 21.9,41.9 34,41.9 43.8,36.6 43.8,30 43.9,25.5 38.9,21.4 31.5,19.5 Z"/>
+                                            </svg>
+                                        </div>
                                         Banco Santander
                                     </span>
-                                    <button type="button" onClick={() => setVisibleBank(null)} className="text-slate-400 hover:text-white">&times;</button>
+                                    <button type="button" onClick={() => setVisibleBank(null)} className="text-slate-400 hover:text-white cursor-pointer">&times;</button>
                                 </div>
                                 <div className="space-y-1.5">
                                     {bankDetails.santander.data.map((item, i) => (
@@ -1751,31 +1935,39 @@ const QuoteForm: React.FC<QuoteFormProps> = ({ onGenerateQuote, initialDetails }
                         )}
                     </div>
 
-                    {/* HSBC */}
+                    {/* HSBC: BOTÓN CÁPSULA CON LOGO OFICIAL + TEXTO */}
                     <div className="relative">
                         <button 
                             type="button" 
                             onClick={() => toggleBankDetails('hsbc')} 
-                            className={`flex items-center gap-1.5 px-2.5 py-1.5 rounded-lg text-xs font-bold transition-all border cursor-pointer ${
+                            className={`h-9 sm:h-10 px-2.5 sm:px-3 rounded-xl flex items-center gap-2 transition-all border cursor-pointer group ${
                                 visibleBank === 'hsbc' 
-                                    ? 'bg-red-700/30 text-white border-red-500 ring-1 ring-red-400' 
-                                    : 'bg-slate-900 text-slate-200 border-slate-700 hover:bg-slate-800'
+                                    ? 'bg-white text-slate-900 border-red-500 ring-2 ring-red-400 shadow-lg shadow-red-900/50 scale-105' 
+                                    : 'bg-slate-900/90 text-slate-200 border-slate-700 hover:border-red-500 hover:bg-slate-800 hover:scale-[1.02] shadow-sm'
                             }`}
+                            title="Datos Bancarios: HSBC (Haz clic para ver/copiar)"
                         >
-                            <div className="w-5 h-5 rounded-full bg-red-700 flex items-center justify-center text-white font-black text-[10px] shadow-sm">H</div>
-                            <span>HSBC</span>
-                            <svg className={`w-3.5 h-3.5 text-slate-400 transform transition-transform ${visibleBank === 'hsbc' ? 'rotate-180' : ''}`} fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 9l-7 7-7-7" /></svg>
+                            <div className="w-5 h-5 sm:w-6 sm:h-6 rounded-lg bg-white flex items-center justify-center p-0.5 shadow-sm shrink-0 group-hover:scale-110 transition-transform">
+                                <svg className="w-full h-full" viewBox="0 0 24 24">
+                                    <path fill="#DB0011" d="M24 12.007l-5.996 5.997V5.996L24 12.007zm-5.996-6.01H6.01l5.996 6.01 5.997-6.01zM0 12.006l6.01 5.997V5.996L0 12.007zm6.01 5.997h11.994l-5.997-5.997-5.996 5.997z"/>
+                                </svg>
+                            </div>
+                            <span className={`text-xs font-bold tracking-wide whitespace-nowrap ${visibleBank === 'hsbc' ? 'text-slate-900' : 'text-slate-200 group-hover:text-white'}`}>HSBC</span>
                         </button>
 
                         {/* POPOVER HSBC */}
                         {visibleBank === 'hsbc' && (
-                            <div className="absolute top-full mt-2 left-0 sm:right-0 sm:left-auto w-72 bg-slate-900 border border-slate-700 rounded-xl shadow-2xl p-3 z-50 text-xs space-y-2 animate-in fade-in zoom-in-95">
+                            <div className="absolute top-full mt-2 right-0 w-72 bg-slate-900 border border-slate-700 rounded-xl shadow-2xl p-3 z-50 text-xs space-y-2 animate-in fade-in zoom-in-95">
                                 <div className="flex items-center justify-between border-b border-slate-800 pb-1.5">
                                     <span className="font-bold text-white flex items-center gap-1.5">
-                                        <span className="w-4 h-4 rounded-full bg-red-700 flex items-center justify-center text-[9px] text-white font-bold">H</span>
+                                        <div className="w-5 h-5 rounded-md bg-white flex items-center justify-center p-0.5 shadow-sm">
+                                            <svg className="w-full h-full" viewBox="0 0 24 24">
+                                                <path fill="#DB0011" d="M24 12.007l-5.996 5.997V5.996L24 12.007zm-5.996-6.01H6.01l5.996 6.01 5.997-6.01zM0 12.006l6.01 5.997V5.996L0 12.007zm6.01 5.997h11.994l-5.997-5.997-5.996 5.997z"/>
+                                            </svg>
+                                        </div>
                                         Banco HSBC
                                     </span>
-                                    <button type="button" onClick={() => setVisibleBank(null)} className="text-slate-400 hover:text-white">&times;</button>
+                                    <button type="button" onClick={() => setVisibleBank(null)} className="text-slate-400 hover:text-white cursor-pointer">&times;</button>
                                 </div>
                                 <div className="space-y-1.5">
                                     {bankDetails.hsbc.data.map((item, i) => (
@@ -1794,17 +1986,15 @@ const QuoteForm: React.FC<QuoteFormProps> = ({ onGenerateQuote, initialDetails }
                             </div>
                         )}
                     </div>
-                </div>
 
-                {/* 3. BOTÓN GENERAR VISTA PREVIA (MÁXIMA PROMINENCIA) */}
-                <div className="shrink-0 flex items-center gap-2">
+                    {/* BOTÓN GENERAR VISTA PREVIA (MÁXIMA PROMINENCIA) */}
                     <button 
                         type="submit" 
                         disabled={!isFormValid}
-                        className="w-full sm:w-auto px-5 sm:px-6 py-2.5 sm:py-3 rounded-xl font-black text-xs sm:text-sm text-white bg-gradient-to-r from-blue-600 via-indigo-600 to-purple-600 hover:from-blue-500 hover:via-indigo-500 hover:to-purple-500 shadow-[0_0_20px_rgba(79,70,229,0.5)] hover:shadow-[0_0_28px_rgba(79,70,229,0.8)] border border-indigo-400/40 transition-all hover:scale-[1.03] active:scale-[0.98] disabled:opacity-40 disabled:scale-100 disabled:shadow-none cursor-pointer flex items-center justify-center gap-2"
+                        className="px-4 sm:px-5 py-2 sm:py-2.5 rounded-xl font-black text-xs sm:text-sm text-white bg-gradient-to-r from-blue-600 via-indigo-600 to-purple-600 hover:from-blue-500 hover:via-indigo-500 hover:to-purple-500 shadow-[0_0_20px_rgba(79,70,229,0.5)] hover:shadow-[0_0_28px_rgba(79,70,229,0.8)] border border-indigo-400/40 transition-all hover:scale-[1.03] active:scale-[0.98] disabled:opacity-40 disabled:scale-100 disabled:shadow-none cursor-pointer flex items-center justify-center gap-1.5 shrink-0"
                         title={!isFormValid ? "Completa el nombre del proyecto y al menos una actividad" : "Generar Vista Previa de la Cotización"}
                     >
-                        <span>Generar Vista Previa</span>
+                        <span>Vista Previa</span>
                         <span className="text-base font-bold">&rarr;</span>
                     </button>
                 </div>
@@ -1823,23 +2013,25 @@ const QuoteForm: React.FC<QuoteFormProps> = ({ onGenerateQuote, initialDetails }
 
             {/* FORMULARIO PRINCIPAL: ESTILO INTEGRADO OSCURO Y DISTRIBUCIÓN HORIZONTAL */}
             <div className="w-full bg-[#0c1322]/90 backdrop-blur-xl p-4 sm:p-8 rounded-2xl shadow-2xl space-y-6 border border-slate-800/90 text-slate-100">
-            {/* SECCIÓN 1: DETALLES DEL PROYECTO Y CLIENTE (DISTRIBUCIÓN HORIZONTAL) */}
-            <fieldset className="border border-slate-800/90 rounded-xl overflow-hidden bg-slate-900/60 shadow-lg">
-                <button 
-                    type="button" 
-                    onClick={() => toggleSection('client')}
-                    className="w-full flex justify-between items-center p-4 bg-slate-900/80 hover:bg-slate-800/80 transition-colors border-b border-slate-800 text-left"
-                >
-                    <legend className="text-base sm:text-lg font-semibold text-slate-200 flex items-center gap-2">
-                        <span className="w-7 h-7 rounded-lg bg-blue-600/20 text-blue-400 flex items-center justify-center text-xs font-bold border border-blue-500/30">1</span>
-                        <span>Detalles del Proyecto y Cliente</span>
-                    </legend>
-                    <svg className={`w-5 h-5 text-slate-400 transform transition-transform ${collapsedSections.client ? 'rotate-180' : ''}`} fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M19 9l-7 7-7-7"></path></svg>
-                </button>
+            {/* FILA SUPERIOR: SECCIÓN 1 (MITAD IZQUIERDA) Y SECCIÓN 2 (MITAD DERECHA) */}
+            <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 items-start">
                 
-                <div className={`p-4 sm:p-6 space-y-5 ${collapsedSections.client ? 'hidden' : 'block'}`}>
-                    {/* FILA HORIZONTAL: NOMBRE DEL PROYECTO + CLIENTE */}
-                    <div className="grid grid-cols-1 md:grid-cols-2 gap-4 sm:gap-6 items-start">
+                {/* SECCIÓN 1: DETALLES DEL PROYECTO Y CLIENTE (DIVIDIDO EN 3 RENGLONES) */}
+                <fieldset className="border border-slate-800/90 rounded-xl overflow-hidden bg-slate-900/60 shadow-lg h-full">
+                    <button 
+                        type="button" 
+                        onClick={() => toggleSection('client')}
+                        className="w-full flex justify-between items-center p-4 bg-slate-900/80 hover:bg-slate-800/80 transition-colors border-b border-slate-800 text-left"
+                    >
+                        <legend className="text-base sm:text-lg font-semibold text-slate-200 flex items-center gap-2">
+                            <span className="w-7 h-7 rounded-lg bg-blue-600/20 text-blue-400 flex items-center justify-center text-xs font-bold border border-blue-500/30">1</span>
+                            <span>Detalles del Proyecto y Cliente</span>
+                        </legend>
+                        <svg className={`w-5 h-5 text-slate-400 transform transition-transform ${collapsedSections.client ? 'rotate-180' : ''}`} fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M19 9l-7 7-7-7"></path></svg>
+                    </button>
+                    
+                    <div className={`p-4 sm:p-6 space-y-4.5 ${collapsedSections.client ? 'hidden' : 'block'}`}>
+                        {/* RENGLÓN 1: NOMBRE DEL PROYECTO */}
                         <div>
                             <label htmlFor="projectName" className="block text-xs sm:text-sm font-medium text-slate-300 mb-1.5">
                                 Nombre del Proyecto <span className="text-rose-400">*</span>
@@ -1864,12 +2056,13 @@ const QuoteForm: React.FC<QuoteFormProps> = ({ onGenerateQuote, initialDetails }
                             </datalist>
                         </div>
 
+                        {/* RENGLÓN 2: CLIENTE (DIRIGIDO A) */}
                         <div>
                             <label htmlFor="recipientName" className="block text-xs sm:text-sm font-medium text-slate-300 mb-1.5">
                                 Cliente (Dirigido a)
                             </label>
                             <div className="flex items-center gap-2">
-                                <div className="relative w-28 sm:w-32 flex-shrink-0">
+                                <div className="relative w-24 sm:w-28 flex-shrink-0">
                                     <input 
                                         type="text" 
                                         name="recipientPrefix" 
@@ -1923,35 +2116,222 @@ const QuoteForm: React.FC<QuoteFormProps> = ({ onGenerateQuote, initialDetails }
                                 </button>
                             </div>
                         </div>
-                    </div>
 
-                    {/* ESLOGAN / SUBTÍTULO */}
-                    <div>
-                        <label htmlFor="companyTagline" className="block text-xs sm:text-sm font-medium text-slate-300 mb-1.5">
-                            Eslogan / Subtítulo de la Empresa
-                        </label>
-                        <input 
-                            type="text" 
-                            name="companyTagline" 
-                            id="companyTagline" 
-                            value={details.companyTagline} 
-                            onChange={handleInputChange} 
-                            className="w-full bg-slate-950/70 border border-slate-700/80 text-slate-100 rounded-lg p-2.5 sm:p-3 focus:ring-2 focus:ring-blue-500/50 focus:border-blue-500 placeholder:text-slate-500 text-sm" 
-                            placeholder="Ej: Arquitectura y Visualización 3D" 
-                        />
+                        {/* RENGLÓN 3: ESLOGAN / SUBTÍTULO */}
+                        <div>
+                            <label htmlFor="companyTagline" className="block text-xs sm:text-sm font-medium text-slate-300 mb-1.5">
+                                Eslogan / Subtítulo de la Empresa
+                            </label>
+                            <input 
+                                type="text" 
+                                name="companyTagline" 
+                                id="companyTagline" 
+                                value={details.companyTagline} 
+                                onChange={handleInputChange} 
+                                className="w-full bg-slate-950/70 border border-slate-700/80 text-slate-100 rounded-lg p-2.5 sm:p-3 focus:ring-2 focus:ring-blue-500/50 focus:border-blue-500 placeholder:text-slate-500 text-sm" 
+                                placeholder="Ej: Arquitectura y Visualización 3D" 
+                            />
+                        </div>
                     </div>
-                </div>
-            </fieldset>
+                </fieldset>
 
-            {/* SECCIÓN 2: ALCANCE DEL SERVICIO */}
-            <fieldset className="border border-slate-800/90 rounded-xl overflow-hidden bg-slate-900/60 shadow-lg">
+                {/* SECCIÓN 2: TOTALES Y CONDICIONES (LADO DERECHO SUPERIOR) */}
+                <fieldset className="border border-slate-800/90 rounded-xl overflow-hidden bg-slate-900/60 shadow-lg h-full">
+                    <button 
+                        type="button" 
+                        onClick={() => toggleSection('terms')}
+                        className="w-full flex justify-between items-center p-4 bg-slate-900/80 hover:bg-slate-800/80 transition-colors border-b border-slate-800 text-left"
+                    >
+                        <legend className="text-base sm:text-lg font-semibold text-slate-200 flex items-center gap-2">
+                            <span className="w-7 h-7 rounded-lg bg-emerald-600/20 text-emerald-400 flex items-center justify-center text-xs font-bold border border-emerald-500/30">2</span>
+                            <span>Totales y Condiciones</span>
+                        </legend>
+                        <svg className={`w-5 h-5 text-slate-400 transform transition-transform ${collapsedSections.terms ? 'rotate-180' : ''}`} fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M19 9l-7 7-7-7"></path></svg>
+                    </button>
+                    
+                    <div className={`p-4 sm:p-6 space-y-5 ${collapsedSections.terms ? 'hidden' : 'block'}`}>
+                        <div className="grid grid-cols-1 xl:grid-cols-2 gap-4 items-start">
+                            {/* CONDICIONES */}
+                            <div className="space-y-3.5">
+                                <div>
+                                    <label className="block text-xs font-medium text-slate-300 mb-1">Tiempo de Entrega</label>
+                                    <div className="flex gap-2">
+                                        <select 
+                                            value={useCustomDeliveryTime ? '__custom__' : (details.deliveryTime || '')}
+                                            onChange={(e) => {
+                                                const val = e.target.value;
+                                                if (val === '__custom__') {
+                                                    setUseCustomDeliveryTime(true);
+                                                } else {
+                                                    setUseCustomDeliveryTime(false);
+                                                    setDetails(prev => ({...prev, deliveryTime: val}));
+                                                }
+                                            }}
+                                            className="w-full bg-slate-950/70 border border-slate-700 text-slate-200 rounded-lg p-2 text-xs sm:text-sm focus:border-blue-500 focus:outline-none cursor-pointer"
+                                        >
+                                            <option value="">Seleccionar tiempo de entrega...</option>
+                                            <option value="3 a 5 días hábiles">3 a 5 días hábiles</option>
+                                            <option value="5 a 7 días hábiles">5 a 7 días hábiles</option>
+                                            <option value="7 a 10 días hábiles">7 a 10 días hábiles</option>
+                                            <option value="10 a 15 días hábiles">10 a 15 días hábiles</option>
+                                            <option value="2 a 3 semanas">2 a 3 semanas</option>
+                                            <option value="1 mes">1 mes</option>
+                                            <option value="__custom__">Otro (escribir manual)...</option>
+                                        </select>
+                                        <div className="flex items-center px-1.5 shrink-0">
+                                            <input 
+                                                type="checkbox" 
+                                                id="customTime" 
+                                                checked={useCustomDeliveryTime} 
+                                                onChange={(e) => {
+                                                    setUseCustomDeliveryTime(e.target.checked);
+                                                    if(e.target.checked) setDetails(p => ({...p, deliveryTime: ''}));
+                                                }}
+                                                className="h-4 w-4 text-blue-600 rounded border-slate-700 bg-slate-900"
+                                            />
+                                            <label htmlFor="customTime" className="ml-1 text-[11px] text-slate-400">Manual</label>
+                                        </div>
+                                    </div>
+                                    {useCustomDeliveryTime && (
+                                        <input 
+                                            type="text"
+                                            value={details.deliveryTime}
+                                            onChange={(e) => setDetails(prev => ({...prev, deliveryTime: e.target.value}))}
+                                            placeholder="Ej: A convenir según avance"
+                                            className="mt-1.5 w-full bg-slate-950/70 border border-slate-700 text-slate-200 rounded-lg p-2 text-xs sm:text-sm"
+                                        />
+                                    )}
+                                </div>
+
+                                <div>
+                                    <label className="block text-xs font-medium text-slate-300 mb-1">Condiciones Generales</label>
+                                    <textarea 
+                                        name="generalConditions" 
+                                        value={details.generalConditions} 
+                                        onChange={handleInputChange} 
+                                        rows={3}
+                                        placeholder="Ej: Se requiere acceso al sitio, luz y agua..."
+                                        className="w-full bg-slate-950/70 border border-slate-700 text-slate-200 rounded-lg p-2 text-xs sm:text-sm placeholder:text-slate-500"
+                                    />
+                                    <div className="flex flex-wrap gap-1 mt-1.5">
+                                        {library.conditions.map((cond, i) => (
+                                            <button 
+                                                key={i} 
+                                                type="button" 
+                                                onClick={() => setDetails(p => ({...p, generalConditions: p.generalConditions ? p.generalConditions + '\n' + cond : cond}))}
+                                                className="text-[10px] bg-slate-800/80 border border-slate-700 text-slate-300 px-2 py-0.5 rounded hover:bg-slate-700 transition-colors"
+                                            >
+                                                + {cond.substring(0, 18)}...
+                                            </button>
+                                        ))}
+                                    </div>
+                                </div>
+                                
+                                <div className="flex items-center pt-0.5">
+                                    <input 
+                                        type="checkbox" 
+                                        id="requireAdvance" 
+                                        checked={details.requireAdvance} 
+                                        onChange={(e) => setDetails(prev => ({...prev, requireAdvance: e.target.checked}))}
+                                        className="h-4 w-4 text-blue-600 focus:ring-blue-500 border-slate-700 bg-slate-900 rounded"
+                                    />
+                                    <label htmlFor="requireAdvance" className="ml-2 block text-xs sm:text-sm text-slate-300">
+                                        Requerir 50% de anticipo
+                                    </label>
+                                </div>
+                            </div>
+
+                            {/* CUADRO DE TOTALES */}
+                            <div className="bg-slate-950/70 p-4 rounded-xl border border-slate-800 space-y-3">
+                                 <div className="flex justify-between items-center pb-2 border-b border-slate-800">
+                                    <span className="font-medium text-slate-400 text-xs sm:text-sm">Subtotal</span>
+                                    <span className="font-mono text-slate-100 text-sm sm:text-base">{formatCurrency(totals.subtotal)}</span>
+                                 </div>
+
+                                 <div className="space-y-2 pb-2 border-b border-slate-800">
+                                    <div className="flex items-center justify-between">
+                                        <label className="text-xs sm:text-sm text-slate-400">Descuento</label>
+                                        <div className="flex items-center gap-1.5">
+                                            <select 
+                                                value={details.discountType}
+                                                onChange={(e) => setDetails(prev => ({...prev, discountType: e.target.value as any}))}
+                                                className="text-xs p-1 border border-slate-700 rounded-md bg-slate-900 text-slate-200"
+                                            >
+                                                <option value="none">No</option>
+                                                <option value="percentage">%</option>
+                                                <option value="fixed">$</option>
+                                            </select>
+                                            {details.discountType !== 'none' && (
+                                                <input 
+                                                    type="number" 
+                                                    value={details.discountValue}
+                                                    onChange={(e) => setDetails(prev => ({...prev, discountValue: parseFloat(e.target.value) || 0}))}
+                                                    className="w-16 p-1 text-right text-xs border border-slate-700 rounded-md bg-slate-900 text-slate-100"
+                                                />
+                                            )}
+                                        </div>
+                                    </div>
+                                    
+                                    <div className="flex items-center justify-between">
+                                        <div className="flex items-center">
+                                            <input 
+                                                type="checkbox" 
+                                                id="addIVA" 
+                                                checked={details.addIVA} 
+                                                onChange={(e) => setDetails(prev => ({...prev, addIVA: e.target.checked}))}
+                                                className="h-3.5 w-3.5 text-blue-600 rounded border-slate-700 bg-slate-900"
+                                            />
+                                            <label htmlFor="addIVA" className="ml-2 text-xs sm:text-sm text-slate-400">IVA (16%)</label>
+                                        </div>
+                                        <span className="font-mono text-xs text-slate-400">{formatCurrency(totals.ivaAmount)}</span>
+                                    </div>
+
+                                    <div className="flex items-center justify-between">
+                                        <div className="flex items-center">
+                                            <input 
+                                                type="checkbox" 
+                                                id="addWithholdings" 
+                                                checked={details.addWithholdings} 
+                                                onChange={(e) => setDetails(prev => ({...prev, addWithholdings: e.target.checked}))}
+                                                className="h-3.5 w-3.5 text-rose-500 rounded border-slate-700 bg-slate-900"
+                                            />
+                                            <label htmlFor="addWithholdings" className="ml-2 text-xs sm:text-sm text-slate-400">Retenciones (Resico)</label>
+                                        </div>
+                                    </div>
+                                    
+                                    {details.addWithholdings && (
+                                        <div className="pl-5 space-y-1 text-xs text-rose-400">
+                                            <div className="flex justify-between">
+                                                <span>IVA Ret ({details.ivaWithholdingPercentage}%)</span>
+                                                <span className="font-mono">- {formatCurrency(totals.ivaWithholdingAmount)}</span>
+                                            </div>
+                                             <div className="flex justify-between">
+                                                <span>ISR Ret ({details.isrWithholdingPercentage}%)</span>
+                                                <span className="font-mono">- {formatCurrency(totals.isrWithholdingAmount)}</span>
+                                            </div>
+                                        </div>
+                                    )}
+                                 </div>
+
+                                 <div className="flex justify-between items-center pt-0.5">
+                                    <span className="text-sm sm:text-base font-bold text-slate-200">Total Cotizado</span>
+                                    <span className="text-lg sm:text-xl font-bold text-emerald-400 font-mono">{formatCurrency(totals.total)}</span>
+                                 </div>
+                            </div>
+                        </div>
+                    </div>
+                </fieldset>
+            </div>
+
+            {/* SECCIÓN 3: ALCANCE DEL SERVICIO (ANCHO COMPLETO - EL ESPACIO QUE NECESITE) */}
+            <fieldset className="w-full border border-slate-800/90 rounded-xl overflow-hidden bg-slate-900/60 shadow-lg">
                 <button 
                     type="button" 
                     onClick={() => toggleSection('services')}
                     className="w-full flex justify-between items-center p-4 bg-slate-900/80 hover:bg-slate-800/80 transition-colors border-b border-slate-800 text-left"
                 >
                     <legend className="text-base sm:text-lg font-semibold text-slate-200 flex items-center gap-2">
-                        <span className="w-7 h-7 rounded-lg bg-blue-600/20 text-blue-400 flex items-center justify-center text-xs font-bold border border-blue-500/30">2</span>
+                        <span className="w-7 h-7 rounded-lg bg-purple-600/20 text-purple-400 flex items-center justify-center text-xs font-bold border border-purple-500/30">3</span>
                         <span>Alcance del Servicio <span className="text-rose-400">*</span></span>
                     </legend>
                     <svg className={`w-5 h-5 text-slate-400 transform transition-transform ${collapsedSections.services ? 'rotate-180' : ''}`} fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M19 9l-7 7-7-7"></path></svg>
@@ -2096,185 +2476,6 @@ const QuoteForm: React.FC<QuoteFormProps> = ({ onGenerateQuote, initialDetails }
                             </div>
                         )}
                     </div>
-                </div>
-            </fieldset>
-
-            {/* SECCIÓN 3: TOTALES Y CONDICIONES */}
-            <fieldset className="border border-slate-800/90 rounded-xl overflow-hidden bg-slate-900/60 shadow-lg">
-                <button 
-                    type="button" 
-                    onClick={() => toggleSection('terms')}
-                    className="w-full flex justify-between items-center p-4 bg-slate-900/80 hover:bg-slate-800/80 transition-colors border-b border-slate-800 text-left"
-                >
-                    <legend className="text-base sm:text-lg font-semibold text-slate-200 flex items-center gap-2">
-                        <span className="w-7 h-7 rounded-lg bg-blue-600/20 text-blue-400 flex items-center justify-center text-xs font-bold border border-blue-500/30">3</span>
-                        <span>Totales y Condiciones</span>
-                    </legend>
-                    <svg className={`w-5 h-5 text-slate-400 transform transition-transform ${collapsedSections.terms ? 'rotate-180' : ''}`} fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M19 9l-7 7-7-7"></path></svg>
-                </button>
-                
-                <div className={`p-4 sm:p-6 space-y-6 ${collapsedSections.terms ? 'hidden' : 'block'}`}>
-                     <div className="grid md:grid-cols-2 gap-6 sm:gap-8 items-start">
-                        {/* CONDICIONES */}
-                        <div className="space-y-4">
-                            <div>
-                                <label className="block text-xs sm:text-sm font-medium text-slate-300 mb-1.5">Tiempo de Entrega</label>
-                                <div className="flex gap-2">
-                                    <select 
-                                        disabled={useCustomDeliveryTime}
-                                        value={useCustomDeliveryTime ? '' : details.deliveryTime}
-                                        onChange={(e) => setDetails(prev => ({...prev, deliveryTime: e.target.value}))}
-                                        className="w-full bg-slate-950/70 border border-slate-700 text-slate-200 rounded-lg p-2.5 sm:p-3 text-sm"
-                                    >
-                                        <option value="">Seleccionar...</option>
-                                        <option value="3 a 5 días hábiles">3 a 5 días hábiles</option>
-                                        <option value="5 a 7 días hábiles">5 a 7 días hábiles</option>
-                                        <option value="7 a 10 días hábiles">7 a 10 días hábiles</option>
-                                        <option value="10 a 15 días hábiles">10 a 15 días hábiles</option>
-                                        <option value="2 a 3 semanas">2 a 3 semanas</option>
-                                        <option value="1 mes">1 mes</option>
-                                    </select>
-                                    <div className="flex items-center px-2">
-                                        <input 
-                                            type="checkbox" 
-                                            id="customTime" 
-                                            checked={useCustomDeliveryTime} 
-                                            onChange={(e) => {
-                                                setUseCustomDeliveryTime(e.target.checked);
-                                                if(e.target.checked) setDetails(p => ({...p, deliveryTime: ''}));
-                                            }}
-                                            className="h-4 w-4 text-blue-600 rounded border-slate-700 bg-slate-900"
-                                        />
-                                        <label htmlFor="customTime" className="ml-1.5 text-xs text-slate-400">Manual</label>
-                                    </div>
-                                </div>
-                                {useCustomDeliveryTime && (
-                                    <input 
-                                        type="text"
-                                        value={details.deliveryTime}
-                                        onChange={(e) => setDetails(prev => ({...prev, deliveryTime: e.target.value}))}
-                                        placeholder="Ej: A convenir según avance"
-                                        className="mt-2 w-full bg-slate-950/70 border border-slate-700 text-slate-200 rounded-lg p-2.5 sm:p-3 text-sm"
-                                    />
-                                )}
-                            </div>
-
-                            <div>
-                                <label className="block text-xs sm:text-sm font-medium text-slate-300 mb-1.5">Condiciones Generales</label>
-                                <textarea 
-                                    name="generalConditions" 
-                                    value={details.generalConditions} 
-                                    onChange={handleInputChange} 
-                                    rows={4}
-                                    placeholder="Ej: Se requiere acceso al sitio, luz y agua..."
-                                    className="w-full bg-slate-950/70 border border-slate-700 text-slate-200 rounded-lg p-2.5 sm:p-3 text-sm placeholder:text-slate-500"
-                                />
-                                <div className="flex flex-wrap gap-1.5 mt-2">
-                                    {library.conditions.map((cond, i) => (
-                                        <button 
-                                            key={i} 
-                                            type="button" 
-                                            onClick={() => setDetails(p => ({...p, generalConditions: p.generalConditions ? p.generalConditions + '\n' + cond : cond}))}
-                                            className="text-xs bg-slate-800/80 border border-slate-700 text-slate-300 px-2.5 py-1 rounded-md hover:bg-slate-700 transition-colors"
-                                        >
-                                            + {cond.substring(0, 20)}...
-                                        </button>
-                                    ))}
-                                </div>
-                            </div>
-                            
-                            <div className="flex items-center pt-1">
-                                <input 
-                                    type="checkbox" 
-                                    id="requireAdvance" 
-                                    checked={details.requireAdvance} 
-                                    onChange={(e) => setDetails(prev => ({...prev, requireAdvance: e.target.checked}))}
-                                    className="h-4 w-4 text-blue-600 focus:ring-blue-500 border-slate-700 bg-slate-900 rounded"
-                                />
-                                <label htmlFor="requireAdvance" className="ml-2 block text-sm text-slate-300">
-                                    Requerir 50% de anticipo
-                                </label>
-                            </div>
-                        </div>
-
-                        {/* CUADRO DE TOTALES */}
-                        <div className="bg-slate-950/70 p-5 sm:p-6 rounded-xl border border-slate-800 h-fit space-y-4">
-                             <div className="flex justify-between items-center pb-3 border-b border-slate-800">
-                                <span className="font-medium text-slate-400 text-sm">Subtotal</span>
-                                <span className="font-mono text-slate-100 text-base">{formatCurrency(totals.subtotal)}</span>
-                             </div>
-
-                             <div className="space-y-3 pb-3 border-b border-slate-800">
-                                <div className="flex items-center justify-between">
-                                    <label className="text-sm text-slate-400">Descuento</label>
-                                    <div className="flex items-center gap-2">
-                                        <select 
-                                            value={details.discountType}
-                                            onChange={(e) => setDetails(prev => ({...prev, discountType: e.target.value as any}))}
-                                            className="text-xs p-1.5 border border-slate-700 rounded-md bg-slate-900 text-slate-200"
-                                        >
-                                            <option value="none">No</option>
-                                            <option value="percentage">%</option>
-                                            <option value="fixed">$</option>
-                                        </select>
-                                        {details.discountType !== 'none' && (
-                                            <input 
-                                                type="number" 
-                                                value={details.discountValue}
-                                                onChange={(e) => setDetails(prev => ({...prev, discountValue: parseFloat(e.target.value) || 0}))}
-                                                className="w-20 p-1 text-right text-sm border border-slate-700 rounded-md bg-slate-900 text-slate-100"
-                                            />
-                                        )}
-                                    </div>
-                                </div>
-                                
-                                <div className="flex items-center justify-between">
-                                    <div className="flex items-center">
-                                        <input 
-                                            type="checkbox" 
-                                            id="addIVA" 
-                                            checked={details.addIVA} 
-                                            onChange={(e) => setDetails(prev => ({...prev, addIVA: e.target.checked}))}
-                                            className="h-4 w-4 text-blue-600 rounded border-slate-700 bg-slate-900"
-                                        />
-                                        <label htmlFor="addIVA" className="ml-2 text-sm text-slate-400">IVA (16%)</label>
-                                    </div>
-                                    <span className="font-mono text-xs text-slate-400">{formatCurrency(totals.ivaAmount)}</span>
-                                </div>
-
-                                <div className="flex items-center justify-between">
-                                    <div className="flex items-center">
-                                        <input 
-                                            type="checkbox" 
-                                            id="addWithholdings" 
-                                            checked={details.addWithholdings} 
-                                            onChange={(e) => setDetails(prev => ({...prev, addWithholdings: e.target.checked}))}
-                                            className="h-4 w-4 text-rose-500 rounded border-slate-700 bg-slate-900"
-                                        />
-                                        <label htmlFor="addWithholdings" className="ml-2 text-sm text-slate-400">Retenciones (Resico)</label>
-                                    </div>
-                                </div>
-                                
-                                {details.addWithholdings && (
-                                    <div className="pl-6 space-y-1.5 text-xs text-rose-400">
-                                        <div className="flex justify-between">
-                                            <span>IVA Ret ({details.ivaWithholdingPercentage}%)</span>
-                                            <span className="font-mono">- {formatCurrency(totals.ivaWithholdingAmount)}</span>
-                                        </div>
-                                         <div className="flex justify-between">
-                                            <span>ISR Ret ({details.isrWithholdingPercentage}%)</span>
-                                            <span className="font-mono">- {formatCurrency(totals.isrWithholdingAmount)}</span>
-                                        </div>
-                                    </div>
-                                )}
-                             </div>
-
-                             <div className="flex justify-between items-center pt-1">
-                                <span className="text-base sm:text-lg font-bold text-slate-200">Total Cotizado</span>
-                                <span className="text-xl sm:text-2xl font-bold text-emerald-400 font-mono">{formatCurrency(totals.total)}</span>
-                             </div>
-                        </div>
-                     </div>
                 </div>
             </fieldset>
 
@@ -2577,8 +2778,187 @@ const QuoteForm: React.FC<QuoteFormProps> = ({ onGenerateQuote, initialDetails }
                 </div>
             </fieldset>
 
+            {/* SECCIÓN 6: BASE DE DATOS Y RESPALDO (ABAJO DEL SAT, COMPRIMIDA POR DEFECTO) */}
+            <fieldset className="border border-slate-800/90 rounded-xl overflow-hidden bg-slate-900/60 shadow-lg">
+                <button 
+                    type="button" 
+                    onClick={() => toggleSection('database' as any)}
+                    className="w-full flex justify-between items-center p-4 bg-slate-900/80 hover:bg-slate-800/80 transition-colors border-b border-slate-800 text-left"
+                >
+                    <legend className="text-base sm:text-lg font-semibold text-slate-200 flex items-center gap-2">
+                        <span className="w-7 h-7 rounded-lg bg-yellow-600/20 text-yellow-400 flex items-center justify-center text-xs font-bold border border-yellow-500/30">⚡</span>
+                        <span>Base de Datos</span>
+                        <span className="text-[10px] font-normal bg-yellow-500/10 text-yellow-300 border border-yellow-500/20 px-2 py-0.5 rounded-full ml-1">
+                            Sincronizado con Inicio Factura
+                        </span>
+                    </legend>
+                    <svg className={`w-5 h-5 text-slate-400 transform transition-transform ${collapsedSections.database ? 'rotate-180' : ''}`} fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M19 9l-7 7-7-7"></path></svg>
+                </button>
+                
+                <div className={`p-4 sm:p-6 space-y-5 ${collapsedSections.database ? 'hidden' : 'block'}`}>
+                    <p className="text-xs text-slate-400">
+                        Estos datos alimentan el autocompletado y se guardan automáticamente en la plantilla base <strong>Inicio Factura</strong> de Supabase. Puedes modificarlos en cualquier momento:
+                    </p>
+
+                    {/* BOTONERA DE RESPALDOS Y SINCRONIZACIÓN */}
+                    <div className="flex flex-wrap items-center justify-between gap-2.5 p-3 bg-slate-950/70 rounded-xl border border-slate-800">
+                        <div className="flex items-center gap-2">
+                            <span className="w-2.5 h-2.5 rounded-full bg-emerald-400 animate-pulse shadow-[0_0_8px_rgba(52,211,153,0.8)]" />
+                            <span className="text-xs font-bold text-slate-200">Supabase: Conectado</span>
+                        </div>
+
+                        <div className="flex items-center gap-2 flex-wrap">
+                            <button
+                                type="button"
+                                onClick={handleSaveBackupDayBefore}
+                                className="px-3 py-1.5 bg-yellow-600/20 hover:bg-yellow-600/30 text-yellow-300 border border-yellow-500/40 rounded-lg text-xs font-bold transition-all flex items-center gap-1.5 shadow-sm cursor-pointer"
+                                title="Guardar respaldo permanente del día anterior de Inicio Factura en Supabase"
+                            >
+                                <span>💾</span>
+                                <span>Respaldar Día Anterior</span>
+                            </button>
+
+                            <button
+                                type="button"
+                                onClick={handleRestoreBackupDayBefore}
+                                className="px-3 py-1.5 bg-blue-600/20 hover:bg-blue-600/30 text-blue-300 border border-blue-500/40 rounded-lg text-xs font-bold transition-all flex items-center gap-1.5 shadow-sm cursor-pointer"
+                                title="Cargar y restaurar el respaldo del día anterior guardado en Supabase"
+                            >
+                                <span>🔄</span>
+                                <span>Restaurar Respaldo</span>
+                            </button>
+
+                            <button
+                                type="button"
+                                onClick={handleDbModalOpen}
+                                className="px-3 py-1.5 bg-slate-800 hover:bg-slate-700 text-slate-200 border border-slate-700 rounded-lg text-xs font-semibold transition-all flex items-center gap-1.5 cursor-pointer"
+                                title="Abrir editor masivo"
+                            >
+                                <span>📝</span>
+                                <span>Edición Masiva</span>
+                            </button>
+                        </div>
+                    </div>
+
+                    {/* CAMPOS EDITABLES DIRECTOS DE LA BASE DE DATOS */}
+                    <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+                        {/* CLIENTES */}
+                        <div className="space-y-1.5">
+                            <label className="block text-xs font-bold text-slate-300 uppercase">
+                                Clientes ({library.clients.length})
+                            </label>
+                            <textarea
+                                value={library.clients.join('\n')}
+                                onChange={(e) => {
+                                    const clients = e.target.value.split('\n').filter(Boolean);
+                                    setLibrary(prev => ({ ...prev, clients }));
+                                }}
+                                rows={5}
+                                className="w-full p-2.5 bg-slate-950/80 border border-slate-700 rounded-lg text-xs font-mono text-slate-200 focus:border-blue-500 focus:outline-none"
+                                placeholder="Un cliente por renglón..."
+                            />
+                        </div>
+
+                        {/* PREFIJOS */}
+                        <div className="space-y-1.5">
+                            <label className="block text-xs font-bold text-slate-300 uppercase">
+                                Prefijos / Títulos ({library.prefixes.length})
+                            </label>
+                            <textarea
+                                value={library.prefixes.join('\n')}
+                                onChange={(e) => {
+                                    const prefixes = e.target.value.split('\n').filter(Boolean);
+                                    setLibrary(prev => ({ ...prev, prefixes }));
+                                }}
+                                rows={5}
+                                className="w-full p-2.5 bg-slate-950/80 border border-slate-700 rounded-lg text-xs font-mono text-slate-200 focus:border-blue-500 focus:outline-none"
+                                placeholder="Arq., Ing., Lic...."
+                            />
+                        </div>
+
+                        {/* PROYECTOS / PALABRAS CLAVE */}
+                        <div className="space-y-1.5">
+                            <label className="block text-xs font-bold text-slate-300 uppercase">
+                                Palabras Clave / Proyectos ({library.projects.length})
+                            </label>
+                            <textarea
+                                value={library.projects.join('\n')}
+                                onChange={(e) => {
+                                    const projects = e.target.value.split('\n').filter(Boolean);
+                                    setLibrary(prev => ({ ...prev, projects }));
+                                }}
+                                rows={5}
+                                className="w-full p-2.5 bg-slate-950/80 border border-slate-700 rounded-lg text-xs font-mono text-slate-200 focus:border-blue-500 focus:outline-none"
+                                placeholder="Casa Club, Fachada, etc...."
+                            />
+                        </div>
+
+                        {/* SERVICIOS / ACTIVIDADES */}
+                        <div className="space-y-1.5 md:col-span-2">
+                            <label className="block text-xs font-bold text-slate-300 uppercase">
+                                Actividades y Servicios ({library.activities.length})
+                            </label>
+                            <textarea
+                                value={library.activities.join('\n')}
+                                onChange={(e) => {
+                                    const activities = e.target.value.split('\n').filter(Boolean);
+                                    setLibrary(prev => ({ ...prev, activities }));
+                                }}
+                                rows={4}
+                                className="w-full p-2.5 bg-slate-950/80 border border-slate-700 rounded-lg text-xs font-mono text-slate-200 focus:border-blue-500 focus:outline-none"
+                                placeholder="Render exterior, Plano ejecutivo..."
+                            />
+                        </div>
+
+                        {/* CONDICIONES GENERALES */}
+                        <div className="space-y-1.5 md:col-span-1">
+                            <label className="block text-xs font-bold text-slate-300 uppercase">
+                                Condiciones Rápidas ({library.conditions.length})
+                            </label>
+                            <textarea
+                                value={library.conditions.join('\n')}
+                                onChange={(e) => {
+                                    const conditions = e.target.value.split('\n').filter(Boolean);
+                                    setLibrary(prev => ({ ...prev, conditions }));
+                                }}
+                                rows={4}
+                                className="w-full p-2.5 bg-slate-950/80 border border-slate-700 rounded-lg text-xs font-mono text-slate-200 focus:border-blue-500 focus:outline-none"
+                                placeholder="Condiciones predeterminadas..."
+                            />
+                        </div>
+                    </div>
+
+                    <div className="flex justify-end pt-2">
+                        <button
+                            type="button"
+                            onClick={async () => {
+                                try {
+                                    // Guardar en Inicio Factura de Supabase
+                                    await saveInicioFacturaToCloud({ ...details, _updatedLibrary: library });
+                                    alert("¡Cambios de la base de datos guardados y sincronizados con Inicio Factura en Supabase!");
+                                } catch (err: any) {
+                                    alert("Error al guardar: " + err.message);
+                                }
+                            }}
+                            className="px-5 py-2.5 bg-emerald-600 hover:bg-emerald-500 text-white rounded-xl text-xs font-bold transition-all shadow-md flex items-center gap-2 cursor-pointer"
+                        >
+                            <span>✓</span>
+                            <span>Guardar Cambios en Inicio Factura</span>
+                        </button>
+                    </div>
+                </div>
+            </fieldset>
+
                 {/* BOTÓN GENERAR VISTA PREVIA RESALTADO AL FINAL */}
-                <div className="pt-4 flex justify-end">
+                <div className="pt-4 flex items-center justify-between gap-4 border-t border-slate-800/80">
+                    {/* FOLIO DISCRETO INFERIOR DERECHO / IZQUIERDO */}
+                    <div className="flex items-center gap-2">
+                        <div className="text-[11px] font-mono text-slate-500 bg-slate-950/70 border border-slate-800/80 px-2.5 py-1 rounded-lg select-none flex items-center gap-1.5" title="Número de folio consecutivo único (no se repite)">
+                            <span className="text-slate-600 uppercase font-sans text-[9px] font-bold">Folio:</span>
+                            <span className="text-slate-300 font-bold tracking-wider">{details.folio || currentFolio}</span>
+                        </div>
+                    </div>
+
                     <button 
                         type="submit" 
                         disabled={!isFormValid}

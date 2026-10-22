@@ -4,6 +4,7 @@ import {
   fetchSavedInvoicesFromCloud, 
   deleteInvoiceFromCloud, 
   saveInvoiceToCloud, 
+  saveFolioCounterToCloud,
   SavedInvoiceItem 
 } from './services/supabaseService';
 import LoadingSpinner from './LoadingSpinner';
@@ -71,6 +72,9 @@ export const SavedInvoicesModal: React.FC<SavedInvoicesModalProps> = ({
       const iva = currentDetails.addIVA ? subAfterDisc * 0.16 : 0;
       const total = subAfterDisc + iva;
 
+      const folDigits = (currentDetails.folio || localStorage.getItem('rembrandt_quote_folio_counter') || '01000')
+        .replace(/[^0-9]/g, '')
+        .padStart(5, '0');
       const newId = `fac_${Date.now()}`;
       const newInvoice: SavedInvoiceItem = {
         id: newId,
@@ -78,13 +82,18 @@ export const SavedInvoicesModal: React.FC<SavedInvoicesModalProps> = ({
         clientName: currentDetails.recipientName || 'Cliente general',
         date: currentDetails.invoiceDate || new Date().toISOString(),
         total: Math.round(total * 100) / 100,
-        data: currentDetails,
+        data: { ...currentDetails, folio: folDigits },
         updatedAt: new Date().toISOString()
       };
 
       const ok = await saveInvoiceToCloud(newInvoice);
       if (ok) {
-        showToast("¡Factura actual guardada en Supabase!");
+        // Incrementar folio para no repetir
+        const nextNum = parseInt(folDigits, 10) + 1;
+        localStorage.setItem('rembrandt_quote_folio_counter', nextNum.toString());
+        await saveFolioCounterToCloud(nextNum);
+
+        showToast(`¡Factura guardada con éxito! (${currentDetails.recipientName || 'Cliente'} - ${currentDetails.projectName || 'Proyecto'} - ${folDigits})`);
         await loadInvoices();
       } else {
         alert("Error al guardar en Supabase. Verifica tu conexión a internet.");
@@ -111,11 +120,20 @@ export const SavedInvoicesModal: React.FC<SavedInvoicesModalProps> = ({
 
   const filtered = invoices.filter(inv => {
     const q = searchTerm.toLowerCase();
+    const folioStr = (inv.data?.folio || '').toLowerCase();
     return (
+      folioStr.includes(q) ||
       (inv.projectName || '').toLowerCase().includes(q) ||
       (inv.clientName || '').toLowerCase().includes(q) ||
       (inv.date || '').toLowerCase().includes(q)
     );
+  }).sort((a, b) => {
+    const folioA = parseInt(a.data?.folio || '0', 10);
+    const folioB = parseInt(b.data?.folio || '0', 10);
+    if (!isNaN(folioA) && !isNaN(folioB) && folioA !== folioB) {
+      return folioB - folioA;
+    }
+    return new Date(b.updatedAt || b.date).getTime() - new Date(a.updatedAt || a.date).getTime();
   });
 
   const formatCurrency = (val: number) =>
@@ -161,7 +179,7 @@ export const SavedInvoicesModal: React.FC<SavedInvoicesModalProps> = ({
           <div className="relative flex-1">
             <input 
               type="text" 
-              placeholder="Buscar por proyecto o cliente..." 
+              placeholder="Buscar por folio (ej. 01000), proyecto o cliente..." 
               value={searchTerm}
               onChange={(e) => setSearchTerm(e.target.value)}
               className="w-full bg-slate-950 border border-slate-700 rounded-xl px-3.5 py-2 text-xs text-white placeholder-slate-500 focus:outline-none focus:border-blue-500"
@@ -204,22 +222,33 @@ export const SavedInvoicesModal: React.FC<SavedInvoicesModalProps> = ({
               </p>
             </div>
           ) : (
-            filtered.map((inv) => (
+            filtered.map((inv) => {
+              const folDigits = (inv.data?.folio || '01000').replace(/[^0-9]/g, '').padStart(5, '0');
+              const client = inv.clientName || inv.data?.recipientName || 'Cliente';
+              const project = inv.projectName || inv.data?.projectName || 'Proyecto';
+              return (
               <div 
                 key={inv.id}
                 className="p-3 sm:p-4 rounded-xl bg-slate-950/70 border border-slate-800 hover:border-slate-700 transition-all flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3 group"
               >
                 <div className="flex-1 min-w-0">
                   <div className="flex items-center gap-2 flex-wrap">
-                    <h3 className="font-bold text-sm text-white truncate" title={inv.projectName}>
-                      {inv.projectName}
+                    <span className="text-[11px] font-mono font-black px-2.5 py-0.5 rounded-md bg-purple-500/20 border border-purple-500/40 text-purple-300 tracking-wider shadow-sm" title="Número de Folio">
+                      {folDigits}
+                    </span>
+                    <h3 className="font-bold text-sm text-white truncate" title={`${client} - ${project} - ${folDigits}`}>
+                      <span className="text-slate-300">{client}</span>
+                      <span className="text-slate-500 mx-1.5">-</span>
+                      <span className="text-white">{project}</span>
+                      <span className="text-slate-500 mx-1.5">-</span>
+                      <span className="text-purple-300 font-mono font-bold">{folDigits}</span>
                     </h3>
                     <span className="text-[11px] font-mono px-2 py-0.5 rounded-md bg-emerald-500/15 border border-emerald-500/30 text-emerald-300 font-bold">
                       {formatCurrency(inv.total || 0)}
                     </span>
                   </div>
                   <div className="flex items-center gap-3 text-xs text-slate-400 mt-1 flex-wrap">
-                    <span>👤 <strong className="text-slate-300">{inv.clientName || 'Sin cliente'}</strong></span>
+                    <span>👤 <strong className="text-slate-300">{client}</strong></span>
                     <span>📅 {new Date(inv.date || inv.updatedAt).toLocaleDateString('es-MX', { year: 'numeric', month: 'short', day: 'numeric' })}</span>
                     <span className="text-[10px] text-slate-500 font-mono">ID: {inv.id}</span>
                   </div>
@@ -260,9 +289,10 @@ export const SavedInvoicesModal: React.FC<SavedInvoicesModalProps> = ({
                   </button>
                 </div>
               </div>
-            ))
-          )}
-        </div>
+            );
+          })
+        )}
+      </div>
 
         {/* FOOTER */}
         <div className="p-3 border-t border-slate-800 bg-slate-950/80 flex items-center justify-between text-xs text-slate-400 px-4">

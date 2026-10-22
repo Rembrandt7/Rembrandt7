@@ -12,7 +12,7 @@ import StorageView from './ListasRemb/StorageView';
 import SafeView from './ListasRemb/SafeView';
 import LinksView from './ListasRemb/LinksView';
 import CloudSyncModal from './ListasRemb/CloudSyncModal';
-import { Task, Contact, StickyNote, StoredImage, SafeItem, LinkItem } from './ListasRemb/types';
+import type { Task, Contact, StickyNote as StickyNoteData, StoredImage, SafeItem, LinkItem } from './ListasRemb/types';
 import { INITIAL_TASKS, DEFAULT_LISTS, CATEGORY_ICONS } from './ListasRemb/constants';
 import { fetchListasFromSupabase, saveListasToSupabase } from './ListasRemb/services/listasSyncService';
 import { exportDataAsJsonFile } from '../utils/cotizadorExportUtils';
@@ -29,7 +29,7 @@ export const ListasTab: React.FC = () => {
   const [listColors, setListColors] = useState<Record<string, string>>({});
   
   const [contacts, setContacts] = useState<Contact[]>([]);
-  const [notes, setNotes] = useState<StickyNote[]>([]);
+  const [notes, setNotes] = useState<StickyNoteData[]>([]);
   const [storedImages, setStoredImages] = useState<StoredImage[]>([]);
 
   const [safePin, setSafePin] = useState<string | null>(null);
@@ -47,6 +47,8 @@ export const ListasTab: React.FC = () => {
   const [filter, setFilter] = useState<string>('all'); 
   const [taskStatusFilter, setTaskStatusFilter] = useState<'all' | 'pending' | 'completed'>('pending');
   const [showHeaderSaveMenu, setShowHeaderSaveMenu] = useState(false);
+  const [isAddingListInBar, setIsAddingListInBar] = useState(false);
+  const [newListNameInBar, setNewListNameInBar] = useState('');
   const [searchQuery, setSearchQuery] = useState('');
   
   const [editingListId, setEditingListId] = useState<string | null>(null);
@@ -114,7 +116,11 @@ export const ListasTab: React.FC = () => {
   const applyImportedObject = useCallback((data: any) => {
     isApplyingCloudRef.current = true;
     if (data.tasks && Array.isArray(data.tasks)) setTasks(data.tasks);
-    if (data.lists && Array.isArray(data.lists)) setLists(data.lists);
+    if (data.lists && Array.isArray(data.lists) && data.lists.length > 0) {
+      setLists(data.lists);
+    } else {
+      setLists(prev => (prev && prev.length > 0 ? prev : DEFAULT_LISTS));
+    }
     if (data.username) setUsername(data.username);
     if (data.listColors) setListColors(data.listColors);
     if (data.listVisibility) setListVisibility(data.listVisibility);
@@ -158,7 +164,16 @@ export const ListasTab: React.FC = () => {
         if (Array.isArray(parsedTasks) && parsedTasks.length > 0) hasLocalTasks = true;
       } catch (e) { console.error(e); }
     }
-    if (savedLists) try { setLists(JSON.parse(savedLists)); } catch (e) { console.error(e); }
+    if (savedLists) {
+      try { 
+        const parsed = JSON.parse(savedLists);
+        if (Array.isArray(parsed) && parsed.length > 0) setLists(parsed);
+        else setLists(DEFAULT_LISTS);
+      } catch (e) { 
+        console.error(e); 
+        setLists(DEFAULT_LISTS);
+      }
+    }
     if (savedUser) setUsername(savedUser);
     if (savedColors) try { setListColors(JSON.parse(savedColors)); } catch (e) { console.error(e); }
     if (savedVisibility) try { setListVisibility(JSON.parse(savedVisibility)); } catch (e) { console.error(e); }
@@ -413,7 +428,7 @@ export const ListasTab: React.FC = () => {
       setContacts(prev => prev.filter(c => c.id !== id));
   };
 
-  const addNote = (note: StickyNote) => {
+  const addNote = (note: StickyNoteData) => {
       setNotes(prev => [note, ...prev]);
   };
   const deleteNote = (id: string) => {
@@ -662,9 +677,10 @@ export const ListasTab: React.FC = () => {
       });
   };
 
+  const effectiveLists = (lists && lists.length > 0) ? lists : DEFAULT_LISTS;
   const listsToShow = (filter === 'all' || filter === 'today' || filter === 'completed')
-    ? lists
-    : lists.filter(l => l === filter);
+    ? effectiveLists
+    : effectiveLists.filter(l => l === filter);
 
   return (
     <div className="flex flex-col h-[calc(100vh-140px)] min-h-[720px] bg-[#0b0f19] text-slate-100 font-sans overflow-hidden rounded-2xl border border-slate-800/80 shadow-2xl relative w-full">
@@ -862,6 +878,135 @@ export const ListasTab: React.FC = () => {
             </button>
           </div>
         </header>
+
+        {/* Barra de Navegación de Listas */}
+        <div className="bg-[#0b101d] border-b border-slate-800/80 px-3 lg:px-6 py-2 flex items-center gap-2 overflow-x-auto no-scrollbar shrink-0">
+          <div className="flex items-center gap-1.5 shrink-0">
+            {/* Botón Ver Todo / Tablero */}
+            <button
+              onClick={() => setFilter('all')}
+              className={`flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-semibold transition-all shrink-0 cursor-pointer ${
+                filter === 'all'
+                  ? 'bg-purple-600 text-white shadow-md shadow-purple-900/40'
+                  : 'text-slate-400 hover:text-slate-200 hover:bg-slate-800/60 border border-slate-800/80'
+              }`}
+              title="Ver todas las listas juntas en el Tablero Kanban"
+            >
+              <LayoutDashboard className="w-3.5 h-3.5" />
+              <span>Tablero</span>
+            </button>
+
+            {/* Listas Dinámicas: Trabajo, Casa, Compras, etc. */}
+            {effectiveLists.map(listName => {
+              const Icon = CATEGORY_ICONS[listName] || CATEGORY_ICONS['default'];
+              const isActive = filter === listName;
+              const customColor = listColors[listName];
+              const pendingCount = tasks.filter(t => t.category === listName && !t.completed).length;
+
+              return (
+                <button
+                  key={listName}
+                  onClick={() => setFilter(listName)}
+                  className={`flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-medium transition-all shrink-0 cursor-pointer ${
+                    isActive
+                      ? 'bg-purple-600/30 text-purple-200 border border-purple-500/60 shadow-sm ring-1 ring-purple-500/30'
+                      : 'text-slate-300 hover:text-white hover:bg-slate-800/60 border border-slate-800/80'
+                  }`}
+                  style={
+                    isActive && customColor
+                      ? { backgroundColor: `${customColor}30`, borderColor: `${customColor}90`, color: '#fff' }
+                      : customColor
+                      ? { borderColor: `${customColor}40` }
+                      : undefined
+                  }
+                  title={`Ver lista: ${listName}`}
+                >
+                  <Icon 
+                    className="w-3.5 h-3.5 shrink-0" 
+                    style={{ color: customColor || (isActive ? '#c084fc' : '#94a3b8') }} 
+                  />
+                  <span className="font-semibold">{listName}</span>
+                  {pendingCount > 0 && (
+                    <span 
+                      className="text-[10px] font-mono px-1.5 py-0.2 rounded-full bg-slate-800/90 text-slate-300 border border-slate-700/60"
+                    >
+                      {pendingCount}
+                    </span>
+                  )}
+                </button>
+              );
+            })}
+
+            {/* Añadir nueva lista en la barra */}
+            {isAddingListInBar ? (
+              <form
+                onSubmit={(e) => {
+                  e.preventDefault();
+                  if (newListNameInBar.trim()) {
+                    handleAddList(newListNameInBar.trim());
+                    setNewListNameInBar('');
+                    setIsAddingListInBar(false);
+                  }
+                }}
+                className="flex items-center gap-1 bg-slate-900 px-2 py-1 rounded-lg border border-purple-500/50 shrink-0"
+              >
+                <input
+                  autoFocus
+                  type="text"
+                  value={newListNameInBar}
+                  onChange={(e) => setNewListNameInBar(e.target.value)}
+                  placeholder="Nombre lista..."
+                  className="bg-transparent text-xs text-white placeholder-slate-500 focus:outline-none w-24"
+                />
+                <button type="submit" className="text-purple-400 hover:text-purple-300 p-0.5 cursor-pointer">
+                  <Check className="w-3 h-3" />
+                </button>
+                <button type="button" onClick={() => setIsAddingListInBar(false)} className="text-slate-400 hover:text-red-400 p-0.5 cursor-pointer">
+                  <X className="w-3 h-3" />
+                </button>
+              </form>
+            ) : (
+              <button
+                onClick={() => setIsAddingListInBar(true)}
+                className="flex items-center gap-1 px-2.5 py-1.5 rounded-lg text-xs font-medium text-slate-400 hover:text-purple-300 hover:bg-slate-800/50 border border-dashed border-slate-800 hover:border-purple-500/40 transition-all shrink-0 cursor-pointer"
+                title="Crear nueva lista"
+              >
+                <Plus className="w-3.5 h-3.5" />
+                <span>Nueva lista</span>
+              </button>
+            )}
+          </div>
+
+          <div className="h-5 w-px bg-slate-800 shrink-0 mx-1" />
+
+          {/* Secondary Views: Contactos, Notas, Almacén, Caja Fuerte, Links */}
+          <div className="flex items-center gap-1 shrink-0">
+            {[
+              { id: 'contacts', icon: Users, label: 'Contactos' },
+              { id: 'notes', icon: StickyNote, label: 'Notas' },
+              { id: 'storage', icon: Archive, label: 'Almacén' },
+              { id: 'safe', icon: Lock, label: 'Caja Fuerte' },
+              { id: 'links', icon: LinkIcon, label: 'Links' },
+            ].map(item => {
+              const isActive = filter === item.id;
+              return (
+                <button
+                  key={item.id}
+                  onClick={() => setFilter(item.id)}
+                  className={`flex items-center gap-1 px-2.5 py-1.5 rounded-lg text-xs font-medium transition-all shrink-0 cursor-pointer ${
+                    isActive
+                      ? 'bg-purple-600/30 text-purple-200 border border-purple-500/60 shadow-sm'
+                      : 'text-slate-400 hover:text-slate-200 hover:bg-slate-800/60 border border-transparent'
+                  }`}
+                  title={item.label}
+                >
+                  <item.icon className="w-3.5 h-3.5" />
+                  <span>{item.label}</span>
+                </button>
+              );
+            })}
+          </div>
+        </div>
 
         {/* Board / Views Area */}
         <main className="flex-1 overflow-y-auto bg-[#070a12] relative flex flex-col min-w-0">

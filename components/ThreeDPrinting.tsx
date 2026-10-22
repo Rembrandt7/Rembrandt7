@@ -1,5 +1,5 @@
 import React, { useState, useMemo, useEffect, useRef } from 'react';
-import { Box, Wrench, Layout, Sparkles, Move, Star, Shield, Zap, Package, Key, Sword, Globe, ChevronRight, Settings, Database, ExternalLink, Cloud, Search, X, Calculator, TrendingUp, FolderArchive, Layers, Scissors, Eye, Flame } from 'lucide-react';
+import { Box, Wrench, Layout, Sparkles, Move, Star, Shield, Zap, Package, Key, Sword, Globe, ChevronRight, Settings, Database, ExternalLink, Cloud, Search, X, Calculator, TrendingUp, FolderArchive, Layers, Scissors, Eye, Flame, FolderDown, Wand2, ChevronDown, ChevronUp } from 'lucide-react';
 import { motion } from 'motion/react';
 
 import ThreeDCalculator from './ThreeDCalculator';
@@ -8,19 +8,19 @@ import ThreeDSuggestions from './ThreeDSuggestions';
 /* ─────────────────────────────────────────────────────────────────
    DATA - Audit and Corrected from PDF (stl_pack.pdf)
 ───────────────────────────────────────────────────────────────── */
-const libraries = [
+const downloadLibraries = [
   { 
     name: 'MakerWorld', 
     href: 'https://makerworld.com/es', 
     description: 'Biblioteca oficial de Bambu Lab con perfiles 3MF listos para imprimir en 1 clic y modelos multicolor AMS.',
-    icon: <img src="/makerworld_premium.png" alt="MakerWorld" className="w-5 h-5 rounded object-contain" />, 
+    icon: <img src="/makerworld_premium.png" alt="MakerWorld" className="w-6 h-6 rounded object-contain" />, 
     color: 'from-teal-500/20 to-transparent' 
   },
   { 
     name: 'Creality', 
     href: 'https://www.crealitycloud.com/es', 
     description: 'Repositorio de Creality Cloud con miles de modelos STL/G-code, figuras y accesorios para impresoras FDM.',
-    icon: <Cloud size={20} className="text-cyan-400" />, 
+    icon: <Cloud size={24} className="text-cyan-400" />, 
     color: 'from-cyan-500/20 to-transparent' 
   },
   { 
@@ -28,7 +28,7 @@ const libraries = [
     href: 'https://www.makeronline.com/en/', 
     description: 'MakerOnline (Anycubic): comunidad de modelos 3D gratuitos optimizados para serie Kobra y resina.',
     icon: (
-      <svg className="w-5 h-5 text-emerald-400" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round">
+      <svg className="w-6 h-6 text-emerald-400" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round">
         <path d="M12 2L2 7l10 5 10-5-10-5zM2 17l10 5 10-5M2 12l10 5 10-5"/>
       </svg>
     ), 
@@ -39,210 +39,203 @@ const libraries = [
     href: 'https://space.snapmaker.com/en', 
     description: 'Comunidad Snapmaker con proyectos de impresión 3D, grabado láser y diseño funcional.',
     icon: (
-      <svg className="w-5 h-5 text-blue-500" viewBox="0 0 36 36" fill="currentColor">
+      <svg className="w-6 h-6 text-blue-500" viewBox="0 0 36 36" fill="currentColor">
         <path d="M23.2899 9.13976C21.7574 8.82421 20.5055 9.02036 19.5311 9.72254C18.5567 10.4247 17.8864 11.6016 17.5232 13.2505L16.3835 18.396H16.3864L15.3677 22.9928C15.1758 23.8627 14.8864 24.4711 14.5026 24.8207C14.1187 25.1704 13.5842 25.2727 12.9022 25.1334C12.4593 25.0425 11.9868 24.8776 11.4789 24.6388L10.9238 27.1291C11.414 27.3792 12.0104 27.5754 12.7132 27.7175C14.2457 28.0331 15.4976 27.8369 16.472 27.1348C17.4464 26.4326 18.1167 25.2557 18.4799 23.6068L19.6197 18.4613H19.6167L20.6354 13.8645C20.8273 12.9946 21.1167 12.3863 21.5006 12.0366C21.8844 11.6869 22.4189 11.5846 23.1009 11.7239C23.5439 11.8148 24.0163 11.9797 24.5242 12.2185L25.0763 9.72538C24.5891 9.4809 23.9927 9.28475 23.2899 9.13976Z" />
       </svg>
     ), 
     color: 'from-blue-600/20 to-transparent' 
   },
   { 
-    name: 'Cults3D', 
-    href: 'https://cults3d.com/es', 
-    description: 'Mercado líder de diseñadores independientes: figuras articuladas flexi, cultura pop, anime y coleccionables exclusivos.',
-    icon: (
-      <svg className="w-5 h-5 text-purple-400" viewBox="0 0 24 24" fill="currentColor">
-        <path d="M12 2L4.5 20.29l.71.71L12 18l6.79 3 .71-.71L12 2z"/>
-      </svg>
-    ), 
-    color: 'from-purple-500/20 to-transparent' 
-  },
-  { 
     name: 'Printables', 
-    href: 'https://www.printables.com/?lang=es', 
-    description: 'Repositorio de Prusa Research con modelos verificados de altísima calidad, concursos y piezas funcionales.',
-    icon: <Globe size={20} className="text-orange-500" />, 
-    color: 'from-orange-600/20 to-transparent' 
-  },
-  { 
-    name: 'Thingiverse', 
-    href: 'https://www.thingiverse.com/', 
-    description: 'El repositorio gratuito más grande del mundo con millones de archivos STL para todo tipo de proyectos.',
+    href: 'https://www.printables.com/es', 
+    description: 'La plataforma comunitaria de Josef Průša con miles de diseños verificados, concursos y perfiles G-code.',
     icon: (
-      <svg className="w-5 h-5 text-blue-400" viewBox="0 0 24 24" fill="currentColor">
-        <path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm0 18c-4.41 0-8-3.59-8-8s3.59-8 8-8 8 3.59 8 8-3.59 8-8 8zm-1-13h2v6h-2zm0 8h2v2h-2z"/>
-      </svg>
-    ), 
-    color: 'from-blue-600/20 to-transparent' 
-  },
-  { 
-    name: 'MyMiniFactory', 
-    href: 'https://www.myminifactory.com/', 
-    description: 'Especializado en miniaturas de juegos de rol (D&D/Warhammer), bustos, escultura artística y cosplay.',
-    icon: (
-      <svg className="w-5 h-5 text-green-400" viewBox="0 0 24 24" fill="currentColor">
-        <path d="M12 2L2 19h20L12 2zm0 4.83L18.17 17H5.83L12 6.83z"/>
-      </svg>
-    ), 
-    color: 'from-green-500/20 to-transparent' 
-  },
-  { 
-    name: 'Thangs', 
-    href: 'https://thangs.com/', 
-    description: 'Buscador geométrico 3D que indexa millones de modelos en toda la web y detecta piezas similares.',
-    icon: (
-      <svg className="w-5 h-5 text-orange-400" viewBox="0 0 24 24" fill="currentColor">
-        <path d="M12 2L2 7v10l10 5 10-5V7l-10-5zm0 2.18L19.82 8 12 11.82 4.18 8 12 4.18zM4 15.18l7 3.5v-7.18l-7-3.5v7.18zm16 0l-7 3.5v-7.18l7-3.5v7.18z"/>
+      <svg className="w-6 h-6 text-orange-500" viewBox="0 0 24 24" fill="currentColor">
+        <path d="M12 2L2 7v10l10 5 10-5V7L12 2zm0 2.8L19.2 8 12 11.2 4.8 8 12 4.8zM4 9.5l7 3.5v7l-7-3.5V9.5zm9 10.5v-7l7-3.5v7l-7 3.5z"/>
       </svg>
     ), 
     color: 'from-orange-500/20 to-transparent' 
   },
   { 
-    name: 'Yeggi', 
-    href: 'https://www.yeggi.com/', 
-    description: 'El "Google" de los archivos STL: busca simultáneamente en Printables, Cults3D, Thingiverse y MakerWorld.',
-    icon: <Search size={20} className="text-yellow-400" />, 
-    color: 'from-yellow-500/20 to-transparent' 
+    name: 'Cults3D', 
+    href: 'https://cults3d.com/es', 
+    description: 'Marketplace de modelos 3D premium y gratuitos con las mejores figuras de anime, arte y cosplay.',
+    icon: <Sparkles size={24} className="text-purple-400" />, 
+    color: 'from-purple-500/20 to-transparent' 
+  },
+  { 
+    name: 'Thingiverse', 
+    href: 'https://www.thingiverse.com/', 
+    description: 'La biblioteca de modelos 3D abiertos más longeva del mundo, ideal para repuestos, mejoras y piezas DIY.',
+    icon: (
+      <svg className="w-6 h-6 text-blue-400" viewBox="0 0 24 24" fill="currentColor">
+        <path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm1 14.5h-2v-2h2v2zm0-4h-2V7h2v5.5z"/>
+      </svg>
+    ), 
+    color: 'from-sky-500/20 to-transparent' 
+  },
+  { 
+    name: 'Thangs', 
+    href: 'https://thangs.com/', 
+    description: 'Motor de búsqueda inteligente que rastrea geométricamente modelos en todas las plataformas 3D a la vez.',
+    icon: <Search size={24} className="text-indigo-400" />, 
+    color: 'from-indigo-500/20 to-transparent' 
+  },
+  { 
+    name: 'MyMiniFactory', 
+    href: 'https://www.myminifactory.com/', 
+    description: 'Modelos 3D garantizados y testeados para impresión, figuras de rol tabletop, bustos y miniaturas detalladas.',
+    icon: <Shield size={24} className="text-amber-400" />, 
+    color: 'from-amber-500/20 to-transparent' 
   },
   { 
     name: 'GrabCAD', 
     href: 'https://grabcad.com/library', 
-    description: 'Biblioteca profesional de ingeniería CAD: engranes, soportes mecánicos, refacciones automotrices y piezas exactas.',
-    icon: <Settings size={20} className="text-rose-400" />, 
-    color: 'from-rose-500/20 to-transparent' 
+    description: 'Comunidad de ingenieros y diseñadores mecánicos con más de 5 millones de archivos CAD, ensambles y partes.',
+    icon: <Wrench size={24} className="text-red-400" />, 
+    color: 'from-red-500/20 to-transparent' 
+  },
+  { 
+    name: 'Instructables', 
+    href: 'https://www.instructables.com/', 
+    description: 'Tutoriales paso a paso de proyectos de impresión 3D combinados con electrónica, madera y manualidades.',
+    icon: <Zap size={24} className="text-yellow-400" />, 
+    color: 'from-yellow-500/20 to-transparent' 
+  },
+];
+
+// Nueva categoría especializada: Imagen a 3D (IA y generadores)
+const imageTo3DTools = [
+  { 
+    name: 'Meshy (IA)', 
+    href: 'https://www.meshy.ai/', 
+    description: 'Generador de modelos 3D con Inteligencia Artificial a partir de texto o imágenes en segundos con texturas PBR completas.',
+    icon: (
+      <div className="w-7 h-7 rounded-lg bg-gradient-to-tr from-fuchsia-500 to-indigo-500 flex items-center justify-center text-white font-black text-xs shadow-sm">
+        M
+      </div>
+    ), 
+    color: 'from-fuchsia-600/25 to-transparent' 
+  },
+  { 
+    name: 'Hitem3D', 
+    href: 'https://hitem3d.com/', 
+    description: 'Herramienta de conversión de imágenes 2D y bocetos a malla 3D optimizada para modelistas e impresores.',
+    icon: (
+      <div className="w-7 h-7 rounded-lg bg-gradient-to-tr from-violet-600 to-purple-400 flex items-center justify-center text-white font-black text-xs shadow-sm">
+        H3
+      </div>
+    ), 
+    color: 'from-violet-600/25 to-transparent' 
+  },
+  { 
+    name: 'Tripo (IA)', 
+    href: 'https://www.tripo3d.ai/', 
+    description: 'Potente IA de texto a 3D e imagen a 3D ultrarrápida: genera geometría limpia en menos de 8 segundos.',
+    icon: (
+      <div className="w-7 h-7 rounded-lg bg-gradient-to-tr from-cyan-500 to-blue-600 flex items-center justify-center text-white font-black text-xs shadow-sm">
+        TR
+      </div>
+    ), 
+    color: 'from-cyan-600/25 to-transparent' 
+  },
+  { 
+    name: 'ImageToSTL', 
+    href: 'https://imagetostl.com/es', 
+    description: 'Conversor rápido y gratuito de fotos PNG/JPG a relieve STL, además de cambiar formatos entre STL, OBJ, 3MF y FBX.',
+    icon: <Layers size={24} className="text-rose-400" />, 
+    color: 'from-rose-500/25 to-transparent' 
+  },
+  { 
+    name: 'Dora (3D)', 
+    href: 'https://www.dora.run/ai', 
+    description: 'Crea escenas interactivas y modelos espaciales 3D interactivos con IA para previsualizar productos en la web.',
+    icon: <Sparkles size={24} className="text-pink-400" />, 
+    color: 'from-pink-500/25 to-transparent' 
   },
 ];
 
 const tools3D = [
   { 
-    name: 'Visualizador 3D', 
-    href: '/visualizador3d/index.html', 
-    isInternal: true,
-    description: 'Visor interno de archivos .STL y .3MF: revisa dimensiones, volumen, gramos estimados y si cabe en tus impresoras.',
+    name: 'Bambu Cloud', 
+    href: 'https://bambulab.com/', 
+    description: 'Ecosistema de corte en la nube de Bambu Studio con monitoreo remoto de cámaras y calibración automática.',
     icon: (
-      <svg className="w-5 h-5 text-cyan-400" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round">
-        <path d="M12 2L2 7l10 5 10-5-10-5zM2 17l10 5 10-5M2 12l10 5 10-5"/>
+      <svg className="w-6 h-6 text-emerald-400" viewBox="0 0 24 24" fill="currentColor">
+        <path d="M4 4h7v7H4V4zm9 0h7v7h-7V4zm-9 9h7v7H4v-7zm9 0h7v7h-7v-7z"/>
       </svg>
     ), 
-    color: 'from-cyan-500/20 to-transparent' 
+    color: 'from-emerald-500/20 to-transparent' 
   },
   { 
-    name: 'MakerLab', 
-    href: 'https://makerworld.com/es/makerlab', 
-    description: 'Suite gratuita de Bambu Lab para crear llaveros desde logos/imágenes, cajas de luz LED, jarrones y letreros en minutos.',
-    icon: <Sparkles size={20} className="text-emerald-400" />, 
+    name: 'SVG2STL', 
+    href: 'https://svg2stl.com/', 
+    description: 'Convierte logotipos vectoriales SVG en archivos 3D STL con grosor personalizable para imprimir llaveros o placas de marca.',
+    icon: <Sparkles size={24} className="text-emerald-400" />, 
     color: 'from-emerald-500/20 to-transparent' 
   },
   { 
     name: 'ItsLitho', 
     href: 'https://tool.itslitho.com/', 
     description: 'Convierte cualquier fotografía familiar o de mascotas en una litofanía 3D (lámpara, cilindro, esfera o llavero a contraluz).',
-    icon: <Star size={20} className="text-amber-300" />, 
+    icon: <Star size={24} className="text-amber-300" />, 
     color: 'from-amber-500/20 to-transparent' 
   },
   { 
     name: 'LithophaneMkr', 
     href: 'https://lithophanemaker.com/', 
     description: 'Generador de lámparas nocturnas, esferas lunares con fotos y marcos iluminados listos para imprimir sin soportes.',
-    icon: <Zap size={20} className="text-yellow-300" />, 
+    icon: <Zap size={24} className="text-yellow-300" />, 
     color: 'from-yellow-500/20 to-transparent' 
   },
   { 
     name: 'Tinkercad', 
     href: 'https://www.tinkercad.com/dashboard', 
     description: 'Editor CAD gratuito en el navegador: ideal para poner nombres a piezas, agregar argolla de llavero o perforar hueco de clicker.',
-    icon: <Box size={20} className="text-red-400" />, 
+    icon: <Box size={24} className="text-red-400" />, 
     color: 'from-red-500/20 to-transparent' 
   },
   { 
-    name: 'ImageToSTL', 
-    href: 'https://imagetostl.com/es', 
-    description: 'Convierte logos, escudos o imágenes PNG/JPG/SVG directamente a modelos 3D con relieve (.STL) para llaveros y letreros.',
-    icon: <Layers size={20} className="text-sky-400" />, 
-    color: 'from-sky-500/20 to-transparent' 
+    name: 'STLBuddy', 
+    href: 'https://stlbuddy.com/model-splitter', 
+    description: 'Cortador de archivos STL: divide modelos grandes en varias partes con conectores para que quepan en tu impresora.',
+    icon: <Scissors size={24} className="text-cyan-400" />, 
+    color: 'from-cyan-500/20 to-transparent' 
   },
   { 
     name: 'TouchTerrain', 
     href: 'https://touchterrain.geol.iastate.edu/', 
     description: 'Genera maquetas y cuadros topográficos 3D en relieve de cualquier montaña, volcán o ciudad del mundo en archivo STL.',
-    icon: <Globe size={20} className="text-lime-400" />, 
+    icon: <Globe size={24} className="text-lime-400" />, 
     color: 'from-lime-500/20 to-transparent' 
   },
   { 
     name: 'Boxes.py', 
     href: 'https://boxes.hackerspace-bamberg.de/', 
     description: 'Generador paramétrico de cajas organizadoras, estuches con bisagra y gavetas a la medida exacta que necesites.',
-    icon: <Package size={20} className="text-amber-400" />, 
+    icon: <Package size={24} className="text-amber-400" />, 
     color: 'from-amber-600/20 to-transparent' 
-  },
-  { 
-    name: 'Meshy (IA)', 
-    href: 'https://www.meshy.ai/workspace', 
-    description: 'Generador 3D con Inteligencia Artificial: escribe un texto o sube una foto y crea un modelo 3D completo para descargar.',
-    icon: (
-      <img 
-        src="data:image/jpeg;base64,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" 
-        alt="Meshy" 
-        className="w-5 h-5 rounded object-cover" 
-      />
-    ), 
-    color: 'from-purple-500/20 to-transparent' 
-  },
-  { 
-    name: 'Hitem3D', 
-    href: 'https://www.hitem3d.ai/create', 
-    description: 'Generador IA de modelos 3D estilizados y personajes a partir de imágenes o descripciones de texto.',
-    icon: (
-      <svg className="w-5 h-5 text-blue-400" viewBox="0 0 24 24" fill="currentColor">
-        <path d="M12 2L2 7l10 5 10-5-10-5zm0 9l-8-4 8-4 8 4-8 4zm-8 3l8 4 8-4v3l-8 4-8-4v-3z"/>
-      </svg>
-    ), 
-    color: 'from-blue-500/20 to-transparent' 
-  },
-  { 
-    name: 'STLBuddy', 
-    href: 'https://stlbuddy.com/model-splitter', 
-    description: 'Cortador de archivos STL: divide modelos grandes en varias partes con conectores para que quepan en tu impresora.',
-    icon: <Scissors size={20} className="text-cyan-400" />, 
-    color: 'from-cyan-500/20 to-transparent' 
-  },
-  { 
-    name: 'Tripo', 
-    href: 'https://studio.tripo3d.ai/', 
-    description: 'Estudio de IA rápido para convertir cualquier boceto, foto o texto en una malla 3D lista para esculpir o imprimir.',
-    icon: (
-      <svg className="w-5 h-5 text-yellow-400" viewBox="0 0 24 24" fill="currentColor">
-        <path d="M12 2L1 21h22L12 2zm0 4.5l6.5 11.5h-13L12 6.5z"/>
-      </svg>
-    ), 
-    color: 'from-yellow-500/20 to-transparent' 
-  },
-  { 
-    name: 'Dora', 
-    href: 'https://www.3dkoneko.com/dora', 
-    description: 'Herramienta creativa para exploración y generación de figuras 3D estilo anime/chibi.',
-    icon: <Sparkles size={20} className="text-rose-400" />, 
-    color: 'from-rose-500/20 to-transparent' 
   },
   { 
     name: 'Gridfinity', 
     href: 'https://gridfinitygenerator.com/es/editor', 
     description: 'Generador online de charolas, bloques y bases modulares Gridfinity para organizar cajones de herramientas y escritorio.',
-    icon: <Database size={20} className="text-orange-400" />, 
+    icon: <Database size={24} className="text-orange-400" />, 
     color: 'from-orange-500/20 to-transparent' 
   },
   { 
     name: 'Multibuild', 
     href: 'https://multibuild.io/parts', 
     description: 'Catálogo de paneles de pared modulares, ganchos y soportes de taller tipo Multiboard para organizar tu espacio.',
-    icon: <Settings size={20} className="text-indigo-400" />, 
+    icon: <Settings size={24} className="text-indigo-400" />, 
     color: 'from-indigo-500/20 to-transparent' 
   },
   { 
-    name: 'Fusion', 
+    name: 'Fusion 360', 
     href: 'https://fusion.online.autodesk.com/', 
     description: 'Acceso directo a Autodesk Fusion 360 Online para modelado mecánico y paramétrico de alta precisión.',
     icon: (
-      <svg viewBox="0 0 24 24" className="w-5 h-5">
+      <svg viewBox="0 0 24 24" className="w-6 h-6">
         <rect width="24" height="24" rx="5" fill="#FF5100"/>
         <path d="M6 5h12v3.5h-8.5v3h7v3.5h-7v4H6V5z" fill="#FFFFFF"/>
       </svg>
@@ -253,15 +246,15 @@ const tools3D = [
     name: 'Bumpmesh', 
     href: 'https://bumpmesh.com/', 
     description: 'Aplica texturas en relieve 3D (madera, ladrillo, piel, patrones geométricos) sobre cualquier imagen o superficie STL.',
-    icon: <Zap size={20} className="text-amber-400" />, 
+    icon: <Zap size={24} className="text-amber-400" />, 
     color: 'from-amber-500/20 to-transparent' 
   },
   { 
-    name: 'Letras', 
+    name: 'Letras ProLED', 
     href: 'https://proled3d.com/?lang=es', 
     description: 'Diseñador de letras corpóreas 3D y letreros luminosos con canal para tiras LED (muy rentable para negocios y eventos).',
     icon: (
-      <svg className="w-5 h-5 text-pink-400" viewBox="0 0 24 24" fill="currentColor">
+      <svg className="w-6 h-6 text-pink-400" viewBox="0 0 24 24" fill="currentColor">
         <path d="M9.93 13.5h4.14L12 7.98 9.93 13.5zM20 2H4c-1.1 0-2 .9-2 2v16c0 1.1.9 2 2 2h16c1.1 0 2-.9 2-2V4c0-1.1-.9-2-2-2zm-4.05 16.5l-1.14-3H9.17l-1.12 3H5.96l5.11-13h1.86l5.11 13h-2.09z"/>
       </svg>
     ), 
@@ -272,7 +265,7 @@ const tools3D = [
     href: 'https://guillochegenerator.com/', 
     description: 'Generador de patrones geométricos hipnóticos tipo espirográfico para posavasos, tapas decorativas y arte en relieve.',
     icon: (
-      <svg className="w-5 h-5 text-teal-300" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round">
+      <svg className="w-6 h-6 text-teal-300" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round">
         <circle cx="12" cy="12" r="9" />
         <ellipse cx="12" cy="12" rx="9" ry="4" transform="rotate(0 12 12)" />
         <ellipse cx="12" cy="12" rx="9" ry="4" transform="rotate(45 12 12)" />
@@ -476,13 +469,121 @@ const GroupCard = ({ group, className, itemsOverride }: { group: typeof groups[0
 
 type SubTab = 'sugerencias' | 'taller' | 'ventas' | 'catalogo' | 'visualizador' | 'todo';
 
+export type SectionId = 'descargas' | 'imagen3d' | 'herramientas' | 'sugerencias' | 'visualizador' | 'catalogo' | 'ventas';
+
+interface SectionConfig {
+  id: SectionId;
+  title: string;
+  badge: string;
+  subtitle: string;
+  icon: (active: boolean) => React.ReactNode;
+  activeBorder: string;
+  activeBg: string;
+  badgeColor: string;
+  glowColor: string;
+}
+
+const SECTIONS: SectionConfig[] = [
+  {
+    id: 'descargas',
+    title: 'Descargas',
+    badge: '11 Sitios',
+    subtitle: 'MakerWorld, Printables, Cults, Thingiverse...',
+    icon: (active) => <FolderDown className={`w-6 h-6 ${active ? 'text-cyan-300' : 'text-cyan-400'}`} />,
+    activeBorder: 'border-cyan-400/60',
+    activeBg: 'bg-cyan-500/15',
+    badgeColor: 'bg-cyan-500/20 text-cyan-300 border-cyan-400/30',
+    glowColor: 'shadow-cyan-900/30',
+  },
+  {
+    id: 'imagen3d',
+    title: 'Imagen a 3D',
+    badge: 'IA & Rápido',
+    subtitle: 'Meshy (IA), Hitem3D, Tripo, ImageToSTL...',
+    icon: (active) => <Wand2 className={`w-6 h-6 ${active ? 'text-fuchsia-300' : 'text-fuchsia-400'}`} />,
+    activeBorder: 'border-fuchsia-400/60',
+    activeBg: 'bg-fuchsia-500/15',
+    badgeColor: 'bg-fuchsia-500/20 text-fuchsia-300 border-fuchsia-400/30',
+    glowColor: 'shadow-fuchsia-900/30',
+  },
+  {
+    id: 'herramientas',
+    title: 'Herramientas 3D',
+    badge: '13 Utilidades',
+    subtitle: 'Litofanías, Slicers, Tinkercad, Fusion...',
+    icon: (active) => <Wrench className={`w-6 h-6 ${active ? 'text-amber-300' : 'text-amber-400'}`} />,
+    activeBorder: 'border-amber-400/60',
+    activeBg: 'bg-amber-500/15',
+    badgeColor: 'bg-amber-500/20 text-amber-300 border-amber-400/30',
+    glowColor: 'shadow-amber-900/30',
+  },
+  {
+    id: 'sugerencias',
+    title: 'Sugerencias',
+    badge: '4 del Día',
+    subtitle: 'Modelos rotativos de alta demanda comercial',
+    icon: (active) => <Flame className={`w-6 h-6 ${active ? 'text-rose-300' : 'text-rose-400'}`} />,
+    activeBorder: 'border-rose-400/60',
+    activeBg: 'bg-rose-500/15',
+    badgeColor: 'bg-rose-500/20 text-rose-300 border-rose-400/30',
+    glowColor: 'shadow-rose-900/30',
+  },
+  {
+    id: 'visualizador',
+    title: 'Visualizador 3D',
+    badge: 'STL / 3MF',
+    subtitle: 'Inspección, pintura 3D y corte con ensamble',
+    icon: (active) => <Eye className={`w-6 h-6 ${active ? 'text-sky-300' : 'text-sky-400'}`} />,
+    activeBorder: 'border-sky-400/60',
+    activeBg: 'bg-sky-500/15',
+    badgeColor: 'bg-sky-500/20 text-sky-300 border-sky-400/30',
+    glowColor: 'shadow-sky-900/30',
+  },
+  {
+    id: 'catalogo',
+    title: 'Catálogo STL',
+    badge: '+90k Modelos',
+    subtitle: 'Star Wars, Anime, Chibis, Miniaturas, Packs',
+    icon: (active) => <FolderArchive className={`w-6 h-6 ${active ? 'text-purple-300' : 'text-purple-400'}`} />,
+    activeBorder: 'border-purple-400/60',
+    activeBg: 'bg-purple-500/15',
+    badgeColor: 'bg-purple-500/20 text-purple-300 border-purple-400/30',
+    glowColor: 'shadow-purple-900/30',
+  },
+  {
+    id: 'ventas',
+    title: 'Ventas y Pedidos',
+    badge: 'CRM & Costos',
+    subtitle: 'Control de pedidos, clientes y anticipos',
+    icon: (active) => <TrendingUp className={`w-6 h-6 ${active ? 'text-emerald-300' : 'text-emerald-400'}`} />,
+    activeBorder: 'border-emerald-400/60',
+    activeBg: 'bg-emerald-500/15',
+    badgeColor: 'bg-emerald-500/20 text-emerald-300 border-emerald-400/30',
+    glowColor: 'shadow-emerald-900/30',
+  },
+];
+
 const ThreeDPrinting: React.FC = () => {
-  const [activeTab, setActiveTab] = useState<SubTab>('sugerencias');
+  // Por defecto está abierto "descargas". Máximo 2 abiertas a la vez; si se abre una 3ra, la 1ra se cierra (FIFO).
+  const [openSections, setOpenSections] = useState<SectionId[]>(['descargas']);
   const [searchQuery, setSearchQuery] = useState('');
-  const [hoveredLib, setHoveredLib] = useState<{ name: string; description: string } | null>(null);
-  const [hoveredTool, setHoveredTool] = useState<{ name: string; description: string } | null>(null);
+
   const viewerIframeRef = useRef<HTMLIFrameElement | null>(null);
   const externalFileInputRef = useRef<HTMLInputElement | null>(null);
+
+  const toggleSection = (id: SectionId) => {
+    setOpenSections(prev => {
+      // Si ya está abierta, se cierra
+      if (prev.includes(id)) {
+        return prev.filter(x => x !== id);
+      }
+      // Si ya hay 2 abiertas, quitamos la más antigua (índice 0) y agregamos la nueva al final
+      if (prev.length >= 2) {
+        return [...prev.slice(1), id];
+      }
+      return [...prev, id];
+    });
+  };
 
   const handleExternalViewerFile = async (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
@@ -520,11 +621,19 @@ const ThreeDPrinting: React.FC = () => {
       .filter(g => g.items.length > 0);
   }, [cleanQuery]);
 
-  const filteredLibraries = useMemo(() => {
-    if (!cleanQuery) return libraries;
-    return libraries.filter(l =>
+  const filteredDownloads = useMemo(() => {
+    if (!cleanQuery) return downloadLibraries;
+    return downloadLibraries.filter(l =>
       l.name.toLowerCase().includes(cleanQuery) ||
       (l.description && l.description.toLowerCase().includes(cleanQuery))
+    );
+  }, [cleanQuery]);
+
+  const filteredImageTo3D = useMemo(() => {
+    if (!cleanQuery) return imageTo3DTools;
+    return imageTo3DTools.filter(t =>
+      t.name.toLowerCase().includes(cleanQuery) ||
+      (t.description && t.description.toLowerCase().includes(cleanQuery))
     );
   }, [cleanQuery]);
 
@@ -538,396 +647,519 @@ const ThreeDPrinting: React.FC = () => {
 
   const totalMatches = useMemo(() => {
     const groupMatches = filteredGroups.reduce((acc, g) => acc + g.items.length, 0);
-    return groupMatches + filteredLibraries.length + filteredTools.length;
-  }, [filteredGroups, filteredLibraries, filteredTools]);
+    return groupMatches + filteredDownloads.length + filteredImageTo3D.length + filteredTools.length;
+  }, [filteredGroups, filteredDownloads, filteredImageTo3D, filteredTools]);
 
   return (
-    <div className="p-4 space-y-5 animate-in fade-in slide-in-from-bottom-4 duration-500 max-w-[1600px] mx-auto pb-20">
-      {/* Librerías (Siempre visible arriba con título arriba y ancho completo abajo) */}
-      <div className="flex flex-col gap-3 bg-blue-600/10 p-4 sm:p-5 rounded-2xl border border-blue-500/20 shadow-lg w-full">
-        <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2 w-full pb-2 border-b border-blue-500/15">
-          <div className="flex items-center gap-3 min-w-0">
-            <div className="p-2 bg-blue-600/20 rounded-xl border border-blue-500/30 shrink-0">
-              <Globe size={20} className="text-blue-400" />
-            </div>
-            <div className="min-w-0">
-              <h2 className="text-base sm:text-lg font-bold text-white leading-tight">Librerías</h2>
-              <p className="text-xs text-gray-400">Pasa el mouse sobre un icono para ver qué hace.</p>
-            </div>
+    <div className="p-3 sm:p-4 space-y-5 animate-in fade-in slide-in-from-bottom-4 duration-500 max-w-[1600px] mx-auto pb-24">
+      
+      {/* 7 GRANDES BOTONES DE NAVEGACIÓN (MÁXIMO 2 SECCIONES ABIERTAS A LA VEZ) */}
+      <div className="space-y-2">
+        <div className="flex items-center justify-between px-1">
+          <div className="flex items-center gap-2">
+            <span className="text-[11px] font-black uppercase tracking-wider text-slate-400">
+              Módulos de Impresión 3D
+            </span>
+            <span className="text-[10px] px-2 py-0.5 rounded-full font-bold bg-white/5 border border-white/10 text-slate-300">
+              {openSections.length} de 2 abiertas
+            </span>
           </div>
-          {hoveredLib && (
-            <p className="text-xs text-blue-200 font-medium sm:max-w-xl truncate animate-in fade-in duration-150">
-              <span className="font-black text-blue-400">{hoveredLib.name}:</span> {hoveredLib.description}
-            </p>
-          )}
+          <span className="text-[11px] text-slate-500 hidden sm:inline">
+            Al abrir una 3ra opción, la primera abierta se cierra automáticamente
+          </span>
         </div>
-        
-        <div className="grid grid-cols-3 sm:grid-cols-6 md:grid-cols-8 lg:grid-cols-11 gap-2.5 w-full">
-          {filteredLibraries.map((tool, idx) => (
-            <a
-              key={idx}
-              href={tool.href}
-              target="_blank"
-              rel="noopener noreferrer"
-              title={`${tool.name}: ${tool.description}`}
-              onMouseEnter={() => setHoveredLib({ name: tool.name, description: tool.description })}
-              onMouseLeave={() => setHoveredLib(null)}
-              className={`relative flex flex-col items-center justify-center p-2 bg-gradient-to-b ${tool.color} border border-white/10 rounded-2xl transition-all hover:scale-105 hover:border-blue-400/50 hover:z-30 group min-w-[65px] h-[78px] shadow-sm`}
-            >
-              <div className="mb-1.5 p-1 bg-gray-900/60 rounded-xl group-hover:scale-110 transition-transform flex items-center justify-center w-8 h-8 shrink-0">
-                {tool.icon}
-              </div>
-              <span className="text-[9px] font-bold text-gray-300 group-hover:text-white uppercase tracking-wider text-center line-clamp-1 w-full px-0.5">
-                {tool.name}
-              </span>
-              {/* Tooltip flotante instantáneo al pasar el mouse */}
-              <div className="pointer-events-none opacity-0 group-hover:opacity-100 transition-all duration-150 absolute left-1/2 -translate-x-1/2 top-full mt-2 w-56 p-2.5 bg-slate-950/95 backdrop-blur-md border border-blue-500/40 rounded-xl shadow-2xl z-50 text-left">
-                <div className="text-[10px] font-black text-blue-400 uppercase tracking-wider mb-0.5 flex items-center justify-between">
-                  <span>{tool.name}</span>
-                  <ExternalLink size={10} className="text-blue-400/70" />
-                </div>
-                <p className="text-[11px] text-slate-200 leading-snug font-normal">
-                  {tool.description}
-                </p>
-              </div>
-            </a>
-          ))}
-        </div>
-      </div>
 
-      {/* Herramientas 3D (Siempre visible arriba con título arriba y ancho completo abajo) */}
-      <div className="flex flex-col gap-3 bg-purple-600/10 p-4 sm:p-5 rounded-2xl border border-purple-500/20 shadow-lg w-full">
-        <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2 w-full pb-2 border-b border-purple-500/15">
-          <div className="flex items-center gap-3 min-w-0">
-            <div className="p-2 bg-purple-600/20 rounded-xl border border-purple-500/30 shrink-0">
-              <Wrench size={20} className="text-purple-400" />
-            </div>
-            <div className="min-w-0">
-              <h2 className="text-base sm:text-lg font-bold text-white leading-tight">Herramientas 3D</h2>
-              <p className="text-xs text-gray-400">Pasa el mouse sobre cada herramienta para saber qué hace.</p>
-            </div>
-          </div>
-          {hoveredTool && (
-            <p className="text-xs text-purple-200 font-medium sm:max-w-xl truncate animate-in fade-in duration-150">
-              <span className="font-black text-purple-400">{hoveredTool.name}:</span> {hoveredTool.description}
-            </p>
-          )}
-        </div>
-        
-        <div className="grid grid-cols-3 sm:grid-cols-6 md:grid-cols-8 lg:grid-cols-10 gap-2 w-full">
-          {filteredTools.map((tool, idx) => (
-            (tool as any).isInternal ? (
+        <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-7 gap-2.5">
+          {SECTIONS.map(section => {
+            const isOpen = openSections.includes(section.id);
+            return (
               <button
-                key={idx}
-                onClick={() => setActiveTab('visualizador')}
-                title={`${tool.name}: ${tool.description}`}
-                onMouseEnter={() => setHoveredTool({ name: tool.name, description: tool.description })}
-                onMouseLeave={() => setHoveredTool(null)}
-                className={`relative flex flex-col items-center justify-center p-2 bg-gradient-to-b ${tool.color} border border-cyan-500/30 rounded-2xl transition-all hover:scale-105 hover:border-cyan-400 hover:z-30 group min-w-[58px] h-[78px] shadow-sm text-center`}
+                key={section.id}
+                type="button"
+                onClick={() => toggleSection(section.id)}
+                className={`p-3 rounded-2xl border text-left transition-all duration-200 flex flex-col justify-between group cursor-pointer relative ${
+                  isOpen
+                    ? `${section.activeBg} ${section.activeBorder} shadow-lg ${section.glowColor} ring-1 ring-white/20`
+                    : 'bg-slate-900/70 border-slate-800 hover:border-slate-700 hover:bg-slate-900/90'
+                }`}
               >
-                <div className="mb-1.5 p-1 bg-gray-900/60 rounded-xl group-hover:scale-110 transition-transform flex items-center justify-center w-8 h-8 shrink-0">
-                  {tool.icon}
-                </div>
-                <span className="text-[9px] font-bold text-cyan-300 group-hover:text-white uppercase tracking-wider text-center line-clamp-1 w-full px-0.5">
-                  {tool.name}
-                </span>
-                {/* Tooltip flotante instantáneo */}
-                <div className="pointer-events-none opacity-0 group-hover:opacity-100 transition-all duration-150 absolute left-1/2 -translate-x-1/2 top-full mt-2 w-56 p-2.5 bg-slate-950/95 backdrop-blur-md border border-cyan-500/40 rounded-xl shadow-2xl z-50 text-left">
-                  <div className="text-[10px] font-black text-cyan-400 uppercase tracking-wider mb-0.5">
-                    {tool.name} (Integrado)
+                {/* Header del botón */}
+                <div className="flex items-start justify-between gap-1.5 w-full mb-2">
+                  <div className={`p-2 rounded-xl bg-slate-950/70 border border-white/10 shadow-sm shrink-0 group-hover:scale-105 transition-transform ${
+                    isOpen ? 'ring-1 ring-white/30' : ''
+                  }`}>
+                    {section.icon(isOpen)}
                   </div>
-                  <p className="text-[11px] text-slate-200 leading-snug font-normal">
-                    {tool.description}
+                  <div className="flex flex-col items-end gap-1">
+                    <span className={`text-[9px] px-1.5 py-0.5 rounded-md font-black uppercase tracking-wider border ${
+                      isOpen
+                        ? 'bg-white/20 text-white border-white/30'
+                        : section.badgeColor
+                    }`}>
+                      {isOpen ? 'Abierto' : section.badge}
+                    </span>
+                    <div className={`w-5 h-5 rounded-lg flex items-center justify-center text-slate-400 group-hover:text-white transition-transform ${
+                      isOpen ? 'rotate-180 text-white' : ''
+                    }`}>
+                      <ChevronDown size={14} />
+                    </div>
+                  </div>
+                </div>
+
+                {/* Texto del botón */}
+                <div className="min-w-0 w-full">
+                  <h3 className={`text-xs sm:text-sm font-black truncate ${
+                    isOpen ? 'text-white' : 'text-slate-200 group-hover:text-white'
+                  }`}>
+                    {section.title}
+                  </h3>
+                  <p className="text-[10px] text-slate-400 truncate mt-0.5 leading-snug">
+                    {section.subtitle}
                   </p>
                 </div>
               </button>
-            ) : (
-              <a
-                key={idx}
-                href={tool.href}
-                target="_blank"
-                rel="noopener noreferrer"
-                title={`${tool.name}: ${tool.description}`}
-                onMouseEnter={() => setHoveredTool({ name: tool.name, description: tool.description })}
-                onMouseLeave={() => setHoveredTool(null)}
-                className={`relative flex flex-col items-center justify-center p-2 bg-gradient-to-b ${tool.color} border border-white/10 rounded-2xl transition-all hover:scale-105 hover:border-purple-400/50 hover:z-30 group min-w-[58px] h-[78px] shadow-sm`}
-              >
-                <div className="mb-1.5 p-1 bg-gray-900/60 rounded-xl group-hover:scale-110 transition-transform flex items-center justify-center w-8 h-8 shrink-0">
-                  {tool.icon}
+            );
+          })}
+        </div>
+      </div>
+
+      {/* MENSAJE CUANDO TODAS ESTÁN CERRADAS */}
+      {openSections.length === 0 && (
+        <div className="p-8 text-center bg-slate-900/40 border border-white/10 rounded-3xl space-y-2 animate-in fade-in duration-200">
+          <p className="text-sm font-bold text-slate-300">
+            Haz clic en cualquiera de los botones de arriba para abrir su contenido.
+          </p>
+          <p className="text-xs text-slate-500">
+            Puedes tener hasta 2 abiertas simultáneamente (Descargas, Sugerencias, Visualizador, Catálogo, etc.).
+          </p>
+        </div>
+      )}
+
+      {/* CONTENEDOR DE SECCIONES ABIERTAS */}
+      <div className="space-y-5">
+        
+        {/* 1. SECCIÓN: DESCARGAS */}
+        {openSections.includes('descargas') && (
+          <div className="flex flex-col gap-3 bg-cyan-600/10 p-4 sm:p-5 rounded-2xl border border-cyan-500/25 shadow-xl w-full animate-in fade-in duration-200">
+            <div className="flex items-center justify-between border-b border-cyan-500/15 pb-2.5">
+              <div className="flex items-center gap-2.5">
+                <div className="p-2 rounded-xl bg-cyan-500/20 border border-cyan-400/30 text-cyan-300">
+                  <FolderDown size={18} />
                 </div>
-                <span className="text-[9px] font-bold text-gray-300 group-hover:text-white uppercase tracking-wider text-center line-clamp-1 w-full px-0.5">
-                  {tool.name}
-                </span>
-                {/* Tooltip flotante instantáneo al pasar el mouse */}
-                <div className="pointer-events-none opacity-0 group-hover:opacity-100 transition-all duration-150 absolute left-1/2 -translate-x-1/2 top-full mt-2 w-56 p-2.5 bg-slate-950/95 backdrop-blur-md border border-purple-500/40 rounded-xl shadow-2xl z-50 text-left">
-                  <div className="text-[10px] font-black text-purple-400 uppercase tracking-wider mb-0.5 flex items-center justify-between">
-                    <span>{tool.name}</span>
-                    <ExternalLink size={10} className="text-purple-400/70" />
-                  </div>
-                  <p className="text-[11px] text-slate-200 leading-snug font-normal">
-                    {tool.description}
+                <div>
+                  <h3 className="text-sm sm:text-base font-black text-white uppercase tracking-wider">
+                    Sitios de Descarga & Repositorios STL / 3MF
+                  </h3>
+                  <p className="text-[11px] text-cyan-200/80">
+                    11 plataformas oficiales verificadas para conseguir modelos 3D
                   </p>
                 </div>
-              </a>
-            )
-          ))}
-        </div>
-      </div>
-
-      {/* Barra de Sub-Pestañas */}
-      <div className="flex flex-col md:flex-row items-center justify-between gap-3 bg-slate-900/70 backdrop-blur-xl p-2.5 rounded-2xl border border-white/10 shadow-xl">
-        <div className="flex items-center gap-1.5 p-1 bg-white/5 rounded-xl border border-white/5 w-full md:w-auto overflow-x-auto scrollbar-none">
-          <button
-            onClick={() => setActiveTab('sugerencias')}
-            className={`flex items-center gap-2 px-3.5 py-2 rounded-lg text-xs font-black uppercase tracking-wider transition-all shrink-0 ${
-              activeTab === 'sugerencias'
-                ? 'bg-gradient-to-r from-amber-500 to-rose-500 text-slate-950 shadow-md'
-                : 'text-amber-300 hover:text-white hover:bg-white/5'
-            }`}
-          >
-            <Flame size={15} />
-            <span>Sugerencias (4 del Día)</span>
-          </button>
-
-          <button
-            onClick={() => setActiveTab('visualizador')}
-            className={`flex items-center gap-2 px-3.5 py-2 rounded-lg text-xs font-black uppercase tracking-wider transition-all shrink-0 ${
-              activeTab === 'visualizador'
-                ? 'bg-gradient-to-r from-cyan-600 to-blue-600 text-white shadow-md'
-                : 'text-gray-400 hover:text-white hover:bg-white/5'
-            }`}
-          >
-            <Eye size={15} />
-            <span>Visualizador 3D (STL/3MF)</span>
-          </button>
-
-          <button
-            onClick={() => setActiveTab('taller')}
-            className={`flex items-center gap-2 px-3.5 py-2 rounded-lg text-xs font-black uppercase tracking-wider transition-all shrink-0 ${
-              activeTab === 'taller'
-                ? 'bg-gradient-to-r from-blue-600 to-indigo-600 text-white shadow-md'
-                : 'text-gray-400 hover:text-white hover:bg-white/5'
-            }`}
-          >
-            <Calculator size={15} />
-            <span>Taller & Cotizador</span>
-          </button>
-
-          <button
-            onClick={() => setActiveTab('ventas')}
-            className={`flex items-center gap-2 px-3.5 py-2 rounded-lg text-xs font-black uppercase tracking-wider transition-all shrink-0 ${
-              activeTab === 'ventas'
-                ? 'bg-gradient-to-r from-emerald-600 to-teal-600 text-white shadow-md'
-                : 'text-gray-400 hover:text-white hover:bg-white/5'
-            }`}
-          >
-            <TrendingUp size={15} />
-            <span>Ventas & Pedidos</span>
-          </button>
-
-          <button
-            onClick={() => setActiveTab('catalogo')}
-            className={`flex items-center gap-2 px-3.5 py-2 rounded-lg text-xs font-black uppercase tracking-wider transition-all shrink-0 ${
-              activeTab === 'catalogo'
-                ? 'bg-gradient-to-r from-purple-600 to-pink-600 text-white shadow-md'
-                : 'text-gray-400 hover:text-white hover:bg-white/5'
-            }`}
-          >
-            <FolderArchive size={15} />
-            <span>Catálogo STL (+90k)</span>
-          </button>
-
-          <button
-            onClick={() => setActiveTab('todo')}
-            className={`flex items-center gap-1.5 px-3 py-2 rounded-lg text-xs font-black uppercase tracking-wider transition-all shrink-0 ${
-              activeTab === 'todo'
-                ? 'bg-white/20 text-white shadow-md'
-                : 'text-gray-400 hover:text-white hover:bg-white/5'
-            }`}
-            title="Ver todas las secciones en una sola pantalla continua"
-          >
-            <Layers size={14} />
-            <span>Ver Todo</span>
-          </button>
-        </div>
-
-        {/* Buscador de modelos STL y herramientas */}
-        <div className="relative w-full md:w-80">
-          <Search size={14} className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400" />
-          <input
-            type="text"
-            value={searchQuery}
-            onChange={e => {
-              setSearchQuery(e.target.value);
-              if (e.target.value.trim() && activeTab !== 'catalogo' && activeTab !== 'todo') {
-                setActiveTab('catalogo');
-              }
-            }}
-            placeholder="Buscar STL (Vader, Naruto, Cosplay...)"
-            className="w-full bg-white/5 border border-white/10 rounded-xl pl-9 pr-8 py-2 text-xs font-bold text-white placeholder:text-gray-500 focus:outline-none focus:border-purple-500/50 transition-all"
-          />
-          {searchQuery && (
-            <button
-              onClick={() => setSearchQuery('')}
-              className="absolute right-2.5 top-1/2 -translate-y-1/2 text-gray-400 hover:text-white p-0.5"
-              title="Limpiar búsqueda"
-            >
-              <X size={13} />
-            </button>
-          )}
-        </div>
-      </div>
-
-      {/* RENDER SUGERENCIAS DEL DÍA (SUGERENCIAS / TODO) */}
-      {(activeTab === 'sugerencias' || activeTab === 'todo') && (
-        <ThreeDSuggestions
-          onSendToCalculator={() => setActiveTab('taller')}
-        />
-      )}
-
-      {/* RENDER CALCULADORA (TALLER / VENTAS / TODO) */}
-      {(activeTab === 'taller' || activeTab === 'ventas' || activeTab === 'todo') && (
-        <ThreeDCalculator
-          viewMode={activeTab === 'todo' ? 'all' : activeTab}
-          onSwitchView={(newView) => setActiveTab(newView as SubTab)}
-        />
-      )}
-
-      {/* RENDER VISUALIZADOR 3D (VISUALIZADOR / TODO) */}
-      {(activeTab === 'visualizador' || activeTab === 'todo') && (
-        <div className="space-y-4 animate-in fade-in duration-300">
-          <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3 p-4 bg-slate-900/60 border border-white/10 rounded-2xl shadow-lg backdrop-blur-xl">
-            <div className="flex items-center gap-3">
-              <div className="p-2.5 bg-cyan-600/20 rounded-xl border border-cyan-500/30">
-                <Box size={22} className="text-cyan-400" />
               </div>
-              <div>
-                <h3 className="text-sm font-black text-white flex flex-wrap items-center gap-2">
-                  <span>Estudio & Visualizador 3D (STL / 3MF)</span>
-                  <span className="text-[10px] font-bold px-2 py-0.5 rounded-full bg-cyan-500/20 text-cyan-300 border border-cyan-500/30">
-                    Pintura 3D · Corte Avanzado · A1 mini · Kobra X · A2L
-                  </span>
-                </h3>
-                <p className="text-xs text-gray-400">
-                  Abre o arrastra cualquier modelo .STL o .3MF para analizar dimensiones, pintar el volumen en 3D o cortar geometrías con conectores de ensamble.
-                </p>
-              </div>
-            </div>
-
-            <div className="flex items-center gap-2 self-end sm:self-auto">
-              <input
-                ref={externalFileInputRef}
-                type="file"
-                accept=".stl,.3mf,.STL,.3MF"
-                onChange={handleExternalViewerFile}
-                className="hidden"
-              />
               <button
                 type="button"
-                onClick={() => externalFileInputRef.current?.click()}
-                className="flex items-center gap-1.5 px-3 py-1.5 bg-cyan-600 hover:bg-cyan-500 border border-cyan-400/40 rounded-xl text-xs font-bold text-white transition-all shadow-sm hover:scale-105"
-                title="Seleccionar archivo .STL o .3MF desde tu equipo"
+                onClick={() => toggleSection('descargas')}
+                className="p-1.5 rounded-xl bg-white/5 hover:bg-white/15 text-slate-400 hover:text-white transition-colors"
+                title="Cerrar Descargas"
               >
-                <Package size={14} />
-                <span>Abrir STL / 3MF</span>
-              </button>
-              <a
-                href="/visualizador3d/index.html?v=68"
-                target="_blank"
-                rel="noopener noreferrer"
-                className="flex items-center gap-1.5 px-3 py-1.5 bg-white/10 hover:bg-white/20 border border-white/15 rounded-xl text-xs font-bold text-white transition-all shadow-sm hover:scale-105"
-                title="Abrir en ventana o pestaña independiente completa"
-              >
-                <ExternalLink size={14} />
-                <span>Pestaña Nueva</span>
-              </a>
-            </div>
-          </div>
-
-          <div className="relative w-full h-[780px] md:h-[860px] bg-slate-950 rounded-2xl border border-white/10 overflow-hidden shadow-2xl">
-            <iframe
-              ref={viewerIframeRef}
-              src="/visualizador3d/index.html?v=68"
-              className="w-full h-full border-none"
-              title="Visualizador 3D STL & 3MF"
-              allow="fullscreen"
-            />
-          </div>
-        </div>
-      )}
-
-      {/* RENDER CATÁLOGO DE MODELOS STL (CATÁLOGO / TODO) */}
-      {(activeTab === 'catalogo' || activeTab === 'todo') && (
-        <div className="space-y-6 animate-in fade-in duration-300">
-          {/* Alerta de resultados de búsqueda */}
-          {cleanQuery && (
-            <div className="flex items-center justify-between p-3.5 bg-purple-500/10 border border-purple-500/20 rounded-2xl text-xs">
-              <span className="text-purple-300 font-bold flex items-center gap-2">
-                <Search size={14} />
-                <span>
-                  Resultados para "<strong className="text-white">{searchQuery}</strong>":{' '}
-                  <span className="text-emerald-400 font-black">{totalMatches} encontrados</span>
-                </span>
-              </span>
-              <button
-                onClick={() => setSearchQuery('')}
-                className="text-[10px] font-black uppercase text-gray-400 hover:text-white bg-white/5 hover:bg-white/10 px-2.5 py-1 rounded-lg transition-all"
-              >
-                Limpiar filtro
+                <X size={16} />
               </button>
             </div>
-          )}
-
-          {/* Mensaje cuando no hay resultados en la búsqueda */}
-          {cleanQuery && totalMatches === 0 && (
-            <div className="p-12 text-center bg-slate-900/30 border border-white/5 rounded-3xl space-y-2">
-              <p className="text-base font-bold text-gray-400">No se encontraron modelos ni herramientas con "{searchQuery}".</p>
-              <p className="text-xs text-gray-500">Prueba buscando por categoría como "Anime", "Star Wars", "Macetas", "Chibis" o el nombre de un personaje.</p>
-            </div>
-          )}
-
-          {/* Grid de STLs */}
-          {cleanQuery ? (
-            <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-4 gap-6">
-              {filteredGroups.map((group, idx) => (
-                <GroupCard key={idx} group={group} itemsOverride={group.items} />
+            
+            <div className="grid grid-cols-2 sm:grid-cols-4 md:grid-cols-6 lg:grid-cols-8 xl:grid-cols-11 gap-2.5 w-full">
+              {filteredDownloads.map((tool, idx) => (
+                <a
+                  key={idx}
+                  href={tool.href}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  title={`${tool.name}: ${tool.description}`}
+                  className={`relative flex flex-col items-center justify-center p-2.5 bg-gradient-to-b ${tool.color} border border-white/10 rounded-2xl transition-all hover:scale-105 hover:border-cyan-400/50 hover:z-30 group min-h-[90px] shadow-sm text-center`}
+                >
+                  <div className="mb-2 p-2 bg-gray-900/70 rounded-xl group-hover:scale-110 transition-transform flex items-center justify-center w-10 h-10 shrink-0">
+                    {tool.icon}
+                  </div>
+                  <span className="text-[10px] font-bold text-gray-200 group-hover:text-white uppercase tracking-wider line-clamp-1 w-full px-0.5">
+                    {tool.name}
+                  </span>
+                  {/* Tooltip flotante */}
+                  <div className="pointer-events-none opacity-0 group-hover:opacity-100 transition-all duration-150 absolute left-1/2 -translate-x-1/2 top-full mt-2 w-56 p-2.5 bg-slate-950/95 backdrop-blur-md border border-cyan-500/40 rounded-xl shadow-2xl z-50 text-left">
+                    <div className="text-[10px] font-black text-cyan-400 uppercase tracking-wider mb-0.5 flex items-center justify-between">
+                      <span>{tool.name}</span>
+                      <ExternalLink size={10} className="text-cyan-400/70" />
+                    </div>
+                    <p className="text-[11px] text-slate-200 leading-snug font-normal">
+                      {tool.description}
+                    </p>
+                  </div>
+                </a>
               ))}
             </div>
-          ) : (
-            <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-4 gap-6">
-              {/* Column 1 (Total: 12 items) */}
-              <div className="flex flex-col gap-6">
-                <GroupCard group={groups[0]} /> {/* Mega Pack: 10 items */}
-                <GroupCard group={groups[5]} /> {/* Articulados: 2 items */}
+          </div>
+        )}
+
+        {/* 2. SECCIÓN: IMAGEN A 3D */}
+        {openSections.includes('imagen3d') && (
+          <div className="flex flex-col gap-3 bg-fuchsia-600/10 p-4 sm:p-5 rounded-2xl border border-fuchsia-500/25 shadow-xl w-full animate-in fade-in duration-200">
+            <div className="flex items-center justify-between border-b border-fuchsia-500/15 pb-2.5">
+              <div className="flex items-center gap-2.5">
+                <div className="p-2 rounded-xl bg-fuchsia-500/20 border border-fuchsia-400/30 text-fuchsia-300">
+                  <Wand2 size={18} />
+                </div>
+                <div>
+                  <h3 className="text-sm sm:text-base font-black text-white uppercase tracking-wider">
+                    Imagen a 3D · Inteligencia Artificial & Conversores
+                  </h3>
+                  <p className="text-[11px] text-fuchsia-200/80">
+                    Genera geometrías 3D a partir de fotos o bocetos 2D en segundos
+                  </p>
+                </div>
+              </div>
+              <button
+                type="button"
+                onClick={() => toggleSection('imagen3d')}
+                className="p-1.5 rounded-xl bg-white/5 hover:bg-white/15 text-slate-400 hover:text-white transition-colors"
+                title="Cerrar Imagen a 3D"
+              >
+                <X size={16} />
+              </button>
+            </div>
+            
+            <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-5 gap-3 w-full">
+              {filteredImageTo3D.map((tool, idx) => (
+                <a
+                  key={idx}
+                  href={tool.href}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  title={`${tool.name}: ${tool.description}`}
+                  className={`relative flex flex-col items-center justify-center p-3.5 bg-gradient-to-b ${tool.color} border border-fuchsia-500/20 rounded-2xl transition-all hover:scale-105 hover:border-fuchsia-400 hover:z-30 group min-h-[96px] shadow-md text-center`}
+                >
+                  <div className="mb-2 p-2 bg-gray-900/80 rounded-xl group-hover:scale-110 transition-transform flex items-center justify-center w-11 h-11 shrink-0">
+                    {tool.icon}
+                  </div>
+                  <span className="text-xs font-black text-white uppercase tracking-wider line-clamp-1 w-full px-0.5">
+                    {tool.name}
+                  </span>
+                  <span className="text-[10px] text-fuchsia-300/80 font-medium line-clamp-1 mt-0.5">
+                    {tool.description.split(':')[0]}
+                  </span>
+                  {/* Tooltip flotante */}
+                  <div className="pointer-events-none opacity-0 group-hover:opacity-100 transition-all duration-150 absolute left-1/2 -translate-x-1/2 top-full mt-2 w-60 p-2.5 bg-slate-950/95 backdrop-blur-md border border-fuchsia-500/40 rounded-xl shadow-2xl z-50 text-left">
+                    <div className="text-[10px] font-black text-fuchsia-400 uppercase tracking-wider mb-0.5 flex items-center justify-between">
+                      <span>{tool.name}</span>
+                      <ExternalLink size={10} className="text-fuchsia-400/70" />
+                    </div>
+                    <p className="text-[11px] text-slate-200 leading-snug font-normal">
+                      {tool.description}
+                    </p>
+                  </div>
+                </a>
+              ))}
+            </div>
+          </div>
+        )}
+
+        {/* 3. SECCIÓN: HERRAMIENTAS 3D */}
+        {openSections.includes('herramientas') && (
+          <div className="flex flex-col gap-3 bg-amber-600/10 p-4 sm:p-5 rounded-2xl border border-amber-500/25 shadow-xl w-full animate-in fade-in duration-200">
+            <div className="flex items-center justify-between border-b border-amber-500/15 pb-2.5">
+              <div className="flex items-center gap-2.5">
+                <div className="p-2 rounded-xl bg-amber-500/20 border border-amber-400/30 text-amber-300">
+                  <Wrench size={18} />
+                </div>
+                <div>
+                  <h3 className="text-sm sm:text-base font-black text-white uppercase tracking-wider">
+                    Herramientas 3D · Slicers, Litofanías & Editores
+                  </h3>
+                  <p className="text-[11px] text-amber-200/80">
+                    13 utilidades de modelado rápido, división STL y cajas paramétricas
+                  </p>
+                </div>
+              </div>
+              <button
+                type="button"
+                onClick={() => toggleSection('herramientas')}
+                className="p-1.5 rounded-xl bg-white/5 hover:bg-white/15 text-slate-400 hover:text-white transition-colors"
+                title="Cerrar Herramientas 3D"
+              >
+                <X size={16} />
+              </button>
+            </div>
+            
+            <div className="grid grid-cols-2 sm:grid-cols-4 md:grid-cols-6 lg:grid-cols-7 xl:grid-cols-13 gap-2 w-full">
+              {filteredTools.map((tool, idx) => (
+                <a
+                  key={idx}
+                  href={tool.href}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  title={`${tool.name}: ${tool.description}`}
+                  className={`relative flex flex-col items-center justify-center p-2.5 bg-gradient-to-b ${tool.color} border border-white/10 rounded-2xl transition-all hover:scale-105 hover:border-amber-400/50 hover:z-30 group min-h-[90px] shadow-sm text-center`}
+                >
+                  <div className="mb-2 p-2 bg-gray-900/70 rounded-xl group-hover:scale-110 transition-transform flex items-center justify-center w-10 h-10 shrink-0">
+                    {tool.icon}
+                  </div>
+                  <span className="text-[10px] font-bold text-gray-200 group-hover:text-white uppercase tracking-wider line-clamp-1 w-full px-0.5">
+                    {tool.name}
+                  </span>
+                  {/* Tooltip flotante */}
+                  <div className="pointer-events-none opacity-0 group-hover:opacity-100 transition-all duration-150 absolute left-1/2 -translate-x-1/2 top-full mt-2 w-56 p-2.5 bg-slate-950/95 backdrop-blur-md border border-amber-500/40 rounded-xl shadow-2xl z-50 text-left">
+                    <div className="text-[10px] font-black text-amber-400 uppercase tracking-wider mb-0.5 flex items-center justify-between">
+                      <span>{tool.name}</span>
+                      <ExternalLink size={10} className="text-amber-400/70" />
+                    </div>
+                    <p className="text-[11px] text-slate-200 leading-snug font-normal">
+                      {tool.description}
+                    </p>
+                  </div>
+                </a>
+              ))}
+            </div>
+          </div>
+        )}
+
+        {/* 4. SECCIÓN: SUGERENCIAS DEL DÍA */}
+        {openSections.includes('sugerencias') && (
+          <div className="flex flex-col gap-3 bg-rose-600/10 p-4 sm:p-5 rounded-2xl border border-rose-500/25 shadow-xl w-full animate-in fade-in duration-200">
+            <div className="flex items-center justify-between border-b border-rose-500/15 pb-2.5">
+              <div className="flex items-center gap-2.5">
+                <div className="p-2 rounded-xl bg-rose-500/20 border border-rose-400/30 text-rose-300">
+                  <Flame size={18} />
+                </div>
+                <div>
+                  <h3 className="text-sm sm:text-base font-black text-white uppercase tracking-wider">
+                    Sugerencias del Día · 4 Modelos de Alta Demanda
+                  </h3>
+                  <p className="text-[11px] text-rose-200/80">
+                    Rotación automática diaria con parámetros calculados y listos para imprimir
+                  </p>
+                </div>
+              </div>
+              <button
+                type="button"
+                onClick={() => toggleSection('sugerencias')}
+                className="p-1.5 rounded-xl bg-white/5 hover:bg-white/15 text-slate-400 hover:text-white transition-colors"
+                title="Cerrar Sugerencias"
+              >
+                <X size={16} />
+              </button>
+            </div>
+
+            <ThreeDSuggestions
+              onSendToCalculator={() => {
+                window.dispatchEvent(new CustomEvent('open-calculator-widget', { detail: { mode: '3d' } }));
+              }}
+            />
+          </div>
+        )}
+
+        {/* 5. SECCIÓN: VISUALIZADOR 3D */}
+        {openSections.includes('visualizador') && (
+          <div className="flex flex-col gap-3 bg-sky-600/10 p-4 sm:p-5 rounded-2xl border border-sky-500/25 shadow-xl w-full animate-in fade-in duration-200">
+            <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3 border-b border-sky-500/15 pb-2.5">
+              <div className="flex items-center gap-2.5">
+                <div className="p-2 rounded-xl bg-sky-500/20 border border-sky-400/30 text-sky-300">
+                  <Eye size={18} />
+                </div>
+                <div>
+                  <h3 className="text-sm sm:text-base font-black text-white uppercase tracking-wider">
+                    Estudio & Visualizador 3D (STL / 3MF)
+                  </h3>
+                  <p className="text-[11px] text-sky-200/80">
+                    Pintura 3D, inspección de capas, corte con conectores y compatibilidad A1 mini / Kobra
+                  </p>
+                </div>
               </div>
 
-              {/* Column 2 (Total: 11 items) */}
-              <div className="flex flex-col gap-6">
-                <GroupCard group={groups[1]} /> {/* Anime Legends: 7 items */}
-                <GroupCard group={groups[2]} /> {/* Pokémon World: 4 items */}
-              </div>
-
-              {/* Column 3 (Total: 11 items) */}
-              <div className="flex flex-col gap-6">
-                <GroupCard group={groups[7]} /> {/* Star Wars: 7 items */}
-                <GroupCard group={groups[4]} /> {/* Marvel & DC: 4 items */}
-              </div>
-
-              {/* Column 4 (Total: 12 items) */}
-              <div className="flex flex-col gap-6">
-                <GroupCard group={groups[3]} /> {/* Máscaras 3D: 6 items */}
-                <GroupCard group={groups[6]} /> {/* Llaveros: 6 items */}
+              <div className="flex items-center gap-2 self-end sm:self-auto">
+                <input
+                  ref={externalFileInputRef}
+                  type="file"
+                  accept=".stl,.3mf,.STL,.3MF"
+                  onChange={handleExternalViewerFile}
+                  className="hidden"
+                />
+                <button
+                  type="button"
+                  onClick={() => externalFileInputRef.current?.click()}
+                  className="flex items-center gap-1.5 px-3 py-1.5 bg-sky-600 hover:bg-sky-500 border border-sky-400/40 rounded-xl text-xs font-bold text-white transition-all shadow-sm hover:scale-105"
+                  title="Seleccionar archivo .STL o .3MF desde tu equipo"
+                >
+                  <Package size={14} />
+                  <span>Abrir STL / 3MF</span>
+                </button>
+                <a
+                  href="/visualizador3d/index.html?v=68"
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="flex items-center gap-1.5 px-3 py-1.5 bg-white/10 hover:bg-white/20 border border-white/15 rounded-xl text-xs font-bold text-white transition-all shadow-sm hover:scale-105"
+                  title="Abrir en ventana o pestaña independiente completa"
+                >
+                  <ExternalLink size={14} />
+                  <span>Pestaña Nueva</span>
+                </a>
+                <button
+                  type="button"
+                  onClick={() => toggleSection('visualizador')}
+                  className="p-1.5 rounded-xl bg-white/5 hover:bg-white/15 text-slate-400 hover:text-white transition-colors ml-1"
+                  title="Cerrar Visualizador 3D"
+                >
+                  <X size={16} />
+                </button>
               </div>
             </div>
-          )}
 
-          <div className="p-6 bg-gradient-to-r from-purple-600/10 to-blue-600/10 rounded-3xl border border-white/10 text-center">
-            <p className="text-sm text-gray-400">
-              Recursos 3D optimizados con enlaces directos a Google Drive y repositorios oficiales.
-            </p>
+            <div className="relative w-full h-[740px] md:h-[820px] bg-slate-950 rounded-2xl border border-white/10 overflow-hidden shadow-2xl">
+              <iframe
+                ref={viewerIframeRef}
+                src="/visualizador3d/index.html?v=68"
+                className="w-full h-full border-none"
+                title="Visualizador 3D STL & 3MF"
+                allow="fullscreen"
+              />
+            </div>
           </div>
-        </div>
-      )}
+        )}
+
+        {/* 6. SECCIÓN: CATÁLOGO STL */}
+        {openSections.includes('catalogo') && (
+          <div className="flex flex-col gap-4 bg-purple-600/10 p-4 sm:p-5 rounded-2xl border border-purple-500/25 shadow-xl w-full animate-in fade-in duration-200">
+            <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3 border-b border-purple-500/15 pb-2.5">
+              <div className="flex items-center gap-2.5">
+                <div className="p-2 rounded-xl bg-purple-500/20 border border-purple-400/30 text-purple-300">
+                  <FolderArchive size={18} />
+                </div>
+                <div>
+                  <h3 className="text-sm sm:text-base font-black text-white uppercase tracking-wider">
+                    Catálogo STL (+90,000 Modelos en Drive)
+                  </h3>
+                  <p className="text-[11px] text-purple-200/80">
+                    Colección clasificada por carpetas y packs listos para descargar
+                  </p>
+                </div>
+              </div>
+
+              {/* Buscador dentro del catálogo */}
+              <div className="flex items-center gap-2 w-full sm:w-auto">
+                <div className="relative flex-1 sm:w-72">
+                  <Search size={14} className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400" />
+                  <input
+                    type="text"
+                    value={searchQuery}
+                    onChange={e => setSearchQuery(e.target.value)}
+                    placeholder="Buscar STL (Vader, Naruto, Chibis...)"
+                    className="w-full bg-slate-900/90 border border-purple-400/30 rounded-xl pl-9 pr-8 py-1.5 text-xs font-bold text-white placeholder:text-gray-500 focus:outline-none focus:border-purple-400 transition-all"
+                  />
+                  {searchQuery && (
+                    <button
+                      onClick={() => setSearchQuery('')}
+                      className="absolute right-2.5 top-1/2 -translate-y-1/2 text-gray-400 hover:text-white p-0.5"
+                      title="Limpiar búsqueda"
+                    >
+                      <X size={13} />
+                    </button>
+                  )}
+                </div>
+                <button
+                  type="button"
+                  onClick={() => toggleSection('catalogo')}
+                  className="p-1.5 rounded-xl bg-white/5 hover:bg-white/15 text-slate-400 hover:text-white transition-colors"
+                  title="Cerrar Catálogo STL"
+                >
+                  <X size={16} />
+                </button>
+              </div>
+            </div>
+
+            {/* Alerta de resultados de búsqueda */}
+            {cleanQuery && (
+              <div className="flex items-center justify-between p-3 bg-purple-500/15 border border-purple-500/30 rounded-xl text-xs">
+                <span className="text-purple-200 font-bold flex items-center gap-2">
+                  <Search size={14} />
+                  <span>
+                    Resultados para "<strong className="text-white">{searchQuery}</strong>":{' '}
+                    <span className="text-emerald-400 font-black">{totalMatches} encontrados</span>
+                  </span>
+                </span>
+                <button
+                  onClick={() => setSearchQuery('')}
+                  className="text-[10px] font-black uppercase text-gray-400 hover:text-white bg-white/10 hover:bg-white/20 px-2.5 py-1 rounded-lg transition-all"
+                >
+                  Limpiar filtro
+                </button>
+              </div>
+            )}
+
+            {/* Mensaje cuando no hay resultados en la búsqueda */}
+            {cleanQuery && totalMatches === 0 && (
+              <div className="p-8 text-center bg-slate-900/30 border border-white/5 rounded-2xl space-y-1.5">
+                <p className="text-sm font-bold text-gray-300">No se encontraron modelos con "{searchQuery}".</p>
+                <p className="text-xs text-gray-500">Prueba buscando por categoría como "Anime", "Star Wars", "Macetas", "Chibis" o el nombre de un personaje.</p>
+              </div>
+            )}
+
+            {/* Grid de STLs */}
+            {cleanQuery ? (
+              <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-4 gap-4">
+                {filteredGroups.map((group, idx) => (
+                  <GroupCard key={idx} group={group} itemsOverride={group.items} />
+                ))}
+              </div>
+            ) : (
+              <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-4 gap-4">
+                <div className="flex flex-col gap-4">
+                  <GroupCard group={groups[0]} />
+                  <GroupCard group={groups[5]} />
+                </div>
+                <div className="flex flex-col gap-4">
+                  <GroupCard group={groups[1]} />
+                  <GroupCard group={groups[2]} />
+                </div>
+                <div className="flex flex-col gap-4">
+                  <GroupCard group={groups[7]} />
+                  <GroupCard group={groups[4]} />
+                </div>
+                <div className="flex flex-col gap-4">
+                  <GroupCard group={groups[3]} />
+                  <GroupCard group={groups[6]} />
+                </div>
+              </div>
+            )}
+          </div>
+        )}
+
+        {/* 7. SECCIÓN: VENTAS Y PEDIDOS */}
+        {openSections.includes('ventas') && (
+          <div className="flex flex-col gap-3 bg-emerald-600/10 p-4 sm:p-5 rounded-2xl border border-emerald-500/25 shadow-xl w-full animate-in fade-in duration-200">
+            <div className="flex items-center justify-between border-b border-emerald-500/15 pb-2.5">
+              <div className="flex items-center gap-2.5">
+                <div className="p-2 rounded-xl bg-emerald-500/20 border border-emerald-400/30 text-emerald-300">
+                  <TrendingUp size={18} />
+                </div>
+                <div>
+                  <h3 className="text-sm sm:text-base font-black text-white uppercase tracking-wider">
+                    Ventas & Pedidos de Impresión 3D
+                  </h3>
+                  <p className="text-[11px] text-emerald-200/80">
+                    Historial de encargos, estados de cobro, costos y registro de anticipos
+                  </p>
+                </div>
+              </div>
+              <button
+                type="button"
+                onClick={() => toggleSection('ventas')}
+                className="p-1.5 rounded-xl bg-white/5 hover:bg-white/15 text-slate-400 hover:text-white transition-colors"
+                title="Cerrar Ventas y Pedidos"
+              >
+                <X size={16} />
+              </button>
+            </div>
+
+            <ThreeDCalculator viewMode="ventas" />
+          </div>
+        )}
+
+      </div>
     </div>
   );
 };

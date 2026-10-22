@@ -1,6 +1,6 @@
 import React, { useRef, useState } from 'react';
 import type { QuoteDetails } from './types';
-import { saveInvoiceToCloud } from './services/supabaseService';
+import { saveInvoiceToCloud, saveFolioCounterToCloud } from './services/supabaseService';
 
 import { DEFAULT_LOGO_B64 } from './constants/defaultLogo';
 import { exportDataAsJsonFile, exportBase64AsFile } from '../../utils/cotizadorExportUtils';
@@ -17,7 +17,8 @@ const HDR_LOGO_B64 = DEFAULT_LOGO_B64;
 const QuoteDisplay: React.FC<QuoteDisplayProps> = ({ details, onReset, onEdit }) => {
   const quoteRef = useRef<HTMLDivElement>(null);
   const [isGenerating, setIsGenerating] = useState(false);
-  const [isMunicipalMode, setIsMunicipalMode] = useState(false);
+  // Compresión municipal SIEMPRE activa por defecto para archivos ultra ligeros
+  const [isMunicipalMode] = useState(true);
   const [isSavingCloud, setIsSavingCloud] = useState(false);
   const [cloudSavedToast, setCloudSavedToast] = useState<string | null>(null);
   
@@ -91,23 +92,42 @@ const QuoteDisplay: React.FC<QuoteDisplayProps> = ({ details, onReset, onEdit })
 
         const originalShadow = input.style.boxShadow;
         input.style.boxShadow = 'none';
-        input.classList.add('printing');
 
         const scale = isMunicipalMode ? 1.4 : 2;
         const quality = isMunicipalMode ? 0.72 : 0.95;
 
-        const canvas = await html2canvas(input, { 
-            scale, 
-            useCORS: true,
-            allowTaint: true,
-            backgroundColor: '#ffffff'
+        let canvas: HTMLCanvasElement;
+        try {
+            canvas = await html2canvas(input, { 
+                scale, 
+                useCORS: true,
+                allowTaint: false,
+                backgroundColor: '#ffffff',
+                logging: false,
+                imageTimeout: 5000
+            });
+        } catch (hErr: any) {
+            console.error("Error en html2canvas:", hErr);
+            throw new Error("html2canvas: " + (hErr?.message || hErr));
+        } finally {
+            input.style.boxShadow = originalShadow;
+        }
+        
+        let imgData: string;
+        try {
+            imgData = canvas.toDataURL('image/jpeg', quality);
+        } catch (cErr: any) {
+            console.error("Error en toDataURL:", cErr);
+            throw new Error("toDataURL: " + (cErr?.message || cErr));
+        }
+
+        const pdf = new jsPDF({
+            orientation: 'p',
+            unit: 'mm',
+            format: 'a4',
+            compress: true
         });
 
-        input.style.boxShadow = originalShadow;
-        input.classList.remove('printing');
-        
-        const imgData = canvas.toDataURL('image/jpeg', quality);
-        const pdf = new jsPDF('p', 'mm', 'a4');
         const pdfWidth = pdf.internal.pageSize.getWidth();
         const pdfPageHeight = pdf.internal.pageSize.getHeight();
         const imgProps = pdf.getImageProperties(imgData);
@@ -127,17 +147,45 @@ const QuoteDisplay: React.FC<QuoteDisplayProps> = ({ details, onReset, onEdit })
         
         pdf.addImage(imgData, 'JPEG', xOffset, 0, finalWidth, finalHeight, undefined, isMunicipalMode ? 'FAST' : 'NONE');
         
-        const clean = (str: string) => str.replace(/[^a-z0-9áéíóúñÁÉÍÓÚÑ]/gi, '_').trim();
+        const clean = (str: string) => str.replace(/[^a-z0-9áéíóúñÁÉÍÓÚÑ \-_]/gi, '').trim();
         const c = clean(details.recipientName) || 'Cliente';
         const p = clean(details.projectName) || 'Proyecto';
-        const suffix = isMunicipalMode ? '_Municipal' : '';
-        const fileName = `${c}-${p}${suffix}.pdf`;
+        const folDigits = (details.folio || '01000').replace(/[^0-9]/g, '').padStart(5, '0');
+        const fileName = `${c} - ${p} - ${folDigits}.pdf`;
 
-        pdf.save(fileName);
+        // Incrustar metadatos ligeros (EXCLUYENDO binarios pesados que provocan Maximum call stack size exceeded)
+        try {
+            const { taxSituationPdfB64, logoB64, signatureB64, ...lightDetails } = details;
+            const keywordsPayload = JSON.stringify({
+                ...lightDetails,
+                folio: details.folio || '01000',
+                _exportedAt: new Date().toISOString()
+            });
+
+            if (keywordsPayload.length < 30000) {
+                pdf.setProperties({
+                    title: fileName,
+                    subject: 'CotizacionRembrandt',
+                    author: 'Rembrandt Cotizador',
+                    keywords: keywordsPayload
+                });
+            }
+        } catch (mErr) {
+            console.warn("No se pudieron incrustar metadatos en el PDF:", mErr);
+        }
+
+        try {
+            pdf.save(fileName);
+        } catch (saveErr: any) {
+            console.error("Error en pdf.save:", saveErr);
+            throw new Error("pdf.save: " + (saveErr?.message || saveErr));
+        }
+
         return fileName;
 
     } catch (error) {
         console.error("Error generating PDF", error);
+        alert("Error al generar el PDF: " + (error instanceof Error ? error.message : String(error)));
         return null;
     } finally {
         setIsGenerating(false);
@@ -149,18 +197,25 @@ const QuoteDisplay: React.FC<QuoteDisplayProps> = ({ details, onReset, onEdit })
     setIsSavingCloud(true);
     try {
       const totalAmount = subtotalAfterDiscount + ivaAmount - ivaWithholdingAmount - isrWithholdingAmount;
+      const folDigits = (details.folio || '01000').replace(/[^0-9]/g, '').padStart(5, '0');
       const newInvoice = {
         id: `fac_${Date.now()}`,
         projectName: details.projectName || 'Proyecto sin título',
         clientName: details.recipientName || 'Cliente',
         date: details.invoiceDate || new Date().toISOString(),
         total: Math.round(totalAmount * 100) / 100,
-        data: details,
+        data: { ...details, folio: folDigits },
         updatedAt: new Date().toISOString()
       };
       const ok = await saveInvoiceToCloud(newInvoice);
       if (ok) {
-        setCloudSavedToast("¡Factura guardada exitosamente en Supabase!");
+        // Incrementar consecutivo (+1) para que la siguiente factura no repita folio
+        const nextNum = parseInt(folDigits, 10) + 1;
+        const nextNumStr = nextNum.toString();
+        localStorage.setItem('rembrandt_quote_folio_counter', nextNumStr);
+        saveFolioCounterToCloud(nextNum);
+
+        setCloudSavedToast(`¡Factura guardada! (${details.recipientName || 'Cliente'} - ${details.projectName || 'Proyecto'} - ${folDigits})`);
         setTimeout(() => setCloudSavedToast(null), 4000);
       } else {
         alert("Error al guardar en Supabase. Verifica la conexión.");
@@ -236,19 +291,15 @@ Arq. Rembrandt Blanco`;
   };
 
   const handleDownloadPdf = async () => {
-    const fileName = await generateAndSavePdf();
-    if (fileName && details) {
-        const dataToSave = {
-            version: 2,
-            timestamp: new Date().toISOString(),
-            details: details,
-            library: { 
-                clients: [details.recipientName],
-                projects: [details.projectName] 
-            } 
-        };
-        const jsonFileName = fileName.replace(/\.pdf$/i, '.json');
-        exportDataAsJsonFile(dataToSave, jsonFileName);
+    try {
+      const fileName = await generateAndSavePdf();
+      if (!fileName) return;
+
+      // Guardar automáticamente la cotización comprimida en Supabase
+      await handleSaveToCloud();
+    } catch (e: any) {
+      console.error("Error en handleDownloadPdf:", e);
+      alert("Error al procesar la cotización: " + (e?.message || e));
     }
   };
   
@@ -304,8 +355,83 @@ Arq. Rembrandt Blanco`;
   };
 
   return (
-    <div className="max-w-4xl mx-auto pb-24 relative">
+    <div className="max-w-4xl mx-auto pb-12 pt-2 relative">
       
+      {/* Action Bar Superior (Acomodados arriba: Editar, Nueva, Descargar PDF, etc.) */}
+      <div className="no-print sticky top-2 z-40 bg-[#0d1322]/95 backdrop-blur-md border border-slate-800 p-2.5 sm:p-3 rounded-2xl shadow-2xl flex flex-wrap justify-between items-center gap-2 mb-6">
+        <div className="flex flex-wrap items-center gap-2">
+            <button 
+              onClick={onEdit} 
+              className="px-3.5 py-2 bg-slate-800 hover:bg-slate-700 text-slate-200 rounded-lg font-medium transition-colors text-xs border border-slate-700 cursor-pointer flex items-center gap-1.5"
+            >
+              <span>&larr;</span>
+              <span>Editar</span>
+            </button>
+            <button 
+              onClick={onReset} 
+              className="px-3.5 py-2 bg-slate-800 hover:bg-slate-700 text-slate-200 rounded-lg font-medium transition-colors text-xs border border-slate-700 cursor-pointer flex items-center gap-1"
+            >
+              <span>+</span>
+              <span>Nueva</span>
+            </button>
+            <button 
+              onClick={() => handleDownloadPdf()}
+              disabled={isGenerating}
+              className="px-4 py-2 bg-blue-600 hover:bg-blue-500 text-white rounded-lg font-semibold text-xs transition-colors shadow-sm whitespace-nowrap cursor-pointer flex items-center gap-1.5 disabled:opacity-50"
+              title="Descargar PDF ligero comprimido y guardar automáticamente en Supabase"
+            >
+              <span>{isGenerating ? 'Generando...' : '📥 Descargar PDF'}</span>
+              <span className="bg-purple-900/80 text-purple-200 text-[10px] px-1.5 py-0.2 rounded font-mono">Ligero</span>
+            </button>
+
+            {/* BOTÓN GUARDAR EN SUPABASE */}
+            <button
+              onClick={handleSaveToCloud}
+              disabled={isSavingCloud}
+              className="px-3.5 py-2 rounded-lg bg-teal-950/60 hover:bg-teal-900/60 text-teal-300 border border-teal-500/40 transition-all font-semibold text-xs whitespace-nowrap cursor-pointer flex items-center gap-1.5 disabled:opacity-50"
+              title="Guardar esta cotización en Supabase para abrirla desde Facturas"
+            >
+              <span>☁️</span>
+              <span>{isSavingCloud ? 'Guardando...' : 'Guardar en Supabase'}</span>
+            </button>
+
+            <button 
+                onClick={handleDownloadJSON}
+                className="px-3 py-2 rounded-lg bg-amber-950/50 hover:bg-amber-900/60 text-amber-300 border border-amber-500/30 transition-all font-medium text-xs whitespace-nowrap cursor-pointer"
+                title="Descargar respaldo JSON de la cotización"
+            >
+                JSON
+            </button>
+        </div>
+
+        <div className="flex flex-wrap items-center gap-2">
+            <button 
+              onClick={handleWhatsAppClick}
+              disabled={isGenerating}
+              className="px-3.5 py-2 bg-emerald-600 hover:bg-emerald-500 text-white rounded-lg font-semibold text-xs transition-colors shadow-sm whitespace-nowrap cursor-pointer flex items-center gap-1"
+            >
+              <span>💬</span>
+              <span>WhatsApp</span>
+            </button>
+            <button 
+              onClick={handleEmailClick}
+              disabled={isGenerating}
+              className="px-3.5 py-2 bg-sky-600 hover:bg-sky-500 text-white rounded-lg font-medium text-xs transition-colors shadow-sm whitespace-nowrap cursor-pointer flex items-center gap-1"
+            >
+              <span>✉️</span>
+              <span>Correo</span>
+            </button>
+            <button 
+              onClick={() => { setShowInvoiceModal(true); }}
+              disabled={isGenerating}
+              className="px-3.5 py-2 bg-indigo-950/60 hover:bg-indigo-900/60 text-indigo-300 border border-indigo-500/40 rounded-lg transition-colors font-medium text-xs whitespace-nowrap cursor-pointer flex items-center gap-1"
+            >
+              <span>💼</span>
+              <span>Solicitar Factura</span>
+            </button>
+        </div>
+      </div>
+
       {/* 1. VISUAL QUOTE (The Printable Area) */}
       <div 
         ref={quoteRef} 
@@ -317,6 +443,7 @@ Arq. Rembrandt Blanco`;
                   <img 
                     src={details.logoB64 || HDR_LOGO_B64} 
                     alt="Company Logo" 
+                    crossOrigin={(details.logoB64 || HDR_LOGO_B64).startsWith('http') ? "anonymous" : undefined}
                     className="h-24 object-contain mb-2"
                   />
                   <div className="text-xs text-slate-500 font-sans space-y-0.5">
@@ -433,12 +560,17 @@ Arq. Rembrandt Blanco`;
               {/* Signature */}
               <div className="text-center mt-12">
                   {details.signatureB64 && (
-                      <img src={details.signatureB64} alt="Firma" className="h-20 mx-auto mb-2 object-contain filter contrast-125" />
+                      <img src={details.signatureB64} alt="Firma" crossOrigin={details.signatureB64.startsWith('http') ? "anonymous" : undefined} className="h-20 mx-auto mb-2 object-contain filter contrast-125" />
                   )}
                   <div className="border-t border-slate-300 w-64 mx-auto pt-2">
                       <p className="font-bold text-slate-800 font-serif">Arq. Rembrandt Blanco</p>
                       <p className="text-xs text-slate-500 uppercase tracking-widest font-sans">Gerente de Proyecto</p>
                   </div>
+              </div>
+
+              {/* Folio Discreto en la parte inferior derecha */}
+              <div className="absolute bottom-4 right-6 text-[10px] font-mono text-slate-400 select-none">
+                  Folio: {(details.folio || '01000').replace(/[^0-9]/g, '').padStart(5, '0')}
               </div>
           </div>
       </div>
@@ -535,79 +667,6 @@ Arq. Rembrandt Blanco`;
           <span>{cloudSavedToast}</span>
         </div>
       )}
-
-      {/* Action Bar - Acomodados del lado izquierdo */}
-      <div className="no-print fixed bottom-0 left-0 right-0 bg-[#0d1322]/95 backdrop-blur-md border-t border-slate-800 p-3 shadow-2xl z-50">
-        <div className="max-w-5xl mx-auto flex flex-wrap justify-start items-center gap-2">
-            <button onClick={onEdit} className="px-3.5 py-2 bg-slate-800 hover:bg-slate-700 text-slate-200 rounded-lg font-medium transition-colors text-xs border border-slate-700 cursor-pointer">
-              &larr; Editar
-            </button>
-            <button onClick={onReset} className="px-3.5 py-2 bg-slate-800 hover:bg-slate-700 text-slate-200 rounded-lg font-medium transition-colors text-xs border border-slate-700 cursor-pointer">
-              Nueva
-            </button>
-            <button 
-              onClick={() => handleDownloadPdf()}
-              disabled={isGenerating}
-              className="px-4 py-2 bg-blue-600 hover:bg-blue-500 text-white rounded-lg font-semibold text-xs transition-colors shadow-sm whitespace-nowrap cursor-pointer flex items-center gap-1.5"
-            >
-              <span>Descargar PDF</span>
-              {isMunicipalMode && <span className="bg-purple-900/80 text-purple-200 text-[10px] px-1.5 py-0.2 rounded font-mono">Ligero</span>}
-            </button>
-
-            {/* BOTÓN TOGGLE COMPRESIÓN MUNICIPAL */}
-            <button
-              onClick={() => setIsMunicipalMode(!isMunicipalMode)}
-              className={`px-3 py-2 rounded-lg text-xs font-bold transition-all border flex items-center gap-1.5 cursor-pointer ${
-                isMunicipalMode 
-                  ? 'bg-purple-600/30 text-purple-200 border-purple-400 shadow-[0_0_12px_rgba(168,85,247,0.4)]' 
-                  : 'bg-slate-800/80 text-slate-400 border-slate-700 hover:text-slate-200'
-              }`}
-              title="Optimiza y comprime el PDF (<1MB) para trámites y portales municipales"
-            >
-              <span>🏛️</span>
-              <span>Compresión Municipal {isMunicipalMode ? '✓ Activa' : ''}</span>
-            </button>
-
-            {/* BOTÓN GUARDAR EN SUPABASE */}
-            <button
-              onClick={handleSaveToCloud}
-              disabled={isSavingCloud}
-              className="px-3.5 py-2 rounded-lg bg-teal-950/60 hover:bg-teal-900/60 text-teal-300 border border-teal-500/40 transition-all font-semibold text-xs whitespace-nowrap cursor-pointer flex items-center gap-1.5 disabled:opacity-50"
-              title="Guardar esta cotización directamente en Supabase para abrirla o modificarla después"
-            >
-              <span>☁️</span>
-              <span>{isSavingCloud ? 'Guardando...' : 'Guardar en Supabase'}</span>
-            </button>
-
-            <button 
-                onClick={handleDownloadJSON}
-                className="px-3.5 py-2 rounded-lg bg-amber-950/60 hover:bg-amber-900/60 text-amber-300 border border-amber-500/30 transition-all font-medium text-xs whitespace-nowrap cursor-pointer"
-            >
-                Guardar Datos JSON
-            </button>
-            <button 
-              onClick={handleWhatsAppClick}
-              disabled={isGenerating}
-              className="px-4 py-2 bg-emerald-600 hover:bg-emerald-500 text-white rounded-lg font-semibold text-xs transition-colors shadow-sm whitespace-nowrap cursor-pointer"
-            >
-              Enviar WhatsApp
-            </button>
-            <button 
-              onClick={handleEmailClick}
-              disabled={isGenerating}
-              className="px-3.5 py-2 bg-sky-600 hover:bg-sky-500 text-white rounded-lg font-medium text-xs transition-colors shadow-sm whitespace-nowrap cursor-pointer"
-            >
-               Enviar Correo
-            </button>
-            <button 
-              onClick={() => { setShowInvoiceModal(true); }}
-              disabled={isGenerating}
-              className="px-3.5 py-2 bg-indigo-950/60 hover:bg-indigo-900/60 text-indigo-300 border border-indigo-500/40 rounded-lg transition-colors font-medium text-xs whitespace-nowrap cursor-pointer"
-            >
-               Solicitar Factura
-            </button>
-        </div>
-      </div>
 
     </div>
   );

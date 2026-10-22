@@ -51,6 +51,8 @@ export interface QuoteDetails {
   taxId?: string; // RFC
   legalName?: string; // Razón Social
   requireAdvance: boolean; // Toggle for 50% advance
+  folio?: string; // Consecutivo 5 dígitos e.g. "01000"
+  invoiceDate?: string;
 }
 
 export interface GeneratedQuote {

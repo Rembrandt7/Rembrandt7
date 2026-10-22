@@ -556,7 +556,89 @@ const MASTER_SUGGESTIONS_POOL: PrintSuggestionItem[] = [
     demandBadge: '⚡ Pack Rentable',
     baseScore: 88,
   },
+  {
+    id: 'sug-foldable-phone-stand',
+    title: 'Soporte Plegable de Bolsillo para Celular / Tablet',
+    searchKeyword: 'foldable pocket phone stand',
+    category: 'Gadgets & Escritorio',
+    platform: 'Printables',
+    url: 'https://www.printables.com/model/86903-foldable-pocket-phone-stand',
+    imageUrl: 'https://media.printables.com/media/prints/86903/images/864387_c6295fc7-60e0-40e9-b54c-1d37803e1e55/img_20211029_115049.jpg',
+    description: 'Soporte articulado ultraplano de bolsillo; se imprime en 40 minutos en una sola pieza sin ensambles.',
+    whyItSells: 'Cuesta menos de $15 MXN de filamento y se vende entre $80 y $120 MXN en cualquier mostrador o bazar.',
+    tags: ['celular', 'soporte', 'plegable', 'gadget', 'bolsillo', 'print in place'],
+    estimatedGrams: 24,
+    estimatedHours: 0.9,
+    suggestedPriceMxn: 100,
+    material: 'PLA',
+    demandBadge: '🔥 Impresión Rápida',
+    baseScore: 97,
+  },
+  {
+    id: 'sug-mini-vice-clamp',
+    title: 'Mini Tornillo de Banco Print-in-Place',
+    searchKeyword: 'mini bench vise print in place',
+    category: 'Hogar & Funcional',
+    platform: 'MakerWorld',
+    url: 'https://makerworld.com/es/models/17215-print-in-place-mini-vice',
+    imageUrl: 'https://media.printables.com/media/prints/928/images/4740324_2fa4be7c-c068-4ef8-a786-34b73eb35676_56d1d6b8-f490-482a-91f6-6ff7af1997db/00100dportrait_00100_burst20180423003754672_cover.jpg',
+    description: 'Prensa mecánica completamente funcional con rosca y mordaza lista para usar al despegar de la cama.',
+    whyItSells: 'Demuestra la magia de la impresión 3D a primera vista; irresistible para aficionados a las herramientas.',
+    tags: ['herramienta', 'prensa', 'mecanico', 'print in place', 'taller'],
+    estimatedGrams: 75,
+    estimatedHours: 2.8,
+    suggestedPriceMxn: 190,
+    material: 'PETG',
+    demandBadge: '⚙️ Mecanismo 100%',
+    baseScore: 94,
+  },
+  {
+    id: 'sug-mushroom-organic-lamp',
+    title: 'Lámpara Champiñón Hongo LED Nórdica',
+    searchKeyword: 'mushroom lamp led ambient',
+    category: 'Iluminación & Lámparas',
+    platform: 'Printables',
+    url: 'https://www.printables.com/model/499623-mushroom-lamp',
+    imageUrl: 'https://media.printables.com/media/prints/499623/images/3956321_0494cf54-205e-42c2-8ae3-be2fa3732049/mushroom_lamp.jpg',
+    description: 'Lámpara moderna estilo nórdico de hongo que difumina suavemente la luz LED para buroes y salas.',
+    whyItSells: 'Diseño en tendencia estética viral en TikTok e Instagram; margen superior a $250 MXN por pieza.',
+    tags: ['lampara', 'hongo', 'nordico', 'led', 'decoracion', 'minimalista'],
+    estimatedGrams: 115,
+    estimatedHours: 4.2,
+    suggestedPriceMxn: 390,
+    material: 'PLA',
+    demandBadge: '🍄 Tendencia Viral',
+    baseScore: 96,
+  },
+  {
+    id: 'sug-switch-cartridge-block',
+    title: 'Cubo Pregunta Mario Estuche Juegos Switch',
+    searchKeyword: 'switch question block game holder',
+    category: 'Gaming & Controles',
+    platform: 'Printables',
+    url: 'https://www.printables.com/model/29841-nintendo-switch-cartridge-case-mario-block',
+    imageUrl: 'https://media.printables.com/media/prints/29841/images/322961_45b37628-97c7-43ca-95df-2d22bdf5f87b/switch_block.jpg',
+    description: 'Bloque con muelle emergente para guardar hasta 12 cartuchos de Nintendo Switch.',
+    whyItSells: 'El coleccionable geek favorito de los poseedores de Switch; venta constante en cualquier época.',
+    tags: ['switch', 'mario', 'gaming', 'estuche', 'geek', 'regalo'],
+    estimatedGrams: 85,
+    estimatedHours: 3.0,
+    suggestedPriceMxn: 220,
+    material: 'PLA',
+    demandBadge: '⭐ Clásico Gamer',
+    baseScore: 98,
+  },
 ];
+
+function getDateDayIndex(dateStr: string): number {
+  try {
+    const [y, m, d] = dateStr.split('-').map(Number);
+    const dt = new Date(y, m - 1, d);
+    return Math.floor(dt.getTime() / (1000 * 60 * 60 * 24));
+  } catch {
+    return 0;
+  }
+}
 
 function getTodayStr(): string {
   const now = new Date();
@@ -875,9 +957,14 @@ const ThreeDSuggestions: React.FC<ThreeDSuggestionsProps> = ({ onSendToCalculato
       }
     }
 
+    const daySeed = getDateDayIndex(today);
+    // Rotación diaria determinista: cada nuevo día calendario rota automáticamente
+    // a 4 sugerencias totalmente frescas sin repetir el lote anterior
     const ranked = [...availablePool].sort((a, b) => {
-      const scoreB = scoreSuggestionItem(b, profile);
-      const scoreA = scoreSuggestionItem(a, profile);
+      const hashA = (daySeed * 37 + a.id.split('').reduce((acc, c) => acc + c.charCodeAt(0), 0)) % 1000;
+      const hashB = (daySeed * 37 + b.id.split('').reduce((acc, c) => acc + c.charCodeAt(0), 0)) % 1000;
+      const scoreB = scoreSuggestionItem(b, profile) + (hashB / 40);
+      const scoreA = scoreSuggestionItem(a, profile) + (hashA / 40);
       return scoreB - scoreA;
     });
 
@@ -1558,7 +1645,7 @@ Responde ÚNICAMENTE con un arreglo JSON válido con este formato exacto:
 
       {/* VISTA 1: LAS 4 SUGERENCIAS DEL DÍA */}
       {activeSubView === 'daily' && (
-        <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-4 gap-5">
+        <div className="grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-4 gap-3.5">
           <AnimatePresence mode="popLayout">
             {dailySlots.map((item, slotIndex) => {
               const isLiked = profile.likedIds.includes(item.id);
@@ -1586,7 +1673,7 @@ Responde ÚNICAMENTE con un arreglo JSON válido con este formato exacto:
                       onKeyDown={e => {
                         if (e.key === 'Enter' || e.key === ' ') openExternalModelUrl(item.url);
                       }}
-                      className="relative h-52 w-full bg-slate-950 overflow-hidden cursor-pointer"
+                      className="relative h-36 w-full bg-slate-950 overflow-hidden cursor-pointer"
                       title={`Haz clic para abrir "${item.title}" en ${item.platform}`}
                     >
                       <img
@@ -1623,7 +1710,7 @@ Responde ÚNICAMENTE con un arreglo JSON válido con este formato exacto:
                     </div>
 
                     {/* CONTENIDO DE LA TARJETA */}
-                    <div className="p-4 space-y-3">
+                    <div className="p-3 space-y-2">
                       <div
                         onClick={e => openExternalModelUrl(item.url, e)}
                         className="flex items-start justify-between gap-2 cursor-pointer group/title"
@@ -1703,7 +1790,7 @@ Responde ÚNICAMENTE con un arreglo JSON válido con este formato exacto:
                   </div>
 
                   {/* BOTONES DE ACCIÓN Y APRENDIZAJE */}
-                  <div className="p-4 pt-0 space-y-2">
+                  <div className="p-3 pt-0 space-y-1.5">
                     <div className="grid grid-cols-2 gap-2">
                       <button
                         type="button"
