@@ -41,7 +41,8 @@ import {
   Sparkles,
   Calculator,
   CheckSquare,
-  Minimize2
+  Minimize2,
+  UploadCloud
 } from 'lucide-react';
 import { Tab, TabConfig, LinkItem } from './types';
 import { AnimatePresence, motion } from 'motion/react';
@@ -116,7 +117,7 @@ import NotificationOverlay from './components/NotificationOverlay';
 import { Message } from './types';
 
 import { LinkProvider, useLinks } from './contexts/LinkContext';
-import { Toaster } from 'sonner';
+import { Toaster, toast } from 'sonner';
 import { GlobalSearch } from './components/GlobalSearch';
 import { PwaInstallPrompt } from './components/PwaInstallPrompt';
 import {
@@ -278,6 +279,35 @@ const MainLayout: React.FC = () => {
   const { config, updateConfig, isEditing, toggleEditing, saveToSupabase, fetchConfigFromSupabaseManual, updateNotifications, activeTabId, setActiveTabId, syncStatus } = useLinks();
   const { isMobile, isFoldUnfolded } = useDeviceLayout();
   const [previousActiveTabId, setPreviousActiveTabId] = useState<string>('email-gen');
+
+  const isLocalHost = typeof window !== 'undefined' && 
+    (window.location.hostname === 'localhost' || window.location.hostname === '127.0.0.1' || window.location.hostname === '::1');
+  const [isDeploying, setIsDeploying] = useState(false);
+
+  const handleDeployToVercel = async () => {
+    if (isDeploying) return;
+    const confirmed = window.confirm("¿Deseas publicar todos los cambios locales a Producción (Vercel)?");
+    if (!confirmed) return;
+
+    setIsDeploying(true);
+    const toastId = toast.loading("Subiendo cambios locales a Vercel...");
+    try {
+      const res = await fetch('/api/dev/deploy', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ message: "feat: despliegue desde panel local" })
+      });
+      const data = await res.json();
+      if (!res.ok || !data.success) {
+        throw new Error(data.error || "Error al desplegar");
+      }
+      toast.success(data.message || "¡Despliegue enviado a Vercel!", { id: toastId, duration: 6000 });
+    } catch (err: any) {
+      toast.error(`Error al subir a Vercel: ${err.message}`, { id: toastId, duration: 6000 });
+    } finally {
+      setIsDeploying(false);
+    }
+  };
 
   const allAiModels = config.aiSidebar?.models || [];
   const geminiItem = allAiModels.find(m => {
@@ -977,6 +1007,31 @@ const MainLayout: React.FC = () => {
 
                     {/* Actions Toolbar */}
                     <div className="flex items-center gap-2 pl-2.5 border-l border-white/10 self-stretch">
+                      {/* Botón Exclusivo de Entorno Local: Subir a Vercel */}
+                      {isLocalHost && (
+                        <motion.button
+                          whileHover={{ scale: 1.04 }}
+                          whileTap={{ scale: 0.96 }}
+                          disabled={isDeploying}
+                          onClick={handleDeployToVercel}
+                          className="self-stretch flex items-center justify-center gap-2 px-3.5 py-2 rounded-xl bg-gradient-to-r from-emerald-600/35 via-teal-600/30 to-cyan-600/35 hover:from-emerald-600/55 hover:to-cyan-600/50 border border-emerald-500/40 text-emerald-200 hover:text-white transition-all shadow-md shadow-emerald-950/40 disabled:opacity-50"
+                          title="Modo Local Activo: Clic para subir todos los cambios probados a Producción (Vercel)"
+                        >
+                          {isDeploying ? (
+                            <>
+                              <RefreshCw size={15} className="animate-spin text-emerald-400" />
+                              <span className="text-xs sm:text-sm font-bold tracking-wide whitespace-nowrap">Subiendo a Vercel...</span>
+                            </>
+                          ) : (
+                            <>
+                              <UploadCloud size={16} className="text-emerald-400" />
+                              <span className="text-xs sm:text-sm font-bold tracking-wide whitespace-nowrap">Subir a Vercel</span>
+                              <span className="w-2 h-2 rounded-full bg-emerald-400 shadow-[0_0_8px_rgba(52,211,153,0.9)] animate-pulse" />
+                            </>
+                          )}
+                        </motion.button>
+                      )}
+
                       {/* Global Quick Voice & Idea Capture Button - Grande a todo lo alto */}
                       <motion.button 
                         whileHover={{ scale: 1.04 }} 
@@ -1098,6 +1153,23 @@ const MainLayout: React.FC = () => {
                   </div>
 
                   <div className="flex items-center gap-0.5 sm:gap-1 shrink-0">
+                    {isLocalHost && (
+                      <button
+                        disabled={isDeploying}
+                        onClick={handleDeployToVercel}
+                        className="p-1.5 sm:p-2 text-emerald-300 hover:text-white bg-emerald-500/15 border border-emerald-500/30 rounded-xl flex items-center gap-1 text-[11px] font-bold"
+                        title="Subir a Vercel"
+                      >
+                        {isDeploying ? (
+                          <RefreshCw size={14} className="animate-spin text-emerald-400" />
+                        ) : (
+                          <>
+                            <UploadCloud size={14} className="text-emerald-400" />
+                            <span className="hidden xs:inline">Subir</span>
+                          </>
+                        )}
+                      </button>
+                    )}
                     <button
                       onClick={() => window.dispatchEvent(new CustomEvent('open-global-search'))}
                       className="p-1.5 sm:p-2 text-purple-300 hover:text-white bg-purple-500/10 border border-purple-500/20 rounded-xl"

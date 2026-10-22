@@ -22,27 +22,32 @@ Dado que este equipo cuenta con monitoreo de Antivirus/EDR corporativo y las car
 
 ---
 
-## 2. Protocolo Obligatorio de Finalización de Tareas y Despliegue en Vercel
+## 2. Flujo de Trabajo en Modo Local Primero y Despliegue a Vercel a Petición
 
-Cada vez que el usuario solicite un cambio o nueva funcionalidad, **NO** des por terminada la tarea solo con editar los archivos locales. Debes seguir este flujo completo:
+Para agilizar el desarrollo y evitar demoras innecesarias de despliegue en la nube por cada cambio o ajuste menor, se establece la siguiente regla obligatoria para todos los chats:
 
-1. **Verificación Local**:
-   - Incrementar la versión de caché en `public/sw.js` (ej. `rembrandt-pwa-v58`, etc.) cuando haya cambios para forzar la actualización de la PWA.
-   - Si se ejecuta `vite build` localmente, borrar la carpeta `dist` inmediatamente después de verificar.
+1. **Desarrollo y Previsualización Inmediata en Modo Local (`http://localhost:3000`)**:
+   - Cada vez que el usuario solicite un cambio (diseño, íconos, reordenamiento, funciones, componentes), **aplica los cambios inmediatamente en los archivos locales**.
+   - El servidor de desarrollo local (`.\node-portable.exe .\node_modules\tsx\dist\cli.mjs server.ts`) se encarga de reflejar los cambios en caliente (Hot Reload) en menos de 1 segundo en `http://localhost:3000`.
+   - **ESTÁ PROHIBIDO compilar o subir a Vercel por cada ajuste intermedio**. Nunca hagas commit ni push hasta que el usuario haya visto el cambio en local y dé su aprobación expresa.
 
-2. **Commit y Push a GitHub**:
-   - Ejecutar `git add .`
-   - Ejecutar `git commit -m "<mensaje descriptivo>"`
-   - Ejecutar `git push origin main` y `git push origin HEAD:main-Rembrandt7`
+2. **Botón Exclusivo de Entorno Local ("Subir a Vercel")**:
+   - En entorno local (`localhost`), la interfaz de Rembrandt muestra un botón visible en el header: `[Subir a Vercel]`.
+   - Este botón permite al usuario lanzar el despliegue automático hacia Vercel directamente con un solo clic.
+   - En producción (Vercel), este botón permanece **100% oculto e inexistente** para no alterar la interfaz pública.
 
-3. **Verificación de Despliegue en Vercel**:
-   - Monitorear el estado del commit mediante la API de GitHub:
-     `curl.exe -s "https://api.github.com/repos/Rembrandt7/Rembrandt7/commits/<commit_sha>/statuses"`
-   - Esperar hasta que Vercel reporte `"state": "success"` (`"description": "Deployment has completed"`).
-   - Verificar con `curl.exe -s -H "Cache-Control: no-cache" https://rembrandt7.vercel.app/sw.js` que la nueva versión esté activa.
-
-4. **Entrega al Usuario**:
-   - Solo confirmar que la tarea está completada UNA VEZ que el cambio esté verificado en vivo en Vercel.
+3. **Protocolo de Publicación a Producción (Vercel)**:
+   - Se ejecuta **ÚNICAMENTE** cuando ocurra una de estas dos situaciones:
+     a) El usuario lo pide explícitamente en el chat (ej. *"Súbelo a Vercel"*, *"Publicar"*, *"Pásalo a producción"*).
+     b) El usuario pulsa el botón local `[Subir a Vercel]`.
+   - Cuando se autoriza la subida a Vercel:
+     1. Incrementar versión en `public/sw.js` (ej. `rembrandt-pwa-v...`) y en `package.json`.
+     2. Si se prueba `vite build` localmente, borrar la carpeta `dist/` de inmediato.
+     3. Ejecutar `git add .`, `git commit -m "<mensaje descriptivo>"`.
+     4. Ejecutar `git push origin main` y `git push origin HEAD:main-Rembrandt7`.
+     5. Monitorear el commit en GitHub API hasta que Vercel reporte `"state": "success"`.
+     6. Verificar con `curl.exe` que el `sw.js` en vivo refleje la nueva versión.
+     7. Confirmar al usuario que la versión en producción está actualizada.
 
 ---
 

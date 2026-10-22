@@ -281,6 +281,167 @@ export const uploadDefaultConfigsToCloud = async (configs: DefaultConfigProfile[
   }
 };
 
+export interface SavedInvoiceItem {
+  id: string;
+  projectName: string;
+  clientName: string;
+  date: string;
+  total: number;
+  data: any;
+  updatedAt: string;
+}
+
+export const saveInicioFacturaToCloud = async (quoteData: any): Promise<boolean> => {
+  if (!supabase) return false;
+  try {
+    const jsonStr = JSON.stringify(quoteData);
+
+    // 1. Guardar en tabla library para persistencia instantánea
+    await supabase.from('library').delete().eq('category', 'inicio_factura');
+    const { error: dbError } = await supabase.from('library').insert([{
+      category: 'inicio_factura',
+      value: jsonStr
+    }]);
+
+    if (dbError) {
+      console.warn("Error guardando inicio_factura en tabla library:", dbError);
+    }
+
+    // 2. Guardar también en Storage en carpeta específica 'inicio_factura'
+    try {
+      const blob = new Blob([jsonStr], { type: 'application/json' });
+      await supabase.storage.from('Rembrandtcosas').upload('inicio_factura/inicio_factura.json', blob, {
+        upsert: true,
+        contentType: 'application/json'
+      });
+    } catch (storageErr) {
+      console.warn("Storage upload inicio_factura opcional falló:", storageErr);
+    }
+
+    return true;
+  } catch (err) {
+    console.error("Error en saveInicioFacturaToCloud:", err);
+    return false;
+  }
+};
+
+export const fetchInicioFacturaFromCloud = async (): Promise<any | null> => {
+  if (!supabase) return null;
+  try {
+    // 1. Intentar desde tabla library
+    const { data, error } = await supabase
+      .from('library')
+      .select('value')
+      .eq('category', 'inicio_factura')
+      .maybeSingle();
+
+    if (data && data.value) {
+      try {
+        return JSON.parse(data.value);
+      } catch (pe) {
+        console.warn("Error parseando inicio_factura desde tabla:", pe);
+      }
+    }
+
+    // 2. Alternativa: Descargar de Storage si existe
+    try {
+      const { data: fileData, error: fileErr } = await supabase.storage
+        .from('Rembrandtcosas')
+        .download('inicio_factura/inicio_factura.json');
+
+      if (!fileErr && fileData) {
+        const text = await fileData.text();
+        return JSON.parse(text);
+      }
+    } catch (e) {
+      // Ignorar si no está en storage
+    }
+
+    return null;
+  } catch (err) {
+    console.error("Error en fetchInicioFacturaFromCloud:", err);
+    return null;
+  }
+};
+
+export const saveInvoiceToCloud = async (invoice: SavedInvoiceItem): Promise<boolean> => {
+  if (!supabase) return false;
+  try {
+    const jsonStr = JSON.stringify(invoice);
+
+    // Guardar en tabla library
+    // Si ya existe el ID, eliminar previo
+    await supabase.from('library').delete().eq('category', 'facturas_guardadas').like('value', `%"id":"${invoice.id}"%`);
+    const { error: dbErr } = await supabase.from('library').insert([{
+      category: 'facturas_guardadas',
+      value: jsonStr
+    }]);
+
+    if (dbErr) console.warn("Error al guardar factura en library:", dbErr);
+
+    // Guardar en Storage en carpeta específica 'facturas'
+    try {
+      const blob = new Blob([jsonStr], { type: 'application/json' });
+      await supabase.storage.from('Rembrandtcosas').upload(`facturas/${invoice.id}.json`, blob, {
+        upsert: true,
+        contentType: 'application/json'
+      });
+    } catch (stErr) {
+      console.warn("Error opcional en Storage facturas:", stErr);
+    }
+
+    return true;
+  } catch (err) {
+    console.error("Error en saveInvoiceToCloud:", err);
+    return false;
+  }
+};
+
+export const fetchSavedInvoicesFromCloud = async (): Promise<SavedInvoiceItem[]> => {
+  if (!supabase) return [];
+  try {
+    const { data, error } = await supabase
+      .from('library')
+      .select('value')
+      .eq('category', 'facturas_guardadas');
+
+    if (error || !data) return [];
+
+    const invoices: SavedInvoiceItem[] = [];
+    data.forEach(item => {
+      try {
+        const parsed = JSON.parse(item.value);
+        if (parsed && parsed.id) {
+          invoices.push(parsed);
+        }
+      } catch (e) {
+        console.warn("Error parseando factura guardada:", e);
+      }
+    });
+
+    // Ordenar de más reciente a más antigua
+    invoices.sort((a, b) => new Date(b.updatedAt || b.date).getTime() - new Date(a.updatedAt || a.date).getTime());
+    return invoices;
+  } catch (err) {
+    console.error("Error en fetchSavedInvoicesFromCloud:", err);
+    return [];
+  }
+};
+
+export const deleteInvoiceFromCloud = async (invoiceId: string): Promise<boolean> => {
+  if (!supabase) return false;
+  try {
+    await supabase.from('library').delete().eq('category', 'facturas_guardadas').like('value', `%"id":"${invoiceId}"%`);
+    try {
+      await supabase.storage.from('Rembrandtcosas').remove([`facturas/${invoiceId}.json`]);
+    } catch (e) {}
+    return true;
+  } catch (err) {
+    console.error("Error en deleteInvoiceFromCloud:", err);
+    return false;
+  }
+};
+
 export const fetchDefaultConfigsFromCloud = async (): Promise<{ configs: DefaultConfigProfile[], activeId?: string } | null> => {
   if (!supabase) return null;
   try {

@@ -633,6 +633,79 @@ async function startServer() {
     }
   });
 
+  app.post(["/api/dev/deploy", "/api/dev/deploy/"], async (req, res) => {
+    try {
+      const fs = await import("fs");
+      const { exec } = await import("child_process");
+      const { promisify } = await import("util");
+      const execAsync = promisify(exec);
+
+      console.log("[DEV-DEPLOY] Iniciando proceso de despliegue a Vercel desde panel local...");
+
+      // 1. Leer y actualizar package.json version
+      const pkgPath = path.resolve(process.cwd(), "package.json");
+      let currentVersion = "0.114.0";
+      if (fs.existsSync(pkgPath)) {
+        const pkgData = JSON.parse(fs.readFileSync(pkgPath, "utf8"));
+        const vParts = (pkgData.version || "0.114.0").split(".").map(Number);
+        vParts[2] = (vParts[2] || 0) + 1;
+        const newVersion = `${vParts[0]}.${vParts[1]}.${vParts[2]}`;
+        pkgData.version = newVersion;
+        fs.writeFileSync(pkgPath, JSON.stringify(pkgData, null, 2), "utf8");
+        currentVersion = newVersion;
+        console.log(`[DEV-DEPLOY] package.json actualizado a v${newVersion}`);
+      }
+
+      // 2. Actualizar public/sw.js CACHE_NAME
+      const swPath = path.resolve(process.cwd(), "public", "sw.js");
+      if (fs.existsSync(swPath)) {
+        let swContent = fs.readFileSync(swPath, "utf8");
+        const match = swContent.match(/rembrandt-pwa-v(\d+)/);
+        if (match) {
+          const nextSwV = parseInt(match[1], 10) + 1;
+          swContent = swContent.replace(/rembrandt-pwa-v\d+/, `rembrandt-pwa-v${nextSwV}`);
+          fs.writeFileSync(swPath, swContent, "utf8");
+          console.log(`[DEV-DEPLOY] public/sw.js actualizado a rembrandt-pwa-v${nextSwV}`);
+        }
+      }
+
+      // 3. Eliminar carpeta dist si existe (EDR antivirus protection)
+      const distPath = path.resolve(process.cwd(), "dist");
+      if (fs.existsSync(distPath)) {
+        fs.rmSync(distPath, { recursive: true, force: true });
+        console.log("[DEV-DEPLOY] Carpeta dist eliminada.");
+      }
+
+      // 4. Git add, commit y push
+      const commitMsg = req.body?.message || `feat: despliegue desde panel local (v${currentVersion})`;
+      await execAsync("git add .");
+      try {
+        await execAsync(`git commit -m "${commitMsg.replace(/"/g, '\\"')}"`);
+      } catch (commitErr: any) {
+        if (commitErr.stdout?.includes("nothing to commit") || commitErr.stderr?.includes("nothing to commit")) {
+          console.log("[DEV-DEPLOY] No hay cambios adicionales para comitear.");
+        } else {
+          throw commitErr;
+        }
+      }
+      await execAsync("git push origin main");
+      await execAsync("git push origin HEAD:main-Rembrandt7");
+
+      console.log("[DEV-DEPLOY] Cambios subidos a GitHub (main y main-Rembrandt7). Vercel desplegará automáticamente.");
+      res.json({
+        success: true,
+        version: currentVersion,
+        message: `¡Despliegue a Vercel iniciado exitosamente (v${currentVersion})! Tu app se actualizará en minutos.`
+      });
+    } catch (e: any) {
+      console.error("[DEV-DEPLOY] Error al desplegar:", e);
+      res.status(500).json({
+        success: false,
+        error: e.message || "Error al ejecutar el despliegue"
+      });
+    }
+  });
+
   app.post(/(.*)/, (req, res) => {
     console.log(`POST ${req.url} not matched`);
     res.status(404).json({ error: `Route ${req.url} not found` });

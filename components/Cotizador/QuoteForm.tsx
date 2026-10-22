@@ -13,6 +13,8 @@ import {
 } from './services/supabaseService';
 import LoadingSpinner from './LoadingSpinner';
 import DefaultConfigsModal from './DefaultConfigsModal';
+import { SavedInvoicesModal } from './SavedInvoicesModal';
+import { InicioFacturaModal } from './InicioFacturaModal';
 import { DEFAULT_LOGO_B64, DEFAULT_LOGO_URL } from './constants/defaultLogo';
 import { exportDataAsJsonFile, exportDataAsCsvFile } from '../../utils/cotizadorExportUtils';
 
@@ -232,7 +234,9 @@ const QuoteForm: React.FC<QuoteFormProps> = ({ onGenerateQuote, initialDetails }
   const [collapsedSections, setCollapsedSections] = useState({
     client: false,
     services: false,
-    terms: true 
+    terms: false,
+    branding: true,
+    fiscal: true
   });
   
   const [showDataManager, setShowDataManager] = useState(false);
@@ -265,6 +269,8 @@ const QuoteForm: React.FC<QuoteFormProps> = ({ onGenerateQuote, initialDetails }
   const [saveStyleSetDefault, setSaveStyleSetDefault] = useState<boolean>(false);
   const [isSavingStyle, setIsSavingStyle] = useState<boolean>(false);
   const [styleToast, setStyleToast] = useState<{ message: string; type: 'success' | 'error' } | null>(null);
+  const [showSavedInvoicesModal, setShowSavedInvoicesModal] = useState<boolean>(false);
+  const [showInicioFacturaModal, setShowInicioFacturaModal] = useState<boolean>(false);
 
   const [bulkEditData, setBulkEditData] = useState({
       projects: '',
@@ -1247,6 +1253,25 @@ const QuoteForm: React.FC<QuoteFormProps> = ({ onGenerateQuote, initialDetails }
 
   const isFormValid = details.projectName.trim() !== '' && details.activities.length > 0;
 
+  const handleLoadFromModal = (quoteData: QuoteDetails) => {
+    setDetails(quoteData);
+    localStorage.setItem(STORAGE_KEYS.DRAFT, JSON.stringify(quoteData));
+    setStyleToast({ message: "¡Factura cargada en el editor!", type: 'success' });
+    setTimeout(() => setStyleToast(null), 3500);
+  };
+
+  const handlePreviewFromModal = (quoteData: QuoteDetails) => {
+    setDetails(quoteData);
+    onGenerateQuote(quoteData);
+  };
+
+  const handleLoadInicioFactura = (templateData: QuoteDetails) => {
+    setDetails(templateData);
+    localStorage.setItem(STORAGE_KEYS.DRAFT, JSON.stringify(templateData));
+    setStyleToast({ message: "¡Plantilla 'Inicio Factura' cargada desde Supabase!", type: 'success' });
+    setTimeout(() => setStyleToast(null), 3500);
+  };
+
   return (
     <div className="max-w-7xl mx-auto pb-24 relative px-2 sm:px-4">
         {/* MODAL: CLOUD CONFIGURATION (SUPABASE) */}
@@ -1553,28 +1578,33 @@ const QuoteForm: React.FC<QuoteFormProps> = ({ onGenerateQuote, initialDetails }
             </div>
         )}
 
-        <form onSubmit={handleSubmit} className="flex flex-col lg:flex-row items-start gap-6">
-            {/* PANEL LATERAL IZQUIERDO: HERRAMIENTAS, BANCOS Y BOTON GENERAR */}
-            <aside className="w-full lg:w-80 shrink-0 flex flex-col gap-4 lg:sticky lg:top-4">
-                {/* 1. HERRAMIENTAS / ACCIONES DEL EDITOR */}
-                <div className="bg-white p-4 rounded-xl shadow-md border border-slate-200">
-                    <div className="flex items-center justify-between pb-2.5 mb-2.5 border-b border-slate-100">
-                        <h2 className="text-sm font-bold text-slate-700 flex items-center gap-1.5">
-                            Editor
-                            <span className="text-[10px] font-normal bg-green-100 text-green-700 px-1.5 py-0.5 rounded-full border border-green-200">
+        <form onSubmit={handleSubmit} className="flex flex-col w-full gap-4 sm:gap-6">
+            {/* ========================================================================= */}
+            {/* BARRA SUPERIOR INTEGRADA HORIZONTAL (REEMPLAZA EL PANEL VERTICAL)         */}
+            {/* ========================================================================= */}
+            <div className="w-full bg-[#0d1527] border border-slate-800/90 rounded-2xl p-3 sm:p-4 shadow-xl backdrop-blur-md flex flex-col xl:flex-row items-stretch xl:items-center justify-between gap-3 sm:gap-4 sticky top-2 z-30">
+                {/* 1. HERRAMIENTAS Y ACCIONES DEL EDITOR (HORIZONTAL) */}
+                <div className="flex-1 min-w-0 flex flex-col sm:flex-row items-start sm:items-center gap-2.5 sm:gap-3 flex-wrap">
+                    <div className="flex items-center gap-2 shrink-0 pr-2 sm:border-r border-slate-700/80">
+                        <div className="flex flex-col">
+                            <h2 className="text-xs font-bold text-slate-200 flex items-center gap-1.5 uppercase tracking-wider">
+                                <span className="w-2 h-2 rounded-full bg-emerald-400 animate-pulse shadow-[0_0_8px_rgba(52,211,153,0.8)]" />
+                                Editor
+                            </h2>
+                            <span className="text-[10px] text-emerald-400 font-mono">
                                 Auto-guardado
                             </span>
-                        </h2>
+                        </div>
                     </div>
 
                     <input type="file" ref={fileInputRef} onChange={handleLoadJSON} accept=".json" className="hidden" />
 
-                    <div className="grid grid-cols-2 gap-2">
+                    <div className="flex flex-wrap items-center gap-1.5">
                         {/* CLOUD BUTTON */}
                         <button 
                             type="button" 
                             onClick={() => setShowCloudModal(true)} 
-                            className={`flex items-center justify-center gap-1.5 text-xs px-2 py-2 rounded-lg font-medium transition-colors border ${cloudConfig.isConnected ? 'bg-green-50 text-green-700 border-green-200' : 'bg-slate-50 text-slate-600 border-slate-200 hover:bg-slate-100'}`}
+                            className={`flex items-center gap-1.5 text-xs px-2.5 py-1.5 rounded-lg font-semibold transition-all border shadow-sm cursor-pointer ${cloudConfig.isConnected ? 'bg-emerald-500/15 text-emerald-300 border-emerald-500/30 hover:bg-emerald-500/25' : 'bg-slate-800 text-slate-300 border-slate-700 hover:bg-slate-700'}`}
                             title="Conectar a Nube (Supabase)"
                         >
                             {isSyncing ? (
@@ -1582,38 +1612,63 @@ const QuoteForm: React.FC<QuoteFormProps> = ({ onGenerateQuote, initialDetails }
                             ) : (
                                 <svg xmlns="http://www.w3.org/2000/svg" className="h-3.5 w-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M3 15a4 4 0 004 4h9a5 5 0 10-.1-9.999 5.002 5.002 0 10-9.78 2.096A4.001 4.001 0 003 15z" /></svg>
                             )}
-                            {cloudConfig.isConnected ? 'Nube OK' : 'Nube'}
+                            <span>{cloudConfig.isConnected ? 'Nube OK' : 'Nube'}</span>
+                        </button>
+
+                        {/* NUEVO: INICIO FACTURA (PLANTILLA BASE SUPABASE) */}
+                        <button 
+                            type="button" 
+                            onClick={() => setShowInicioFacturaModal(true)} 
+                            className="flex items-center gap-1 text-xs px-2.5 py-1.5 rounded-lg font-semibold bg-gradient-to-r from-amber-500/20 to-orange-500/20 hover:from-amber-500/30 hover:to-orange-500/30 text-amber-200 border border-amber-500/40 shadow-sm transition-all cursor-pointer"
+                            title="Plantilla Base 'Inicio Factura' guardada en Supabase"
+                        >
+                            <span>🏛️</span>
+                            <span>Inicio Factura</span>
+                        </button>
+
+                        {/* NUEVO: FACTURAS GUARDADAS EN SUPABASE */}
+                        <button 
+                            type="button" 
+                            onClick={() => setShowSavedInvoicesModal(true)} 
+                            className="flex items-center gap-1 text-xs px-2.5 py-1.5 rounded-lg font-semibold bg-blue-500/15 hover:bg-blue-500/25 text-blue-300 border border-blue-500/30 shadow-sm transition-all cursor-pointer"
+                            title="Abrir o modificar facturas guardadas en Supabase"
+                        >
+                            <span>📁</span>
+                            <span>Facturas</span>
                         </button>
 
                         {/* DATOS BUTTON */}
-                        <button type="button" onClick={() => setShowDataManager(true)} className="flex items-center justify-center gap-1.5 text-xs bg-indigo-50 text-indigo-700 font-medium px-2 py-2 rounded-lg hover:bg-indigo-100 transition-colors border border-indigo-200" title="Administrar base de datos y catálogos">
-                            📚 Datos
+                        <button type="button" onClick={() => setShowDataManager(true)} className="flex items-center gap-1 text-xs bg-indigo-500/15 text-indigo-300 hover:bg-indigo-500/25 font-semibold px-2.5 py-1.5 rounded-lg transition-colors border border-indigo-500/30 cursor-pointer" title="Administrar base de datos y catálogos">
+                            <span>📚</span>
+                            <span>Datos</span>
                         </button>
 
                         {/* GUARDAR ESTILO BUTTON */}
                         <button 
                             type="button" 
                             onClick={handleOpenSaveStyleModal} 
-                            className="flex items-center justify-center gap-1.5 text-xs bg-emerald-50 text-emerald-800 hover:bg-emerald-100 font-medium px-2 py-2 rounded-lg transition-colors border border-emerald-200"
+                            className="flex items-center gap-1 text-xs bg-teal-500/15 text-teal-300 hover:bg-teal-500/25 font-semibold px-2.5 py-1.5 rounded-lg transition-colors border border-teal-500/30 cursor-pointer"
                             title="Guardar configuración actual como nuevo Estilo predeterminado"
                         >
-                            💾 Guardar Estilo
+                            <span>💾</span>
+                            <span>Guardar Estilo</span>
                         </button>
 
                         {/* ESTILOS BUTTON */}
                         <button 
                             type="button" 
                             onClick={() => setShowDefaultConfigsModal(true)} 
-                            className="flex items-center justify-center gap-1.5 text-xs bg-amber-50 text-amber-800 hover:bg-amber-100 font-medium px-2 py-2 rounded-lg transition-colors border border-amber-200"
+                            className="flex items-center gap-1 text-xs bg-amber-500/15 text-amber-300 hover:bg-amber-500/25 font-semibold px-2.5 py-1.5 rounded-lg transition-colors border border-amber-500/30 cursor-pointer"
                             title="Administrar Estilos, plantillas y respaldos"
                         >
-                            🎨 Estilos
+                            <span>🎨</span>
+                            <span>Estilos</span>
                         </button>
                         
                         {/* CARGAR BUTTON */}
-                        <button type="button" onClick={handleLoadJSONClick} className="flex items-center justify-center gap-1.5 text-xs bg-slate-100 text-slate-700 font-medium px-2 py-2 rounded-lg hover:bg-slate-200 transition-colors border border-slate-200">
+                        <button type="button" onClick={handleLoadJSONClick} className="flex items-center gap-1 text-xs bg-slate-800 text-slate-200 hover:bg-slate-700 font-semibold px-2.5 py-1.5 rounded-lg transition-colors border border-slate-700 cursor-pointer">
                             <svg xmlns="http://www.w3.org/2000/svg" className="h-3.5 w-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-8l-4 4m0 0L8 8m4-4v12" /></svg>
-                            Cargar
+                            <span>Cargar</span>
                         </button>
                         
                         {/* GUARDAR BUTTON */}
@@ -1621,209 +1676,636 @@ const QuoteForm: React.FC<QuoteFormProps> = ({ onGenerateQuote, initialDetails }
                             type="button" 
                             onClick={handleSaveQuote} 
                             disabled={!isFormValid} 
-                            className="flex items-center justify-center gap-1.5 text-xs bg-blue-50 text-blue-700 font-medium border border-blue-200 px-2 py-2 rounded-lg hover:bg-blue-100 transition-colors disabled:opacity-50"
+                            className="flex items-center gap-1 text-xs bg-blue-600/20 text-blue-300 hover:bg-blue-600/30 font-semibold border border-blue-500/30 px-2.5 py-1.5 rounded-lg transition-colors disabled:opacity-40 cursor-pointer"
                         >
                             <svg xmlns="http://www.w3.org/2000/svg" className="h-3.5 w-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M8 7H5a2 2 0 00-2 2v9a2 2 0 002 2h14a2 2 0 002-2V9a2 2 0 00-2-2h-3m-1 4l-3 3m0 0l-3-3m3 3V4" /></svg>
-                            Guardar
+                            <span>Guardar</span>
                         </button>
 
                         {/* LIMPIAR BUTTON */}
-                        <button type="button" onClick={handleClearDraft} className="flex items-center justify-center gap-1 text-xs text-red-500 hover:text-red-700 bg-red-50 hover:bg-red-100 border border-red-200 px-2 py-2 rounded-lg transition-colors font-medium" title="Borrar formulario e iniciar nuevo">
-                            Limpiar
+                        <button type="button" onClick={handleClearDraft} className="flex items-center gap-1 text-xs text-rose-400 hover:text-rose-300 bg-rose-500/15 hover:bg-rose-500/25 border border-rose-500/30 px-2.5 py-1.5 rounded-lg transition-colors font-semibold cursor-pointer" title="Borrar formulario e iniciar nuevo">
+                            <span>🗑️</span>
+                            <span>Limpiar</span>
                         </button>
 
                         {/* SYNC BD BUTTON */}
                         <button 
                             type="button" 
                             onClick={handleDbModalOpen}
-                            className="flex items-center justify-center gap-1.5 text-xs bg-yellow-100 text-yellow-800 border border-yellow-300 hover:bg-yellow-200 font-medium px-2 py-2 rounded-lg transition-colors"
+                            className="flex items-center gap-1 text-xs bg-yellow-500/20 text-yellow-300 border border-yellow-500/40 hover:bg-yellow-500/30 font-semibold px-2.5 py-1.5 rounded-lg transition-colors cursor-pointer"
                             title="Actualizar Base de Datos"
                         >
-                            <svg xmlns="http://www.w3.org/2000/svg" className="h-3.5 w-3.5 fill-current text-yellow-600" viewBox="0 0 20 20">
+                            <svg xmlns="http://www.w3.org/2000/svg" className="h-3.5 w-3.5 fill-current text-yellow-400" viewBox="0 0 20 20">
                                 <path fillRule="evenodd" d="M11.3 1.046A1 1 0 0112 2v5h4a1 1 0 01.82 1.573l-7 10A1 1 0 018 18v-5H4a1 1 0 01-.82-1.573l7-10a1 1 0 011.12-.38z" clipRule="evenodd" />
                             </svg>
-                            Sync BD
+                            <span>Sync BD</span>
                         </button>
                     </div>
                 </div>
 
-                {/* 2. DATOS BANCARIOS */}
-                <div className="bg-white p-4 rounded-xl shadow-md border border-slate-200">
-                    <h3 className="text-xs font-bold text-slate-500 uppercase tracking-wider mb-2.5">Datos Bancarios</h3>
-                    <div className="space-y-2">
-                        {/* SANTANDER */}
-                        <div className="bg-white border border-slate-200 rounded-lg shadow-2xs overflow-hidden">
-                            <button type="button" onClick={() => toggleBankDetails('santander')} className="w-full flex justify-between items-center p-2.5 hover:bg-slate-50 transition-colors">
-                                <div className="flex items-center gap-2">
-                                     <div className="w-6 h-6 rounded-full bg-red-600 flex items-center justify-center text-white font-bold text-[10px]">S</div>
-                                     <span className="font-bold text-xs text-slate-800">Santander</span>
-                                </div>
-                                <svg className={`w-4 h-4 text-slate-400 transform transition-transform ${visibleBank === 'santander' ? 'rotate-180' : ''}`} fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 9l-7 7-7-7" /></svg>
-                            </button>
-                            {visibleBank === 'santander' && (
-                                <div className="px-3 pb-3 space-y-1.5 text-xs border-t border-slate-100 pt-2">
-                                     {bankDetails.santander.data.map((item, i) => (
-                                         <div key={i} className="flex justify-between items-center group cursor-pointer p-1 hover:bg-slate-50 rounded" onClick={() => handleCopy(item.value)}>
-                                             <span className="text-[11px] text-slate-500">{item.label}</span>
-                                             <span className="font-mono text-[11px] font-medium text-slate-800 flex items-center gap-1">
-                                                 {item.value}
-                                                 <svg className="w-3 h-3 text-slate-300 opacity-0 group-hover:opacity-100" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M8 16H6a2 2 0 01-2-2V6a2 2 0 012-2h8a2 2 0 012 2v2m-6 12h8a2 2 0 002-2v-8a2 2 0 00-2-2h-8a2 2 0 00-2 2v8a2 2 0 002 2z" /></svg>
-                                             </span>
-                                         </div>
-                                     ))}
-                                     <button type="button" onClick={() => handleCopyBankFull(bankDetails.santander.allDetails)} className="w-full mt-2 bg-slate-100 text-slate-600 text-[11px] py-1.5 rounded hover:bg-slate-200 transition-colors font-medium">
-                                         Copiar Todo
-                                     </button>
-                                </div>
-                            )}
-                        </div>
+                {/* 2. DATOS BANCARIOS (FORMATO HORIZONTAL CON DROPDOWNS / POPOVERS) */}
+                <div className="flex items-center gap-2 bg-slate-950/80 p-1.5 sm:p-2 rounded-xl border border-slate-800 shrink-0">
+                    <span className="text-[10px] font-bold uppercase tracking-wider text-slate-400 px-1 hidden md:inline">Bancos:</span>
+                    
+                    {/* SANTANDER */}
+                    <div className="relative">
+                        <button 
+                            type="button" 
+                            onClick={() => toggleBankDetails('santander')} 
+                            className={`flex items-center gap-1.5 px-2.5 py-1.5 rounded-lg text-xs font-bold transition-all border cursor-pointer ${
+                                visibleBank === 'santander' 
+                                    ? 'bg-red-600/30 text-white border-red-500 ring-1 ring-red-400' 
+                                    : 'bg-slate-900 text-slate-200 border-slate-700 hover:bg-slate-800'
+                            }`}
+                        >
+                            <div className="w-5 h-5 rounded-full bg-red-600 flex items-center justify-center text-white font-black text-[10px] shadow-sm">S</div>
+                            <span>Santander</span>
+                            <svg className={`w-3.5 h-3.5 text-slate-400 transform transition-transform ${visibleBank === 'santander' ? 'rotate-180' : ''}`} fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 9l-7 7-7-7" /></svg>
+                        </button>
 
-                        {/* HSBC */}
-                        <div className="bg-white border border-slate-200 rounded-lg shadow-2xs overflow-hidden">
-                            <button type="button" onClick={() => toggleBankDetails('hsbc')} className="w-full flex justify-between items-center p-2.5 hover:bg-slate-50 transition-colors">
-                                <div className="flex items-center gap-2">
-                                     <div className="w-6 h-6 rounded-full bg-red-700 flex items-center justify-center text-white font-bold text-[10px]">H</div>
-                                     <span className="font-bold text-xs text-slate-800">HSBC</span>
+                        {/* POPOVER SANTANDER */}
+                        {visibleBank === 'santander' && (
+                            <div className="absolute top-full mt-2 left-0 sm:right-0 sm:left-auto w-72 bg-slate-900 border border-slate-700 rounded-xl shadow-2xl p-3 z-50 text-xs space-y-2 animate-in fade-in zoom-in-95">
+                                <div className="flex items-center justify-between border-b border-slate-800 pb-1.5">
+                                    <span className="font-bold text-white flex items-center gap-1.5">
+                                        <span className="w-4 h-4 rounded-full bg-red-600 flex items-center justify-center text-[9px] text-white font-bold">S</span>
+                                        Banco Santander
+                                    </span>
+                                    <button type="button" onClick={() => setVisibleBank(null)} className="text-slate-400 hover:text-white">&times;</button>
                                 </div>
-                                <svg className={`w-4 h-4 text-slate-400 transform transition-transform ${visibleBank === 'hsbc' ? 'rotate-180' : ''}`} fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 9l-7 7-7-7" /></svg>
-                            </button>
-                            {visibleBank === 'hsbc' && (
-                                <div className="px-3 pb-3 space-y-1.5 text-xs border-t border-slate-100 pt-2">
-                                     {bankDetails.hsbc.data.map((item, i) => (
-                                         <div key={i} className="flex justify-between items-center group cursor-pointer p-1 hover:bg-slate-50 rounded" onClick={() => handleCopy(item.value)}>
-                                             <span className="text-[11px] text-slate-500">{item.label}</span>
-                                             <span className="font-mono text-[11px] font-medium text-slate-800 flex items-center gap-1">
-                                                 {item.value}
-                                                 <svg className="w-3 h-3 text-slate-300 opacity-0 group-hover:opacity-100" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M8 16H6a2 2 0 01-2-2V6a2 2 0 012-2h8a2 2 0 012 2v2m-6 12h8a2 2 0 002-2v-8a2 2 0 00-2-2h-8a2 2 0 00-2 2v8a2 2 0 002 2z" /></svg>
-                                             </span>
-                                         </div>
-                                     ))}
-                                     <button type="button" onClick={() => handleCopyBankFull(bankDetails.hsbc.allDetails)} className="w-full mt-2 bg-slate-100 text-slate-600 text-[11px] py-1.5 rounded hover:bg-slate-200 transition-colors font-medium">
-                                         Copiar Todo
-                                     </button>
+                                <div className="space-y-1.5">
+                                    {bankDetails.santander.data.map((item, i) => (
+                                        <div key={i} className="flex justify-between items-center group cursor-pointer p-1 hover:bg-slate-800 rounded transition-colors" onClick={() => handleCopy(item.value)}>
+                                            <span className="text-[11px] text-slate-400">{item.label}</span>
+                                            <span className="font-mono text-[11px] font-semibold text-emerald-300 flex items-center gap-1">
+                                                {item.value}
+                                                <svg className="w-3 h-3 text-slate-400 group-hover:text-white" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M8 16H6a2 2 0 01-2-2V6a2 2 0 012-2h8a2 2 0 012 2v2m-6 12h8a2 2 0 002-2v-8a2 2 0 00-2-2h-8a2 2 0 00-2 2v8a2 2 0 002 2z" /></svg>
+                                            </span>
+                                        </div>
+                                    ))}
                                 </div>
-                            )}
-                        </div>
+                                <button type="button" onClick={() => handleCopyBankFull(bankDetails.santander.allDetails)} className="w-full mt-1 bg-slate-800 hover:bg-slate-700 text-slate-200 text-[11px] py-1.5 rounded-lg transition-colors font-semibold border border-slate-700 cursor-pointer">
+                                    Copiar Todos los Datos
+                                </button>
+                            </div>
+                        )}
+                    </div>
+
+                    {/* HSBC */}
+                    <div className="relative">
+                        <button 
+                            type="button" 
+                            onClick={() => toggleBankDetails('hsbc')} 
+                            className={`flex items-center gap-1.5 px-2.5 py-1.5 rounded-lg text-xs font-bold transition-all border cursor-pointer ${
+                                visibleBank === 'hsbc' 
+                                    ? 'bg-red-700/30 text-white border-red-500 ring-1 ring-red-400' 
+                                    : 'bg-slate-900 text-slate-200 border-slate-700 hover:bg-slate-800'
+                            }`}
+                        >
+                            <div className="w-5 h-5 rounded-full bg-red-700 flex items-center justify-center text-white font-black text-[10px] shadow-sm">H</div>
+                            <span>HSBC</span>
+                            <svg className={`w-3.5 h-3.5 text-slate-400 transform transition-transform ${visibleBank === 'hsbc' ? 'rotate-180' : ''}`} fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 9l-7 7-7-7" /></svg>
+                        </button>
+
+                        {/* POPOVER HSBC */}
+                        {visibleBank === 'hsbc' && (
+                            <div className="absolute top-full mt-2 left-0 sm:right-0 sm:left-auto w-72 bg-slate-900 border border-slate-700 rounded-xl shadow-2xl p-3 z-50 text-xs space-y-2 animate-in fade-in zoom-in-95">
+                                <div className="flex items-center justify-between border-b border-slate-800 pb-1.5">
+                                    <span className="font-bold text-white flex items-center gap-1.5">
+                                        <span className="w-4 h-4 rounded-full bg-red-700 flex items-center justify-center text-[9px] text-white font-bold">H</span>
+                                        Banco HSBC
+                                    </span>
+                                    <button type="button" onClick={() => setVisibleBank(null)} className="text-slate-400 hover:text-white">&times;</button>
+                                </div>
+                                <div className="space-y-1.5">
+                                    {bankDetails.hsbc.data.map((item, i) => (
+                                        <div key={i} className="flex justify-between items-center group cursor-pointer p-1 hover:bg-slate-800 rounded transition-colors" onClick={() => handleCopy(item.value)}>
+                                            <span className="text-[11px] text-slate-400">{item.label}</span>
+                                            <span className="font-mono text-[11px] font-semibold text-emerald-300 flex items-center gap-1">
+                                                {item.value}
+                                                <svg className="w-3 h-3 text-slate-400 group-hover:text-white" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M8 16H6a2 2 0 01-2-2V6a2 2 0 012-2h8a2 2 0 012 2v2m-6 12h8a2 2 0 002-2v-8a2 2 0 00-2-2h-8a2 2 0 00-2 2v8a2 2 0 002 2z" /></svg>
+                                            </span>
+                                        </div>
+                                    ))}
+                                </div>
+                                <button type="button" onClick={() => handleCopyBankFull(bankDetails.hsbc.allDetails)} className="w-full mt-1 bg-slate-800 hover:bg-slate-700 text-slate-200 text-[11px] py-1.5 rounded-lg transition-colors font-semibold border border-slate-700 cursor-pointer">
+                                    Copiar Todos los Datos
+                                </button>
+                            </div>
+                        )}
                     </div>
                 </div>
 
-                {/* 3. BOTÓN GENERAR VISTA PREVIA Y VALIDACIÓN */}
-                <div className="bg-white p-4 rounded-xl shadow-md border border-slate-200 space-y-3">
-                    {!isFormValid && (details.projectName || details.recipientName) && (
-                        <div className="bg-red-50 text-red-600 p-2.5 rounded-lg text-xs text-center font-medium animate-pulse">
-                            Faltan campos requeridos: 
-                            {!details.projectName && " Nombre del Proyecto,"}
-                            {details.activities.length === 0 && " Al menos una actividad."}
-                        </div>
-                    )}
+                {/* 3. BOTÓN GENERAR VISTA PREVIA (MÁXIMA PROMINENCIA) */}
+                <div className="shrink-0 flex items-center gap-2">
                     <button 
                         type="submit" 
                         disabled={!isFormValid}
-                        className="w-full bg-slate-900 text-white px-4 py-3.5 rounded-xl font-bold text-sm hover:bg-black transition-all hover:scale-[1.02] active:scale-[0.98] disabled:opacity-50 disabled:scale-100 shadow-md cursor-pointer flex items-center justify-center gap-2"
+                        className="w-full sm:w-auto px-5 sm:px-6 py-2.5 sm:py-3 rounded-xl font-black text-xs sm:text-sm text-white bg-gradient-to-r from-blue-600 via-indigo-600 to-purple-600 hover:from-blue-500 hover:via-indigo-500 hover:to-purple-500 shadow-[0_0_20px_rgba(79,70,229,0.5)] hover:shadow-[0_0_28px_rgba(79,70,229,0.8)] border border-indigo-400/40 transition-all hover:scale-[1.03] active:scale-[0.98] disabled:opacity-40 disabled:scale-100 disabled:shadow-none cursor-pointer flex items-center justify-center gap-2"
+                        title={!isFormValid ? "Completa el nombre del proyecto y al menos una actividad" : "Generar Vista Previa de la Cotización"}
                     >
-                        Generar Vista Previa &rarr;
+                        <span>Generar Vista Previa</span>
+                        <span className="text-base font-bold">&rarr;</span>
                     </button>
                 </div>
-            </aside>
+            </div>
 
-            {/* COLUMNA DERECHA: CAMPOS DE LA COTIZACIÓN */}
-            <div className="flex-1 min-w-0 w-full bg-white p-4 sm:p-8 rounded-2xl shadow-xl space-y-4 sm:space-y-10 border border-slate-200">
-            {/* ... section 1 ... */}
-            <fieldset className="border border-slate-200 rounded-lg overflow-hidden">
+            {/* AVISO DE VALIDACIÓN SI FALTAN CAMPOS */}
+            {!isFormValid && (details.projectName || details.recipientName) && (
+                <div className="bg-amber-500/10 border border-amber-500/30 text-amber-300 p-2.5 rounded-xl text-xs font-semibold flex items-center justify-between gap-2 animate-in fade-in">
+                    <span className="flex items-center gap-2">
+                        <span>⚠️</span>
+                        <span>Faltan campos requeridos para vista previa: {!details.projectName && " Nombre del Proyecto,"} {details.activities.length === 0 && " Al menos una actividad."}</span>
+                    </span>
+                    <span className="text-[10px] text-amber-400/80 uppercase">Incompleto</span>
+                </div>
+            )}
+
+            {/* FORMULARIO PRINCIPAL: ESTILO INTEGRADO OSCURO Y DISTRIBUCIÓN HORIZONTAL */}
+            <div className="w-full bg-[#0c1322]/90 backdrop-blur-xl p-4 sm:p-8 rounded-2xl shadow-2xl space-y-6 border border-slate-800/90 text-slate-100">
+            {/* SECCIÓN 1: DETALLES DEL PROYECTO Y CLIENTE (DISTRIBUCIÓN HORIZONTAL) */}
+            <fieldset className="border border-slate-800/90 rounded-xl overflow-hidden bg-slate-900/60 shadow-lg">
                 <button 
                     type="button" 
                     onClick={() => toggleSection('client')}
-                    className="w-full flex justify-between items-center p-4 bg-slate-50 hover:bg-slate-100 transition-colors"
+                    className="w-full flex justify-between items-center p-4 bg-slate-900/80 hover:bg-slate-800/80 transition-colors border-b border-slate-800 text-left"
                 >
-                    <legend className="text-lg font-semibold text-slate-800">1. Detalles del Proyecto y Cliente</legend>
-                    <svg className={`w-5 h-5 text-slate-500 transform transition-transform ${collapsedSections.client ? 'rotate-180' : ''}`} fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M19 9l-7 7-7-7"></path></svg>
+                    <legend className="text-base sm:text-lg font-semibold text-slate-200 flex items-center gap-2">
+                        <span className="w-7 h-7 rounded-lg bg-blue-600/20 text-blue-400 flex items-center justify-center text-xs font-bold border border-blue-500/30">1</span>
+                        <span>Detalles del Proyecto y Cliente</span>
+                    </legend>
+                    <svg className={`w-5 h-5 text-slate-400 transform transition-transform ${collapsedSections.client ? 'rotate-180' : ''}`} fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M19 9l-7 7-7-7"></path></svg>
                 </button>
                 
-                <div className={`p-4 sm:p-6 space-y-6 ${collapsedSections.client ? 'hidden' : 'block'}`}>
-                     {/* ... inputs for project name, client name, logos ... */}
-                    <div>
-                        <label htmlFor="projectName" className="block text-sm font-medium text-slate-700 mb-2">Nombre del Proyecto <span className="text-red-500">*</span></label>
-                        <input 
-                            type="text" 
-                            name="projectName" 
-                            id="projectName" 
-                            value={details.projectName} 
-                            onChange={handleInputChange} 
-                            list="project-suggestions" 
-                            className="w-full bg-slate-100 border border-slate-300 text-slate-900 rounded-md p-3 focus:ring-blue-500 focus:border-blue-500 placeholder:text-slate-500" 
-                            placeholder="Ej: Casa Club" 
-                            autoComplete="off"
-                            required 
-                        />
-                        <datalist id="project-suggestions">
-                            <option value="Render de "></option>
-                            <option value="Diseño de "></option>
-                            <option value="Remodelación"></option>
-                            {library.projects.map(p => <option key={p} value={p} />)}
-                        </datalist>
-                    </div>
-                    <div>
-                        <label htmlFor="recipientName" className="block text-sm font-medium text-slate-700 mb-2">Cliente (Dirigido a)</label>
-                        <div className="flex items-center gap-2">
-                             <div className="relative w-32 flex-shrink-0">
-                                <input 
-                                    type="text" 
-                                    name="recipientPrefix" 
-                                    list="prefix-options"
-                                    value={details.recipientPrefix} 
-                                    onChange={handleInputChange} 
-                                    className="w-full bg-slate-100 border border-slate-300 text-slate-900 rounded-md p-3 focus:ring-blue-500 focus:border-blue-500 placeholder:text-slate-500"
-                                    placeholder="Título"
-                                />
-                                <datalist id="prefix-options">
-                                    {library.prefixes.map(p => <option key={p} value={p} />)}
-                                </datalist>
-                             </div>
+                <div className={`p-4 sm:p-6 space-y-5 ${collapsedSections.client ? 'hidden' : 'block'}`}>
+                    {/* FILA HORIZONTAL: NOMBRE DEL PROYECTO + CLIENTE */}
+                    <div className="grid grid-cols-1 md:grid-cols-2 gap-4 sm:gap-6 items-start">
+                        <div>
+                            <label htmlFor="projectName" className="block text-xs sm:text-sm font-medium text-slate-300 mb-1.5">
+                                Nombre del Proyecto <span className="text-rose-400">*</span>
+                            </label>
                             <input 
                                 type="text" 
-                                name="recipientName" 
-                                id="recipientName" 
-                                value={details.recipientName} 
+                                name="projectName" 
+                                id="projectName" 
+                                value={details.projectName} 
                                 onChange={handleInputChange} 
-                                list="client-suggestions"
-                                className="flex-grow w-full bg-slate-100 border border-slate-300 text-slate-900 rounded-md p-3 focus:ring-blue-500 focus:border-blue-500 placeholder:text-slate-500" 
-                                placeholder="Ej: David Villarreal"
-                                autoComplete="off" 
+                                list="project-suggestions" 
+                                className="w-full bg-slate-950/70 border border-slate-700/80 text-slate-100 rounded-lg p-2.5 sm:p-3 focus:ring-2 focus:ring-blue-500/50 focus:border-blue-500 placeholder:text-slate-500 text-sm" 
+                                placeholder="Ej: Casa Club" 
+                                autoComplete="off"
+                                required 
                             />
-                            <datalist id="client-suggestions">
-                                {library.clients.map((c, i) => <option key={`${c}-${i}`} value={c} />)}
+                            <datalist id="project-suggestions">
+                                <option value="Render de "></option>
+                                <option value="Diseño de "></option>
+                                <option value="Remodelación"></option>
+                                {library.projects.map(p => <option key={p} value={p} />)}
                             </datalist>
+                        </div>
 
-                            {/* BOTÓN PARA GUARDAR CLIENTE MANUALMENTE */}
-                            <button
-                                type="button"
-                                onClick={handleSaveNewClient}
-                                disabled={isSavingClient}
-                                className={`p-3 border rounded-md transition-all flex items-center justify-center gap-2 flex-shrink-0 min-w-[50px]
-                                    ${isSavingClient 
-                                        ? 'bg-blue-600 border-blue-600 text-white cursor-wait' 
-                                        : 'bg-blue-50 text-blue-600 border-blue-200 hover:bg-blue-100'
-                                    }`}
-                                title={isSavingClient ? "Guardando..." : "Guardar Cliente en Base de Datos"}
+                        <div>
+                            <label htmlFor="recipientName" className="block text-xs sm:text-sm font-medium text-slate-300 mb-1.5">
+                                Cliente (Dirigido a)
+                            </label>
+                            <div className="flex items-center gap-2">
+                                <div className="relative w-28 sm:w-32 flex-shrink-0">
+                                    <input 
+                                        type="text" 
+                                        name="recipientPrefix" 
+                                        list="prefix-options"
+                                        value={details.recipientPrefix} 
+                                        onChange={handleInputChange} 
+                                        className="w-full bg-slate-950/70 border border-slate-700/80 text-slate-100 rounded-lg p-2.5 sm:p-3 focus:ring-2 focus:ring-blue-500/50 focus:border-blue-500 placeholder:text-slate-500 text-sm"
+                                        placeholder="Título"
+                                    />
+                                    <datalist id="prefix-options">
+                                        {library.prefixes.map(p => <option key={p} value={p} />)}
+                                    </datalist>
+                                </div>
+                                <input 
+                                    type="text" 
+                                    name="recipientName" 
+                                    id="recipientName" 
+                                    value={details.recipientName} 
+                                    onChange={handleInputChange} 
+                                    list="client-suggestions"
+                                    className="flex-grow w-full bg-slate-950/70 border border-slate-700/80 text-slate-100 rounded-lg p-2.5 sm:p-3 focus:ring-2 focus:ring-blue-500/50 focus:border-blue-500 placeholder:text-slate-500 text-sm" 
+                                    placeholder="Ej: David Villarreal"
+                                    autoComplete="off" 
+                                />
+                                <datalist id="client-suggestions">
+                                    {library.clients.map((c, i) => <option key={`${c}-${i}`} value={c} />)}
+                                </datalist>
+
+                                {/* BOTÓN PARA GUARDAR CLIENTE MANUALMENTE */}
+                                <button
+                                    type="button"
+                                    onClick={handleSaveNewClient}
+                                    disabled={isSavingClient}
+                                    className={`p-2.5 sm:p-3 border rounded-lg transition-all flex items-center justify-center gap-1.5 flex-shrink-0 min-w-[44px]
+                                        ${isSavingClient 
+                                            ? 'bg-blue-600 border-blue-600 text-white cursor-wait' 
+                                            : 'bg-blue-600/20 text-blue-400 border-blue-500/30 hover:bg-blue-600/30 hover:text-blue-300'
+                                        }`}
+                                    title={isSavingClient ? "Guardando..." : "Guardar Cliente en Base de Datos"}
+                                >
+                                    {isSavingClient ? (
+                                        <>
+                                            <LoadingSpinner />
+                                            <span className="text-xs font-bold hidden sm:inline">Guardando...</span>
+                                        </>
+                                    ) : (
+                                        <svg xmlns="http://www.w3.org/2000/svg" className="h-4 w-4 sm:h-5 sm:w-5" viewBox="0 0 20 20" fill="currentColor">
+                                            <path d="M8 9a3 3 0 100-6 3 3 0 000 6zM8 11a6 6 0 016 6H2a6 6 0 016-6zM16 7a1 1 0 10-2 0v1h-1a1 1 0 100 2h1v1a1 1 0 102 0v-1h1a1 1 0 100-2h-1V7z" />
+                                        </svg>
+                                    )}
+                                </button>
+                            </div>
+                        </div>
+                    </div>
+
+                    {/* ESLOGAN / SUBTÍTULO */}
+                    <div>
+                        <label htmlFor="companyTagline" className="block text-xs sm:text-sm font-medium text-slate-300 mb-1.5">
+                            Eslogan / Subtítulo de la Empresa
+                        </label>
+                        <input 
+                            type="text" 
+                            name="companyTagline" 
+                            id="companyTagline" 
+                            value={details.companyTagline} 
+                            onChange={handleInputChange} 
+                            className="w-full bg-slate-950/70 border border-slate-700/80 text-slate-100 rounded-lg p-2.5 sm:p-3 focus:ring-2 focus:ring-blue-500/50 focus:border-blue-500 placeholder:text-slate-500 text-sm" 
+                            placeholder="Ej: Arquitectura y Visualización 3D" 
+                        />
+                    </div>
+                </div>
+            </fieldset>
+
+            {/* SECCIÓN 2: ALCANCE DEL SERVICIO */}
+            <fieldset className="border border-slate-800/90 rounded-xl overflow-hidden bg-slate-900/60 shadow-lg">
+                <button 
+                    type="button" 
+                    onClick={() => toggleSection('services')}
+                    className="w-full flex justify-between items-center p-4 bg-slate-900/80 hover:bg-slate-800/80 transition-colors border-b border-slate-800 text-left"
+                >
+                    <legend className="text-base sm:text-lg font-semibold text-slate-200 flex items-center gap-2">
+                        <span className="w-7 h-7 rounded-lg bg-blue-600/20 text-blue-400 flex items-center justify-center text-xs font-bold border border-blue-500/30">2</span>
+                        <span>Alcance del Servicio <span className="text-rose-400">*</span></span>
+                    </legend>
+                    <svg className={`w-5 h-5 text-slate-400 transform transition-transform ${collapsedSections.services ? 'rotate-180' : ''}`} fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M19 9l-7 7-7-7"></path></svg>
+                </button>
+                
+                <div className={`p-4 sm:p-6 space-y-5 ${collapsedSections.services ? 'hidden' : 'block'}`}>
+                    {/* ACCESOS RÁPIDOS A ACTIVIDADES POR DEFECTO */}
+                    <div>
+                        <label className="block text-[11px] font-semibold text-slate-400 uppercase tracking-wider mb-2">
+                            Plantillas Rápidas de Actividades:
+                        </label>
+                        <div className="flex flex-wrap gap-1.5">
+                            {DEFAULT_ACTIVITY_PRESETS.map((preset) => (
+                                <button
+                                    key={preset.name}
+                                    type="button"
+                                    onClick={() => handleSelectPresetActivity(preset)}
+                                    className="text-xs px-2.5 py-1 rounded-full bg-slate-800/80 hover:bg-blue-600/20 text-slate-300 hover:text-blue-300 border border-slate-700 hover:border-blue-500/40 transition-colors flex items-center gap-1.5 font-medium"
+                                    title={`Cargar ${preset.name} por ${formatCurrency(preset.defaultPrice)}`}
+                                >
+                                    <span>+ {preset.name}</span>
+                                    <span className="text-[10px] text-slate-400 font-normal">({formatCurrency(preset.defaultPrice)})</span>
+                                </button>
+                            ))}
+                        </div>
+                    </div>
+
+                    {/* ENTRADA DE NUEVA ACTIVIDAD */}
+                    <div className="space-y-4 bg-slate-950/60 p-4 sm:p-5 rounded-xl border border-slate-800">
+                        <div className="grid grid-cols-1 md:grid-cols-5 gap-2 mb-1 px-1 text-xs text-slate-400 font-semibold">
+                            <label className="md:col-span-3">Descripción de la Actividad</label>
+                            <label>Cantidad (#)</label>
+                            <label>Precio Unitario</label>
+                        </div>
+                        <div className="grid grid-cols-1 md:grid-cols-5 gap-3 items-center">
+                            <input 
+                                type="text" 
+                                name="name" 
+                                value={currentActivity.name} 
+                                onChange={handleActivityChange} 
+                                placeholder="Ej: Vista de fachada" 
+                                className="md:col-span-3 p-2.5 bg-slate-900 border border-slate-700 text-slate-100 rounded-lg focus:ring-2 focus:ring-blue-500/50 focus:border-blue-500 placeholder:text-slate-500 text-sm" 
+                                list="activity-suggestions"
+                            />
+                            <datalist id="activity-suggestions">
+                                {filteredActivitySuggestions.map((a, i) => <option key={i} value={a} />)}
+                            </datalist>
+                            <input 
+                                type="number" 
+                                name="quantity" 
+                                min="1" 
+                                value={currentActivity.quantity} 
+                                onChange={handleActivityChange} 
+                                placeholder="1" 
+                                className="p-2.5 w-full bg-slate-900 border border-slate-700 text-slate-100 rounded-lg focus:ring-2 focus:ring-blue-500/50 focus:border-blue-500 placeholder:text-slate-500 text-sm"
+                            />
+                            <input 
+                                type="number" 
+                                name="unitPrice" 
+                                min="0" 
+                                step="any" 
+                                value={currentActivity.unitPrice} 
+                                onChange={handleActivityChange} 
+                                placeholder="1200" 
+                                className="p-2.5 w-full bg-slate-900 border border-slate-700 text-slate-100 rounded-lg focus:ring-2 focus:ring-blue-500/50 focus:border-blue-500 placeholder:text-slate-500 text-sm"
+                            />
+                        </div>
+                        <div className="flex items-center justify-between pt-2">
+                            {/* SELECTOR DINÁMICO DE CATEGORÍA */}
+                            <select 
+                                name="type" 
+                                value={currentActivity.type} 
+                                onChange={handleActivityChange} 
+                                className="p-2.5 bg-slate-900 border border-slate-700 text-slate-200 rounded-lg focus:ring-2 focus:ring-blue-500/50 focus:border-blue-500 max-w-[200px] text-xs sm:text-sm"
                             >
-                                {isSavingClient ? (
-                                    <>
-                                        <LoadingSpinner />
-                                        <span className="text-xs font-bold hidden sm:inline">Guardando...</span>
-                                    </>
-                                ) : (
-                                    <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5" viewBox="0 0 20 20" fill="currentColor">
-                                        <path d="M8 9a3 3 0 100-6 3 3 0 000 6zM8 11a6 6 0 016 6H2a6 6 0 016-6zM16 7a1 1 0 10-2 0v1h-1a1 1 0 100 2h1v1a1 1 0 102 0v-1h1a1 1 0 100-2h-1V7z" />
-                                    </svg>
+                                {library.serviceCategories.map((cat) => (
+                                    <option key={cat} value={cat}>{cat}</option>
+                                ))}
+                                {library.serviceCategories.length === 0 && (
+                                    <option value="" disabled>-- Cargar Nube --</option>
                                 )}
+                            </select>
+
+                            <button 
+                                type="button" 
+                                onClick={handleAddActivity} 
+                                className="px-5 py-2.5 bg-blue-600 hover:bg-blue-500 text-white text-xs sm:text-sm font-semibold rounded-lg transition-colors shadow-lg shadow-blue-900/30 flex items-center gap-1.5"
+                            >
+                                <span>+</span>
+                                <span>Agregar Actividad</span>
                             </button>
                         </div>
                     </div>
-                    
+
+                    {/* LISTA DE ACTIVIDADES AGREGADAS */}
+                    <div className="space-y-2.5">
+                        {details.activities.map((act, index) => (
+                            <div key={act.id} className="group bg-slate-900/80 p-3.5 sm:p-4 rounded-xl border border-slate-800/90 hover:border-slate-700 transition-all flex flex-col sm:flex-row sm:items-center gap-4">
+                                <div className="flex-grow">
+                                    <div className="flex items-center gap-2">
+                                        <span className="font-semibold text-slate-100 text-sm md:text-base">{act.name}</span>
+                                        {act.type && (
+                                            <span className="text-[10px] bg-slate-800 text-slate-400 px-2 py-0.5 rounded-full uppercase tracking-wider border border-slate-700">
+                                                {act.type}
+                                            </span>
+                                        )}
+                                    </div>
+                                    <div className="text-xs text-slate-400 mt-1 flex gap-3">
+                                        <span>Cant: <strong className="text-slate-200">{act.quantity}</strong></span>
+                                        <span>P.U: <strong className="text-slate-200">{formatCurrency(act.unitPrice)}</strong></span>
+                                    </div>
+                                </div>
+                                <div className="text-right min-w-[100px]">
+                                    <p className="font-bold text-slate-100 font-mono text-sm sm:text-base">{formatCurrency(act.quantity * act.unitPrice)}</p>
+                                </div>
+                                <div className="flex items-center justify-end gap-1 opacity-100 sm:opacity-0 sm:group-hover:opacity-100 transition-opacity">
+                                    <button 
+                                        type="button" 
+                                        onClick={() => handleEditActivity(act.id)} 
+                                        className="p-1.5 text-slate-400 hover:text-amber-400 transition-colors"
+                                        title="Editar"
+                                    >
+                                        <svg xmlns="http://www.w3.org/2000/svg" className="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15.232 5.232l3.536 3.536m-2.036-5.036a2.5 2.5 0 113.536 3.536L6.5 21.036H3v-3.572L16.732 3.732z" />
+                                        </svg>
+                                    </button>
+                                    <button type="button" onClick={() => handleMoveActivity(index, 'up')} disabled={index === 0} className="p-1.5 text-slate-400 hover:text-blue-400 disabled:opacity-30 transition-colors" title="Subir">
+                                        <svg xmlns="http://www.w3.org/2000/svg" className="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 15l7-7 7 7" /></svg>
+                                    </button>
+                                    <button type="button" onClick={() => handleMoveActivity(index, 'down')} disabled={index === details.activities.length - 1} className="p-1.5 text-slate-400 hover:text-blue-400 disabled:opacity-30 transition-colors" title="Bajar">
+                                        <svg xmlns="http://www.w3.org/2000/svg" className="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 9l-7 7-7-7"></path></svg>
+                                    </button>
+                                    <button type="button" onClick={() => handleRemoveActivity(act.id)} className="p-1.5 text-slate-400 hover:text-rose-400 transition-colors ml-1" title="Eliminar">
+                                        <svg xmlns="http://www.w3.org/2000/svg" className="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" /></svg>
+                                    </button>
+                                </div>
+                            </div>
+                        ))}
+                        {details.activities.length === 0 && (
+                            <div className="text-center py-8 bg-slate-950/40 rounded-xl border-2 border-dashed border-slate-800 text-slate-400 text-sm">
+                                No hay actividades agregadas aún. Selecciona una plantilla o escribe una arriba.
+                            </div>
+                        )}
+                    </div>
+                </div>
+            </fieldset>
+
+            {/* SECCIÓN 3: TOTALES Y CONDICIONES */}
+            <fieldset className="border border-slate-800/90 rounded-xl overflow-hidden bg-slate-900/60 shadow-lg">
+                <button 
+                    type="button" 
+                    onClick={() => toggleSection('terms')}
+                    className="w-full flex justify-between items-center p-4 bg-slate-900/80 hover:bg-slate-800/80 transition-colors border-b border-slate-800 text-left"
+                >
+                    <legend className="text-base sm:text-lg font-semibold text-slate-200 flex items-center gap-2">
+                        <span className="w-7 h-7 rounded-lg bg-blue-600/20 text-blue-400 flex items-center justify-center text-xs font-bold border border-blue-500/30">3</span>
+                        <span>Totales y Condiciones</span>
+                    </legend>
+                    <svg className={`w-5 h-5 text-slate-400 transform transition-transform ${collapsedSections.terms ? 'rotate-180' : ''}`} fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M19 9l-7 7-7-7"></path></svg>
+                </button>
+                
+                <div className={`p-4 sm:p-6 space-y-6 ${collapsedSections.terms ? 'hidden' : 'block'}`}>
+                     <div className="grid md:grid-cols-2 gap-6 sm:gap-8 items-start">
+                        {/* CONDICIONES */}
+                        <div className="space-y-4">
+                            <div>
+                                <label className="block text-xs sm:text-sm font-medium text-slate-300 mb-1.5">Tiempo de Entrega</label>
+                                <div className="flex gap-2">
+                                    <select 
+                                        disabled={useCustomDeliveryTime}
+                                        value={useCustomDeliveryTime ? '' : details.deliveryTime}
+                                        onChange={(e) => setDetails(prev => ({...prev, deliveryTime: e.target.value}))}
+                                        className="w-full bg-slate-950/70 border border-slate-700 text-slate-200 rounded-lg p-2.5 sm:p-3 text-sm"
+                                    >
+                                        <option value="">Seleccionar...</option>
+                                        <option value="3 a 5 días hábiles">3 a 5 días hábiles</option>
+                                        <option value="5 a 7 días hábiles">5 a 7 días hábiles</option>
+                                        <option value="7 a 10 días hábiles">7 a 10 días hábiles</option>
+                                        <option value="10 a 15 días hábiles">10 a 15 días hábiles</option>
+                                        <option value="2 a 3 semanas">2 a 3 semanas</option>
+                                        <option value="1 mes">1 mes</option>
+                                    </select>
+                                    <div className="flex items-center px-2">
+                                        <input 
+                                            type="checkbox" 
+                                            id="customTime" 
+                                            checked={useCustomDeliveryTime} 
+                                            onChange={(e) => {
+                                                setUseCustomDeliveryTime(e.target.checked);
+                                                if(e.target.checked) setDetails(p => ({...p, deliveryTime: ''}));
+                                            }}
+                                            className="h-4 w-4 text-blue-600 rounded border-slate-700 bg-slate-900"
+                                        />
+                                        <label htmlFor="customTime" className="ml-1.5 text-xs text-slate-400">Manual</label>
+                                    </div>
+                                </div>
+                                {useCustomDeliveryTime && (
+                                    <input 
+                                        type="text"
+                                        value={details.deliveryTime}
+                                        onChange={(e) => setDetails(prev => ({...prev, deliveryTime: e.target.value}))}
+                                        placeholder="Ej: A convenir según avance"
+                                        className="mt-2 w-full bg-slate-950/70 border border-slate-700 text-slate-200 rounded-lg p-2.5 sm:p-3 text-sm"
+                                    />
+                                )}
+                            </div>
+
+                            <div>
+                                <label className="block text-xs sm:text-sm font-medium text-slate-300 mb-1.5">Condiciones Generales</label>
+                                <textarea 
+                                    name="generalConditions" 
+                                    value={details.generalConditions} 
+                                    onChange={handleInputChange} 
+                                    rows={4}
+                                    placeholder="Ej: Se requiere acceso al sitio, luz y agua..."
+                                    className="w-full bg-slate-950/70 border border-slate-700 text-slate-200 rounded-lg p-2.5 sm:p-3 text-sm placeholder:text-slate-500"
+                                />
+                                <div className="flex flex-wrap gap-1.5 mt-2">
+                                    {library.conditions.map((cond, i) => (
+                                        <button 
+                                            key={i} 
+                                            type="button" 
+                                            onClick={() => setDetails(p => ({...p, generalConditions: p.generalConditions ? p.generalConditions + '\n' + cond : cond}))}
+                                            className="text-xs bg-slate-800/80 border border-slate-700 text-slate-300 px-2.5 py-1 rounded-md hover:bg-slate-700 transition-colors"
+                                        >
+                                            + {cond.substring(0, 20)}...
+                                        </button>
+                                    ))}
+                                </div>
+                            </div>
+                            
+                            <div className="flex items-center pt-1">
+                                <input 
+                                    type="checkbox" 
+                                    id="requireAdvance" 
+                                    checked={details.requireAdvance} 
+                                    onChange={(e) => setDetails(prev => ({...prev, requireAdvance: e.target.checked}))}
+                                    className="h-4 w-4 text-blue-600 focus:ring-blue-500 border-slate-700 bg-slate-900 rounded"
+                                />
+                                <label htmlFor="requireAdvance" className="ml-2 block text-sm text-slate-300">
+                                    Requerir 50% de anticipo
+                                </label>
+                            </div>
+                        </div>
+
+                        {/* CUADRO DE TOTALES */}
+                        <div className="bg-slate-950/70 p-5 sm:p-6 rounded-xl border border-slate-800 h-fit space-y-4">
+                             <div className="flex justify-between items-center pb-3 border-b border-slate-800">
+                                <span className="font-medium text-slate-400 text-sm">Subtotal</span>
+                                <span className="font-mono text-slate-100 text-base">{formatCurrency(totals.subtotal)}</span>
+                             </div>
+
+                             <div className="space-y-3 pb-3 border-b border-slate-800">
+                                <div className="flex items-center justify-between">
+                                    <label className="text-sm text-slate-400">Descuento</label>
+                                    <div className="flex items-center gap-2">
+                                        <select 
+                                            value={details.discountType}
+                                            onChange={(e) => setDetails(prev => ({...prev, discountType: e.target.value as any}))}
+                                            className="text-xs p-1.5 border border-slate-700 rounded-md bg-slate-900 text-slate-200"
+                                        >
+                                            <option value="none">No</option>
+                                            <option value="percentage">%</option>
+                                            <option value="fixed">$</option>
+                                        </select>
+                                        {details.discountType !== 'none' && (
+                                            <input 
+                                                type="number" 
+                                                value={details.discountValue}
+                                                onChange={(e) => setDetails(prev => ({...prev, discountValue: parseFloat(e.target.value) || 0}))}
+                                                className="w-20 p-1 text-right text-sm border border-slate-700 rounded-md bg-slate-900 text-slate-100"
+                                            />
+                                        )}
+                                    </div>
+                                </div>
+                                
+                                <div className="flex items-center justify-between">
+                                    <div className="flex items-center">
+                                        <input 
+                                            type="checkbox" 
+                                            id="addIVA" 
+                                            checked={details.addIVA} 
+                                            onChange={(e) => setDetails(prev => ({...prev, addIVA: e.target.checked}))}
+                                            className="h-4 w-4 text-blue-600 rounded border-slate-700 bg-slate-900"
+                                        />
+                                        <label htmlFor="addIVA" className="ml-2 text-sm text-slate-400">IVA (16%)</label>
+                                    </div>
+                                    <span className="font-mono text-xs text-slate-400">{formatCurrency(totals.ivaAmount)}</span>
+                                </div>
+
+                                <div className="flex items-center justify-between">
+                                    <div className="flex items-center">
+                                        <input 
+                                            type="checkbox" 
+                                            id="addWithholdings" 
+                                            checked={details.addWithholdings} 
+                                            onChange={(e) => setDetails(prev => ({...prev, addWithholdings: e.target.checked}))}
+                                            className="h-4 w-4 text-rose-500 rounded border-slate-700 bg-slate-900"
+                                        />
+                                        <label htmlFor="addWithholdings" className="ml-2 text-sm text-slate-400">Retenciones (Resico)</label>
+                                    </div>
+                                </div>
+                                
+                                {details.addWithholdings && (
+                                    <div className="pl-6 space-y-1.5 text-xs text-rose-400">
+                                        <div className="flex justify-between">
+                                            <span>IVA Ret ({details.ivaWithholdingPercentage}%)</span>
+                                            <span className="font-mono">- {formatCurrency(totals.ivaWithholdingAmount)}</span>
+                                        </div>
+                                         <div className="flex justify-between">
+                                            <span>ISR Ret ({details.isrWithholdingPercentage}%)</span>
+                                            <span className="font-mono">- {formatCurrency(totals.isrWithholdingAmount)}</span>
+                                        </div>
+                                    </div>
+                                )}
+                             </div>
+
+                             <div className="flex justify-between items-center pt-1">
+                                <span className="text-base sm:text-lg font-bold text-slate-200">Total Cotizado</span>
+                                <span className="text-xl sm:text-2xl font-bold text-emerald-400 font-mono">{formatCurrency(totals.total)}</span>
+                             </div>
+                        </div>
+                     </div>
+                </div>
+            </fieldset>
+
+            {/* SECCIÓN 4: IDENTIDAD VISUAL (LOGOS Y FIRMA - SEPARADO ABAJO) */}
+            <fieldset className="border border-slate-800/90 rounded-xl overflow-hidden bg-slate-900/60 shadow-lg">
+                <button 
+                    type="button" 
+                    onClick={() => toggleSection('branding')}
+                    className="w-full flex justify-between items-center p-4 bg-slate-900/80 hover:bg-slate-800/80 transition-colors border-b border-slate-800 text-left"
+                >
+                    <div className="flex items-center gap-3">
+                        <legend className="text-base sm:text-lg font-semibold text-slate-200 flex items-center gap-2">
+                            <span className="w-7 h-7 rounded-lg bg-indigo-600/20 text-indigo-400 flex items-center justify-center text-xs font-bold border border-indigo-500/30">4</span>
+                            <span>Identidad Visual (Logo y Firma)</span>
+                        </legend>
+                        <span className={`text-[10px] sm:text-xs px-2.5 py-0.5 rounded-full font-medium border ${details.logoB64 && details.signatureB64 ? 'bg-emerald-500/10 text-emerald-400 border-emerald-500/30' : 'bg-slate-800 text-slate-400 border-slate-700'}`}>
+                            {details.logoB64 && details.signatureB64 ? '✓ Configurado' : 'Opcional'}
+                        </span>
+                    </div>
+                    <svg className={`w-5 h-5 text-slate-400 transform transition-transform ${collapsedSections.branding ? 'rotate-180' : ''}`} fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M19 9l-7 7-7-7"></path></svg>
+                </button>
+                
+                <div className={`p-4 sm:p-6 space-y-6 ${collapsedSections.branding ? 'hidden' : 'block'}`}>
+                    <p className="text-xs text-slate-400">
+                        Estos elementos casi nunca cambian. Puedes dejarlos configurados o actualizarlos cuando lo requieras:
+                    </p>
+
                     <div className="grid md:grid-cols-2 gap-6">
-                        {/* ... LOGO & SIGNATURE UPLOAD LOGIC (Existing) ... */}
+                        {/* DROPZONE LOGO */}
                         <div>
-                            <label className="block text-sm font-medium text-slate-700 mb-2">Logo de la Empresa (Opcional)</label>
+                            <label className="block text-xs sm:text-sm font-medium text-slate-300 mb-2">Logo de la Empresa</label>
                             
                             <div 
                                onClick={!details.logoB64 ? (e) => handleDropzoneClick(e, logoDriveUrl) : undefined}
@@ -1831,20 +2313,20 @@ const QuoteForm: React.FC<QuoteFormProps> = ({ onGenerateQuote, initialDetails }
                                onDragOver={(e) => e.preventDefault()}
                                onDragLeave={() => setIsLogoDragging(false)}
                                onDrop={(e) => handleFileDrop(e, 'logoB64')}
-                               className={`h-40 mt-1 flex flex-col justify-center px-6 pt-5 pb-6 border-2 border-dashed rounded-md transition-colors relative ${isLogoDragging ? 'border-green-500 bg-green-50' : 'border-slate-300'} ${!details.logoB64 ? 'cursor-pointer' : ''}`}
+                               className={`h-40 mt-1 flex flex-col justify-center px-6 pt-5 pb-6 border-2 border-dashed rounded-xl transition-colors relative bg-slate-950/50 ${isLogoDragging ? 'border-emerald-500 bg-emerald-500/10' : 'border-slate-700 hover:border-slate-500'} ${!details.logoB64 ? 'cursor-pointer' : ''}`}
                             >
                                 <div className="space-y-1 text-center">
                                 {!details.logoB64 ? (
                                     <>
-                                    <svg className="mx-auto h-10 w-10 text-slate-400" stroke="currentColor" fill="none" viewBox="0 0 48 48" aria-hidden="true">
+                                    <svg className="mx-auto h-9 w-9 text-slate-500" stroke="currentColor" fill="none" viewBox="0 0 48 48" aria-hidden="true">
                                         <path d="M28 8H12a4 4 0 00-4 4v20m32-12v8m0 0v8a4 4 0 01-4 4H12a4 4 0 01-4-4v-4m32-4l-3.172-3.172a4 4 0 00-5.656 0L28 28M8 32l9.172-9.172a4 4 0 015.656 0L28 28m0 0l4 4m4-24h8m-4-4v8" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" />
                                     </svg>
-                                    <div className="flex text-xs text-slate-600 justify-center">
-                                        <label htmlFor="logo-upload" className="relative cursor-pointer bg-white rounded-md font-medium text-slate-600 hover:text-slate-500 focus-within:outline-none focus-within:ring-2 focus-within:ring-offset-2 focus-within:ring-slate-500">
+                                    <div className="flex text-xs text-slate-400 justify-center">
+                                        <label htmlFor="logo-upload" className="relative cursor-pointer font-medium text-blue-400 hover:text-blue-300 focus-within:outline-none">
                                         <span>Sube un archivo</span>
                                         <input id="logo-upload" name="logo-upload" type="file" className="sr-only" onChange={(e) => handleFileChange(e, 'logoB64')} accept="image/png, image/jpeg, image/svg+xml" />
                                         </label>
-                                        <p className="pl-1">o arrastra</p>
+                                        <p className="pl-1 text-slate-500">o arrastra</p>
                                     </div>
                                     <p className="text-[10px] text-slate-500">Click para abrir carpeta Drive.</p>
                                     <div className="mt-2 w-full interactive-area" onClick={(e) => e.stopPropagation()}>
@@ -1854,13 +2336,13 @@ const QuoteForm: React.FC<QuoteFormProps> = ({ onGenerateQuote, initialDetails }
                                                 value={logoUrlInput}
                                                 onChange={(e) => setLogoUrlInput(e.target.value)}
                                                 placeholder="Pegar enlace directo de imagen..."
-                                                className="flex-1 text-[10px] bg-slate-700 text-white border border-slate-600 rounded px-2 py-1 focus:ring-blue-500 focus:border-blue-500 placeholder:text-slate-400"
+                                                className="flex-1 text-[10px] bg-slate-900 text-white border border-slate-700 rounded px-2 py-1 focus:ring-blue-500 focus:border-blue-500 placeholder:text-slate-500"
                                             />
                                             <button 
                                                 type="button"
                                                 onClick={(e) => handleUrlUpload(e, 'logoB64')}
                                                 disabled={loadingImage.logo}
-                                                className="text-[10px] bg-slate-800 text-white px-3 py-1 rounded hover:bg-slate-700 disabled:opacity-50 transition-colors"
+                                                className="text-[10px] bg-slate-800 text-white px-3 py-1 rounded hover:bg-slate-700 disabled:opacity-50 transition-colors border border-slate-700"
                                             >
                                                 {loadingImage.logo ? '...' : 'Ok'}
                                             </button>
@@ -1872,15 +2354,15 @@ const QuoteForm: React.FC<QuoteFormProps> = ({ onGenerateQuote, initialDetails }
                                         <img src={details.logoB64} alt="Logo preview" className="mx-auto h-24 max-h-24 object-contain" />
                                         <label 
                                             htmlFor="logo-upload" 
-                                            className="absolute inset-0 flex flex-col items-center justify-center bg-black bg-opacity-0 group-hover:bg-opacity-60 transition-all cursor-pointer text-white opacity-0 group-hover:opacity-100 rounded-md"
+                                            className="absolute inset-0 flex flex-col items-center justify-center bg-black/70 transition-all cursor-pointer text-white opacity-0 group-hover:opacity-100 rounded-xl"
                                             onClick={(e) => e.stopPropagation()}
                                         >
-                                            <span className="font-semibold text-sm">Cambiar Imagen</span>
+                                            <span className="font-semibold text-xs sm:text-sm">Cambiar Imagen</span>
                                         </label>
                                         <button 
                                             type="button" 
                                             onClick={(e) => { e.stopPropagation(); handleRemoveImage('logoB64'); }} 
-                                            className="absolute top-0 right-0 p-1 bg-red-600 text-white rounded-bl-md opacity-0 group-hover:opacity-100 transition-opacity z-10"
+                                            className="absolute top-0 right-0 p-1.5 bg-rose-600 text-white rounded-tr-xl rounded-bl-xl opacity-0 group-hover:opacity-100 transition-opacity z-10"
                                         >
                                             <svg xmlns="http://www.w3.org/2000/svg" className="h-4 w-4" viewBox="0 0 20 20" fill="currentColor"><path fillRule="evenodd" d="M4.293 4.293a1 1 0 011.414 0L10 8.586l4.293-4.293a1 1 0 111.414 1.414L11.414 10l4.293 4.293a1 1 0 01-1.414 1.414L10 11.414l-4.293 4.293a1 1 0 01-1.414-1.414L8.586 10 4.293 5.707a1 1 0 010-1.414z" clipRule="evenodd" /></svg>
                                         </button>
@@ -1889,14 +2371,14 @@ const QuoteForm: React.FC<QuoteFormProps> = ({ onGenerateQuote, initialDetails }
                                 </div>
                             </div>
 
-                            <div className="mt-2 flex flex-col gap-2 interactive-area">
-                              <div className="flex flex-wrap gap-2">
+                            <div className="mt-2.5 flex flex-col gap-2 interactive-area">
+                              <div className="flex flex-wrap gap-1.5">
                                 {PRESET_IMAGES.filter(p => p.type === 'logo').map((preset, idx) => (
                                     <button
                                     key={idx}
                                     type="button"
                                     onClick={() => handlePresetClick(preset.url, 'logoB64')}
-                                    className="text-[10px] bg-slate-100 border border-slate-300 px-2 py-1 rounded-full hover:bg-slate-200 transition-colors text-slate-700"
+                                    className="text-[10px] bg-slate-800/80 border border-slate-700 px-2.5 py-1 rounded-full hover:bg-slate-700 transition-colors text-slate-300"
                                     title={preset.url}
                                     >
                                     + {preset.name}
@@ -1905,7 +2387,7 @@ const QuoteForm: React.FC<QuoteFormProps> = ({ onGenerateQuote, initialDetails }
                                 <button
                                     type="button"
                                     onClick={() => handleOpenCloudGallery('logoB64')}
-                                    className="text-[10px] bg-blue-600 text-white px-2 py-1 rounded-full hover:bg-blue-700 transition-colors flex items-center gap-1"
+                                    className="text-[10px] bg-blue-600 text-white px-2.5 py-1 rounded-full hover:bg-blue-500 transition-colors flex items-center gap-1 font-medium shadow-sm"
                                 >
                                     <svg xmlns="http://www.w3.org/2000/svg" className="h-3 w-3" viewBox="0 0 20 20" fill="currentColor">
                                         <path fillRule="evenodd" d="M4 3a2 2 0 00-2 2v10a2 2 0 002 2h12a2 2 0 002-2V5a2 2 0 00-2-2H4zm12 12H4l4-8 3 6 2-4 3 6z" clipRule="evenodd" />
@@ -1914,35 +2396,36 @@ const QuoteForm: React.FC<QuoteFormProps> = ({ onGenerateQuote, initialDetails }
                                 </button>
                               </div>
                               {details.logoB64 && (
-                                <button type="button" onClick={() => saveImageAsDefault('logo')} className="text-[10px] text-blue-600 hover:text-blue-800 text-center border border-blue-200 rounded py-1 bg-blue-50">
+                                <button type="button" onClick={() => saveImageAsDefault('logo')} className="text-[10px] text-blue-400 hover:text-blue-300 text-center border border-blue-500/30 rounded py-1 bg-blue-600/10">
                                     💾 Guardar como default
                                 </button>
                               )}
                             </div>
                         </div>
 
+                        {/* DROPZONE FIRMA */}
                         <div>
-                            <label className="block text-sm font-medium text-slate-700 mb-2">Firma (Opcional)</label>
+                            <label className="block text-xs sm:text-sm font-medium text-slate-300 mb-2">Firma Digital</label>
                             <div 
                                onClick={!details.signatureB64 ? (e) => handleDropzoneClick(e, signatureDriveUrl) : undefined}
                                onDragEnter={(e) => { e.preventDefault(); setIsSignatureDragging(true); }}
                                onDragOver={(e) => e.preventDefault()}
                                onDragLeave={() => setIsSignatureDragging(false)}
                                onDrop={(e) => handleFileDrop(e, 'signatureB64')}
-                               className={`h-40 mt-1 flex flex-col justify-center px-6 pt-5 pb-6 border-2 border-dashed rounded-md transition-colors relative ${isSignatureDragging ? 'border-green-500 bg-green-50' : 'border-slate-300'} ${!details.signatureB64 ? 'cursor-pointer' : ''}`}
+                               className={`h-40 mt-1 flex flex-col justify-center px-6 pt-5 pb-6 border-2 border-dashed rounded-xl transition-colors relative bg-slate-950/50 ${isSignatureDragging ? 'border-emerald-500 bg-emerald-500/10' : 'border-slate-700 hover:border-slate-500'} ${!details.signatureB64 ? 'cursor-pointer' : ''}`}
                             >
                                 <div className="space-y-1 text-center">
                                 {!details.signatureB64 ? (
                                     <>
-                                    <svg className="mx-auto h-10 w-10 text-slate-400" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                    <svg className="mx-auto h-9 w-9 text-slate-500" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                                       <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1} d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z" />
                                     </svg>
-                                    <div className="flex text-xs text-slate-600 justify-center">
-                                        <label htmlFor="signature-upload" className="relative cursor-pointer bg-white rounded-md font-medium text-slate-600 hover:text-slate-500 focus-within:outline-none focus-within:ring-2 focus-within:ring-offset-2 focus-within:ring-slate-500">
+                                    <div className="flex text-xs text-slate-400 justify-center">
+                                        <label htmlFor="signature-upload" className="relative cursor-pointer font-medium text-blue-400 hover:text-blue-300 focus-within:outline-none">
                                         <span>Sube un archivo</span>
                                         <input id="signature-upload" name="signature-upload" type="file" className="sr-only" onChange={(e) => handleFileChange(e, 'signatureB64')} accept="image/png, image/jpeg, image/svg+xml" />
                                         </label>
-                                        <p className="pl-1">o arrastra</p>
+                                        <p className="pl-1 text-slate-500">o arrastra</p>
                                     </div>
                                     <p className="text-[10px] text-slate-500">Google Drive: Click para abrir.</p>
                                     <div className="mt-2 w-full interactive-area" onClick={(e) => e.stopPropagation()}>
@@ -1952,13 +2435,13 @@ const QuoteForm: React.FC<QuoteFormProps> = ({ onGenerateQuote, initialDetails }
                                                 value={signatureUrlInput}
                                                 onChange={(e) => setSignatureUrlInput(e.target.value)}
                                                 placeholder="Pegar enlace..."
-                                                className="flex-1 text-[10px] bg-slate-700 text-white border border-slate-600 rounded px-2 py-1 focus:ring-blue-500 focus:border-blue-500 placeholder:text-slate-400"
+                                                className="flex-1 text-[10px] bg-slate-900 text-white border border-slate-700 rounded px-2 py-1 focus:ring-blue-500 focus:border-blue-500 placeholder:text-slate-500"
                                             />
                                             <button 
                                                 type="button"
                                                 onClick={(e) => handleUrlUpload(e, 'signatureB64')}
                                                 disabled={loadingImage.signature}
-                                                className="text-[10px] bg-slate-800 text-white px-3 py-1 rounded hover:bg-slate-700 disabled:opacity-50 transition-colors"
+                                                className="text-[10px] bg-slate-800 text-white px-3 py-1 rounded hover:bg-slate-700 disabled:opacity-50 transition-colors border border-slate-700"
                                             >
                                                 {loadingImage.signature ? '...' : 'Ok'}
                                             </button>
@@ -1976,15 +2459,15 @@ const QuoteForm: React.FC<QuoteFormProps> = ({ onGenerateQuote, initialDetails }
                                             <img src={details.signatureB64} alt="Firma preview" className="mx-auto h-20 max-h-20 object-contain" />
                                             <label 
                                                 htmlFor="signature-upload" 
-                                                className="absolute inset-0 flex flex-col items-center justify-center bg-black bg-opacity-0 group-hover:bg-opacity-60 transition-all cursor-pointer text-white opacity-0 group-hover:opacity-100 rounded-md"
+                                                className="absolute inset-0 flex flex-col items-center justify-center bg-black/70 transition-all cursor-pointer text-white opacity-0 group-hover:opacity-100 rounded-xl"
                                                 onClick={(e) => e.stopPropagation()}
                                             >
-                                                <span className="font-semibold text-sm">Cambiar Firma</span>
+                                                <span className="font-semibold text-xs sm:text-sm">Cambiar Firma</span>
                                             </label>
                                             <button 
                                                 type="button" 
                                                 onClick={(e) => { e.stopPropagation(); handleRemoveImage('signatureB64'); }} 
-                                                className="absolute top-0 right-0 p-1 bg-red-600 text-white rounded-bl-md opacity-0 group-hover:opacity-100 transition-opacity z-10"
+                                                className="absolute top-0 right-0 p-1.5 bg-rose-600 text-white rounded-tr-xl rounded-bl-xl opacity-0 group-hover:opacity-100 transition-opacity z-10"
                                             >
                                                 <svg xmlns="http://www.w3.org/2000/svg" className="h-4 w-4" viewBox="0 0 20 20" fill="currentColor"><path fillRule="evenodd" d="M4.293 4.293a1 1 0 011.414 0L10 8.586l4.293-4.293a1 1 0 111.414 1.414L11.414 10l4.293 4.293a1 1 0 01-1.414 1.414L10 11.414l-4.293 4.293a1 1 0 01-1.414-1.414L8.586 10 4.293 5.707a1 1 0 010-1.414z" clipRule="evenodd" /></svg>
                                             </button>
@@ -1994,14 +2477,14 @@ const QuoteForm: React.FC<QuoteFormProps> = ({ onGenerateQuote, initialDetails }
                                 )}
                                 </div>
                             </div>
-                            <div className="mt-2 flex flex-col gap-2 interactive-area">
-                              <div className="flex flex-wrap gap-2">
+                            <div className="mt-2.5 flex flex-col gap-2 interactive-area">
+                              <div className="flex flex-wrap gap-1.5">
                                 {PRESET_IMAGES.filter(p => p.type === 'signature').map((preset, idx) => (
                                     <button
                                     key={idx}
                                     type="button"
                                     onClick={() => handlePresetClick(preset.url, 'signatureB64')}
-                                    className="text-[10px] bg-slate-100 border border-slate-300 px-2 py-1 rounded-full hover:bg-slate-200 transition-colors text-slate-700"
+                                    className="text-[10px] bg-slate-800/80 border border-slate-700 px-2.5 py-1 rounded-full hover:bg-slate-700 transition-colors text-slate-300"
                                     title={preset.url}
                                     >
                                     + {preset.name}
@@ -2010,7 +2493,7 @@ const QuoteForm: React.FC<QuoteFormProps> = ({ onGenerateQuote, initialDetails }
                                 <button
                                     type="button"
                                     onClick={() => handleOpenCloudGallery('signatureB64')}
-                                    className="text-[10px] bg-blue-600 text-white px-2 py-1 rounded-full hover:bg-blue-700 transition-colors flex items-center gap-1"
+                                    className="text-[10px] bg-blue-600 text-white px-2.5 py-1 rounded-full hover:bg-blue-500 transition-colors flex items-center gap-1 font-medium shadow-sm"
                                 >
                                     <svg xmlns="http://www.w3.org/2000/svg" className="h-3 w-3" viewBox="0 0 20 20" fill="currentColor">
                                         <path fillRule="evenodd" d="M4 3a2 2 0 00-2 2v10a2 2 0 002 2h12a2 2 0 002-2V5a2 2 0 00-2-2H4zm12 12H4l4-8 3 6 2-4 3 6z" clipRule="evenodd" />
@@ -2019,374 +2502,90 @@ const QuoteForm: React.FC<QuoteFormProps> = ({ onGenerateQuote, initialDetails }
                                 </button>
                               </div>
                               {details.signatureB64 && (
-                                <button type="button" onClick={() => saveImageAsDefault('signature')} className="text-[10px] text-blue-600 hover:text-blue-800 text-center border border-blue-200 rounded py-1 bg-blue-50">
+                                <button type="button" onClick={() => saveImageAsDefault('signature')} className="text-[10px] text-blue-400 hover:text-blue-300 text-center border border-blue-500/30 rounded py-1 bg-blue-600/10">
                                     💾 Guardar como default
                                 </button>
                               )}
                             </div>
                         </div>
                     </div>
-                     <div>
-                        <label htmlFor="companyTagline" className="block text-sm font-medium text-slate-700 mb-2">Eslogan/Descripción de la Empresa</label>
-                        <input type="text" name="companyTagline" id="companyTagline" value={details.companyTagline} onChange={handleInputChange} className="w-full bg-slate-100 border border-slate-300 text-slate-900 rounded-md p-3 focus:ring-blue-500 focus:border-blue-500 placeholder:text-slate-500" placeholder="Ej: Arquitectura y Visualización 3D" />
-                    </div>
                 </div>
             </fieldset>
 
-            {/* SECTION 2: SERVICES */}
-            <fieldset className="border border-slate-200 rounded-lg overflow-hidden">
+            {/* SECCIÓN 5: DATOS FISCALES Y CONSTANCIA SAT (SEPARADO ABAJO) */}
+            <fieldset className="border border-slate-800/90 rounded-xl overflow-hidden bg-slate-900/60 shadow-lg">
                 <button 
                     type="button" 
-                    onClick={() => toggleSection('services')}
-                    className="w-full flex justify-between items-center p-4 bg-slate-50 hover:bg-slate-100 transition-colors"
+                    onClick={() => toggleSection('fiscal')}
+                    className="w-full flex justify-between items-center p-4 bg-slate-900/80 hover:bg-slate-800/80 transition-colors border-b border-slate-800 text-left"
                 >
-                    <legend className="text-xl font-semibold text-slate-800">2. Alcance del Servicio <span className="text-red-500">*</span></legend>
-                     <svg className={`w-5 h-5 text-slate-500 transform transition-transform ${collapsedSections.services ? 'rotate-180' : ''}`} fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M19 9l-7 7-7-7"></path></svg>
+                    <div className="flex items-center gap-3">
+                        <legend className="text-base sm:text-lg font-semibold text-slate-200 flex items-center gap-2">
+                            <span className="w-7 h-7 rounded-lg bg-teal-600/20 text-teal-400 flex items-center justify-center text-xs font-bold border border-teal-500/30 font-mono">SAT</span>
+                            <span>5. Datos Fiscales y Constancia</span>
+                        </legend>
+                        <span className={`text-[10px] sm:text-xs px-2.5 py-0.5 rounded-full font-medium border ${details.taxId || details.taxSituationPdfB64 ? 'bg-emerald-500/10 text-emerald-400 border-emerald-500/30' : 'bg-slate-800 text-slate-400 border-slate-700'}`}>
+                            {details.taxId || details.taxSituationPdfB64 ? '✓ Configurado' : 'Opcional'}
+                        </span>
+                    </div>
+                    <svg className={`w-5 h-5 text-slate-400 transform transition-transform ${collapsedSections.fiscal ? 'rotate-180' : ''}`} fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M19 9l-7 7-7-7"></path></svg>
                 </button>
                 
-                <div className={`p-4 sm:p-6 ${collapsedSections.services ? 'hidden' : 'block'}`}>
-                    {/* ACCESOS RÁPIDOS A ACTIVIDADES POR DEFECTO */}
-                    <div className="mb-3">
-                        <label className="block text-[11px] font-semibold text-slate-500 uppercase tracking-wider mb-1.5">
-                            Plantillas Rápidas de Actividades:
-                        </label>
-                        <div className="flex flex-wrap gap-1.5">
-                            {DEFAULT_ACTIVITY_PRESETS.map((preset) => (
-                                <button
-                                    key={preset.name}
-                                    type="button"
-                                    onClick={() => handleSelectPresetActivity(preset)}
-                                    className="text-xs px-2.5 py-1 rounded-full bg-slate-100 hover:bg-blue-50 text-slate-700 hover:text-blue-700 border border-slate-200 hover:border-blue-300 transition-colors flex items-center gap-1 font-medium"
-                                    title={`Cargar ${preset.name} por ${formatCurrency(preset.defaultPrice)}`}
-                                >
-                                    <span>+ {preset.name}</span>
-                                    <span className="text-[10px] text-slate-500 font-normal">({formatCurrency(preset.defaultPrice)})</span>
-                                </button>
-                            ))}
+                <div className={`p-4 sm:p-6 space-y-4 ${collapsedSections.fiscal ? 'hidden' : 'block'}`}>
+                    <p className="text-xs text-slate-400">
+                        Carga la constancia de situación fiscal del SAT o especifica los datos fiscales directos para facturación:
+                    </p>
+                    
+                    <div className="grid md:grid-cols-2 gap-4">
+                        <div>
+                            <label className="block text-xs font-bold text-slate-300 uppercase mb-1.5">Razón Social</label>
+                            <input 
+                                type="text" 
+                                value={details.legalName || ''}
+                                onChange={(e) => setDetails(prev => ({...prev, legalName: e.target.value}))}
+                                className="w-full p-2.5 bg-slate-950/70 border border-slate-700 rounded-lg text-sm text-slate-100 placeholder:text-slate-500"
+                                placeholder="Nombre o Razón Social oficial"
+                            />
                         </div>
-                    </div>
-
-                    <div className="space-y-4 bg-slate-50 p-4 rounded-lg border border-slate-200">
-                        <div className="grid grid-cols-1 md:grid-cols-5 gap-2 mb-2 px-1 text-xs text-slate-600 font-semibold">
-                            <label className="md:col-span-3">Descripción de la Actividad</label>
-                            <label>Cantidad (#)</label>
-                            <label>Precio Unitario</label>
+                        <div>
+                            <label className="block text-xs font-bold text-slate-300 uppercase mb-1.5">RFC</label>
+                            <input 
+                                type="text" 
+                                value={details.taxId || ''}
+                                onChange={(e) => setDetails(prev => ({...prev, taxId: e.target.value}))}
+                                className="w-full p-2.5 bg-slate-950/70 border border-slate-700 rounded-lg text-sm uppercase text-slate-100 font-mono placeholder:text-slate-500"
+                                placeholder="XAXX010101000"
+                            />
                         </div>
-                        <div className="grid grid-cols-1 md:grid-cols-5 gap-4 items-center">
-                            <input type="text" name="name" value={currentActivity.name} onChange={handleActivityChange} placeholder="Ej: Vista de fachada" className="md:col-span-3 p-2 bg-slate-100 border border-slate-300 text-slate-900 rounded-md focus:ring-blue-500 focus:border-blue-500 placeholder:text-slate-500" list="activity-suggestions"/>
-                            <datalist id="activity-suggestions">
-                                {filteredActivitySuggestions.map((a, i) => <option key={i} value={a} />)}
-                            </datalist>
-                            <input type="number" name="quantity" min="1" value={currentActivity.quantity} onChange={handleActivityChange} placeholder="1" className="p-2 w-full bg-slate-100 border border-slate-300 text-slate-900 rounded-md focus:ring-blue-500 focus:border-blue-500 placeholder:text-slate-500"/>
-                            <input type="number" name="unitPrice" min="0" step="any" value={currentActivity.unitPrice} onChange={handleActivityChange} placeholder="1200" className="p-2 w-full bg-slate-100 border border-slate-300 text-slate-900 rounded-md focus:ring-blue-500 focus:border-blue-500 placeholder:text-slate-500"/>
-                        </div>
-                        <div className="flex items-center justify-between mt-2">
-                            {/* DYNAMIC CATEGORY SELECT */}
-                            <select 
-                                name="type" 
-                                value={currentActivity.type} 
-                                onChange={handleActivityChange} 
-                                className="p-2 bg-slate-100 border border-slate-300 text-slate-900 rounded-md focus:ring-blue-500 focus:border-blue-500 max-w-[200px]"
-                            >
-                                {library.serviceCategories.map((cat) => (
-                                    <option key={cat} value={cat}>{cat}</option>
-                                ))}
-                                {library.serviceCategories.length === 0 && (
-                                    <>
-                                        <option value="" disabled>-- Cargar Nube --</option>
-                                    </>
-                                )}
-                            </select>
-
-                            <button type="button" onClick={handleAddActivity} className="px-5 py-2 bg-slate-600 text-white text-sm font-semibold rounded-md hover:bg-slate-700 transition-colors shadow-sm">
-                                + Agregar
-                            </button>
-                        </div>
-                    </div>
-
-                    {/* LISTA DE ACTIVIDADES */}
-                    <div className="space-y-3">
-                        {details.activities.map((act, index) => (
-                            <div key={act.id} className="group bg-white p-4 rounded-lg border border-slate-200 shadow-sm hover:shadow-md transition-all flex flex-col sm:flex-row sm:items-center gap-4">
-                                <div className="flex-grow">
-                                    <div className="flex items-center gap-2">
-                                        <span className="font-bold text-slate-800 text-sm md:text-base">{act.name}</span>
-                                        {act.type && (
-                                            <span className="text-[10px] bg-slate-100 text-slate-500 px-2 py-0.5 rounded-full uppercase tracking-wider border border-slate-200">
-                                                {act.type}
-                                            </span>
-                                        )}
-                                    </div>
-                                    <div className="text-xs text-slate-500 mt-1 flex gap-3">
-                                        <span>Cant: <strong className="text-slate-700">{act.quantity}</strong></span>
-                                        <span>P.U: <strong className="text-slate-700">{formatCurrency(act.unitPrice)}</strong></span>
-                                    </div>
-                                </div>
-                                <div className="text-right min-w-[100px]">
-                                    <p className="font-bold text-slate-900">{formatCurrency(act.quantity * act.unitPrice)}</p>
-                                </div>
-                                <div className="flex items-center justify-end gap-1 opacity-100 sm:opacity-0 sm:group-hover:opacity-100 transition-opacity">
-                                    {/* EDIT BUTTON */}
-                                    <button 
-                                        type="button" 
-                                        onClick={() => handleEditActivity(act.id)} 
-                                        className="p-1 text-slate-400 hover:text-yellow-600 disabled:opacity-30"
-                                        title="Editar"
-                                    >
-                                        <svg xmlns="http://www.w3.org/2000/svg" className="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15.232 5.232l3.536 3.536m-2.036-5.036a2.5 2.5 0 113.536 3.536L6.5 21.036H3v-3.572L16.732 3.732z" />
-                                        </svg>
-                                    </button>
-                                    <button type="button" onClick={() => handleMoveActivity(index, 'up')} disabled={index === 0} className="p-1 text-slate-400 hover:text-blue-500 disabled:opacity-30">
-                                        <svg xmlns="http://www.w3.org/2000/svg" className="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 15l7-7 7 7" /></svg>
-                                    </button>
-                                    <button type="button" onClick={() => handleMoveActivity(index, 'down')} disabled={index === details.activities.length - 1} className="p-1 text-slate-400 hover:text-blue-500 disabled:opacity-30">
-                                        <svg xmlns="http://www.w3.org/2000/svg" className="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 9l-7 7-7-7" /></svg>
-                                    </button>
-                                    <button type="button" onClick={() => handleRemoveActivity(act.id)} className="p-1 text-slate-400 hover:text-red-500 ml-2">
-                                        <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" /></svg>
-                                    </button>
-                                </div>
-                            </div>
-                        ))}
-                         {details.activities.length === 0 && (
-                            <div className="text-center py-8 bg-slate-50 rounded-lg border-2 border-dashed border-slate-200 text-slate-400 text-sm">
-                                No hay actividades agregadas aún.
-                            </div>
-                        )}
-                    </div>
-                </div>
-            </fieldset>
-
-            {/* SECTION 3: TERMS & TOTALS */}
-            <fieldset className="border border-slate-200 rounded-lg overflow-hidden">
-                <button 
-                    type="button" 
-                    onClick={() => toggleSection('terms')}
-                    className="w-full flex justify-between items-center p-4 bg-slate-50 hover:bg-slate-100 transition-colors"
-                >
-                    <legend className="text-lg font-semibold text-slate-800">3. Totales y Condiciones</legend>
-                    <svg className={`w-5 h-5 text-slate-500 transform transition-transform ${collapsedSections.terms ? 'rotate-180' : ''}`} fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M19 9l-7 7-7-7"></path></svg>
-                </button>
-                
-                <div className={`p-4 sm:p-6 space-y-6 ${collapsedSections.terms ? 'hidden' : 'block'}`}>
-                     <div className="grid md:grid-cols-2 gap-8">
-                        <div className="space-y-4">
-                            <div>
-                                <label className="block text-sm font-medium text-slate-700 mb-2">Tiempo de Entrega</label>
-                                <div className="flex gap-2">
-                                    <select 
-                                        disabled={useCustomDeliveryTime}
-                                        value={useCustomDeliveryTime ? '' : details.deliveryTime}
-                                        onChange={(e) => setDetails(prev => ({...prev, deliveryTime: e.target.value}))}
-                                        className="w-full bg-slate-100 border border-slate-300 rounded-md p-3 text-sm"
-                                    >
-                                        <option value="">Seleccionar...</option>
-                                        <option value="3 a 5 días hábiles">3 a 5 días hábiles</option>
-                                        <option value="5 a 7 días hábiles">5 a 7 días hábiles</option>
-                                        <option value="7 a 10 días hábiles">7 a 10 días hábiles</option>
-                                        <option value="10 a 15 días hábiles">10 a 15 días hábiles</option>
-                                        <option value="2 a 3 semanas">2 a 3 semanas</option>
-                                        <option value="1 mes">1 mes</option>
-                                    </select>
-                                    <div className="flex items-center">
-                                        <input 
-                                            type="checkbox" 
-                                            id="customTime" 
-                                            checked={useCustomDeliveryTime} 
-                                            onChange={(e) => {
-                                                setUseCustomDeliveryTime(e.target.checked);
-                                                if(e.target.checked) setDetails(p => ({...p, deliveryTime: ''}));
-                                            }}
-                                            className="h-4 w-4 text-blue-600 rounded border-slate-300"
-                                        />
-                                        <label htmlFor="customTime" className="ml-2 text-xs text-slate-600">Manual</label>
-                                    </div>
-                                </div>
-                                {useCustomDeliveryTime && (
-                                    <input 
-                                        type="text"
-                                        value={details.deliveryTime}
-                                        onChange={(e) => setDetails(prev => ({...prev, deliveryTime: e.target.value}))}
-                                        placeholder="Ej: A convenir según avance"
-                                        className="mt-2 w-full bg-white border border-slate-300 rounded-md p-3 text-sm"
-                                    />
-                                )}
-                            </div>
-
-                             <div>
-                                <label className="block text-sm font-medium text-slate-700 mb-2">Condiciones Generales</label>
-                                <textarea 
-                                    name="generalConditions" 
-                                    value={details.generalConditions} 
-                                    onChange={handleInputChange} 
-                                    rows={4}
-                                    placeholder="Ej: Se requiere acceso al sitio, luz y agua..."
-                                    className="w-full bg-slate-100 border border-slate-300 rounded-md p-3 text-sm"
-                                />
-                                <div className="flex gap-2 mt-2">
-                                    {library.conditions.map((cond, i) => (
-                                        <button 
-                                            key={i} 
-                                            type="button" 
-                                            onClick={() => setDetails(p => ({...p, generalConditions: p.generalConditions ? p.generalConditions + '\n' + cond : cond}))}
-                                            className="text-xs bg-slate-100 border border-slate-200 px-2 py-1 rounded hover:bg-slate-200"
-                                        >
-                                            + {cond.substring(0, 15)}...
-                                        </button>
-                                    ))}
-                                </div>
-                            </div>
-                            
-                            <div className="flex items-center mt-4">
-                                <input 
-                                    type="checkbox" 
-                                    id="requireAdvance" 
-                                    checked={details.requireAdvance} 
-                                    onChange={(e) => setDetails(prev => ({...prev, requireAdvance: e.target.checked}))}
-                                    className="h-4 w-4 text-blue-600 focus:ring-blue-500 border-slate-300 rounded"
-                                />
-                                <label htmlFor="requireAdvance" className="ml-2 block text-sm text-slate-900">
-                                    Requerir 50% de anticipo
+                        <div className="md:col-span-2">
+                            <label className="block text-xs font-bold text-slate-300 uppercase mb-1.5">Constancia de Situación Fiscal (PDF)</label>
+                            <div className="flex gap-2 items-center">
+                                <label className="flex-1 cursor-pointer bg-slate-900 border border-slate-700 hover:border-slate-500 hover:bg-slate-800/80 transition-colors rounded-lg p-3 text-sm text-slate-300 flex items-center justify-center gap-2">
+                                    <svg xmlns="http://www.w3.org/2000/svg" className="h-4 w-4 text-teal-400" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M7 21h10a2 2 0 002-2V9.414a1 1 0 00-.293-.707l-5.414-5.414A1 1 0 0012.586 3H7a2 2 0 00-2 2v14a2 2 0 002 2z" /></svg>
+                                    <span className="font-medium">{details.taxSituationPdfB64 ? 'Cambiar PDF de Constancia' : 'Subir Constancia del SAT (PDF)'}</span>
+                                    <input type="file" accept="application/pdf" onChange={handlePdfUpload} className="hidden" />
                                 </label>
-                            </div>
-                        </div>
-
-                        {/* TOTALS CALCULATOR */}
-                        <div className="bg-slate-50 p-6 rounded-lg border border-slate-200 h-fit">
-                             <div className="flex justify-between items-center mb-4 pb-4 border-b border-slate-200">
-                                <span className="font-semibold text-slate-600">Subtotal</span>
-                                <span className="font-mono text-slate-800">{formatCurrency(totals.subtotal)}</span>
-                             </div>
-
-                             <div className="space-y-3 mb-4 pb-4 border-b border-slate-200">
-                                <div className="flex items-center justify-between">
-                                    <label className="text-sm text-slate-600">Descuento</label>
-                                    <div className="flex items-center gap-2">
-                                        <select 
-                                            value={details.discountType}
-                                            onChange={(e) => setDetails(prev => ({...prev, discountType: e.target.value as any}))}
-                                            className="text-xs p-1 border rounded bg-white"
-                                        >
-                                            <option value="none">No</option>
-                                            <option value="percentage">%</option>
-                                            <option value="fixed">$</option>
-                                        </select>
-                                        {details.discountType !== 'none' && (
-                                            <input 
-                                                type="number" 
-                                                value={details.discountValue}
-                                                onChange={(e) => setDetails(prev => ({...prev, discountValue: parseFloat(e.target.value) || 0}))}
-                                                className="w-20 p-1 text-right text-sm border rounded"
-                                            />
-                                        )}
-                                    </div>
-                                </div>
-                                
-                                <div className="flex items-center justify-between">
-                                    <div className="flex items-center">
-                                        <input 
-                                            type="checkbox" 
-                                            id="addIVA" 
-                                            checked={details.addIVA} 
-                                            onChange={(e) => setDetails(prev => ({...prev, addIVA: e.target.checked}))}
-                                            className="h-4 w-4 text-blue-600 rounded border-slate-300"
-                                        />
-                                        <label htmlFor="addIVA" className="ml-2 text-sm text-slate-600">IVA (16%)</label>
-                                    </div>
-                                    <span className="font-mono text-xs text-slate-500">{formatCurrency(totals.ivaAmount)}</span>
-                                </div>
-
-                                <div className="flex items-center justify-between">
-                                    <div className="flex items-center">
-                                        <input 
-                                            type="checkbox" 
-                                            id="addWithholdings" 
-                                            checked={details.addWithholdings} 
-                                            onChange={(e) => setDetails(prev => ({...prev, addWithholdings: e.target.checked}))}
-                                            className="h-4 w-4 text-red-600 rounded border-slate-300"
-                                        />
-                                        <label htmlFor="addWithholdings" className="ml-2 text-sm text-slate-600">Retenciones (Resico)</label>
-                                    </div>
-                                </div>
-                                
-                                {details.addWithholdings && (
-                                    <div className="pl-6 space-y-2">
-                                        <div className="flex justify-between text-xs text-red-500">
-                                            <span>IVA Ret ({details.ivaWithholdingPercentage}%)</span>
-                                            <span>- {formatCurrency(totals.ivaWithholdingAmount)}</span>
-                                        </div>
-                                         <div className="flex justify-between text-xs text-red-500">
-                                            <span>ISR Ret ({details.isrWithholdingPercentage}%)</span>
-                                            <span>- {formatCurrency(totals.isrWithholdingAmount)}</span>
-                                        </div>
-                                    </div>
+                                {details.taxSituationPdfB64 && (
+                                     <button type="button" onClick={handleRemovePdf} className="p-3 text-rose-400 hover:bg-rose-500/10 rounded-lg border border-rose-500/30 transition-colors" title="Eliminar PDF">
+                                        <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5" viewBox="0 0 20 20" fill="currentColor"><path fillRule="evenodd" d="M4.293 4.293a1 1 0 011.414 0L10 8.586l4.293-4.293a1 1 0 111.414 1.414L11.414 10l4.293 4.293a1 1 0 01-1.414 1.414L10 11.414l-4.293 4.293a1 1 0 01-1.414-1.414L8.586 10 4.293 5.707a1 1 0 010-1.414z" clipRule="evenodd" /></svg>
+                                     </button>
                                 )}
-                             </div>
-
-                             <div className="flex justify-between items-center text-xl font-bold text-slate-900">
-                                <span>Total</span>
-                                <span>{formatCurrency(totals.total)}</span>
-                             </div>
+                            </div>
+                            {details.taxSituationPdfB64 && <p className="text-xs text-emerald-400 mt-1.5 flex items-center gap-1 font-medium">✓ Constancia SAT cargada en memoria</p>}
                         </div>
-                     </div>
-
-                     {/* FISCAL DATA SECTION */}
-                     <div className="mt-6 pt-6 border-t border-slate-200">
-                        <h4 className="font-semibold text-slate-800 mb-4 flex items-center gap-2">
-                            <span className="bg-slate-200 text-slate-700 rounded-full w-6 h-6 flex items-center justify-center text-xs">Sat</span>
-                            Datos Fiscales (Para Factura)
-                        </h4>
-                        <div className="grid md:grid-cols-2 gap-4">
-                            <div>
-                                <label className="block text-xs font-bold text-slate-500 uppercase mb-1">Razón Social</label>
-                                <input 
-                                    type="text" 
-                                    value={details.legalName || ''}
-                                    onChange={(e) => setDetails(prev => ({...prev, legalName: e.target.value}))}
-                                    className="w-full p-2 border border-slate-300 rounded text-sm"
-                                    placeholder="Nombre oficial"
-                                />
-                            </div>
-                             <div>
-                                <label className="block text-xs font-bold text-slate-500 uppercase mb-1">RFC</label>
-                                <input 
-                                    type="text" 
-                                    value={details.taxId || ''}
-                                    onChange={(e) => setDetails(prev => ({...prev, taxId: e.target.value}))}
-                                    className="w-full p-2 border border-slate-300 rounded text-sm uppercase"
-                                    placeholder="XAXX010101000"
-                                />
-                            </div>
-                            <div className="md:col-span-2">
-                                <label className="block text-xs font-bold text-slate-500 uppercase mb-1">Constancia de Situación Fiscal (PDF)</label>
-                                <div className="flex gap-2 items-center">
-                                    <label className="flex-1 cursor-pointer bg-slate-100 border border-slate-300 hover:bg-slate-200 transition-colors rounded p-2 text-sm text-slate-600 flex items-center justify-center gap-2">
-                                        <svg xmlns="http://www.w3.org/2000/svg" className="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M7 21h10a2 2 0 002-2V9.414a1 1 0 00-.293-.707l-5.414-5.414A1 1 0 0012.586 3H7a2 2 0 00-2 2v14a2 2 0 002 2z" /></svg>
-                                        {details.taxSituationPdfB64 ? 'Cambiar Archivo' : 'Subir PDF'}
-                                        <input type="file" accept="application/pdf" onChange={handlePdfUpload} className="hidden" />
-                                    </label>
-                                    {details.taxSituationPdfB64 && (
-                                         <button type="button" onClick={handleRemovePdf} className="p-2 text-red-500 hover:bg-red-50 rounded border border-red-200">
-                                            <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5" viewBox="0 0 20 20" fill="currentColor"><path fillRule="evenodd" d="M4.293 4.293a1 1 0 011.414 0L10 8.586l4.293-4.293a1 1 0 111.414 1.414L11.414 10l4.293 4.293a1 1 0 01-1.414 1.414L10 11.414l-4.293 4.293a1 1 0 01-1.414-1.414L8.586 10 4.293 5.707a1 1 0 010-1.414z" clipRule="evenodd" /></svg>
-                                         </button>
-                                    )}
-                                </div>
-                                {details.taxSituationPdfB64 && <p className="text-xs text-green-600 mt-1">✓ PDF cargado</p>}
-                            </div>
-                        </div>
-                     </div>
+                    </div>
                 </div>
             </fieldset>
 
-                {/* Botón generar al final del formulario por conveniencia */}
+                {/* BOTÓN GENERAR VISTA PREVIA RESALTADO AL FINAL */}
                 <div className="pt-4 flex justify-end">
                     <button 
                         type="submit" 
                         disabled={!isFormValid}
-                        className="bg-slate-900 text-white px-8 py-3 rounded-xl font-bold text-base hover:bg-black transition-all hover:scale-105 disabled:opacity-50 disabled:scale-100 shadow-lg cursor-pointer flex items-center gap-2"
+                        className="bg-gradient-to-r from-blue-600 to-indigo-600 hover:from-blue-500 hover:to-indigo-500 text-white px-8 py-3.5 rounded-xl font-bold text-base hover:scale-[1.02] active:scale-[0.98] disabled:opacity-40 disabled:scale-100 shadow-xl shadow-blue-900/40 cursor-pointer flex items-center gap-2 transition-all border border-blue-400/30"
                     >
-                        Generar Vista Previa &rarr;
+                        <span>Generar Vista Previa</span>
+                        <span className="text-lg">→</span>
                     </button>
                 </div>
             </div>
@@ -2632,6 +2831,23 @@ const QuoteForm: React.FC<QuoteFormProps> = ({ onGenerateQuote, initialDetails }
             currentFormDetails={details}
             isCloudConnected={cloudConfig.isConnected}
             onOpenCloudGallery={handleOpenCloudGallery}
+        />
+
+        {/* MODAL: FACTURAS GUARDADAS EN SUPABASE */}
+        <SavedInvoicesModal
+            isOpen={showSavedInvoicesModal}
+            onClose={() => setShowSavedInvoicesModal(false)}
+            onLoadInvoice={handleLoadFromModal}
+            onPreviewInvoice={handlePreviewFromModal}
+            currentDetails={details}
+        />
+
+        {/* MODAL: INICIO FACTURA (PLANTILLA BASE SUPABASE) */}
+        <InicioFacturaModal
+            isOpen={showInicioFacturaModal}
+            onClose={() => setShowInicioFacturaModal(false)}
+            currentDetails={details}
+            onLoadInicioFactura={handleLoadInicioFactura}
         />
 
     </div>

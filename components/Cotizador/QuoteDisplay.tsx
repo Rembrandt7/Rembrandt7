@@ -1,5 +1,6 @@
 import React, { useRef, useState } from 'react';
 import type { QuoteDetails } from './types';
+import { saveInvoiceToCloud } from './services/supabaseService';
 
 import { DEFAULT_LOGO_B64 } from './constants/defaultLogo';
 import { exportDataAsJsonFile, exportBase64AsFile } from '../../utils/cotizadorExportUtils';
@@ -16,6 +17,9 @@ const HDR_LOGO_B64 = DEFAULT_LOGO_B64;
 const QuoteDisplay: React.FC<QuoteDisplayProps> = ({ details, onReset, onEdit }) => {
   const quoteRef = useRef<HTMLDivElement>(null);
   const [isGenerating, setIsGenerating] = useState(false);
+  const [isMunicipalMode, setIsMunicipalMode] = useState(false);
+  const [isSavingCloud, setIsSavingCloud] = useState(false);
+  const [cloudSavedToast, setCloudSavedToast] = useState<string | null>(null);
   
   // State for WhatsApp Modal (Client)
   const [showWhatsAppModal, setShowWhatsAppModal] = useState(false);
@@ -89,8 +93,11 @@ const QuoteDisplay: React.FC<QuoteDisplayProps> = ({ details, onReset, onEdit })
         input.style.boxShadow = 'none';
         input.classList.add('printing');
 
+        const scale = isMunicipalMode ? 1.4 : 2;
+        const quality = isMunicipalMode ? 0.72 : 0.95;
+
         const canvas = await html2canvas(input, { 
-            scale: 2, 
+            scale, 
             useCORS: true,
             allowTaint: true,
             backgroundColor: '#ffffff'
@@ -99,7 +106,7 @@ const QuoteDisplay: React.FC<QuoteDisplayProps> = ({ details, onReset, onEdit })
         input.style.boxShadow = originalShadow;
         input.classList.remove('printing');
         
-        const imgData = canvas.toDataURL('image/jpeg', 0.95);
+        const imgData = canvas.toDataURL('image/jpeg', quality);
         const pdf = new jsPDF('p', 'mm', 'a4');
         const pdfWidth = pdf.internal.pageSize.getWidth();
         const pdfPageHeight = pdf.internal.pageSize.getHeight();
@@ -118,12 +125,13 @@ const QuoteDisplay: React.FC<QuoteDisplayProps> = ({ details, onReset, onEdit })
         // Center horizontally
         const xOffset = (pdfWidth - finalWidth) / 2;
         
-        pdf.addImage(imgData, 'JPEG', xOffset, 0, finalWidth, finalHeight);
+        pdf.addImage(imgData, 'JPEG', xOffset, 0, finalWidth, finalHeight, undefined, isMunicipalMode ? 'FAST' : 'NONE');
         
         const clean = (str: string) => str.replace(/[^a-z0-9áéíóúñÁÉÍÓÚÑ]/gi, '_').trim();
         const c = clean(details.recipientName) || 'Cliente';
         const p = clean(details.projectName) || 'Proyecto';
-        const fileName = `${c}-${p}.pdf`;
+        const suffix = isMunicipalMode ? '_Municipal' : '';
+        const fileName = `${c}-${p}${suffix}.pdf`;
 
         pdf.save(fileName);
         return fileName;
@@ -133,6 +141,34 @@ const QuoteDisplay: React.FC<QuoteDisplayProps> = ({ details, onReset, onEdit })
         return null;
     } finally {
         setIsGenerating(false);
+    }
+  };
+
+  const handleSaveToCloud = async () => {
+    if (!details) return;
+    setIsSavingCloud(true);
+    try {
+      const totalAmount = subtotalAfterDiscount + ivaAmount - ivaWithholdingAmount - isrWithholdingAmount;
+      const newInvoice = {
+        id: `fac_${Date.now()}`,
+        projectName: details.projectName || 'Proyecto sin título',
+        clientName: details.recipientName || 'Cliente',
+        date: details.invoiceDate || new Date().toISOString(),
+        total: Math.round(totalAmount * 100) / 100,
+        data: details,
+        updatedAt: new Date().toISOString()
+      };
+      const ok = await saveInvoiceToCloud(newInvoice);
+      if (ok) {
+        setCloudSavedToast("¡Factura guardada exitosamente en Supabase!");
+        setTimeout(() => setCloudSavedToast(null), 4000);
+      } else {
+        alert("Error al guardar en Supabase. Verifica la conexión.");
+      }
+    } catch (e: any) {
+      alert("Error: " + e.message);
+    } finally {
+      setIsSavingCloud(false);
     }
   };
 
@@ -492,6 +528,14 @@ Arq. Rembrandt Blanco`;
          </div>
       )}
 
+      {/* Toast de Guardado en la Nube */}
+      {cloudSavedToast && (
+        <div className="no-print fixed top-6 right-6 z-50 bg-emerald-900/95 border border-emerald-500/50 text-white px-4 py-2.5 rounded-xl shadow-2xl text-xs font-bold flex items-center gap-2 animate-bounce">
+          <span>☁️</span>
+          <span>{cloudSavedToast}</span>
+        </div>
+      )}
+
       {/* Action Bar - Acomodados del lado izquierdo */}
       <div className="no-print fixed bottom-0 left-0 right-0 bg-[#0d1322]/95 backdrop-blur-md border-t border-slate-800 p-3 shadow-2xl z-50">
         <div className="max-w-5xl mx-auto flex flex-wrap justify-start items-center gap-2">
@@ -504,10 +548,37 @@ Arq. Rembrandt Blanco`;
             <button 
               onClick={() => handleDownloadPdf()}
               disabled={isGenerating}
-              className="px-4 py-2 bg-blue-600 hover:bg-blue-500 text-white rounded-lg font-semibold text-xs transition-colors shadow-sm whitespace-nowrap cursor-pointer"
+              className="px-4 py-2 bg-blue-600 hover:bg-blue-500 text-white rounded-lg font-semibold text-xs transition-colors shadow-sm whitespace-nowrap cursor-pointer flex items-center gap-1.5"
             >
-              Descargar PDF
+              <span>Descargar PDF</span>
+              {isMunicipalMode && <span className="bg-purple-900/80 text-purple-200 text-[10px] px-1.5 py-0.2 rounded font-mono">Ligero</span>}
             </button>
+
+            {/* BOTÓN TOGGLE COMPRESIÓN MUNICIPAL */}
+            <button
+              onClick={() => setIsMunicipalMode(!isMunicipalMode)}
+              className={`px-3 py-2 rounded-lg text-xs font-bold transition-all border flex items-center gap-1.5 cursor-pointer ${
+                isMunicipalMode 
+                  ? 'bg-purple-600/30 text-purple-200 border-purple-400 shadow-[0_0_12px_rgba(168,85,247,0.4)]' 
+                  : 'bg-slate-800/80 text-slate-400 border-slate-700 hover:text-slate-200'
+              }`}
+              title="Optimiza y comprime el PDF (<1MB) para trámites y portales municipales"
+            >
+              <span>🏛️</span>
+              <span>Compresión Municipal {isMunicipalMode ? '✓ Activa' : ''}</span>
+            </button>
+
+            {/* BOTÓN GUARDAR EN SUPABASE */}
+            <button
+              onClick={handleSaveToCloud}
+              disabled={isSavingCloud}
+              className="px-3.5 py-2 rounded-lg bg-teal-950/60 hover:bg-teal-900/60 text-teal-300 border border-teal-500/40 transition-all font-semibold text-xs whitespace-nowrap cursor-pointer flex items-center gap-1.5 disabled:opacity-50"
+              title="Guardar esta cotización directamente en Supabase para abrirla o modificarla después"
+            >
+              <span>☁️</span>
+              <span>{isSavingCloud ? 'Guardando...' : 'Guardar en Supabase'}</span>
+            </button>
+
             <button 
                 onClick={handleDownloadJSON}
                 className="px-3.5 py-2 rounded-lg bg-amber-950/60 hover:bg-amber-900/60 text-amber-300 border border-amber-500/30 transition-all font-medium text-xs whitespace-nowrap cursor-pointer"
