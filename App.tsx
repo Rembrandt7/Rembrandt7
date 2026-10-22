@@ -325,6 +325,15 @@ const MainLayout: React.FC = () => {
       cardStyle: 'bg-gradient-to-br from-amber-500/20 via-orange-500/15 to-amber-600/25 hover:from-amber-500/35 hover:via-orange-500/30 hover:to-amber-600/40 border-amber-500/40 hover:border-orange-300/80 shadow-[0_0_15px_rgba(249,115,22,0.25)] hover:shadow-[0_0_28px_rgba(249,115,22,0.65),0_0_12px_rgba(251,146,60,0.4)]',
       iconGlow: 'drop-shadow(0 0 6px rgba(249,115,22,0.85)) drop-shadow(0 0 14px rgba(251,146,60,0.6))',
       dotColor: 'bg-gradient-to-r from-amber-400 to-orange-500 shadow-[0_0_8px_rgba(249,115,22,0.8)]'
+    },
+    {
+      id: 'header-whatsapp',
+      name: 'WhatsApp',
+      href: 'https://web.whatsapp.com/',
+      iconSvg: '<svg viewBox="0 0 24 24" class="w-full h-full" fill="none" xmlns="http://www.w3.org/2000/svg"><path fill="#22c55e" d="M12.04 2c-5.46 0-9.91 4.45-9.91 9.91 0 1.75.46 3.45 1.32 4.95L2.05 22l5.25-1.38c1.45.79 3.08 1.21 4.74 1.21 5.46 0 9.91-4.45 9.91-9.91 0-2.65-1.03-5.14-2.9-7.01A9.816 9.816 0 0 0 12.04 2m.01 1.67c2.2 0 4.26.86 5.82 2.42a8.225 8.225 0 0 1 2.41 5.83c0 4.54-3.7 8.24-8.24 8.24-1.48 0-2.93-.4-4.2-1.15l-.3-.18-3.12.82.83-3.04-.2-.31a8.196 8.196 0 0 1-1.26-4.38c0-4.54 3.7-8.24 8.24-8.24m-3.53 3.63c-.19 0-.52.07-.79.37-.27.3-1.04 1.02-1.04 2.48 0 1.47 1.07 2.89 1.21 3.09.15.2 2.1 3.2 5.08 4.49 2.49 1.07 2.99.86 3.53.81.54-.05 1.74-.71 1.99-1.4.24-.68.24-1.27.17-1.4-.07-.12-.27-.2-.56-.34-.3-.15-1.74-.86-2.01-.96-.27-.1-.47-.15-.67.15-.2.3-.77.96-.94 1.16-.17.2-.34.22-.64.07-.3-.15-1.26-.46-2.39-1.48-.88-.79-1.48-1.76-1.65-2.06-.17-.3-.02-.46.13-.61.14-.14.3-.35.45-.52.15-.17.2-.3.3-.5.1-.2.05-.37-.02-.52-.08-.15-.67-1.62-.92-2.22-.24-.6-.49-.51-.67-.52h-.57z"/></svg>',
+      cardStyle: 'bg-gradient-to-br from-emerald-500/20 via-green-600/15 to-emerald-700/25 hover:from-emerald-500/35 hover:via-green-600/30 hover:to-emerald-700/40 border-emerald-500/40 hover:border-green-300/80 shadow-[0_0_15px_rgba(34,197,94,0.25)] hover:shadow-[0_0_28px_rgba(34,197,94,0.65),0_0_12px_rgba(74,222,128,0.4)]',
+      iconGlow: 'drop-shadow(0 0 6px rgba(34,197,94,0.85)) drop-shadow(0 0 14px rgba(74,222,128,0.6))',
+      dotColor: 'bg-gradient-to-r from-emerald-400 to-green-500 shadow-[0_0_8px_rgba(34,197,94,0.8)]'
     }
   ];
 

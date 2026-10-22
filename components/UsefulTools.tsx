@@ -836,7 +836,7 @@ export const UsefulTools: React.FC = () => {
                             }
                         }))}
                         strategy={rectSortingStrategy}
-                        className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-6 gap-2.5 w-full"
+                        className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-7 gap-2.5 w-full"
                         itemClassName="w-full"
                         renderItem={(qaItem) => (
                             <QuickAccessCard

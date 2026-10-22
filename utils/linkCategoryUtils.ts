@@ -231,8 +231,10 @@ export const CANONICAL_LINKS_MAP: Record<string, Partial<LinkItem>> = {
     name: 'Facebook',
     href: 'https://www.facebook.com/',
     category: 'social',
-    colorClass: 'text-blue-600 hover:text-blue-500',
-    iconSvg: `<svg xmlns="http://www.w3.org/2000/svg" className="h-6 w-6" viewBox="0 0 24 24" fill="currentColor"><path d="M24 12.073c0-6.627-5.373-12-12-12s-12 5.373-12 12c0 5.99 4.388 10.954 10.125 11.854v-8.385H7.078v-3.47h3.047V9.43c0-3.007 1.792-4.669 4.533-4.669 1.312 0 2.686.235 2.686.235v2.953H15.83c-1.491 0-1.956.925-1.956 1.874v2.25h3.328l-.532 3.47h-2.796v8.385C19.612 23.027 24 18.062 24 12.073z"/></svg>`
+    colorClass: 'text-blue-500 hover:text-blue-400',
+    iconSvg: `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 100 100" class="w-full h-full" fill="none"><defs><linearGradient id="fb-opt1-bg" x1="0%" y1="0%" x2="100%" y2="100%"><stop offset="0%" stop-color="#2583ff"/><stop offset="45%" stop-color="#1877f2"/><stop offset="100%" stop-color="#0852c7"/></linearGradient><linearGradient id="fb-opt1-bevel" x1="0%" y1="0%" x2="0%" y2="100%"><stop offset="0%" stop-color="#ffffff" stop-opacity="0.35"/><stop offset="100%" stop-color="#ffffff" stop-opacity="0.05"/></linearGradient><filter id="fb-opt1-shadow" x="-10%" y="-10%" width="120%" height="120%"><feDropShadow dx="0" dy="2" stdDeviation="2.5" flood-color="#000000" flood-opacity="0.3"/></filter></defs><rect width="100" height="100" rx="24" fill="url(#fb-opt1-bg)" stroke="#3b82f6" stroke-width="1"/><rect x="2.5" y="2.5" width="95" height="95" rx="21.5" fill="none" stroke="url(#fb-opt1-bevel)" stroke-width="1.5"/><path d="M57 96V60h12.5l1.9-14.8H57v-9.5c0-4.3 1.2-7.2 7.3-7.2h7.8V15.2c-1.4-.2-6.1-.6-11.6-.6-11.5 0-19.4 7-19.4 19.9V45.2H28.2v14.8H41.1V96H57z" fill="#FFFFFF" filter="url(#fb-opt1-shadow)"/></svg>`,
+    outlineColor: '#1877f2',
+    outlineWidth: 8
   },
   'instagram': {
     id: '7',
@@ -302,7 +304,7 @@ export function normalizeAndDeduplicateLinksBar(links: LinkItem[]): LinkItem[] {
     const nameLower = item.name.trim().toLowerCase();
     const hrefNormalized = (item.href || '').trim().toLowerCase().replace(/\/$/, '');
 
-    // Exclude Compresor, CapCut and Maket AI from linksBar (per explicit user instruction)
+    // Exclude Compresor, CapCut, Maket AI, WhatsApp and Notion from linksBar (per user instruction: WhatsApp moved to top header, Notion moved to Accesos Rápidos)
     if (nameLower.includes('compresor') || item.id === 'compresor' || item.id === 'qa-2') {
       continue;
     }
@@ -313,6 +315,12 @@ export function normalizeAndDeduplicateLinksBar(links: LinkItem[]): LinkItem[] {
       continue;
     }
     if (nameLower === 'renders remb' || nameLower === 'renders' || item.id === 'renders-remb' || (hrefNormalized && hrefNormalized.includes('renders%20remb'))) {
+      continue;
+    }
+    if (nameLower === 'whatsapp' || item.id === '2' || item.id === 'whatsapp' || (hrefNormalized && hrefNormalized.includes('web.whatsapp.com'))) {
+      continue;
+    }
+    if (nameLower === 'notion' || item.id === '3' || item.id === 'notion' || (hrefNormalized && hrefNormalized.includes('notion.so'))) {
       continue;
     }
 
@@ -383,12 +391,10 @@ export function normalizeAndDeduplicateLinksBar(links: LinkItem[]): LinkItem[] {
     result.push(item);
   }
 
-  // Ensure all authentic canonical links are always present in linksBar (excluding CapCut & Maket AI per user request)
+  // Ensure all authentic canonical links are always present in linksBar (excluding CapCut, Maket AI, WhatsApp and Notion per user request)
   const MANDATORY_CANONICALS = [
     'javer',
     'makerworld',
-    'whatsapp',
-    'notion',
     'youtube',
     'flow',
     'rendair',
@@ -427,8 +433,6 @@ export function normalizeAndDeduplicateLinksBar(links: LinkItem[]): LinkItem[] {
   // Desired authentic visual order matching the original layout with Rendair in centro de trabajos
   const DESIRED_ORDER = [
     'makerworld',
-    'whatsapp',
-    'notion',
     'youtube',
     'flow',
     'rendair',

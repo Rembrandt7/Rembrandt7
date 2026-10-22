@@ -80,26 +80,6 @@ const INITIAL_CONFIG: AppConfig = {
         outlineWidth: 10
     },
     {
-        id: '2',
-        href: "https://web.whatsapp.com/",
-        name: "WhatsApp",
-        category: "social",
-        colorClass: "text-green-500 hover:text-green-400",
-        iconSvg: `<svg viewBox="0 0 64 64" class="w-full h-full" xmlns="http://www.w3.org/2000/svg"><defs><linearGradient id="wa-green-bg" x1="0%" y1="0%" x2="100%" y2="100%"><stop offset="0%" stop-color="#2be06e"/><stop offset="60%" stop-color="#22c55e"/><stop offset="100%" stop-color="#15803d"/></linearGradient></defs><rect x="2" y="2" width="60" height="60" rx="16" fill="url(#wa-green-bg)" stroke="#86efac" stroke-width="1.2" stroke-opacity="0.5"/><g transform="translate(13, 13) scale(1.583)"><path fill="#ffffff" d="M12.04 2c-5.46 0-9.91 4.45-9.91 9.91 0 1.75.46 3.45 1.32 4.95L2.05 22l5.25-1.38c1.45.79 3.08 1.21 4.74 1.21 5.46 0 9.91-4.45 9.91-9.91 0-2.65-1.03-5.14-2.9-7.01A9.816 9.816 0 0 0 12.04 2m.01 1.67c2.2 0 4.26.86 5.82 2.42a8.225 8.225 0 0 1 2.41 5.83c0 4.54-3.7 8.24-8.24 8.24-1.48 0-2.93-.4-4.2-1.15l-.3-.18-3.12.82.83-3.04-.2-.31a8.196 8.196 0 0 1-1.26-4.38c0-4.54 3.7-8.24 8.24-8.24m-3.53 3.63c-.19 0-.52.07-.79.37-.27.3-1.04 1.02-1.04 2.48 0 1.47 1.07 2.89 1.21 3.09.15.2 2.1 3.2 5.08 4.49 2.49 1.07 2.99.86 3.53.81.54-.05 1.74-.71 1.99-1.4.24-.68.24-1.27.17-1.4-.07-.12-.27-.2-.56-.34-.3-.15-1.74-.86-2.01-.96-.27-.1-.47-.15-.67.15-.2.3-.77.96-.94 1.16-.17.2-.34.22-.64.07-.3-.15-1.26-.46-2.39-1.48-.88-.79-1.48-1.76-1.65-2.06-.17-.3-.02-.46.13-.61.14-.14.3-.35.45-.52.15-.17.2-.3.3-.5.1-.2.05-.37-.02-.52-.08-.15-.67-1.62-.92-2.22-.24-.6-.49-.51-.67-.52h-.57z"/></g></svg>`,
-        outlineColor: '#22c55e',
-        outlineWidth: 8
-    },
-    {
-        id: '3',
-        href: "https://www.notion.so/",
-        name: "Notion",
-        category: "trabajo",
-        colorClass: "text-white hover:text-gray-300",
-        iconSvg: `<svg viewBox="0 0 64 64" class="w-full h-full" xmlns="http://www.w3.org/2000/svg"><defs><linearGradient id="notion-bg" x1="0%" y1="0%" x2="100%" y2="100%"><stop offset="0%" stop-color="#26221f"/><stop offset="50%" stop-color="#1c1917"/><stop offset="100%" stop-color="#0f0e0d"/></linearGradient></defs><rect x="2" y="2" width="60" height="60" rx="16" fill="url(#notion-bg)" stroke="#f59e0b" stroke-width="1.6" stroke-opacity="0.6"/><g transform="translate(13, 13) scale(1.583)"><path fill="#ffffff" d="M4.459 4.208c.746.606 1.026.56 2.428.466l13.215-.793c.28 0 .047-.28-.046-.326L17.86 1.69c-.466-.373-.84-.466-1.586-.42L3.899 2.25c-.466.047-.56.28-.373.513l.933 1.445zm-.42 3.125v13.634c0 .84.42 1.12 1.306 1.073l14.195-.84c.886-.046.98-.56.98-1.213V6.353c0-.653-.28-.933-.886-.886L5.345 6.307c-.7.046-1.306.326-1.306 1.026zm12.37.933c.093.42 0 .84-.373.886l-.7.14v8.586c-.513.28-1.026.466-1.493.466-.793 0-1.026-.28-1.633-1.026l-4.76-7.464v7.324l1.4.326c0 .42-.326.746-.746.746H4.832c-.093-.42.093-.746.513-.793l.886-.187V9.387l-1.12-.093c0-.42.233-.746.653-.793l3.36-.233 5.087 7.79V9.107l-1.213-.14c0-.42.28-.746.7-.793l3.08-.233z"/></g></svg>`,
-        outlineColor: '#f59e0b',
-        outlineWidth: 8
-    },
-    {
         id: 'youtube',
         href: "https://www.youtube.com/",
         name: "YouTube",
@@ -168,8 +148,10 @@ const INITIAL_CONFIG: AppConfig = {
         href: "https://www.facebook.com/",
         name: "Facebook",
         category: "social",
-        colorClass: "text-blue-600 hover:text-blue-500",
-        iconSvg: `<svg xmlns="http://www.w3.org/2000/svg" className="h-6 w-6" viewBox="0 0 24 24" fill="currentColor"><path d="M24 12.073c0-6.627-5.373-12-12-12s-12 5.373-12 12c0 5.99 4.388 10.954 10.125 11.854v-8.385H7.078v-3.47h3.047V9.43c0-3.007 1.792-4.669 4.533-4.669 1.312 0 2.686.235 2.686.235v2.953H15.83c-1.491 0-1.956.925-1.956 1.874v2.25h3.328l-.532 3.47h-2.796v8.385C19.612 23.027 24 18.062 24 12.073z"/></svg>`
+        colorClass: "text-blue-500 hover:text-blue-400",
+        iconSvg: `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 100 100" class="w-full h-full" fill="none"><defs><linearGradient id="fb-opt1-bg" x1="0%" y1="0%" x2="100%" y2="100%"><stop offset="0%" stop-color="#2583ff"/><stop offset="45%" stop-color="#1877f2"/><stop offset="100%" stop-color="#0852c7"/></linearGradient><linearGradient id="fb-opt1-bevel" x1="0%" y1="0%" x2="0%" y2="100%"><stop offset="0%" stop-color="#ffffff" stop-opacity="0.35"/><stop offset="100%" stop-color="#ffffff" stop-opacity="0.05"/></linearGradient><filter id="fb-opt1-shadow" x="-10%" y="-10%" width="120%" height="120%"><feDropShadow dx="0" dy="2" stdDeviation="2.5" flood-color="#000000" flood-opacity="0.3"/></filter></defs><rect width="100" height="100" rx="24" fill="url(#fb-opt1-bg)" stroke="#3b82f6" stroke-width="1"/><rect x="2.5" y="2.5" width="95" height="95" rx="21.5" fill="none" stroke="url(#fb-opt1-bevel)" stroke-width="1.5"/><path d="M57 96V60h12.5l1.9-14.8H57v-9.5c0-4.3 1.2-7.2 7.3-7.2h7.8V15.2c-1.4-.2-6.1-.6-11.6-.6-11.5 0-19.4 7-19.4 19.9V45.2H28.2v14.8H41.1V96H57z" fill="#FFFFFF" filter="url(#fb-opt1-shadow)"/></svg>`,
+        outlineColor: '#1877f2',
+        outlineWidth: 8
     },
     {
         id: '7',
@@ -199,7 +181,7 @@ const INITIAL_CONFIG: AppConfig = {
         { id: 'ai-4', name: 'DeepSeek', href: 'https://chat.deepseek.com/', colorClass: 'text-blue-600 hover:text-blue-500', iconSvg: '<svg class="w-full h-full fill-current" viewBox="0 0 24 24"><path d="M20 2H4c-1.1 0-2 .9-2 2v18l4-4h14c1.1 0 2-.9 2-2V4c0-1.1-.9-2-2-2zm0 14H6l-2 2V4h16v12z"/><path d="M12 6c-1.66 0-3 1.34-3 3s1.34 3 3 3 3-1.34 3-3-1.34-3-3-3zm0 4c-.55 0-1-.45-1-1s.45-1 1-1 1 .45 1 1-1 1 1z"/></svg>' }
     ],
     quickAccess: [
-        { id: 'qa-1', name: 'Rendair', href: 'https://rendair.ai/dashboard', colorClass: 'hover:text-teal-400', iconSvg: '<svg viewBox="0 0 64 64" class="w-full h-full" xmlns="http://www.w3.org/2000/svg"><defs><linearGradient id="rendair-grad-qa" x1="0%" y1="0%" x2="100%" y2="100%"><stop offset="0%" stop-color="#22d3ee"/><stop offset="100%" stop-color="#0284c7"/></linearGradient></defs><rect x="4" y="4" width="56" height="56" rx="16" fill="#0f172a" stroke="url(#rendair-grad-qa)" stroke-width="2.5"/><path d="M22 45V19h12.5a8.5 8.5 0 0 1 8.5 8.5c0 4.1-2.9 7.6-7 8.3L44 45h-6l-7-8.5H28V45H22zm6-14.5h6.5a2.5 2.5 0 0 0 0-5H28v5z" fill="url(#rendair-grad-qa)"/><circle cx="47" cy="17" r="3.5" fill="#38bdf8"/></svg>' },
+        { id: 'qa-notion', name: 'Notion', href: 'https://www.notion.so/', clickCount: 4, colorClass: 'hover:text-amber-400', iconSvg: '<svg viewBox="0 0 64 64" class="w-full h-full" xmlns="http://www.w3.org/2000/svg"><defs><linearGradient id="notion-bg-qa" x1="0%" y1="0%" x2="100%" y2="100%"><stop offset="0%" stop-color="#26221f"/><stop offset="50%" stop-color="#1c1917"/><stop offset="100%" stop-color="#0f0e0d"/></linearGradient></defs><rect x="2" y="2" width="60" height="60" rx="16" fill="url(#notion-bg-qa)" stroke="#f59e0b" stroke-width="1.6" stroke-opacity="0.6"/><g transform="translate(13, 13) scale(1.583)"><path fill="#ffffff" d="M4.459 4.208c.746.606 1.026.56 2.428.466l13.215-.793c.28 0 .047-.28-.046-.326L17.86 1.69c-.466-.373-.84-.466-1.586-.42L3.899 2.25c-.466.047-.56.28-.373.513l.933 1.445zm-.42 3.125v13.634c0 .84.42 1.12 1.306 1.073l14.195-.84c.886-.046.98-.56.98-1.213V6.353c0-.653-.28-.933-.886-.886L5.345 6.307c-.7.046-1.306.326-1.306 1.026zm12.37.933c.093.42 0 .84-.373.886l-.7.14v8.586c-.513.28-1.026.466-1.493.466-.793 0-1.026-.28-1.633-1.026l-4.76-7.464v7.324l1.4.326c0 .42-.326.746-.746.746H4.832c-.093-.42.093-.746.513-.793l.886-.187V9.387l-1.12-.093c0-.42.233-.746.653-.793l3.36-.233 5.087 7.79V9.107l-1.213-.14c0-.42.28-.746.7-.793l3.08-.233z"/></g></svg>' },
         { id: 'qa-javer', name: 'Javer Data Center', href: 'https://aistudio.google.com/apps/3a3196da-cb37-40b8-9a5d-48e74634248d?showPreview=true&showAssistant=true', colorClass: 'hover:text-blue-400', iconSvg: '<svg class="w-full h-full" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg"><defs><linearGradient id="javer-dc-grad" x1="0%" y1="0%" x2="100%" y2="100%"><stop offset="0%" stop-color="#3b82f6" /><stop offset="50%" stop-color="#06b6d4" /><stop offset="100%" stop-color="#3b82f6" /></linearGradient></defs><rect x="3" y="3" width="18" height="18" rx="3" stroke="url(#javer-dc-grad)" stroke-width="2" /><line x1="3" y1="9" x2="21" y2="9" stroke="url(#javer-dc-grad)" stroke-width="1.5" /><line x1="3" y1="15" x2="21" y2="15" stroke="url(#javer-dc-grad)" stroke-width="1.5" stroke-dasharray="2 2" /><circle cx="7" cy="6" r="1" fill="#60a5fa" /><circle cx="11" cy="6" r="1" fill="#34d399" /><circle cx="7" cy="12" r="1" fill="#34d399" /><circle cx="11" cy="12" r="1" fill="#60a5fa" /><circle cx="7" cy="18" r="1" fill="#f43f5e" /><circle cx="11" cy="18" r="1" fill="#34d399" /><path d="M17 5v11a3 3 0 0 1-5 2.2" stroke="url(#javer-dc-grad)" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" /></svg>' },
         { id: 'qa-pdf-remb', name: 'PDF', href: 'https://pdf-remb.vercel.app/', colorClass: 'hover:text-rose-400', iconSvg: '<svg class="w-full h-full" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/><path d="M9 15v-4h2a1.5 1.5 0 0 1 0 3H9"/><path d="M15 11v4"/></svg>' },
         { id: 'qa-3', name: 'iLovePDF', href: 'https://www.ilovepdf.com/es', colorClass: 'hover:text-red-500', iconSvg: '<svg class="w-full h-full" viewBox="0 0 64 64" xmlns="http://www.w3.org/2000/svg"><rect width="56" height="56" x="4" y="4" rx="8" fill="currentColor"/><text x="32" y="42" fontFamily="Arial, sans-serif" fontSize="22" fontWeight="bold" fill="#111827" textAnchor="middle">PDF</text></svg>' },
@@ -922,6 +904,15 @@ const normalizeConfigCategoriesAndQuickAccess = (cfg: any): boolean => {
 
     if (cfg.aiSidebar.quickAccess.length !== originalLen) modified = true;
 
+    const hasNotionQA = cfg.aiSidebar.quickAccess.some((l: any) => l.id === 'qa-notion' || (l.name || '').toLowerCase() === 'notion' || (l.href || '').includes('notion.so'));
+    if (!hasNotionQA) {
+      const defaultNotionQA = INITIAL_CONFIG.aiSidebar.quickAccess.find(l => l.id === 'qa-notion');
+      if (defaultNotionQA) {
+        cfg.aiSidebar.quickAccess.push({ ...defaultNotionQA });
+        modified = true;
+      }
+    }
+
     // Ensure Áreas Municipales, Cotizador, Listas Remb, Compresor, and PDF URLs/names are current
     cfg.aiSidebar.quickAccess.forEach((item: any) => {
       const name = (item.name || '').toLowerCase();
@@ -1042,6 +1033,21 @@ const ensureSherwinWilliamsLinkUpdated = (cfg: any): boolean => {
           updated = true;
         }
       }
+      if (item.id === '6' || (item.name || '').toLowerCase() === 'facebook' || (item.href || '').includes('facebook.com')) {
+        const newFbSvg = `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 100 100" class="w-full h-full" fill="none"><defs><linearGradient id="fb-opt1-bg" x1="0%" y1="0%" x2="100%" y2="100%"><stop offset="0%" stop-color="#2583ff"/><stop offset="45%" stop-color="#1877f2"/><stop offset="100%" stop-color="#0852c7"/></linearGradient><linearGradient id="fb-opt1-bevel" x1="0%" y1="0%" x2="0%" y2="100%"><stop offset="0%" stop-color="#ffffff" stop-opacity="0.35"/><stop offset="100%" stop-color="#ffffff" stop-opacity="0.05"/></linearGradient><filter id="fb-opt1-shadow" x="-10%" y="-10%" width="120%" height="120%"><feDropShadow dx="0" dy="2" stdDeviation="2.5" flood-color="#000000" flood-opacity="0.3"/></filter></defs><rect width="100" height="100" rx="24" fill="url(#fb-opt1-bg)" stroke="#3b82f6" stroke-width="1"/><rect x="2.5" y="2.5" width="95" height="95" rx="21.5" fill="none" stroke="url(#fb-opt1-bevel)" stroke-width="1.5"/><path d="M57 96V60h12.5l1.9-14.8H57v-9.5c0-4.3 1.2-7.2 7.3-7.2h7.8V15.2c-1.4-.2-6.1-.6-11.6-.6-11.5 0-19.4 7-19.4 19.9V45.2H28.2v14.8H41.1V96H57z" fill="#FFFFFF" filter="url(#fb-opt1-shadow)"/></svg>`;
+        if (item.iconSvg !== newFbSvg) {
+          item.iconSvg = newFbSvg;
+          updated = true;
+        }
+        if (item.outlineColor !== '#1877f2') {
+          item.outlineColor = '#1877f2';
+          updated = true;
+        }
+        if (item.outlineWidth !== 8) {
+          item.outlineWidth = 8;
+          updated = true;
+        }
+      }
       if (item.id === 'adobe-express' || item.id === 'adobe' || (item.name || '').toLowerCase().includes('adobe') || (item.href || '').includes('express.adobe.com')) {
         const defaultAdobe = INITIAL_CONFIG.linksBar.find(l => l.id === 'adobe-express');
         if (defaultAdobe) {
@@ -1081,21 +1087,12 @@ const ensureSherwinWilliamsLinkUpdated = (cfg: any): boolean => {
         updated = true;
       }
     }
-    const hasRendairQA = cfg.aiSidebar.quickAccess.some((l: any) => l.id === 'qa-1' || (l.name || '').toLowerCase() === 'rendair');
-    if (!hasRendairQA) {
-      const defaultRendairQA = INITIAL_CONFIG.aiSidebar.quickAccess.find(l => l.id === 'qa-1');
-      if (defaultRendairQA) {
-        cfg.aiSidebar.quickAccess.unshift(defaultRendairQA);
+    const hasNotionQA = cfg.aiSidebar.quickAccess.some((l: any) => l.id === 'qa-notion' || (l.name || '').toLowerCase() === 'notion' || (l.href || '').includes('notion.so'));
+    if (!hasNotionQA) {
+      const defaultNotionQA = INITIAL_CONFIG.aiSidebar.quickAccess.find(l => l.id === 'qa-notion');
+      if (defaultNotionQA) {
+        cfg.aiSidebar.quickAccess.push(defaultNotionQA);
         updated = true;
-      }
-    } else {
-      const qaItem = cfg.aiSidebar.quickAccess.find((l: any) => l.id === 'qa-1' || (l.name || '').toLowerCase() === 'rendair');
-      if (qaItem && (qaItem.iconSvg || '').includes('textAnchor="middle"')) {
-        const defaultRendairQA = INITIAL_CONFIG.aiSidebar.quickAccess.find(l => l.id === 'qa-1');
-        if (defaultRendairQA) {
-          qaItem.iconSvg = defaultRendairQA.iconSvg;
-          updated = true;
-        }
       }
     }
   }
