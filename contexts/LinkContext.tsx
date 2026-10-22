@@ -128,6 +128,16 @@ const INITIAL_CONFIG: AppConfig = {
         outlineWidth: 8
     },
     {
+        id: 'adobe-express',
+        href: "https://new.express.adobe.com/",
+        name: "Adobe Express",
+        category: "trabajo",
+        colorClass: "text-red-500 hover:text-red-400",
+        iconSvg: `<svg viewBox="0 0 64 64" class="w-full h-full" xmlns="http://www.w3.org/2000/svg"><defs><linearGradient id="adb-bg-b" x1="0%" y1="0%" x2="100%" y2="100%"><stop offset="0%" stop-color="#ff2e3b"/><stop offset="40%" stop-color="#fa0f00"/><stop offset="100%" stop-color="#c40008"/></linearGradient></defs><rect x="2" y="2" width="60" height="60" rx="16" fill="url(#adb-bg-b)" stroke="#ff858a" stroke-width="1.4" stroke-opacity="0.6"/><g transform="translate(14, 14) scale(1.5)"><path fill="#ffffff" d="M13.966 22.624l-1.69-4.281H8.122l3.892-9.144 5.662 13.425zM8.884 1.376H0v21.248zm15.116 0h-8.884L24 22.624Z"/></g></svg>`,
+        outlineColor: '#fa0f00',
+        outlineWidth: 8
+    },
+    {
         id: '1',
         href: "https://www.mercadolibre.com.mx/",
         name: "Mercado Libre",
@@ -1014,6 +1024,17 @@ const ensureSherwinWilliamsLinkUpdated = (cfg: any): boolean => {
           updated = true;
         }
       }
+      if (item.id === 'adobe-express' || item.id === 'adobe' || (item.name || '').toLowerCase().includes('adobe') || (item.href || '').includes('express.adobe.com')) {
+        const defaultAdobe = INITIAL_CONFIG.linksBar.find(l => l.id === 'adobe-express');
+        if (defaultAdobe) {
+          if (item.name !== defaultAdobe.name) { item.name = defaultAdobe.name; updated = true; }
+          if (item.category !== 'trabajo') { item.category = 'trabajo'; updated = true; }
+          if (item.href !== defaultAdobe.href) { item.href = defaultAdobe.href; updated = true; }
+          if (item.iconSvg !== defaultAdobe.iconSvg) { item.iconSvg = defaultAdobe.iconSvg; updated = true; }
+          if (item.outlineColor !== defaultAdobe.outlineColor) { item.outlineColor = defaultAdobe.outlineColor; updated = true; }
+          if (item.outlineWidth !== defaultAdobe.outlineWidth) { item.outlineWidth = defaultAdobe.outlineWidth; updated = true; }
+        }
+      }
     });
   };
 
@@ -1079,6 +1100,32 @@ const ensureSherwinWilliamsLinkUpdated = (cfg: any): boolean => {
       lbItem.outlineColor = defaultRendair.outlineColor;
       lbItem.outlineWidth = defaultRendair.outlineWidth;
       updated = true;
+    }
+
+    const defaultAdobe = INITIAL_CONFIG.linksBar.find(l => l.id === 'adobe-express');
+    const adobeItem = cfg.linksBar.find((l: any) => l.id === 'adobe-express' || l.id === 'adobe' || (l.name || '').toLowerCase().includes('adobe') || (l.href || '').toLowerCase().includes('express.adobe.com'));
+    if (!adobeItem && defaultAdobe) {
+      cfg.linksBar.push({ ...defaultAdobe });
+      updated = true;
+    } else if (adobeItem && defaultAdobe) {
+      if (adobeItem.name !== defaultAdobe.name) {
+        adobeItem.name = defaultAdobe.name;
+        updated = true;
+      }
+      if (adobeItem.category !== 'trabajo') {
+        adobeItem.category = 'trabajo';
+        updated = true;
+      }
+      if (adobeItem.href !== defaultAdobe.href) {
+        adobeItem.href = defaultAdobe.href;
+        updated = true;
+      }
+      if (adobeItem.iconSvg !== defaultAdobe.iconSvg) {
+        adobeItem.iconSvg = defaultAdobe.iconSvg;
+        adobeItem.outlineColor = defaultAdobe.outlineColor;
+        adobeItem.outlineWidth = defaultAdobe.outlineWidth;
+        updated = true;
+      }
     }
   }
   updateArray(cfg.googleDock);

@@ -188,6 +188,36 @@ export const CANONICAL_LINKS_MAP: Record<string, Partial<LinkItem>> = {
     outlineColor: '#10b981',
     outlineWidth: 8
   },
+  'adobe': {
+    id: 'adobe-express',
+    name: 'Adobe Express',
+    href: 'https://new.express.adobe.com/',
+    category: 'trabajo',
+    colorClass: 'text-red-500 hover:text-red-400',
+    iconSvg: `<svg viewBox="0 0 64 64" class="w-full h-full" xmlns="http://www.w3.org/2000/svg"><defs><linearGradient id="adb-bg-b" x1="0%" y1="0%" x2="100%" y2="100%"><stop offset="0%" stop-color="#ff2e3b"/><stop offset="40%" stop-color="#fa0f00"/><stop offset="100%" stop-color="#c40008"/></linearGradient></defs><rect x="2" y="2" width="60" height="60" rx="16" fill="url(#adb-bg-b)" stroke="#ff858a" stroke-width="1.4" stroke-opacity="0.6"/><g transform="translate(14, 14) scale(1.5)"><path fill="#ffffff" d="M13.966 22.624l-1.69-4.281H8.122l3.892-9.144 5.662 13.425zM8.884 1.376H0v21.248zm15.116 0h-8.884L24 22.624Z"/></g></svg>`,
+    outlineColor: '#fa0f00',
+    outlineWidth: 8
+  },
+  'adobe express': {
+    id: 'adobe-express',
+    name: 'Adobe Express',
+    href: 'https://new.express.adobe.com/',
+    category: 'trabajo',
+    colorClass: 'text-red-500 hover:text-red-400',
+    iconSvg: `<svg viewBox="0 0 64 64" class="w-full h-full" xmlns="http://www.w3.org/2000/svg"><defs><linearGradient id="adb-bg-b" x1="0%" y1="0%" x2="100%" y2="100%"><stop offset="0%" stop-color="#ff2e3b"/><stop offset="40%" stop-color="#fa0f00"/><stop offset="100%" stop-color="#c40008"/></linearGradient></defs><rect x="2" y="2" width="60" height="60" rx="16" fill="url(#adb-bg-b)" stroke="#ff858a" stroke-width="1.4" stroke-opacity="0.6"/><g transform="translate(14, 14) scale(1.5)"><path fill="#ffffff" d="M13.966 22.624l-1.69-4.281H8.122l3.892-9.144 5.662 13.425zM8.884 1.376H0v21.248zm15.116 0h-8.884L24 22.624Z"/></g></svg>`,
+    outlineColor: '#fa0f00',
+    outlineWidth: 8
+  },
+  'adobe-express': {
+    id: 'adobe-express',
+    name: 'Adobe Express',
+    href: 'https://new.express.adobe.com/',
+    category: 'trabajo',
+    colorClass: 'text-red-500 hover:text-red-400',
+    iconSvg: `<svg viewBox="0 0 64 64" class="w-full h-full" xmlns="http://www.w3.org/2000/svg"><defs><linearGradient id="adb-bg-b" x1="0%" y1="0%" x2="100%" y2="100%"><stop offset="0%" stop-color="#ff2e3b"/><stop offset="40%" stop-color="#fa0f00"/><stop offset="100%" stop-color="#c40008"/></linearGradient></defs><rect x="2" y="2" width="60" height="60" rx="16" fill="url(#adb-bg-b)" stroke="#ff858a" stroke-width="1.4" stroke-opacity="0.6"/><g transform="translate(14, 14) scale(1.5)"><path fill="#ffffff" d="M13.966 22.624l-1.69-4.281H8.122l3.892-9.144 5.662 13.425zM8.884 1.376H0v21.248zm15.116 0h-8.884L24 22.624Z"/></g></svg>`,
+    outlineColor: '#fa0f00',
+    outlineWidth: 8
+  },
   'pinterest': {
     id: '5',
     name: 'Pinterest',
@@ -295,14 +325,20 @@ export function normalizeAndDeduplicateLinksBar(links: LinkItem[]): LinkItem[] {
       item.name = canonical.name || item.name;
       item.category = canonical.category || item.category;
       item.colorClass = canonical.colorClass || item.colorClass;
-      // Always enforce authentic icons for canonical links (especially Javer, WhatsApp, Notion, Rendair, Amazon)
-      if (nameLower === 'javer' || nameLower === 'whatsapp' || nameLower === 'notion' || nameLower === 'rendair' || nameLower === 'amazon' || !item.iconSvg) {
+      // Always enforce authentic icons for canonical links (especially Javer, WhatsApp, Notion, Rendair, Amazon, Adobe)
+      if (nameLower === 'javer' || nameLower === 'whatsapp' || nameLower === 'notion' || nameLower === 'rendair' || nameLower === 'amazon' || nameLower === 'adobe' || nameLower === 'adobe express' || item.id === 'adobe-express' || !item.iconSvg) {
         item.iconSvg = canonical.iconSvg!;
       } else {
         item.iconSvg = canonical.iconSvg || item.iconSvg;
       }
       if (canonical.outlineColor) item.outlineColor = canonical.outlineColor;
       if (canonical.outlineWidth) item.outlineWidth = canonical.outlineWidth;
+    }
+
+    if (nameLower.includes('adobe') || item.id === 'adobe-express' || (item.href || '').includes('express.adobe.com')) {
+      item.category = 'trabajo';
+      item.href = 'https://new.express.adobe.com/';
+      item.name = 'Adobe Express';
     }
 
     // Check duplicate by normalized name
@@ -356,6 +392,7 @@ export function normalizeAndDeduplicateLinksBar(links: LinkItem[]): LinkItem[] {
     'youtube',
     'flow',
     'rendair',
+    'adobe',
     'mercadolibre',
     'amazon',
     'pinterest',
@@ -366,7 +403,8 @@ export function normalizeAndDeduplicateLinksBar(links: LinkItem[]): LinkItem[] {
 
   for (const key of MANDATORY_CANONICALS) {
     const isPresent = seenNames.has(key) || 
-      (key === 'mercadolibre' && seenNames.has('mercado libre'));
+      (key === 'mercadolibre' && seenNames.has('mercado libre')) ||
+      (key === 'adobe' && (seenNames.has('adobe') || seenNames.has('adobe express') || seenIds.has('adobe-express')));
 
     if (!isPresent) {
       const def = CANONICAL_LINKS_MAP[key];
@@ -394,6 +432,7 @@ export function normalizeAndDeduplicateLinksBar(links: LinkItem[]): LinkItem[] {
     'youtube',
     'flow',
     'rendair',
+    'adobe',
     'mercadolibre',
     'amazon',
     'pinterest',
@@ -405,7 +444,7 @@ export function normalizeAndDeduplicateLinksBar(links: LinkItem[]): LinkItem[] {
   // If the list is the canonical set, sort them in the exact order from the screenshot
   const isDefaultSet = result.every(item => {
     const n = (item.name || '').toLowerCase().trim();
-    return n === 'javer' || DESIRED_ORDER.includes(n) || n === 'mercado libre';
+    return n === 'javer' || DESIRED_ORDER.includes(n) || n === 'mercado libre' || n === 'adobe express';
   });
 
   if (isDefaultSet) {
@@ -413,6 +452,7 @@ export function normalizeAndDeduplicateLinksBar(links: LinkItem[]): LinkItem[] {
       const n = (item.name || '').toLowerCase().trim();
       if (n === 'javer') return -1;
       if (n === 'mercado libre') return DESIRED_ORDER.indexOf('mercadolibre');
+      if (n === 'adobe express') return DESIRED_ORDER.indexOf('adobe');
       const idx = DESIRED_ORDER.indexOf(n);
       return idx !== -1 ? idx : 999;
     };
