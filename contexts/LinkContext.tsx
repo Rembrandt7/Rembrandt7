@@ -316,7 +316,8 @@ const INITIAL_CONFIG: AppConfig = {
             { id: 'ut-2-3', name: "Luma", description: "Dream Machine video IA", href: "https://lumalabs.ai/dream-machine", colorClass: "hover:shadow-emerald-500/20", iconSvg: '<svg class="w-full h-full text-emerald-400" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><path d="M12 2a10 10 0 1 0 10 10A10 10 0 0 0 12 2zm0 16a6 6 0 1 1 6-6 6 6 0 0 1-6 6z" /><path d="M12 8v4l3 3" /></svg>' },
             { id: 'ut-2-4', name: "Look X", description: "Imagen a Imagen arquitectónico", href: "https://www.lookx.ai/pc/gc/i2i", colorClass: "hover:shadow-rose-400/20", iconSvg: '<svg class="w-full h-full text-rose-400" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M12 2a7 7 0 0 1 7.08 7c0 1.27-.33 2.47-.9 3.52L12 22 5.82 12.52A7 7 0 0 1 12 2z"/><circle cx="12" cy="9" r="2.5"/></svg>' },
             { id: 'ut-2-5', name: "Deevid", description: "Avatares y animación IA", href: "https://deevid.ai/es/ai-avatar", colorClass: "hover:shadow-red-400/20", iconSvg: '<svg class="w-full h-full text-red-400" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"></path><circle cx="12" cy="7" r="4"></circle></svg>' },
-            { id: 'ut-2-6', name: "Prompt Video", description: "Generador de prompts de video", href: "https://www.clicmayores.com/xprompt.html", colorClass: "hover:shadow-orange-500/20", iconSvg: '<svg class="w-full h-full text-orange-400" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><rect x="2" y="2" width="20" height="20" rx="2.18" ry="2.18"></rect><line x1="7" y1="2" x2="7" y2="22"></line><line x1="17" y1="2" x2="17" y2="22"></line><line x1="2" y1="12" x2="22" y2="12"></line><line x1="2" y1="7" x2="7" y2="7"></line><line x1="2" y1="17" x2="7" y2="17"></line><line x1="17" y1="17" x2="22" y2="17"></line><line x1="17" y1="7" x2="22" y2="7"></line></svg>' }
+            { id: 'ut-2-6', name: "Prompt Video", description: "Generador de prompts de video", href: "https://www.clicmayores.com/xprompt.html", colorClass: "hover:shadow-orange-500/20", iconSvg: '<svg class="w-full h-full text-orange-400" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><rect x="2" y="2" width="20" height="20" rx="2.18" ry="2.18"></rect><line x1="7" y1="2" x2="7" y2="22"></line><line x1="17" y1="2" x2="17" y2="22"></line><line x1="2" y1="12" x2="22" y2="12"></line><line x1="2" y1="7" x2="7" y2="7"></line><line x1="2" y1="17" x2="7" y2="17"></line><line x1="17" y1="17" x2="22" y2="17"></line><line x1="17" y1="7" x2="22" y2="7"></line></svg>' },
+            { id: 'ut-2-7', name: "Click Mayores", description: "Recursos", href: "https://www.clicmayores.com/x.html", colorClass: "hover:shadow-emerald-500/20", iconSvg: '<svg class="w-full h-full text-emerald-400" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M12 2a10 10 0 1 0 10 10A10 10 0 0 0 12 2zm0 14a4 4 0 1 1 4-4 4 4 0 0 1-4 4z" /><path d="M10 9l5 3-5 3z" /></svg>' }
         ]
     },
     {
@@ -330,7 +331,8 @@ const INITIAL_CONFIG: AppConfig = {
             { id: 'ut-3-3', name: "Kyutai", description: "Conversación y audio en tiempo real", href: "https://kyutai.org/tts", colorClass: "hover:shadow-red-400/20", iconSvg: '<svg class="w-full h-full text-red-400" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M12 2a10 10 0 1 0 10 10A10 10 0 0 0 12 2zm0 14a4 4 0 1 1 4-4 4 4 0 0 1-4 4z"></path><path d="M12 8v8"></path></svg>' },
             { id: 'ut-3-4', name: "LALAL.AI", description: "Separador de voz y música", href: "https://www.lalal.ai/es/", colorClass: "hover:shadow-cyan-400/20", iconSvg: '<svg class="w-full h-full text-cyan-400" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M2 10v4M6 6v12M10 3v18M14 8v8M18 5v14M22 10v4"/></svg>' },
             { id: 'ut-3-5', name: "Udio", description: "Música IA de alta fidelidad", href: "https://www.udio.com/", colorClass: "hover:shadow-pink-500/20", iconSvg: '<svg class="w-full h-full text-pink-400" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><path d="M12 3v18M3 12h18" /><circle cx="12" cy="12" r="9" /></svg>' },
-            { id: 'ut-3-6', name: "MusicFX", description: "Google Labs generador musical", href: "https://labs.google/fx/es/tools/music-fx-dj", colorClass: "hover:shadow-red-500/20", iconSvg: '<svg class="w-full h-full text-red-400" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><path d="M9 18V5l12-2v13" /><circle cx="6" cy="18" r="3" /><circle cx="18" cy="16" r="3" /></svg>' }
+            { id: 'ut-3-6', name: "MusicFX", description: "Google Labs generador musical", href: "https://labs.google/fx/es/tools/music-fx-dj", colorClass: "hover:shadow-red-500/20", iconSvg: '<svg class="w-full h-full text-red-400" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><path d="M9 18V5l12-2v13" /><circle cx="6" cy="18" r="3" /><circle cx="18" cy="16" r="3" /></svg>' },
+            { id: 'ut-3-7', name: "sonora", description: "Bases audiovisuales", href: "https://aistudio.google.com/apps/drive/1-audios-sonora", colorClass: "hover:shadow-teal-500/20", iconSvg: '<svg class="w-full h-full text-teal-400" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M9 18V5l12-2v13"/><circle cx="6" cy="18" r="3"/><circle cx="18" cy="16" r="3"/></svg>' }
         ]
     },
     {
@@ -393,7 +395,8 @@ const INITIAL_CONFIG: AppConfig = {
             { id: 'ut-7-2', name: "a2e", description: "Generador de video y animación", href: "https://a2e.ai/", colorClass: "hover:shadow-cyan-400/20", iconSvg: '<svg class="w-full h-full text-cyan-400" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><polygon points="12 2 2 7 12 12 22 7 12 2"/><polyline points="2 17 12 22 22 17"/><polyline points="2 12 12 17 22 12"/></svg>' },
             { id: 'ut-7-3', name: "Omnicreator", description: "Suite de creación de contenido", href: "https://omnicreator.net/es", colorClass: "hover:shadow-amber-500/20", iconSvg: '<svg class="w-full h-full text-amber-400" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><circle cx="12" cy="12" r="9"/><circle cx="12" cy="12" r="4"/><path d="M12 3v3M12 18v3M3 12h3M18 12h3"/></svg>' },
             { id: 'ut-7-4', name: "SeaArt", description: "Arte generativo con IA", href: "https://www.seaart.ai/es/create/image?id=f8172af6747ec762bcf847bd60fdf7cd&model_ver_no=2c39fe1f-f5d6-4b50-a273-499677f2f7a9", colorClass: "hover:shadow-indigo-500/20", iconSvg: '<svg class="w-full h-full text-indigo-400" viewBox="0 0 64 64" xmlns="http://www.w3.org/2000/svg"><circle cx="32" cy="32" r="28" fill="currentColor"/><text x="32" y="44" fontFamily="Arial, sans-serif" fontSize="32" fontWeight="bold" fill="black" textAnchor="middle">S</text></svg>' },
-            { id: 'ut-7-5', name: "tensorart", description: "Modelos y plantillas de arte IA", href: "https://tensor.art/es-ES/template/892333693933191976", colorClass: "hover:shadow-rose-500/20", iconSvg: '<svg class="w-full h-full text-rose-400" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><rect x="3" y="3" width="18" height="18" rx="4"/><circle cx="9" cy="9" r="2"/><circle cx="15" cy="15" r="2"/><line x1="9" y1="9" x2="15" y2="15"/></svg>' }
+            { id: 'ut-7-5', name: "tensorart", description: "Modelos y plantillas de arte IA", href: "https://tensor.art/es-ES/template/892333693933191976", colorClass: "hover:shadow-rose-500/20", iconSvg: '<svg class="w-full h-full text-rose-400" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><rect x="3" y="3" width="18" height="18" rx="4"/><circle cx="9" cy="9" r="2"/><circle cx="15" cy="15" r="2"/><line x1="9" y1="9" x2="15" y2="15"/></svg>' },
+            { id: 'ut-7-6', name: "apob", description: "Generador de avatares y retratos IA", href: "https://apob.ai/", colorClass: "hover:shadow-pink-400/20", iconSvg: '<svg class="w-full h-full text-pink-400" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"/><circle cx="12" cy="7" r="4"/></svg>' }
         ]
     },
     {
@@ -659,26 +662,10 @@ const normalizeAndDeduplicateUsefulTools = (currentTools: any[]): { tools: any[]
     catMap[cat.id] = { ...cat, items: [] };
   });
 
-  const canonicalItemHome: { [key: string]: string } = {};
-  const canonicalItemDef: { [key: string]: any } = {};
-  canonicalCategories.forEach((cat: any) => {
-    (cat.items || []).forEach((it: any) => {
-      const normKey = (it.name || '').toLowerCase().trim();
-      canonicalItemHome[normKey] = cat.id;
-      canonicalItemDef[normKey] = it;
-    });
-  });
-
-  const seenItems = new Set<string>();
-  let modified = false;
-
-  if (!Array.isArray(currentTools) || currentTools.length !== 8 || currentTools.some(s => !catMap[s.id])) {
-    modified = true;
-  }
-
   const getItemKey = (item: any): string => {
     const name = (item?.name || '').toLowerCase().trim();
     const href = (item?.href || '').toLowerCase().trim();
+    if (name.includes('banana')) return 'banana';
     if (name.includes('magic eraser')) return 'magic eraser';
     if (name.includes('watermark')) return 'watermarkremover';
     if (name.includes('vectoriz')) return 'vectorizar';
@@ -688,9 +675,10 @@ const normalizeAndDeduplicateUsefulTools = (currentTools: any[]): { tools: any[]
     if (name.includes('editor render')) return 'editor renders';
     if (name.includes('seaart')) return 'seaart';
     if (name.includes('tensorart')) return 'tensorart';
+    if (name.includes('apob') || href.includes('apob')) return 'apob';
     if (name.includes('runway')) return 'runway';
     if (name.includes('kling')) return 'kling ai';
-    if (name.includes('luma')) return 'luma';
+    if (name.includes('luma') || name.includes('dream machine')) return 'luma';
     if (name.includes('digen')) return 'digen';
     if (name.includes('look x') || name.includes('lookx')) return 'look x';
     if (name.includes('deevid')) return 'deevid';
@@ -704,7 +692,7 @@ const normalizeAndDeduplicateUsefulTools = (currentTools: any[]): { tools: any[]
     if (name.includes('lalal')) return 'lalal.ai';
     if (name.includes('udio')) return 'udio';
     if (name.includes('musicfx')) return 'musicfx';
-    if (name.includes('audios gemini') || name.includes('sonora')) return 'audios gemini';
+    if (name.includes('audios gemini') || name.includes('sonora')) return 'sonora';
     if (name === 'sam' || name.includes('segment anything')) return 'sam';
     if (name.includes('isoremb') || name.includes('isometr')) return 'isoremb';
     if (name.includes('3dcamara') || name.includes('3d camera')) return '3dcamara';
@@ -738,13 +726,32 @@ const normalizeAndDeduplicateUsefulTools = (currentTools: any[]): { tools: any[]
     return name || href;
   };
 
+  const canonicalItemHome: { [key: string]: string } = {};
+  const canonicalItemDef: { [key: string]: any } = {};
+  canonicalCategories.forEach((cat: any) => {
+    (cat.items || []).forEach((it: any) => {
+      const normKey = (it.name || '').toLowerCase().trim();
+      const itemKey = getItemKey(it);
+      canonicalItemHome[normKey] = cat.id;
+      canonicalItemDef[normKey] = it;
+      canonicalItemHome[itemKey] = cat.id;
+      canonicalItemDef[itemKey] = it;
+    });
+  });
+
   const getTargetCategory = (itemKey: string, originalSecId?: string, secTitle?: string): string => {
     // Specific explicit reroutings requested by user
-    if (itemKey === 'digen' || itemKey === 'a2e' || itemKey === 'omnicreator' || itemKey === 'seaart' || itemKey === 'tensorart') {
+    if (itemKey === 'digen' || itemKey === 'a2e' || itemKey === 'omnicreator' || itemKey === 'seaart' || itemKey === 'tensorart' || itemKey === 'apob') {
       return 'ut-7'; // Más
     }
     if (itemKey === 'qwen' || itemKey === 'grok' || itemKey === 'deepseek' || itemKey === 'meta ai') {
       return 'ut-8'; // IAs
+    }
+    if (itemKey === 'sonora' || itemKey === 'audios gemini') {
+      return 'ut-3'; // Audio & Música
+    }
+    if (itemKey === 'click mayores' || itemKey === 'prompt video' || itemKey === 'luma' || itemKey === 'kling ai' || itemKey === 'runway' || itemKey === 'deevid' || itemKey === 'look x') {
+      return 'ut-2'; // Video & Animación
     }
     if (itemKey === 'comfy') {
       return 'ut-6'; // Productividad
@@ -782,6 +789,10 @@ const normalizeAndDeduplicateUsefulTools = (currentTools: any[]): { tools: any[]
     if (n === 'word' || n === 'excel' || n === 'powerpoint' || n === 'gmail' || n === 'drive' || n === 'google drive' || n === 'capcut' || n === 'maket ia' || n === 'devdocs' || n === 'notebooklm' || n === 'perplexity') {
       return true;
     }
+    // Remove nanobanana / superbanana from useful tools as requested by user
+    if (n.includes('banana') || n.includes('nanobanana') || n.includes('superbanana') || h.includes('banana')) {
+      return true;
+    }
     // Remove all 3D printing duplicates matching the dedicated Impresión 3D tab:
     if (n.includes('stlbuddy') || n.includes('stl buddy') || h.includes('stlbuddy.com')) return true;
     if ((n.includes('letras 3d') || n === 'letras' || n.includes('proled')) && (h.includes('proled3d') || !n.includes('gentype'))) {
@@ -816,6 +827,13 @@ const normalizeAndDeduplicateUsefulTools = (currentTools: any[]): { tools: any[]
 
     return false;
   };
+
+  const seenItems = new Set<string>();
+  let modified = false;
+
+  if (!Array.isArray(currentTools) || currentTools.length !== 8 || currentTools.some(s => !catMap[s.id])) {
+    modified = true;
+  }
 
   // 1. Process current items and deduplicate strictly
   if (Array.isArray(currentTools)) {
