@@ -42,7 +42,8 @@ import {
   Calculator,
   CheckSquare,
   Minimize2,
-  UploadCloud
+  UploadCloud,
+  Archive
 } from 'lucide-react';
 import { Tab, TabConfig, LinkItem } from './types';
 import { AnimatePresence, motion } from 'motion/react';
@@ -94,6 +95,7 @@ const CotizadorTab = lazyWithRetry(() => import('./components/CotizadorTab'));
 const ListasTab = lazyWithRetry(() => import('./components/ListasTab'));
 const CompresorTab = lazyWithRetry(() => import('./components/CompresorTab'));
 const PersonalTab = lazyWithRetry(() => import('./components/PersonalTab'));
+const BodegaTab = lazyWithRetry(() => import('./components/BodegaTab'));
 
 import { PanchoState } from './components/Pancho/PanchoRobotAvatar';
 import { GlobalQuickIdeaModal } from './components/ListasRemb/GlobalQuickIdeaModal';
@@ -699,6 +701,20 @@ const MainLayout: React.FC = () => {
         updateConfig({ ...config, tabs: nextTabs });
       }
 
+      // Auto-add Bodega tab right after Listas if missing
+      const hasBodegaTab = config.tabs.some(t => t.id === 'bodega' || t.componentKey === 'Bodega');
+      if (!hasBodegaTab) {
+        const bodegaTab: TabConfig = { id: 'bodega', label: 'Bodega', type: 'system', componentKey: 'Bodega', isVisible: true, icon: 'Archive' };
+        const nextTabs = [...config.tabs];
+        const listasIdx = nextTabs.findIndex(t => t.id === 'listas' || t.componentKey === 'Listas');
+        if (listasIdx !== -1) {
+          nextTabs.splice(listasIdx + 1, 0, bodegaTab);
+        } else {
+          nextTabs.push(bodegaTab);
+        }
+        updateConfig({ ...config, tabs: nextTabs });
+      }
+
       // Auto-remove deprecated tabs (Compresor, Renders, Video, Archivos, Dashboard, Ingeniero) from horizontal tabs bar
       const isRemovedTab = (t: { id?: string; label?: string; componentKey?: string }) =>
         isRenderTab(t) ||
@@ -825,6 +841,9 @@ const MainLayout: React.FC = () => {
     if (tabId === 'compresor') {
       return <CompresorTab />;
     }
+    if (tabId === 'bodega') {
+      return <BodegaTab />;
+    }
 
     const activeTab = config.tabs.find(t => t.id === tabId);
     if (!activeTab) return null;
@@ -874,6 +893,8 @@ const MainLayout: React.FC = () => {
         return <ListasTab />;
       case 'Compresor':
         return <CompresorTab />;
+      case 'Bodega':
+        return <BodegaTab />;
       default:
         return (
           <div className="glass-panel p-2.5 sm:p-4 md:p-6 rounded-2xl sm:rounded-3xl shadow-2xl w-full mt-2 sm:mt-6">
@@ -909,6 +930,7 @@ const MainLayout: React.FC = () => {
     'Cotizador': <Calculator />,
     'Listas': <CheckSquare />,
     'Compresor': <Minimize2 />,
+    'Bodega': <Archive />,
   };
 
   const handleCloseNotification = (id: string) => {

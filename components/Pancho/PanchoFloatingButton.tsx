@@ -58,6 +58,13 @@ export const getPanchoRole = (activeTabId: string): { title: string; subtitle: s
         icon: '📋',
         color: 'from-blue-600 via-indigo-600 to-purple-600',
       };
+    case 'bodega':
+      return {
+        title: 'Pancho Bodeguero',
+        subtitle: 'Archivos R2, Renders & 3D',
+        icon: '📦',
+        color: 'from-blue-600 via-cyan-600 to-teal-600',
+      };
     default:
       return {
         title: 'Pancho IA',

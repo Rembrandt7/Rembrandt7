@@ -18,6 +18,7 @@ export enum Tab {
   COTIZADOR = 'Cotizador',
   LISTAS = 'Listas',
   COMPRESOR = 'Compresor',
+  BODEGA = 'Bodega',
 }
 
 export interface LinkItem {

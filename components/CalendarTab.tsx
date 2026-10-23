@@ -1068,6 +1068,13 @@ const CalendarTab: React.FC = () => {
         return false;
       }
 
+      // 0.1. Solo 1 vez al dia: si ya se mostro la alerta hoy para este token/carro, no volver a lanzar hoy
+      try {
+        if (localStorage.getItem('token_prompt_shown_today_' + t.id) === todayStr) {
+          return false;
+        }
+      } catch (_) {}
+
       // 1. If it was already completed today, NEVER ask again today!
       if (t.lastCompletedDate === todayStr) {
         return false;
@@ -3420,7 +3427,12 @@ const CalendarTab: React.FC = () => {
 
       {/* Overdue Token Interactive Prompt Modal */}
       <AnimatePresence>
-        {currentOverdueToken && (
+        {currentOverdueToken && (() => {
+          try {
+            localStorage.setItem('token_prompt_shown_today_' + currentOverdueToken.id, todayStr);
+          } catch (_) {}
+          return true;
+        })() && (
           <div className="fixed inset-0 z-[250] flex items-center justify-center p-4 bg-black/75 backdrop-blur-md">
             <motion.div
               initial={{ opacity: 0, scale: 0.9, y: 20 }}

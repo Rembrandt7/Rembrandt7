@@ -5,6 +5,14 @@ import cookieParser from "cookie-parser";
 import dotenv from "dotenv";
 import path from "path";
 import { Readable } from "stream";
+import { 
+  listBodegaObjects, 
+  uploadBodegaObject, 
+  deleteBodegaObject, 
+  getBodegaPreSignedUrl,
+  createBodegaFolder,
+  deleteBodegaFolder
+} from "./services/r2Client";
 
 dotenv.config();
 
@@ -18,6 +26,96 @@ async function startServer() {
 
   app.get("/api/health", (req, res) => {
     res.json({ status: "ok" });
+  });
+
+  // --- BODEGA (CLOUDFLARE R2) ENDPOINTS ---
+  app.get(["/api/bodega/list", "/api/bodega"], async (req, res) => {
+    try {
+      const prefix = typeof req.query.prefix === 'string' ? req.query.prefix : undefined;
+      const data = await listBodegaObjects(prefix);
+      res.json(data);
+    } catch (err: any) {
+      console.error("Error in /api/bodega/list:", err);
+      res.status(500).json({ error: err.message || "Failed to list Bodega files" });
+    }
+  });
+
+  app.post(["/api/bodega/upload", "/api/bodega"], async (req, res) => {
+    try {
+      const { key, base64Data, contentType } = req.body;
+      if (!key || !base64Data) {
+        return res.status(400).json({ error: "Missing key or base64Data" });
+      }
+      const buffer = Buffer.from(base64Data, 'base64');
+      await uploadBodegaObject(key, buffer, contentType || 'application/octet-stream');
+      const downloadUrl = getBodegaPreSignedUrl(key, 'GET', 86400);
+      res.json({ success: true, key, downloadUrl });
+    } catch (err: any) {
+      console.error("Error in /api/bodega/upload:", err);
+      res.status(500).json({ error: err.message || "Failed to upload to Bodega" });
+    }
+  });
+
+  app.post("/api/bodega/create-folder", async (req, res) => {
+    try {
+      const folder = req.body?.folder || req.body?.name || req.body?.path;
+      if (!folder || typeof folder !== "string" || !folder.trim()) {
+        return res.status(400).json({ error: "Nombre de carpeta no especificado" });
+      }
+      const ok = await createBodegaFolder(folder);
+      res.json({ success: ok, folder });
+    } catch (err: any) {
+      console.error("Error creating Bodega folder:", err);
+      res.status(500).json({ error: err.message || "Error al crear la carpeta" });
+    }
+  });
+
+  app.delete("/api/bodega/delete-folder", async (req, res) => {
+    try {
+      const folder = typeof req.query.folder === "string" ? req.query.folder : req.body?.folder;
+      if (!folder) {
+        return res.status(400).json({ error: "Falta el parámetro folder" });
+      }
+      const ok = await deleteBodegaFolder(folder);
+      res.json({ success: ok });
+    } catch (err: any) {
+      console.error("Error deleting Bodega folder:", err);
+      res.status(500).json({ error: err.message || "Error al eliminar la carpeta" });
+    }
+  });
+
+  app.delete(["/api/bodega/delete", "/api/bodega"], async (req, res) => {
+    try {
+      const isFolder = req.query.isFolder === "true" || req.body?.isFolder === true;
+      if (isFolder) {
+        const folder = typeof req.query.folder === "string" ? req.query.folder : req.body?.folder || req.query.key;
+        if (!folder) return res.status(400).json({ error: "Falta el parámetro folder" });
+        const ok = await deleteBodegaFolder(folder);
+        return res.json({ success: ok });
+      }
+      const key = typeof req.query.key === 'string' ? req.query.key : req.body?.key;
+      if (!key) {
+        return res.status(400).json({ error: "Missing key parameter" });
+      }
+      const ok = await deleteBodegaObject(key);
+      res.json({ success: ok });
+    } catch (err: any) {
+      console.error("Error in /api/bodega/delete:", err);
+      res.status(500).json({ error: err.message || "Failed to delete from Bodega" });
+    }
+  });
+
+  app.get("/api/bodega/download-url", (req, res) => {
+    try {
+      const key = typeof req.query.key === 'string' ? req.query.key : '';
+      if (!key) {
+        return res.status(400).json({ error: "Missing key parameter" });
+      }
+      const url = getBodegaPreSignedUrl(key, 'GET', 86400);
+      res.json({ url });
+    } catch (err: any) {
+      res.status(500).json({ error: err.message });
+    }
   });
 
   // Helper to create OAuth2 client
