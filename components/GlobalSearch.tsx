@@ -33,7 +33,7 @@ import { LinkItem, Command, TabConfig } from '../types';
 import { toast } from 'sonner';
 import { getSmartLinkTarget } from '../utils/appLinkUtils';
 
-type SearchCategory = 'all' | 'tab' | 'note' | 'calendar' | 'finance' | 'music' | 'command' | 'link' | 'system';
+type SearchCategory = 'all' | 'tab' | 'invoice' | 'note' | 'calendar' | 'finance' | 'music' | 'command' | 'link' | 'system';
 
 interface SearchResult {
   id: string;
@@ -468,6 +468,46 @@ export const GlobalSearch: React.FC = () => {
       }
     } catch (_) {}
 
+    // 9. COTIZACIONES Y FACTURAS GUARDADAS
+    try {
+      const rawInvoices = localStorage.getItem('rembrandt_saved_invoices');
+      if (rawInvoices) {
+        const parsedInvoices = JSON.parse(rawInvoices);
+        if (Array.isArray(parsedInvoices)) {
+          parsedInvoices.forEach((inv: any, idx: number) => {
+            const client = inv.clientName || inv.data?.recipientName || '';
+            const project = inv.projectName || inv.data?.projectName || '';
+            const folio = inv.data?.folio || inv.id || '';
+            const total = inv.total ? `$${Number(inv.total).toLocaleString('es-MX')}` : '';
+            const match = !q ||
+              client.toLowerCase().includes(q) ||
+              project.toLowerCase().includes(q) ||
+              folio.toLowerCase().includes(q);
+
+            if (match) {
+              items.push({
+                id: `inv-${inv.id || idx}`,
+                title: `${project || 'Sin Título'} · Folio #${folio}`,
+                subtitle: `Cliente: ${client || 'N/A'} · Total: ${total} · Fecha: ${inv.date ? new Date(inv.date).toLocaleDateString('es-MX') : 'N/A'}`,
+                category: 'invoice',
+                categoryLabel: 'Cotización',
+                categoryColor: 'bg-lime-500/20 text-lime-300 border-lime-500/30',
+                icon: <FileText size={16} className="text-lime-400" />,
+                action: () => {
+                  setActiveTabId('cotizador');
+                  window.dispatchEvent(new CustomEvent('remb_load_invoice', { detail: inv }));
+                  setIsOpen(false);
+                  toast.info(`Cargando cotización: ${project}`);
+                }
+              });
+            }
+          });
+        }
+      }
+    } catch (e) {
+      console.warn('Error indexando facturas en búsqueda global:', e);
+    }
+
     return items;
   }, [config, nutritionData, query, setActiveTabId, toggleEditing, saveToSupabase, fetchConfigFromSupabaseManual]);
 
@@ -514,6 +554,7 @@ export const GlobalSearch: React.FC = () => {
   const categories: { id: SearchCategory; label: string }[] = [
     { id: 'all', label: 'Todo' },
     { id: 'tab', label: 'Pestañas' },
+    { id: 'invoice', label: 'Cotizaciones' },
     { id: 'system', label: 'Sistema' },
     { id: 'note', label: 'Notas' },
     { id: 'calendar', label: 'Calendario' },

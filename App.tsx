@@ -440,6 +440,80 @@ const MainLayout: React.FC = () => {
   const [panchoState, setPanchoState] = useState<PanchoState>('idle');
   const [assistantMessages, setAssistantMessages] = useState<Message[]>([]);
 
+  // Indicador de Conexión a Internet (Online / Offline)
+  const [isOnline, setIsOnline] = useState<boolean>(() => 
+    typeof navigator !== 'undefined' ? navigator.onLine : true
+  );
+
+  useEffect(() => {
+    const handleOnline = () => setIsOnline(true);
+    const handleOffline = () => setIsOnline(false);
+
+    window.addEventListener('online', handleOnline);
+    window.addEventListener('offline', handleOffline);
+    return () => {
+      window.removeEventListener('online', handleOnline);
+      window.removeEventListener('offline', handleOffline);
+    };
+  }, []);
+
+  // Auto-Respaldo Semanal Silencioso a Bodega (Cloudflare R2)
+  useEffect(() => {
+    const runAutoBackup = async () => {
+      try {
+        const lastBackupStr = localStorage.getItem('rembrandt_last_auto_backup_ts');
+        const now = Date.now();
+        const SEVEN_DAYS_MS = 7 * 24 * 60 * 60 * 1000;
+        if (lastBackupStr && now - parseInt(lastBackupStr, 10) < SEVEN_DAYS_MS) {
+          return;
+        }
+
+        const backupData = {
+          exportedAt: new Date().toISOString(),
+          version: 'rembrandt7-backup-v1',
+          invoices: (() => {
+            try {
+              return JSON.parse(localStorage.getItem('rembrandt_saved_invoices') || '[]');
+            } catch {
+              return [];
+            }
+          })(),
+          folioCounter: localStorage.getItem('rembrandt_quote_folio_counter') || '1000',
+          configSummary: {
+            tabsCount: config.tabs?.length || 0,
+            commandsCount: config.commands?.length || 0,
+            savedAt: new Date().toISOString()
+          }
+        };
+
+        const dateStr = new Date().toISOString().split('T')[0];
+        const fileName = `respaldos/auto_backup_${dateStr}.json`;
+        const jsonStr = JSON.stringify(backupData, null, 2);
+        const base64Data = btoa(unescape(encodeURIComponent(jsonStr)));
+
+        const res = await fetch('/api/bodega/upload', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            fileName,
+            fileData: base64Data,
+            contentType: 'application/json'
+          })
+        });
+
+        if (res.ok) {
+          localStorage.setItem('rembrandt_last_auto_backup_ts', now.toString());
+          console.log(`[Auto-Backup] Respaldo semanal guardado en Bodega R2: ${fileName}`);
+        }
+      } catch (err) {
+        console.warn('[Auto-Backup] No se pudo completar el auto-respaldo silencioso:', err);
+      }
+    };
+
+    const timer = setTimeout(runAutoBackup, 12000);
+    return () => clearTimeout(timer);
+  }, [config]);
+
   useEffect(() => {
     const handleOpenPancho = () => setIsAssistantOpen(true);
     const handleOpenQuickIdea = () => setIsQuickIdeaOpen(true);
@@ -1061,6 +1135,19 @@ const MainLayout: React.FC = () => {
                     <div className="hidden sm:flex items-center gap-2 shrink-0">
                       <div className="px-2.5 py-1.5 bg-white/[0.04] border border-white/10 rounded-xl backdrop-blur-md shadow-inner flex items-center gap-1.5 text-xs">
                         <Clock />
+                      </div>
+
+                      {/* Indicador de Conexión (Online/Offline) */}
+                      <div 
+                        className={`flex items-center gap-1.5 px-2.5 py-1.5 rounded-xl border text-xs font-semibold backdrop-blur-md transition-all ${
+                          isOnline 
+                            ? 'bg-emerald-500/10 border-emerald-500/30 text-emerald-300' 
+                            : 'bg-amber-500/15 border-amber-500/40 text-amber-300 animate-pulse'
+                        }`}
+                        title={isOnline ? "Conexión a Internet activa (En línea)" : "Sin conexión a Internet (Modo Local / Desconectado)"}
+                      >
+                        <span className={`w-2 h-2 rounded-full ${isOnline ? 'bg-emerald-400 shadow-[0_0_8px_rgba(52,211,153,0.8)]' : 'bg-amber-400 shadow-[0_0_8px_rgba(251,191,36,0.8)]'}`} />
+                        <span className="hidden xl:inline">{isOnline ? 'En línea' : 'Desconectado'}</span>
                       </div>
                     </div>
 

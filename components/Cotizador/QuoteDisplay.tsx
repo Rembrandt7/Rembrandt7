@@ -20,6 +20,8 @@ const QuoteDisplay: React.FC<QuoteDisplayProps> = ({ details, onReset, onEdit })
   // Compresión municipal SIEMPRE activa por defecto para archivos ultra ligeros
   const [isMunicipalMode] = useState(true);
   const [isSavingCloud, setIsSavingCloud] = useState(false);
+  const [isSavingBodega, setIsSavingBodega] = useState(false);
+  const [isPreparingEmail, setIsPreparingEmail] = useState(false);
   const [cloudSavedToast, setCloudSavedToast] = useState<string | null>(null);
   
   // State for WhatsApp Modal (Client)
@@ -75,12 +77,10 @@ const QuoteDisplay: React.FC<QuoteDisplayProps> = ({ details, onReset, onEdit })
       day: 'numeric'
   });
 
-  // --- Helper: Generate PDF ---
-  const generateAndSavePdf = async (): Promise<string | null> => {
+  // --- Helper: Generate PDF Instance ---
+  const generatePdfInstance = async (): Promise<{ fileName: string; base64: string; pdf: any } | null> => {
     const input = quoteRef.current;
     if (!input || !details) return null;
-
-    setIsGenerating(true);
 
     try {
         const [html2canvasModule, jspdfModule] = await Promise.all([
@@ -174,6 +174,25 @@ const QuoteDisplay: React.FC<QuoteDisplayProps> = ({ details, onReset, onEdit })
             console.warn("No se pudieron incrustar metadatos en el PDF:", mErr);
         }
 
+        const dataUri = pdf.output('datauristring');
+        const base64 = dataUri.split(',')[1] || '';
+
+        return { fileName, base64, pdf };
+    } catch (error) {
+        console.error("Error generating PDF", error);
+        alert("Error al generar el PDF: " + (error instanceof Error ? error.message : String(error)));
+        return null;
+    }
+  };
+
+  // --- Helper: Generate & Download PDF ---
+  const generateAndSavePdf = async (): Promise<string | null> => {
+    setIsGenerating(true);
+    try {
+        const result = await generatePdfInstance();
+        if (!result) return null;
+        const { fileName, pdf } = result;
+
         try {
             pdf.save(fileName);
         } catch (saveErr: any) {
@@ -182,7 +201,6 @@ const QuoteDisplay: React.FC<QuoteDisplayProps> = ({ details, onReset, onEdit })
         }
 
         return fileName;
-
     } catch (error) {
         console.error("Error generating PDF", error);
         alert("Error al generar el PDF: " + (error instanceof Error ? error.message : String(error)));
@@ -224,6 +242,67 @@ const QuoteDisplay: React.FC<QuoteDisplayProps> = ({ details, onReset, onEdit })
       alert("Error: " + e.message);
     } finally {
       setIsSavingCloud(false);
+    }
+  };
+
+  const handleSaveToBodega = async () => {
+    if (!details) return;
+    setIsSavingBodega(true);
+    try {
+      const result = await generatePdfInstance();
+      if (!result) return;
+      const { fileName, base64 } = result;
+
+      const res = await fetch('/api/bodega/upload', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          fileName: `facturas/${fileName}`,
+          fileData: base64,
+          contentType: 'application/pdf'
+        })
+      });
+
+      if (!res.ok) {
+        const errJson = await res.json().catch(() => ({}));
+        throw new Error(errJson.error || `HTTP ${res.status}`);
+      }
+
+      setCloudSavedToast(`¡Cotización guardada en Bodega R2! (facturas/${fileName})`);
+      setTimeout(() => setCloudSavedToast(null), 4000);
+    } catch (e: any) {
+      alert("Error al guardar en Bodega R2: " + (e?.message || e));
+    } finally {
+      setIsSavingBodega(false);
+    }
+  };
+
+  const handleSendToEmail = async () => {
+    if (!details) return;
+    setIsPreparingEmail(true);
+    try {
+      const result = await generatePdfInstance();
+      if (!result) return;
+      const { fileName, base64 } = result;
+      const folDigits = (details.folio || '01000').replace(/[^0-9]/g, '').padStart(5, '0');
+
+      const emailPayload = {
+        recipientName: details.recipientName || '',
+        projectName: details.projectName || '',
+        folio: folDigits,
+        total,
+        pdfFileName: fileName,
+        pdfBase64: base64,
+        timestamp: Date.now()
+      };
+
+      sessionStorage.setItem('remb_pending_quote_email', JSON.stringify(emailPayload));
+      window.dispatchEvent(new CustomEvent('navigate-to-tab', { detail: 'email-gen' }));
+      window.dispatchEvent(new CustomEvent('remb_check_pending_quote'));
+    } catch (e: any) {
+      alert("Error al preparar correo: " + (e?.message || e));
+    } finally {
+      setIsPreparingEmail(false);
     }
   };
 
@@ -395,6 +474,17 @@ Arq. Rembrandt Blanco`;
               <span>{isSavingCloud ? 'Guardando...' : 'Guardar en Supabase'}</span>
             </button>
 
+            {/* BOTÓN GUARDAR EN BODEGA R2 */}
+            <button
+              onClick={handleSaveToBodega}
+              disabled={isSavingBodega || isGenerating}
+              className="px-3.5 py-2 rounded-lg bg-indigo-950/70 hover:bg-indigo-900/80 text-indigo-300 border border-indigo-500/40 transition-all font-semibold text-xs whitespace-nowrap cursor-pointer flex items-center gap-1.5 disabled:opacity-50"
+              title="Guardar PDF directamente en Cloudflare R2 (carpeta facturas/)"
+            >
+              <span>📦</span>
+              <span>{isSavingBodega ? 'Guardando en R2...' : 'Guardar en Bodega (R2)'}</span>
+            </button>
+
             <button 
                 onClick={handleDownloadJSON}
                 className="px-3 py-2 rounded-lg bg-amber-950/50 hover:bg-amber-900/60 text-amber-300 border border-amber-500/30 transition-all font-medium text-xs whitespace-nowrap cursor-pointer"
@@ -405,6 +495,17 @@ Arq. Rembrandt Blanco`;
         </div>
 
         <div className="flex flex-wrap items-center gap-2">
+            {/* REDACTAR CORREO CON ESTA COTIZACIÓN */}
+            <button 
+              onClick={handleSendToEmail}
+              disabled={isPreparingEmail || isGenerating}
+              className="px-3.5 py-2 bg-gradient-to-r from-violet-600 to-indigo-600 hover:from-violet-500 hover:to-indigo-500 text-white rounded-lg font-semibold text-xs transition-colors shadow-sm whitespace-nowrap cursor-pointer flex items-center gap-1.5 disabled:opacity-50"
+              title="Abrir Generador de Email con cliente, proyecto y PDF adjunto listo para redactar con IA"
+            >
+              <span>✨</span>
+              <span>{isPreparingEmail ? 'Preparando...' : 'Redactar Correo'}</span>
+            </button>
+
             <button 
               onClick={handleWhatsAppClick}
               disabled={isGenerating}

@@ -581,6 +581,40 @@ const EmailGenerator: React.FC<EmailGeneratorProps> = ({ attachedImages, onAttac
         }
     }, [config.customQuickPresets]);
 
+    // Recepción automática de cotizaciones enviadas desde el Cotizador
+    useEffect(() => {
+        const checkPendingQuote = () => {
+            try {
+                const raw = sessionStorage.getItem('remb_pending_quote_email');
+                if (!raw) return;
+                sessionStorage.removeItem('remb_pending_quote_email');
+                const data = JSON.parse(raw);
+                if (data.recipientName) setRecipientName(data.recipientName);
+                if (data.projectName) setProject(data.projectName);
+                if (data.pdfFileName && data.pdfBase64) {
+                    const newAtt: RealAttachmentFile = {
+                        id: `att-quote-${Date.now()}`,
+                        name: data.pdfFileName,
+                        size: Math.round((data.pdfBase64.length * 3) / 4),
+                        mimeType: 'application/pdf',
+                        base64: data.pdfBase64,
+                    };
+                    setRealAttachments(prev => [...prev.filter(a => a.name !== data.pdfFileName), newAtt]);
+                }
+                const ideaText = `Envío de cotización correspondiente al proyecto "${data.projectName || ''}" (Folio #${data.folio || ''}) por un monto total de $${Number(data.total || 0).toLocaleString('es-MX')} MXN. Se anexa documento formal en formato PDF.`;
+                setIdea(ideaText);
+                setActiveMode('ai');
+                toast.success(`Cotización cargada: ${data.projectName || data.recipientName}`);
+            } catch (err) {
+                console.warn('Error cargando cotización pendiente:', err);
+            }
+        };
+
+        checkPendingQuote();
+        window.addEventListener('remb_check_pending_quote', checkPendingQuote);
+        return () => window.removeEventListener('remb_check_pending_quote', checkPendingQuote);
+    }, []);
+
     const handleSwitchCategory = useCallback((cat: TemplateCategory) => {
         setTemplateCategory(cat);
         if (cat === '3d') {

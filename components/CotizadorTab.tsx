@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import QuoteForm from './Cotizador/QuoteForm';
 import QuoteDisplay from './Cotizador/QuoteDisplay';
 import type { QuoteDetails } from './Cotizador/types';
@@ -6,6 +6,21 @@ import type { QuoteDetails } from './Cotizador/types';
 const CotizadorTab: React.FC = () => {
   const [quoteDetails, setQuoteDetails] = useState<QuoteDetails | null>(null);
   const [isViewingQuote, setIsViewingQuote] = useState<boolean>(false);
+
+  useEffect(() => {
+    const handleLoadInvoice = (e: any) => {
+      const inv = e.detail;
+      if (!inv) return;
+      const details = inv.data || inv;
+      if (details) {
+        setQuoteDetails(details);
+        setIsViewingQuote(true);
+      }
+    };
+
+    window.addEventListener('remb_load_invoice', handleLoadInvoice);
+    return () => window.removeEventListener('remb_load_invoice', handleLoadInvoice);
+  }, []);
 
   const handleGenerateQuote = (details: QuoteDetails) => {
     setQuoteDetails(details);

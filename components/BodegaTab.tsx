@@ -20,7 +20,12 @@ import {
   AlertTriangle,
   ShieldAlert,
   ArrowLeft,
-  FolderInput
+  FolderInput,
+  Eye,
+  X,
+  ExternalLink,
+  ZoomIn,
+  ZoomOut
 } from 'lucide-react';
 import { toast } from 'sonner';
 
@@ -55,6 +60,8 @@ export const BodegaTab: React.FC = () => {
   const [movingFileKey, setMovingFileKey] = useState<string | null>(null);
   const [targetMoveFolder, setTargetMoveFolder] = useState<string>('');
   const [quotaBlockReason, setQuotaBlockReason] = useState<string | null>(null);
+  const [previewFile, setPreviewFile] = useState<BodegaFile | null>(null);
+  const [zoomLevel, setZoomLevel] = useState<number>(1);
 
   const fileInputRef = useRef<HTMLInputElement>(null);
   const warnedNearLimitRef = useRef<boolean>(false);
@@ -804,7 +811,14 @@ export const BodegaTab: React.FC = () => {
               >
                 <div className="space-y-2">
                   <div className="flex items-start justify-between gap-2">
-                    <div className="p-2.5 rounded-xl bg-slate-950 border border-slate-800/80">
+                    <div 
+                      onClick={() => {
+                        setPreviewFile(file);
+                        setZoomLevel(1);
+                      }}
+                      className="p-2.5 rounded-xl bg-slate-950 border border-slate-800/80 cursor-pointer hover:border-blue-500/50 hover:scale-105 transition-all"
+                      title="Clic para vista previa"
+                    >
                       {getCategoryIcon(file.category)}
                     </div>
                     <span className="text-[10px] font-mono font-bold px-2 py-0.5 rounded-md bg-slate-800 text-slate-300">
@@ -813,7 +827,14 @@ export const BodegaTab: React.FC = () => {
                   </div>
 
                   <div>
-                    <h4 className="font-bold text-xs text-white truncate group-hover:text-blue-300 transition-colors" title={file.name}>
+                    <h4 
+                      onClick={() => {
+                        setPreviewFile(file);
+                        setZoomLevel(1);
+                      }}
+                      className="font-bold text-xs text-white truncate group-hover:text-blue-300 transition-colors cursor-pointer" 
+                      title={`Ver vista previa de ${file.name}`}
+                    >
                       {file.name}
                     </h4>
                     {file.folder && (
@@ -871,17 +892,32 @@ export const BodegaTab: React.FC = () => {
 
                 {/* BOTONES DE ACCIÓN */}
                 <div className="flex items-center justify-between pt-2.5 border-t border-slate-800/80 text-xs">
-                  <a
-                    href={file.downloadUrl}
-                    download={file.name}
-                    target="_blank"
-                    rel="noreferrer"
-                    className="flex items-center gap-1 text-slate-300 hover:text-white hover:bg-slate-800 px-2.5 py-1.5 rounded-lg transition-colors cursor-pointer"
-                    title="Descargar archivo a tu equipo"
-                  >
-                    <Download size={14} />
-                    <span>Descargar</span>
-                  </a>
+                  <div className="flex items-center gap-1">
+                    <button
+                      type="button"
+                      onClick={() => {
+                        setPreviewFile(file);
+                        setZoomLevel(1);
+                      }}
+                      className="flex items-center gap-1 text-blue-400 hover:text-white hover:bg-blue-600/30 px-2 py-1.5 rounded-lg transition-colors cursor-pointer"
+                      title="Vista previa interactiva"
+                    >
+                      <Eye size={14} />
+                      <span className="hidden sm:inline">Ver</span>
+                    </button>
+
+                    <a
+                      href={file.downloadUrl}
+                      download={file.name}
+                      target="_blank"
+                      rel="noreferrer"
+                      className="flex items-center gap-1 text-slate-300 hover:text-white hover:bg-slate-800 px-2 py-1.5 rounded-lg transition-colors cursor-pointer"
+                      title="Descargar archivo a tu equipo"
+                    >
+                      <Download size={14} />
+                      <span className="hidden sm:inline">Descargar</span>
+                    </a>
+                  </div>
 
                   <div className="flex items-center gap-1">
                     <button
@@ -914,6 +950,188 @@ export const BodegaTab: React.FC = () => {
                 </div>
               </div>
             ))}
+          </div>
+        </div>
+      )}
+
+      {/* MODAL DE VISTA PREVIA INTERACTIVA */}
+      {previewFile && (
+        <div 
+          className="fixed inset-0 z-50 flex items-center justify-center p-3 sm:p-6 bg-black/85 backdrop-blur-md animate-in fade-in duration-200"
+          onClick={() => setPreviewFile(null)}
+        >
+          <div 
+            className="relative w-full max-w-4xl max-h-[90vh] bg-slate-900 border border-slate-700/80 rounded-3xl shadow-2xl overflow-hidden flex flex-col"
+            onClick={(e) => e.stopPropagation()}
+          >
+            {/* Modal Header */}
+            <div className="flex items-center justify-between px-5 py-3.5 border-b border-slate-800 bg-slate-950/80">
+              <div className="flex items-center gap-2.5 min-w-0 pr-3">
+                <div className="p-2 rounded-xl bg-slate-900 border border-slate-800 text-blue-400">
+                  {getCategoryIcon(previewFile.category)}
+                </div>
+                <div className="min-w-0">
+                  <h3 className="text-sm font-bold text-white truncate" title={previewFile.name}>
+                    {previewFile.name}
+                  </h3>
+                  <p className="text-[11px] text-slate-400 flex items-center gap-2">
+                    <span>{formatBytes(previewFile.size)}</span>
+                    {previewFile.folder && <span>• 📁 {previewFile.folder}</span>}
+                    <span>• {new Date(previewFile.lastModified).toLocaleDateString('es-MX')}</span>
+                  </p>
+                </div>
+              </div>
+
+              <div className="flex items-center gap-2">
+                {/* Controles de Zoom para imágenes */}
+                {(previewFile.category === 'image' || previewFile.name.match(/\.(png|jpe?g|webp|gif|svg)$/i)) && (
+                  <div className="hidden sm:flex items-center gap-1 px-2 py-1 rounded-xl bg-slate-800/80 border border-slate-700 text-xs">
+                    <button
+                      onClick={() => setZoomLevel(prev => Math.max(0.5, prev - 0.25))}
+                      className="p-1 hover:text-white text-slate-400"
+                      title="Alejar"
+                    >
+                      <ZoomOut size={14} />
+                    </button>
+                    <span className="font-mono text-[10px] w-9 text-center text-slate-300">
+                      {Math.round(zoomLevel * 100)}%
+                    </span>
+                    <button
+                      onClick={() => setZoomLevel(prev => Math.min(3, prev + 0.25))}
+                      className="p-1 hover:text-white text-slate-400"
+                      title="Acercar"
+                    >
+                      <ZoomIn size={14} />
+                    </button>
+                    <button
+                      onClick={() => setZoomLevel(1)}
+                      className="text-[10px] px-1 text-slate-400 hover:text-white"
+                      title="Restablecer 100%"
+                    >
+                      1:1
+                    </button>
+                  </div>
+                )}
+
+                <button
+                  onClick={() => setPreviewFile(null)}
+                  className="p-2 rounded-xl text-slate-400 hover:text-white hover:bg-slate-800 transition-colors"
+                  title="Cerrar vista previa (ESC)"
+                >
+                  <X size={18} />
+                </button>
+              </div>
+            </div>
+
+            {/* Modal Body / Viewer */}
+            <div className="flex-1 overflow-auto bg-slate-950/60 p-4 sm:p-6 flex items-center justify-center min-h-[300px] max-h-[calc(90vh-140px)]">
+              {(previewFile.category === 'image' || previewFile.name.match(/\.(png|jpe?g|webp|gif|svg)$/i)) ? (
+                <div className="overflow-auto max-w-full max-h-full flex items-center justify-center">
+                  <img
+                    src={previewFile.downloadUrl}
+                    alt={previewFile.name}
+                    className="max-h-[68vh] object-contain rounded-xl shadow-lg transition-transform duration-150"
+                    style={{ transform: `scale(${zoomLevel})`, transformOrigin: 'center center' }}
+                  />
+                </div>
+              ) : previewFile.name.toLowerCase().endsWith('.pdf') ? (
+                <div className="w-full h-[65vh] flex flex-col items-center justify-center bg-slate-900 rounded-2xl border border-slate-800 p-6 text-center space-y-4">
+                  <FileText size={56} className="text-red-400" />
+                  <div>
+                    <h4 className="text-base font-bold text-white mb-1">Documento PDF</h4>
+                    <p className="text-xs text-slate-400 max-w-md">
+                      Puedes visualizarlo directamente en una nueva pestaña del navegador o descargarlo a tu equipo.
+                    </p>
+                  </div>
+                  <div className="flex items-center gap-3">
+                    <a
+                      href={previewFile.downloadUrl}
+                      target="_blank"
+                      rel="noreferrer"
+                      className="flex items-center gap-1.5 px-4 py-2 rounded-xl bg-blue-600 hover:bg-blue-500 text-white font-bold text-xs"
+                    >
+                      <ExternalLink size={14} />
+                      <span>Abrir visor PDF</span>
+                    </a>
+                    <a
+                      href={previewFile.downloadUrl}
+                      download={previewFile.name}
+                      className="flex items-center gap-1.5 px-4 py-2 rounded-xl bg-slate-800 hover:bg-slate-700 text-white font-bold text-xs"
+                    >
+                      <Download size={14} />
+                      <span>Descargar</span>
+                    </a>
+                  </div>
+                </div>
+              ) : previewFile.category === '3d' ? (
+                <div className="w-full h-[60vh] flex flex-col items-center justify-center bg-slate-900 rounded-2xl border border-slate-800 p-6 text-center space-y-4">
+                  <Box size={56} className="text-cyan-400 animate-pulse" />
+                  <div>
+                    <h4 className="text-base font-bold text-white mb-1">Archivo de Modelo 3D</h4>
+                    <p className="text-xs text-slate-400 max-w-md">
+                      Formato compatible con slicers de impresión 3D (Bambu Studio, Cura, PrusaSlicer).
+                    </p>
+                  </div>
+                  <a
+                    href={previewFile.downloadUrl}
+                    download={previewFile.name}
+                    className="flex items-center gap-1.5 px-5 py-2.5 rounded-xl bg-cyan-600 hover:bg-cyan-500 text-white font-bold text-xs"
+                  >
+                    <Download size={15} />
+                    <span>Descargar archivo 3D</span>
+                  </a>
+                </div>
+              ) : (
+                <div className="w-full h-[50vh] flex flex-col items-center justify-center bg-slate-900 rounded-2xl border border-slate-800 p-6 text-center space-y-3">
+                  <div className="p-4 rounded-2xl bg-slate-800 text-slate-300">
+                    {getCategoryIcon(previewFile.category)}
+                  </div>
+                  <h4 className="text-sm font-bold text-white">{previewFile.name}</h4>
+                  <p className="text-xs text-slate-400">
+                    Archivo listo para descarga ({formatBytes(previewFile.size)})
+                  </p>
+                  <a
+                    href={previewFile.downloadUrl}
+                    download={previewFile.name}
+                    className="flex items-center gap-1.5 px-4 py-2 rounded-xl bg-blue-600 hover:bg-blue-500 text-white font-bold text-xs"
+                  >
+                    <Download size={14} />
+                    <span>Descargar</span>
+                  </a>
+                </div>
+              )}
+            </div>
+
+            {/* Modal Footer */}
+            <div className="flex items-center justify-between px-5 py-3 border-t border-slate-800 bg-slate-950/90 text-xs">
+              <button
+                onClick={() => handleCopyLink(previewFile)}
+                className="flex items-center gap-1.5 px-3 py-1.5 rounded-xl bg-slate-800 hover:bg-slate-700 text-slate-200"
+              >
+                {copiedKey === previewFile.key ? <Check size={14} className="text-emerald-400" /> : <Copy size={14} />}
+                <span>Copiar Enlace</span>
+              </button>
+
+              <div className="flex items-center gap-2">
+                <a
+                  href={previewFile.downloadUrl}
+                  target="_blank"
+                  rel="noreferrer"
+                  className="flex items-center gap-1.5 px-3 py-1.5 rounded-xl bg-slate-800 hover:bg-slate-700 text-slate-200"
+                >
+                  <ExternalLink size={14} />
+                  <span>Enlace directo</span>
+                </a>
+                <a
+                  href={previewFile.downloadUrl}
+                  download={previewFile.name}
+                  className="flex items-center gap-1.5 px-4 py-1.5 rounded-xl bg-blue-600 hover:bg-blue-500 text-white font-bold"
+                >
+                  <Download size={14} />
+                  <span>Descargar</span>
+                </a>
+              </div>
+            </div>
           </div>
         </div>
       )}
