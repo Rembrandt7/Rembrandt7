@@ -19,6 +19,8 @@ export enum Tab {
   LISTAS = 'Listas',
   COMPRESOR = 'Compresor',
   BODEGA = 'Bodega',
+  EDICION = 'Edición',
+  WHATSAPP = 'WhatsApp',
 }
 
 export interface LinkItem {

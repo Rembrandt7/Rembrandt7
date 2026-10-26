@@ -1,0 +1,6 @@
+{
+  "name": "Cotizaciones de Arquitectura",
+  "description": "Una herramienta profesional para que los arquitectos generen cotizaciones detalladas para proyectos de renders y planos, listas para ser presentadas a los clientes.",
+  "requestFramePermissions": [],
+  "majorCapabilities": ["MAJOR_CAPABILITY_SERVER_SIDE_GEMINI_API"]
+}

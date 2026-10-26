@@ -4,6 +4,7 @@ import { motion } from 'motion/react';
 
 import ThreeDCalculator from './ThreeDCalculator';
 import ThreeDSuggestions from './ThreeDSuggestions';
+import { useLinks } from '../contexts/LinkContext';
 
 /* ─────────────────────────────────────────────────────────────────
    DATA - Audit and Corrected from PDF (stl_pack.pdf)
@@ -496,6 +497,17 @@ const SECTIONS: SectionConfig[] = [
     glowColor: 'shadow-cyan-900/30',
   },
   {
+    id: 'sugerencias',
+    title: 'Sugerencias',
+    badge: '4 del Día',
+    subtitle: 'Modelos nuevos rotativos de alta demanda',
+    icon: (active) => <Flame className={`w-6 h-6 ${active ? 'text-rose-300' : 'text-rose-400'}`} />,
+    activeBorder: 'border-rose-400/60',
+    activeBg: 'bg-rose-500/15',
+    badgeColor: 'bg-rose-500/20 text-rose-300 border-rose-400/30',
+    glowColor: 'shadow-rose-900/30',
+  },
+  {
     id: 'imagen3d',
     title: 'Imagen a 3D',
     badge: 'IA & Rápido',
@@ -516,17 +528,6 @@ const SECTIONS: SectionConfig[] = [
     activeBg: 'bg-amber-500/15',
     badgeColor: 'bg-amber-500/20 text-amber-300 border-amber-400/30',
     glowColor: 'shadow-amber-900/30',
-  },
-  {
-    id: 'sugerencias',
-    title: 'Sugerencias',
-    badge: '4 del Día',
-    subtitle: 'Modelos rotativos de alta demanda comercial',
-    icon: (active) => <Flame className={`w-6 h-6 ${active ? 'text-rose-300' : 'text-rose-400'}`} />,
-    activeBorder: 'border-rose-400/60',
-    activeBg: 'bg-rose-500/15',
-    badgeColor: 'bg-rose-500/20 text-rose-300 border-rose-400/30',
-    glowColor: 'shadow-rose-900/30',
   },
   {
     id: 'visualizador',
@@ -564,12 +565,23 @@ const SECTIONS: SectionConfig[] = [
 ];
 
 const ThreeDPrinting: React.FC = () => {
-  // Por defecto está abierto "descargas". Máximo 2 abiertas a la vez; si se abre una 3ra, la 1ra se cierra (FIFO).
-  const [openSections, setOpenSections] = useState<SectionId[]>(['descargas']);
+  const { activeTabId, config } = useLinks();
+  // Por defecto siempre abren "descargas" y "sugerencias" del día. Máximo 2 abiertas a la vez; si se abre una 3ra, la 1ra se cierra (FIFO).
+  const [openSections, setOpenSections] = useState<SectionId[]>(['descargas', 'sugerencias']);
   const [searchQuery, setSearchQuery] = useState('');
 
   const viewerIframeRef = useRef<HTMLIFrameElement | null>(null);
   const externalFileInputRef = useRef<HTMLInputElement | null>(null);
+
+  // Siempre que se entre al apartado de Impresión 3D, aseguramos que abran Descargas y Sugerencias del Día
+  useEffect(() => {
+    const activeTabObj = config?.tabs?.find(t => t.id === activeTabId);
+    const is3DTab = activeTabId === '3d-print' || activeTabObj?.componentKey === 'Impresión 3D';
+    if (is3DTab) {
+      setOpenSections(['descargas', 'sugerencias']);
+      window.dispatchEvent(new CustomEvent('refresh-3d-daily-suggestions'));
+    }
+  }, [activeTabId, config?.tabs]);
 
   const toggleSection = (id: SectionId) => {
     setOpenSections(prev => {
@@ -797,7 +809,42 @@ const ThreeDPrinting: React.FC = () => {
           </div>
         )}
 
-        {/* 2. SECCIÓN: IMAGEN A 3D */}
+        {/* 2. SECCIÓN: SUGERENCIAS DEL DÍA */}
+        {openSections.includes('sugerencias') && (
+          <div className="flex flex-col gap-3 bg-rose-600/10 p-4 sm:p-5 rounded-2xl border border-rose-500/25 shadow-xl w-full animate-in fade-in duration-200">
+            <div className="flex items-center justify-between border-b border-rose-500/15 pb-2.5">
+              <div className="flex items-center gap-2.5">
+                <div className="p-2 rounded-xl bg-rose-500/20 border border-rose-400/30 text-rose-300">
+                  <Flame size={18} />
+                </div>
+                <div>
+                  <h3 className="text-sm sm:text-base font-black text-white uppercase tracking-wider">
+                    Sugerencias del Día · 4 Modelos de Alta Demanda
+                  </h3>
+                  <p className="text-[11px] text-rose-200/80">
+                    Rotación automática de modelos nuevos con parámetros calculados y listos para imprimir
+                  </p>
+                </div>
+              </div>
+              <button
+                type="button"
+                onClick={() => toggleSection('sugerencias')}
+                className="p-1.5 rounded-xl bg-white/5 hover:bg-white/15 text-slate-400 hover:text-white transition-colors"
+                title="Cerrar Sugerencias"
+              >
+                <X size={16} />
+              </button>
+            </div>
+
+            <ThreeDSuggestions
+              onSendToCalculator={() => {
+                window.dispatchEvent(new CustomEvent('open-calculator-widget', { detail: { mode: '3d' } }));
+              }}
+            />
+          </div>
+        )}
+
+        {/* 3. SECCIÓN: IMAGEN A 3D */}
         {openSections.includes('imagen3d') && (
           <div className="flex flex-col gap-3 bg-fuchsia-600/10 p-4 sm:p-5 rounded-2xl border border-fuchsia-500/25 shadow-xl w-full animate-in fade-in duration-200">
             <div className="flex items-center justify-between border-b border-fuchsia-500/15 pb-2.5">
@@ -859,7 +906,7 @@ const ThreeDPrinting: React.FC = () => {
           </div>
         )}
 
-        {/* 3. SECCIÓN: HERRAMIENTAS 3D */}
+        {/* 4. SECCIÓN: HERRAMIENTAS 3D */}
         {openSections.includes('herramientas') && (
           <div className="flex flex-col gap-3 bg-amber-600/10 p-4 sm:p-5 rounded-2xl border border-amber-500/25 shadow-xl w-full animate-in fade-in duration-200">
             <div className="flex items-center justify-between border-b border-amber-500/15 pb-2.5">
@@ -915,41 +962,6 @@ const ThreeDPrinting: React.FC = () => {
                 </a>
               ))}
             </div>
-          </div>
-        )}
-
-        {/* 4. SECCIÓN: SUGERENCIAS DEL DÍA */}
-        {openSections.includes('sugerencias') && (
-          <div className="flex flex-col gap-3 bg-rose-600/10 p-4 sm:p-5 rounded-2xl border border-rose-500/25 shadow-xl w-full animate-in fade-in duration-200">
-            <div className="flex items-center justify-between border-b border-rose-500/15 pb-2.5">
-              <div className="flex items-center gap-2.5">
-                <div className="p-2 rounded-xl bg-rose-500/20 border border-rose-400/30 text-rose-300">
-                  <Flame size={18} />
-                </div>
-                <div>
-                  <h3 className="text-sm sm:text-base font-black text-white uppercase tracking-wider">
-                    Sugerencias del Día · 4 Modelos de Alta Demanda
-                  </h3>
-                  <p className="text-[11px] text-rose-200/80">
-                    Rotación automática diaria con parámetros calculados y listos para imprimir
-                  </p>
-                </div>
-              </div>
-              <button
-                type="button"
-                onClick={() => toggleSection('sugerencias')}
-                className="p-1.5 rounded-xl bg-white/5 hover:bg-white/15 text-slate-400 hover:text-white transition-colors"
-                title="Cerrar Sugerencias"
-              >
-                <X size={16} />
-              </button>
-            </div>
-
-            <ThreeDSuggestions
-              onSendToCalculator={() => {
-                window.dispatchEvent(new CustomEvent('open-calculator-widget', { detail: { mode: '3d' } }));
-              }}
-            />
           </div>
         )}
 

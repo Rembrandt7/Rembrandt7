@@ -1,0 +1,8 @@
+node_modules
+.git
+.env
+*.zip
+start-local.mjs
+*.ico
+*.lnk
+migrated_prompt_history

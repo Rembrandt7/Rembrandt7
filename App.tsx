@@ -43,7 +43,8 @@ import {
   CheckSquare,
   Minimize2,
   UploadCloud,
-  Archive
+  Archive,
+  Sliders
 } from 'lucide-react';
 import { Tab, TabConfig, LinkItem } from './types';
 import { AnimatePresence, motion } from 'motion/react';
@@ -96,6 +97,8 @@ const ListasTab = lazyWithRetry(() => import('./components/ListasTab'));
 const CompresorTab = lazyWithRetry(() => import('./components/CompresorTab'));
 const PersonalTab = lazyWithRetry(() => import('./components/PersonalTab'));
 const BodegaTab = lazyWithRetry(() => import('./components/BodegaTab'));
+const EdicionTab = lazyWithRetry(() => import('./components/EdicionTab'));
+const WhatsAppTab = lazyWithRetry(() => import('./components/WhatsAppTab'));
 
 import { PanchoState } from './components/Pancho/PanchoRobotAvatar';
 import { GlobalQuickIdeaModal } from './components/ListasRemb/GlobalQuickIdeaModal';
@@ -715,9 +718,28 @@ const MainLayout: React.FC = () => {
         updateConfig({ ...config, tabs: nextTabs });
       }
 
+      // Auto-add Edición tab right after Bodega (or Listas) if missing
+      const brokenEdicion = config.tabs.some(t => (t.id === 'edicion' || (t.label && t.label.startsWith('Edici'))) && (t.label !== 'Edición' || t.componentKey !== 'Edición')); if (brokenEdicion) { updateConfig({ ...config, tabs: config.tabs.map(t => (t.id === 'edicion' || (t.label && t.label.startsWith('Edici'))) ? { ...t, label: 'Edición', componentKey: 'Edición' } : t) }); }
+      const hasEdicionTab = config.tabs.some(t => t.id === 'edicion' || t.componentKey === 'Edición');
+      if (!hasEdicionTab) {
+        const edicionTab: TabConfig = { id: 'edicion', label: 'Edición', type: 'system', componentKey: 'Edición', isVisible: true, icon: 'Sliders' };
+        const nextTabs = [...config.tabs];
+        const bodIdx = nextTabs.findIndex(t => t.id === 'bodega' || t.componentKey === 'Bodega');
+        const lisIdx = nextTabs.findIndex(t => t.id === 'listas' || t.componentKey === 'Listas');
+        const insertAfter = bodIdx !== -1 ? bodIdx : lisIdx;
+        if (insertAfter !== -1) {
+          nextTabs.splice(insertAfter + 1, 0, edicionTab);
+        } else {
+          nextTabs.push(edicionTab);
+        }
+        updateConfig({ ...config, tabs: nextTabs });
+      }
+
+      // WhatsApp is now unified inside Generador de Mensajes (email-gen)
+
       // Auto-remove deprecated tabs (Compresor, Renders, Video, Archivos, Dashboard, Ingeniero) from horizontal tabs bar
       const isRemovedTab = (t: { id?: string; label?: string; componentKey?: string }) =>
-        isRenderTab(t) ||
+        isRenderTab(t) || t.id === 'whatsapp' || t.componentKey === 'WhatsApp' ||
         t.id === 'compresor' ||
         t.componentKey === 'Compresor' ||
         (t.label || '').toLowerCase().includes('compresor') ||
@@ -844,7 +866,12 @@ const MainLayout: React.FC = () => {
     if (tabId === 'bodega') {
       return <BodegaTab />;
     }
+    if (tabId === 'edicion') {
+      return <EdicionTab />;
+    }
 
+    if (tabId === 'edicion') { return <EdicionTab />; }
+    if (tabId === 'whatsapp') { return <WhatsAppTab isActiveTab={activeTabId === tabId} onReturnToTab={() => setActiveTabId(tabId)} />; }
     const activeTab = config.tabs.find(t => t.id === tabId);
     if (!activeTab) return null;
 
@@ -895,6 +922,12 @@ const MainLayout: React.FC = () => {
         return <CompresorTab />;
       case 'Bodega':
         return <BodegaTab />;
+      case 'Edición':
+      case 'Edicion':
+        return <EdicionTab />;
+      case 'WhatsApp':
+      case 'Whatsapp':
+        return <WhatsAppTab isActiveTab={activeTabId === tabId} onReturnToTab={() => setActiveTabId(tabId)} />;
       default:
         return (
           <div className="glass-panel p-2.5 sm:p-4 md:p-6 rounded-2xl sm:rounded-3xl shadow-2xl w-full mt-2 sm:mt-6">
@@ -931,6 +964,10 @@ const MainLayout: React.FC = () => {
     'Listas': <CheckSquare />,
     'Compresor': <Minimize2 />,
     'Bodega': <Archive />,
+    'Edición': <Sliders />,
+    'Edicion': <Sliders />,
+    'WhatsApp': <MessageSquare />,
+    'Whatsapp': <MessageSquare />,
   };
 
   const handleCloseNotification = (id: string) => {

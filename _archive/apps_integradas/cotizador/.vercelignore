@@ -1,0 +1,6 @@
+node_modules
+.git
+.env
+*.zip
+start-local.mjs
+cotizador.ico

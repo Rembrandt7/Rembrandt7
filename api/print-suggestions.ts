@@ -40,38 +40,39 @@ const SEARCH_PRINTABLES_QUERY = `
 `;
 
 /**
- * Detects the true category of a 3D model from its actual title/name
- * so that categories and descriptions always match the real object.
+ * Detects the true category of a 3D model from its actual title/name and query context
+ * (supporting both singular and plural words) so that categories and descriptions
+ * ALWAYS match the real object shown in the photo.
  */
-function inferCategoryFromTitle(rawName: string, fallbackCategory: string): string {
-  const n = rawName.toLowerCase();
+function inferCategoryFromTitle(rawName: string, queryContext: string, fallbackCategory: string): string {
+  const combined = `${rawName} ${queryContext}`.toLowerCase();
 
-  if (/\b(lamp|light|lithophane|lantern|bulb|lampshade|candle|nightlight|sconce|iluminaci|lampara)\b/.test(n)) {
+  if (/\b(lamps?|lights?|lithophanes?|lanterns?|bulbs?|lampshades?|candles?|nightlights?|sconces?|led\s*lamp|moon\s*lamp|iluminaci|lamparas?)\b/.test(combined)) {
     return 'Iluminación & Lámparas';
   }
-  if (/\b(planter|vase|pot|succulent|flower\s*pot|bonsai|terrarium|jardiner|maceta|jarron)\b/.test(n)) {
+  if (/\b(planters?|vases?|pots?|succulents?|flower\s*pots?|bonsais?|terrariums?|hydroponics?|seeds?|jardiner|macetas?|jarron(es)?)\b/.test(combined)) {
     return 'Decoración & Macetas';
   }
-  if (/\b(controller|xbox|ps5|ps4|playstation|dualsense|nintendo|switch|joycon|steam\s*deck|dice|dnd|d&d|pokeball|pokemon|gamer|gaming|console|headset\s*stand)\b/.test(n)) {
+  if (/\b(controllers?|xbox|ps5|ps4|playstation|dualsense|nintendo|switch|joycons?|steam\s*deck|dices?|dnd|d&d|pokeballs?|pokemon|gamers?|gaming|consoles?|headsets?|cartridges?)\b/.test(combined)) {
     return 'Gaming & Controles';
   }
-  if (/\b(keychain|keyring|edc|karambit|otf|fidget|spinner|slider|whistle|multitool|coin|token|llavero|knife)\b/.test(n)) {
+  if (/\b(keychains?|keyrings?|edc|karambits?|otf|fidgets?|spinners?|sliders?|whistles?|multitools?|coins?|tokens?|llaveros?|knives|knife)\b/.test(combined)) {
     return 'EDC & Llaveros';
   }
-  if (/\b(gift\s*box|puzzle\s*box|labyrinth|rose|valentine|christmas|halloween|easter|heart|ornament|trophy|regalo)\b/.test(n)) {
+  if (/\b(gift\s*box(es)?|puzzle\s*box(es)?|labyrinths?|roses?|valentines?|christmas|halloween|easter|hearts?|ornaments?|troph(y|ies)|regalos?)\b/.test(combined)) {
     return 'Temporada & Regalos';
   }
-  if (/\b(kitchen|fridge|dispenser|soap|toothbrush|sponge|hook|hanger|clamp|shelf|bracket|wrench|tool|coaster|clip|funnel|opener|bathroom|sink)\b/.test(n)) {
+  if (/\b(kitchen|fridges?|dispensers?|soaps?|toothbrush(es)?|sponges?|hooks?|hangers?|clamps?|vices?|vises?|shel(f|ves)|brackets?|wrench(es)?|tools?|coasters?|clips?|funnels?|openers?|bathroom|sink|batter(y|ies))\b/.test(combined)) {
     return 'Hogar & Funcional';
   }
-  if (/\b(gridfinity|deskfinity|desk|organizer|stand|holder|dock|magsafe|iphone|phone|laptop|tablet|watch|airpods|cable|charger|sd\s*card|usb|pen\s*holder|headphone)\b/.test(n)) {
+  if (/\b(gridfinity|deskfinity|desks?|organizers?|stands?|holders?|docks?|magsafe|iphones?|phones?|laptops?|tablets?|watch(es)?|airpods|cables?|chargers?|sd\s*cards?|usb|pen\s*holders?|headphones?|earphones?)\b/.test(combined)) {
     return 'Gadgets & Escritorio';
   }
-  if (/\b(articulated|flexi|dragon|axolotl|octopus|turtle|lizard|gecko|shark|snake|dino|rex|cat|dog|frog|capybara|owl|spider|crab|butterfly|print\s*in\s*place|print-in-place)\b/.test(n)) {
+  if (/\b(articulated|flexi|dragons?|axolotls?|octopus(es)?|turtles?|lizards?|geckos?|sharks?|snakes?|dinos?|rex|cats?|dogs?|frogs?|capybaras?|owls?|spiders?|crabs?|butterfl(y|ies)|print\s*in\s*place|print-in-place)\b/.test(combined)) {
     return 'Articulados & Flexi';
   }
 
-  return fallbackCategory || 'Articulados & Flexi';
+  return fallbackCategory || 'Gadgets & Escritorio';
 }
 
 /**
@@ -85,8 +86,23 @@ function translateModelTitleToSpanish(rawName: string): string {
     .trim();
 
   const phraseReplacements: Array<[RegExp, string]> = [
+    [/\barticulated night spirit\s*\(?dragon\)?/gi, 'Dragón Espíritu Nocturno Articulado'],
+    [/\barticulated bone dragons?\b/gi, 'Dragón de Hueso Articulado'],
+    [/\barticulated spirit dragons?\b/gi, 'Dragón Espíritu Articulado'],
+    [/\barticulated crystal dragons?\b/gi, 'Dragón de Cristal Articulado'],
+    [/\barticulated dragons?\b/gi, 'Dragón Articulado'],
+    [/\barticulated axolotls?\b/gi, 'Ajolote Articulado'],
+    [/\barticulated octopus(es)?\b/gi, 'Pulpo Articulado'],
+    [/\barticulated lizards?\b/gi, 'Lagarto Articulado'],
+    [/\barticulated geckos?\b/gi, 'Gecko Articulado'],
+    [/\barticulated turtles?\b/gi, 'Tortuga Articulada'],
+    [/\barticulated sharks?\b/gi, 'Tiburón Articulado'],
+    [/\barticulated snakes?\b/gi, 'Serpiente Articulada'],
     [/\bself[- ]watering planters?\b/gi, 'Maceta Autorriego'],
     [/\bwatering planters?\b/gi, 'Maceta con Riego'],
+    [/\bmodern planters?\b/gi, 'Maceta Moderna'],
+    [/\bgeometric planters?\b/gi, 'Maceta Geométrica'],
+    [/\bsucculent planters?\b/gi, 'Maceta para Suculentas'],
     [/\bheadphone stands?\b/gi, 'Soporte para Audífonos'],
     [/\bheadset stands?\b/gi, 'Soporte para Audífonos'],
     [/\bcontroller stands?\b/gi, 'Soporte para Control'],
@@ -108,6 +124,7 @@ function translateModelTitleToSpanish(rawName: string): string {
     [/\bgift box(es)?\b/gi, 'Caja de Regalo'],
     [/\bpuzzle box(es)?\b/gi, 'Caja Rompecabezas'],
     [/\binfinity cubes?\b/gi, 'Cubo Infinito'],
+    [/\bdrink can dispensers?\b/gi, 'Dispensador de Latas'],
     [/\bcan dispensers?\b/gi, 'Dispensador de Latas'],
     [/\bdrink dispensers?\b/gi, 'Dispensador de Bebidas'],
     [/\bbattery holders?\b/gi, 'Organizador de Baterías'],
@@ -116,7 +133,9 @@ function translateModelTitleToSpanish(rawName: string): string {
     [/\bsoap dish(es)?\b/gi, 'Jabonera'],
     [/\btoothbrush holders?\b/gi, 'Porta Cepillos'],
     [/\bwall mounts?\b/gi, 'Soporte de Pared'],
+    [/\bwall hooks?\b/gi, 'Gancho de Pared'],
     [/\bmoon lamps?\b/gi, 'Lámpara Luna'],
+    [/\bvoronoi mushroom lamps?\b/gi, 'Lámpara Hongo Voronoi'],
     [/\bvoronoi lamps?\b/gi, 'Lámpara Voronoi'],
     [/\bmushroom lamps?\b/gi, 'Lámpara Hongo'],
     [/\bled lamps?\b/gi, 'Lámpara LED'],
@@ -124,10 +143,9 @@ function translateModelTitleToSpanish(rawName: string): string {
     [/\bdesk lamps?\b/gi, 'Lámpara de Escritorio'],
     [/\bcrystal dragons?\b/gi, 'Dragón de Cristal'],
     [/\bnight spirit dragons?\b/gi, 'Dragón Espíritu Nocturno'],
-    [/\barticulated dragons?\b/gi, 'Dragón Articulado'],
     [/\bflexi dragons?\b/gi, 'Dragón Flexi'],
     [/\bflexi rex\b/gi, 'Dinosaurio Flexi Rex'],
-    [/\bprint[- ]in[- ]place\b/gi, 'Impresión en 1 Pieza'],
+    [/\bprint[- ]in[- ]place\b/gi, 'Print-in-Place'],
     [/\bno supports?\b/gi, 'Sin Soportes'],
     [/\bsupportless\b/gi, 'Sin Soportes'],
     [/\bwith led stand\b/gi, 'con Base LED'],
@@ -140,6 +158,8 @@ function translateModelTitleToSpanish(rawName: string): string {
     [/\bspiral vase\b/gi, 'Jarrón en Espiral'],
     [/\bvase mode\b/gi, 'Modo Vaso'],
     [/\blow[- ]poly\b/gi, 'Low Poly'],
+    [/\beasy output\b/gi, 'Impresión Fácil'],
+    [/\bprint at once\b/gi, 'Una Sola Pieza'],
   ];
 
   for (const [regex, replacement] of phraseReplacements) {
@@ -150,18 +170,18 @@ function translateModelTitleToSpanish(rawName: string): string {
     [/\barticulated\b/gi, 'Articulado'],
     [/\bdragon\b/gi, 'Dragón'],
     [/\bdragons\b/gi, 'Dragones'],
-    [/\baxolotl\b/gi, 'Ajolote'],
-    [/\boctopus\b/gi, 'Pulpo'],
-    [/\bturtle\b/gi, 'Tortuga'],
-    [/\bshark\b/gi, 'Tiburón'],
-    [/\blizard\b/gi, 'Lagarto'],
-    [/\bgecko\b/gi, 'Gecko'],
-    [/\bsnake\b/gi, 'Serpiente'],
-    [/\bfrog\b/gi, 'Rana'],
-    [/\bcat\b/gi, 'Gato'],
-    [/\bdog\b/gi, 'Perro'],
-    [/\bcapybara\b/gi, 'Capibara'],
-    [/\bdinosaur\b/gi, 'Dinosaurio'],
+    [/\baxolotls?\b/gi, 'Ajolote'],
+    [/\boctopus(es)?\b/gi, 'Pulpo'],
+    [/\bturtles?\b/gi, 'Tortuga'],
+    [/\bsharks?\b/gi, 'Tiburón'],
+    [/\blizards?\b/gi, 'Lagarto'],
+    [/\bgeckos?\b/gi, 'Gecko'],
+    [/\bsnakes?\b/gi, 'Serpiente'],
+    [/\bfrogs?\b/gi, 'Rana'],
+    [/\bcats?\b/gi, 'Gato'],
+    [/\bdogs?\b/gi, 'Perro'],
+    [/\bcapybaras?\b/gi, 'Capibara'],
+    [/\bdinosaurs?\b/gi, 'Dinosaurio'],
     [/\bplanters?\b/gi, 'Maceta'],
     [/\bvases?\b/gi, 'Jarrón'],
     [/\bpots?\b/gi, 'Maceta'],
@@ -186,7 +206,7 @@ function translateModelTitleToSpanish(rawName: string): string {
     [/\bcastles?\b/gi, 'Castillo'],
     [/\btowers?\b/gi, 'Torre'],
     [/\blabyrinth\b/gi, 'Laberinto'],
-    [/\bpuzzle\b/gi, 'Rompecabezas'],
+    [/\bpuzzles?\b/gi, 'Rompecabezas'],
     [/\bminimalistic\b/gi, 'Minimalista'],
     [/\bminimalist\b/gi, 'Minimalista'],
     [/\bmodern\b/gi, 'Moderno'],
@@ -200,6 +220,8 @@ function translateModelTitleToSpanish(rawName: string): string {
     [/\bhelical\b/gi, 'Helicoidal'],
     [/\bgeometric\b/gi, 'Geométrico'],
     [/\bsecret\b/gi, 'Secreto'],
+    [/\bhydroponic\b/gi, 'Hidropónica'],
+    [/\bseeds?\s*starter\b/gi, 'Germinador'],
     [/\bfor\b/gi, 'para'],
     [/\bwith\b/gi, 'con'],
     [/\band\b/gi, 'y'],
@@ -211,7 +233,18 @@ function translateModelTitleToSpanish(rawName: string): string {
     clean = clean.replace(regex, replacement);
   }
 
-  clean = clean.replace(/\s+/g, ' ').trim();
+  // Fix common adjective-noun inversions in Spanish
+  clean = clean
+    .replace(/\bArticulado\s+(Dragón|Ajolote|Pulpo|Tiburón|Lagarto|Gecko|Dinosaurio|Gato|Perro|Capibara)\b/gi, '$1 Articulado')
+    .replace(/\bArticulado\s+(Tortuga|Serpiente|Rana)\b/gi, '$1 Articulada')
+    .replace(/\bModerno\s+(Maceta|Lámpara|Jabonera|Cajonera|Repisa|Torre|Caja)\b/gi, '$1 Moderna')
+    .replace(/\bGeométrico\s+(Maceta|Lámpara|Jabonera|Caja)\b/gi, '$1 Geométrica')
+    .replace(/\bHelicoidal\s+(Maceta|Lámpara|Torre)\b/gi, '$1 Helicoidal')
+    .replace(/\bMinimalista\s+(Soporte|Maceta|Lámpara|Base|Organizador)\b/gi, '$1 Minimalista')
+    .replace(/\bDragón\s+Dragón\b/gi, 'Dragón')
+    .replace(/\s+/g, ' ')
+    .trim();
+
   // Capitalize first letter
   if (clean.length > 0) {
     clean = clean.charAt(0).toUpperCase() + clean.slice(1);
@@ -339,9 +372,19 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
     : [singleQuery];
 
   try {
-    const queryResults = await Promise.all(
-      queryList.map(q => fetchPrintablesQuery(q, queryList.length > 1 ? 14 : 24))
+    const rawQueryResults = await Promise.all(
+      queryList.map(q => fetchPrintablesQuery(q, queryList.length > 1 ? 20 : 28))
     );
+
+    // Shuffle each query's top results so every call surfaces fresh models instead of repeating index 0
+    const queryResults = rawQueryResults.map(items => {
+      const copy = [...items];
+      for (let idx = copy.length - 1; idx > 0; idx--) {
+        const randIdx = Math.floor(Math.random() * (idx + 1));
+        [copy[idx], copy[randIdx]] = [copy[randIdx], copy[idx]];
+      }
+      return copy;
+    });
 
     const seenIds = new Set<string>();
     const models: ExternalPrintModel[] = [];
@@ -366,7 +409,8 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
 
         const rawTitle = String(item.name).trim();
         const spanishTitle = translateModelTitleToSpanish(rawTitle);
-        const detectedCategory = inferCategoryFromTitle(rawTitle, categoryLabel);
+        const queryUsed = queryList[qIdx] || singleQuery;
+        const detectedCategory = inferCategoryFromTitle(rawTitle, queryUsed, categoryLabel);
         const likes = Number(item.likesCount) || 0;
         const downloads = Number(item.downloadCount) || 0;
 

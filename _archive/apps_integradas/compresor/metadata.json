@@ -1,0 +1,6 @@
+{
+  "name": "RembJPG-PNG Converter",
+  "description": "High-performance batch image converter and organizer. Supports JPG, PNG, and WebP conversion. Features AI-powered renaming using Gemini, smart compression, and ZIP export.",
+  "requestFramePermissions": [],
+  "majorCapabilities": []
+}

@@ -11,7 +11,8 @@ import {
   RefreshCw, Pencil, Save, Copy, AlertTriangle, Mic, MicOff, RotateCcw, 
   Bot, Newspaper, ExternalLink, Bookmark, Building2, CheckCircle2, Check,
   Clock, Zap, Search, Image as ImageIcon, Users, ChevronDown, ChevronUp,
-  FileText, Printer, Reply, UserPlus, X, Paperclip, UploadCloud, Download
+  FileText, Printer, Reply, UserPlus, X, Paperclip, UploadCloud, Download,
+  ArrowLeftRight, Columns, ChevronLeft, ChevronRight
 } from 'lucide-react';
 import { motion, AnimatePresence } from 'motion/react';
 import { toast } from 'sonner';
@@ -1980,8 +1981,8 @@ const EmailGenerator: React.FC<EmailGeneratorProps> = ({ attachedImages, onAttac
         }
     };
 
-    return (
-        <div onDrop={handleDrop} onDragOver={(e) => { e.preventDefault(); setIsDraggingOver(true); }} onDragLeave={() => setIsDraggingOver(false)} className={`p-4 transition-all ${isDraggingOver ? 'bg-purple-500/10 ring-2 ring-purple-500/40 rounded-2xl' : ''}`}>
+    const emailPanelContent = (
+        <div onDrop={handleDrop} onDragOver={(e) => { e.preventDefault(); setIsDraggingOver(true); }} onDragLeave={() => setIsDraggingOver(false)} className={`p-2 sm:p-4 transition-all ${isDraggingOver ? 'bg-purple-500/10 ring-2 ring-purple-500/40 rounded-2xl' : ''}`}>
             <input
                 ref={fileListInputRef}
                 type="file"
@@ -2096,7 +2097,7 @@ const EmailGenerator: React.FC<EmailGeneratorProps> = ({ attachedImages, onAttac
                             </div>
                             <div>
                                 <h2 className="text-xs font-black text-white uppercase tracking-tight">Generador Javer</h2>
-                                <p className="text-[9px] text-gray-400">Voz, IA y WhatsApp</p>
+                                <p className="text-[9px] text-gray-400">Voz, IA y Correo</p>
                             </div>
                         </div>
 
@@ -2517,35 +2518,6 @@ const EmailGenerator: React.FC<EmailGeneratorProps> = ({ attachedImages, onAttac
                                         </span>
                                     </div>
 
-                                    {/* BOTÓN PROMINENTE: ENVIAR POR WHATSAPP EN 1 TOQUE */}
-                                    <button
-                                        type="button"
-                                        onClick={() => handleSendWhatsApp(generatedContent.whatsappMessage)}
-                                        className="w-full py-3 bg-gradient-to-r from-emerald-500 to-green-600 hover:from-emerald-400 hover:to-green-500 text-white rounded-xl text-xs font-black uppercase tracking-wider flex items-center justify-center gap-2 shadow-lg shadow-emerald-950/60 active:scale-95 transition-all cursor-pointer border border-emerald-400/30"
-                                        title="Enviar mensaje generado directamente por WhatsApp"
-                                    >
-                                        <MessageSquare size={16} />
-                                        <span>Enviar por WhatsApp (1 Toque)</span>
-                                    </button>
-
-                                    {/* Caja de WhatsApp */}
-                                    <div className="p-3 bg-slate-950/90 rounded-xl border border-emerald-500/30 space-y-1.5">
-                                        <div className="flex items-center justify-between">
-                                            <span className="text-[9.5px] font-black text-emerald-300 uppercase">Mensaje WhatsApp:</span>
-                                            <button
-                                                type="button"
-                                                onClick={() => handleCopyToClipboard(generatedContent.whatsappMessage, 'whatsapp')}
-                                                className="text-[10px] text-gray-400 hover:text-white flex items-center gap-1 cursor-pointer"
-                                            >
-                                                <Copy size={11} />
-                                                <span>{copied === 'whatsapp' ? '¡Copiado!' : 'Copiar'}</span>
-                                            </button>
-                                        </div>
-                                        <p className="text-[11px] text-emerald-100/95 whitespace-pre-wrap leading-relaxed max-h-40 overflow-y-auto">
-                                            {generatedContent.whatsappMessage}
-                                        </p>
-                                    </div>
-
                                     {/* Caja de Correo */}
                                     <div className="p-3 bg-slate-950/90 rounded-xl border border-purple-500/30 space-y-2">
                                         <div className="flex items-center justify-between border-b border-gray-800 pb-1.5">
@@ -2758,15 +2730,7 @@ const EmailGenerator: React.FC<EmailGeneratorProps> = ({ attachedImages, onAttac
 
                             {/* Resultados de Entrega si hay contenido */}
                             {generatedContent && (
-                                <div className="bg-slate-900/95 border-2 border-emerald-500/40 rounded-3xl p-4 shadow-2xl space-y-2.5">
-                                    <button
-                                        type="button"
-                                        onClick={() => handleSendWhatsApp(generatedContent.whatsappMessage)}
-                                        className="w-full py-3 bg-gradient-to-r from-emerald-500 to-green-600 hover:from-emerald-400 text-white rounded-xl text-xs font-black uppercase tracking-wider flex items-center justify-center gap-2 shadow-lg cursor-pointer"
-                                    >
-                                        <MessageSquare size={16} />
-                                        <span>Enviar por WhatsApp (1 Toque)</span>
-                                    </button>
+                                <div className="bg-slate-900/95 border-2 border-purple-500/40 rounded-3xl p-4 shadow-2xl space-y-2.5">
                                     <div className="flex items-center gap-1.5">
                                         <button
                                             type="button"
@@ -3394,40 +3358,6 @@ const EmailGenerator: React.FC<EmailGeneratorProps> = ({ attachedImages, onAttac
                         <div className="space-y-4">
                             {generatedContent ? (
                                 <div className="space-y-4">
-                                    {/* Tarjeta WhatsApp Direct Dispatch */}
-                                    <div className="bg-slate-900/95 border-2 border-emerald-500/40 rounded-3xl p-4 shadow-2xl space-y-3">
-                                        <div className="flex items-center justify-between">
-                                            <span className="text-xs font-black uppercase text-emerald-400 flex items-center gap-1.5">
-                                                <MessageSquare size={16} />
-                                                <span>Mensaje WhatsApp Optimizado</span>
-                                            </span>
-                                            <button
-                                                type="button"
-                                                onClick={() => handleCopyToClipboard(generatedContent.whatsappMessage, 'whatsapp')}
-                                                className="text-[10px] text-gray-400 hover:text-white flex items-center gap-1 cursor-pointer"
-                                            >
-                                                <Copy size={11} />
-                                                <span>{copied === 'whatsapp' ? '¡Copiado!' : 'Copiar'}</span>
-                                            </button>
-                                        </div>
-
-                                        {/* Botón Grande: Enviar por WhatsApp en 1 Toque */}
-                                        <button
-                                            type="button"
-                                            onClick={() => handleSendWhatsApp(generatedContent.whatsappMessage)}
-                                            className="w-full py-3 bg-gradient-to-r from-emerald-500 to-green-600 hover:from-emerald-400 hover:to-green-500 text-white rounded-xl text-xs font-black uppercase tracking-wider flex items-center justify-center gap-2 shadow-lg shadow-emerald-950/60 active:scale-95 transition-all cursor-pointer border border-emerald-400/30"
-                                        >
-                                            <MessageSquare size={16} />
-                                            <span>Enviar por WhatsApp (1 Toque)</span>
-                                        </button>
-
-                                        <div className="p-3 bg-slate-950/90 rounded-xl border border-emerald-500/30 max-h-44 overflow-y-auto">
-                                            <p className="text-xs text-emerald-100/95 whitespace-pre-wrap leading-relaxed">
-                                                {generatedContent.whatsappMessage}
-                                            </p>
-                                        </div>
-                                    </div>
-
                                     {/* Tarjeta Correo Ejecutivo Formal */}
                                     <div className="bg-slate-900/95 border-2 border-purple-500/40 rounded-3xl p-4 shadow-2xl space-y-3">
                                         <div className="flex items-center justify-between border-b border-gray-800 pb-2">
@@ -4942,8 +4872,8 @@ const EmailGenerator: React.FC<EmailGeneratorProps> = ({ attachedImages, onAttac
                         {/* Estado: Resultados Generados */}
                         {generatedContent && !isLoading && (
                             <div className="space-y-4">
-                                {/* TARJETA DE CORREO */}
-                                <div className="bg-gray-900/90 rounded-2xl border border-gray-800 overflow-hidden shadow-2xl">
+                                {/* TARJETA DE CORREO ELECTRÓNICO */}
+                                <div key="card-email" className="bg-gray-900/90 rounded-2xl border border-gray-800 overflow-hidden shadow-2xl">
                                     <div className="bg-gray-800/80 px-4 py-2.5 border-b border-gray-800 flex justify-between items-center flex-wrap gap-2">
                                         <div className="flex items-center gap-2">
                                             <div className="p-1.5 bg-purple-600/20 text-purple-400 rounded-lg border border-purple-500/30">
@@ -5042,42 +4972,6 @@ const EmailGenerator: React.FC<EmailGeneratorProps> = ({ attachedImages, onAttac
                                     </div>
                                 </div>
 
-                                {/* TARJETA DE WHATSAPP */}
-                                <div className="bg-gray-900/90 rounded-2xl border border-gray-800 overflow-hidden shadow-xl">
-                                    <div className="bg-gray-800/80 px-4 py-2.5 border-b border-gray-800 flex justify-between items-center">
-                                        <div className="flex items-center gap-2">
-                                            <div className="p-1.5 bg-green-600/20 text-green-400 rounded-lg border border-green-500/30">
-                                                <MessageSquare size={14} />
-                                            </div>
-                                            <span className="text-xs font-black uppercase text-green-400">WhatsApp</span>
-                                        </div>
-                                        <button 
-                                            onClick={() => handleCopyToClipboard(generatedContent.whatsappMessage, 'whatsapp')} 
-                                            className={`px-3 py-1.5 rounded-lg text-xs font-bold border transition-all flex items-center gap-1.5 cursor-pointer ${
-                                                copied === 'whatsapp' ? 'bg-green-600 text-white border-green-500' : 'bg-gray-800 text-gray-300 border-gray-700 hover:bg-gray-700'
-                                            }`}
-                                        >
-                                            <Copy size={13} />
-                                            <span>{copied === 'whatsapp' ? 'Copiado!' : 'Copiar'}</span>
-                                        </button>
-                                    </div>
-                                    <div className="p-4 space-y-3">
-                                        <textarea 
-                                            value={generatedContent.whatsappMessage} 
-                                            onChange={e => setGeneratedContent({ ...generatedContent, whatsappMessage: e.target.value })} 
-                                            onContextMenu={e => handleContextMenu(e, 'whatsapp', 'whatsappMessage')} 
-                                            className="w-full h-24 bg-gray-800/40 border border-gray-700/80 rounded-xl p-3 text-xs text-gray-200 font-sans resize-none outline-none focus:border-green-500 leading-relaxed shadow-inner" 
-                                        />
-                                        <button 
-                                            onClick={() => handleSendWhatsApp(generatedContent.whatsappMessage)} 
-                                            className="w-full py-2 bg-gradient-to-r from-green-600 to-green-700 hover:from-green-500 hover:to-green-600 text-white rounded-xl font-black text-xs uppercase tracking-widest shadow-md flex items-center justify-center gap-2 hover:scale-[1.01] active:scale-[0.99] transition-all cursor-pointer"
-                                        >
-                                            <MessageSquare size={14}/> 
-                                            <span>Lanzar por WhatsApp</span>
-                                        </button>
-                                    </div>
-                                </div>
-
                                 {/* IDEA MEJORADA */}
                                 {generatedContent.improvedIdea && (
                                     <div className="bg-gradient-to-br from-purple-900/20 to-indigo-900/10 rounded-2xl border border-purple-500/20 p-3 shadow-md flex items-center justify-between gap-3">
@@ -5103,7 +4997,7 @@ const EmailGenerator: React.FC<EmailGeneratorProps> = ({ attachedImages, onAttac
                                 </div>
                                 <div className="max-w-xs space-y-1.5">
                                     <h4 className="text-sm font-black text-white uppercase tracking-wider">
-                                        Vista Previa de Correo y WhatsApp
+                                        Vista Previa de Correo Electrónico
                                     </h4>
                                     <p className="text-xs text-gray-400 leading-relaxed">
                                         Escribe o dicta tu idea a la izquierda y pulsa <strong className="text-purple-300">"Generar Mensajes con IA"</strong>. Aquí verás tu correo formateado con saludo formal y firma ejecutiva listo para enviar.
@@ -5598,14 +5492,6 @@ const EmailGenerator: React.FC<EmailGeneratorProps> = ({ attachedImages, onAttac
                                         </button>
                                         <button
                                             type="button"
-                                            onClick={() => handleSendWhatsApp(livePreview.whatsappMessage)}
-                                            className="px-2.5 py-1.5 bg-green-600/20 hover:bg-green-600 text-green-300 hover:text-white rounded-xl text-xs font-bold border border-green-500/40 transition-all flex items-center justify-center gap-1 cursor-pointer"
-                                        >
-                                            <MessageSquare size={12} />
-                                            <span>WhatsApp</span>
-                                        </button>
-                                        <button
-                                            type="button"
                                             onClick={() => handleOpenOutlookWeb(livePreview.emailSubject, livePreview.emailBody)}
                                             className="flex-1 sm:flex-initial px-3 py-1.5 bg-gradient-to-r from-blue-600 to-indigo-600 hover:from-blue-500 hover:to-indigo-500 text-white rounded-xl font-black text-xs uppercase tracking-wider shadow-lg flex items-center justify-center gap-1 transition-all hover:scale-[1.02] active:scale-[0.98] cursor-pointer border border-blue-400/30"
                                         >
@@ -5723,6 +5609,8 @@ const EmailGenerator: React.FC<EmailGeneratorProps> = ({ attachedImages, onAttac
             )}
         </div>
     );
+
+    return emailPanelContent;
 };
 
 export default EmailGenerator;

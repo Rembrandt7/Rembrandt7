@@ -708,6 +708,17 @@ async function startServer() {
     }
   });
 
+  // 8. Live 3D Print Suggestions endpoint (Printables GraphQL)
+  app.all(["/api/print-suggestions", "/api/print-suggestions/"], async (req, res) => {
+    try {
+      const printSuggestionsHandler = (await import("./api/print-suggestions")).default;
+      await printSuggestionsHandler(req as any, res as any);
+    } catch (error: any) {
+      console.error("Print suggestions error:", error);
+      res.status(500).json({ ok: false, error: error.message, models: [] });
+    }
+  });
+
   app.post(["/api/config/save-local", "/api/config/save-local/"], async (req, res) => {
     try {
       const fs = await import("fs");

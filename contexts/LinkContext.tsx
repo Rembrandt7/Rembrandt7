@@ -17,9 +17,13 @@ const INITIAL_TABS: TabConfig[] = [
     { id: 'teleprompter', label: 'Teleprompter', type: 'system', componentKey: 'Teleprompter', isVisible: true, icon: 'Music' },
     { id: 'cotizador', label: 'Cotizador', type: 'system', componentKey: 'Cotizador', isVisible: true, icon: 'Calculator' },
     { id: 'listas', label: 'Listas', type: 'system', componentKey: 'Listas', isVisible: true, icon: 'CheckSquare' },
+    { id: 'bodega', label: 'Bodega', type: 'system', componentKey: 'Bodega', isVisible: true, icon: 'Archive' },
+    { id: 'edicion', label: 'Edición', type: 'system', componentKey: 'Edición', isVisible: true, icon: 'Sliders' },
 ];
 
 const isDeprecatedTab = (t: any) =>
+    t.id === 'whatsapp' ||
+    t.componentKey === 'WhatsApp' ||
     t.id === 'dashboard' ||
     t.id === 'video-gen' ||
     t.componentKey === 'Generador de Video' ||

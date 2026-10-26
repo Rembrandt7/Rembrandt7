@@ -479,20 +479,20 @@ const LinksBar: React.FC = () => {
                     )}
                 </div>
 
-                {/* Pancho Assistant Button a la derecha de la barra (Caja roja de la solicitud) */}
+                {/* Pancho Assistant Button a la derecha de la barra (Misma altura que los demás botones) */}
                 <div className="shrink-0 flex items-center pl-1 sm:pl-2 border-l border-white/10">
                     <button
                         onClick={() => window.dispatchEvent(new CustomEvent('open-pancho'))}
-                        className="flex items-center gap-1.5 sm:gap-2 px-2.5 sm:px-3 py-1.5 rounded-2xl bg-gradient-to-r from-purple-950/60 via-purple-900/40 to-pink-950/40 hover:from-purple-900/70 hover:to-pink-900/60 border border-purple-500/40 text-purple-200 hover:text-white transition-all shadow-lg hover:shadow-purple-500/20 group/panchoBar shrink-0 cursor-pointer"
-                        title="Abrir a Pancho Asistente"
+                        className="flex items-center justify-center gap-2 sm:gap-2.5 h-11 sm:h-14 md:h-16 px-3 sm:px-4 rounded-2xl sm:rounded-3xl bg-gradient-to-b from-purple-900/75 via-purple-950/70 to-pink-950/60 hover:from-purple-800/80 hover:to-pink-900/75 border border-purple-500/45 hover:border-purple-400/70 text-purple-200 hover:text-white transition-all duration-300 hover:scale-[1.06] hover:-translate-y-1 active:scale-95 shadow-lg hover:shadow-[0_10px_30px_rgba(168,85,247,0.35)] group/panchoBar shrink-0 cursor-pointer"
+                        title="Abrir a Pancho Asistente IA"
                     >
                         <div className="relative flex items-center justify-center shrink-0">
-                            <PanchoRobotAvatar state="idle" size={28} showTail={false} />
-                            <span className="absolute -top-0.5 -right-0.5 w-2 h-2 rounded-full bg-emerald-400 shadow-[0_0_6px_rgba(52,211,153,0.9)]" />
+                            <PanchoRobotAvatar state="idle" size={38} showTail={false} />
+                            <span className="absolute -top-0.5 -right-0.5 w-2.5 h-2.5 rounded-full bg-emerald-400 shadow-[0_0_8px_rgba(52,211,153,0.95)] ring-2 ring-slate-950" />
                         </div>
-                        <div className="hidden sm:flex flex-col text-left leading-none">
-                            <span className="text-[11px] font-bold text-white group-hover/panchoBar:text-pink-300 transition-colors">Pancho</span>
-                            <span className="text-[8px] text-purple-300/80 font-mono">IA Asistente</span>
+                        <div className="hidden sm:flex flex-col justify-center text-left leading-tight">
+                            <span className="text-xs md:text-sm font-black text-white group-hover/panchoBar:text-pink-300 transition-colors tracking-tight">Pancho</span>
+                            <span className="text-[9px] md:text-[10px] text-purple-300/90 font-mono font-bold mt-0.5">IA Asistente</span>
                         </div>
                     </button>
                 </div>

@@ -575,58 +575,184 @@ const MASTER_SUGGESTIONS_POOL: PrintSuggestionItem[] = [
     baseScore: 97,
   },
   {
-    id: 'sug-mini-vice-clamp',
-    title: 'Mini Tornillo de Banco Print-in-Place',
-    searchKeyword: 'mini bench vise print in place',
-    category: 'Hogar & Funcional',
-    platform: 'MakerWorld',
-    url: 'https://makerworld.com/es/models/17215-print-in-place-mini-vice',
-    imageUrl: 'https://media.printables.com/media/prints/928/images/4740324_2fa4be7c-c068-4ef8-a786-34b73eb35676_56d1d6b8-f490-482a-91f6-6ff7af1997db/00100dportrait_00100_burst20180423003754672_cover.jpg',
-    description: 'Prensa mecánica completamente funcional con rosca y mordaza lista para usar al despegar de la cama.',
-    whyItSells: 'Demuestra la magia de la impresión 3D a primera vista; irresistible para aficionados a las herramientas.',
-    tags: ['herramienta', 'prensa', 'mecanico', 'print in place', 'taller'],
-    estimatedGrams: 75,
-    estimatedHours: 2.8,
-    suggestedPriceMxn: 190,
-    material: 'PETG',
-    demandBadge: '⚙️ Mecanismo 100%',
-    baseScore: 94,
+    id: 'sug-bone-dragon-flexi',
+    title: 'Dragón de Hueso Articulado (Sin Soportes)',
+    searchKeyword: 'articulated bone dragon',
+    category: 'Articulados & Flexi',
+    platform: 'Printables',
+    url: 'https://www.printables.com/model/538160-articulated-bone-dragon',
+    imageUrl: 'https://media.printables.com/media/prints/538160/images/5335973_90d97eb3-e844-4917-9f31-838d71a84dc8_2736cd68-d1c3-4b71-b2ef-23928482ee48/bone-dragon-photo.png',
+    description: 'Dragón esquelético articulado print-in-place (+116,000 descargas reales) con articulación fluida en cada vértebra.',
+    whyItSells: 'Impreso en PLA Blanco Hueso o Mármol se vende al instante como pieza de colección.',
+    tags: ['dragon', 'articulado', 'hueso', 'flexi', 'sin soportes', 'bestseller'],
+    estimatedGrams: 112,
+    estimatedHours: 4.0,
+    suggestedPriceMxn: 290,
+    material: 'PLA',
+    demandBadge: '🔥 116k Descargas',
+    baseScore: 98,
+    likesCount: 14085,
+    downloadsCount: 116512,
   },
   {
-    id: 'sug-mushroom-organic-lamp',
-    title: 'Lámpara Champiñón Hongo LED Nórdica',
-    searchKeyword: 'mushroom lamp led ambient',
+    id: 'sug-voronoi-mushroom-lamp',
+    title: 'Lámpara Hongo Voronoi para Luz LED',
+    searchKeyword: 'voronoi mushroom lamp',
     category: 'Iluminación & Lámparas',
     platform: 'Printables',
-    url: 'https://www.printables.com/model/499623-mushroom-lamp',
-    imageUrl: 'https://media.printables.com/media/prints/499623/images/3956321_0494cf54-205e-42c2-8ae3-be2fa3732049/mushroom_lamp.jpg',
-    description: 'Lámpara moderna estilo nórdico de hongo que difumina suavemente la luz LED para buroes y salas.',
-    whyItSells: 'Diseño en tendencia estética viral en TikTok e Instagram; margen superior a $250 MXN por pieza.',
-    tags: ['lampara', 'hongo', 'nordico', 'led', 'decoracion', 'minimalista'],
+    url: 'https://www.printables.com/model/1466028-voronoi-mushroom-lamp',
+    imageUrl: 'https://media.printables.com/media/prints/18cd508f-35c2-4e61-b70f-0df7c36313a4/images/11052470_3dc66c5a-5a27-43cd-81d3-32d958c6dcb3_13efafa8-9d63-47ae-afd5-5aeafb11b899/dsc00214.jpg',
+    description: 'Lámpara de mesa con sombrero orgánico estilo Voronoi que proyecta patrones cálidos en toda la habitación.',
+    whyItSells: 'Tendencia viral en decoración estética; se imprime con pocos gramos y tiene margen de ganancia muy alto.',
+    tags: ['lampara', 'hongo', 'voronoi', 'led', 'decoracion', 'moderno'],
     estimatedGrams: 115,
-    estimatedHours: 4.2,
-    suggestedPriceMxn: 390,
+    estimatedHours: 4.1,
+    suggestedPriceMxn: 380,
     material: 'PLA',
     demandBadge: '🍄 Tendencia Viral',
-    baseScore: 96,
+    baseScore: 97,
+    likesCount: 2348,
+    downloadsCount: 5224,
   },
   {
-    id: 'sug-switch-cartridge-block',
-    title: 'Cubo Pregunta Mario Estuche Juegos Switch',
-    searchKeyword: 'switch question block game holder',
+    id: 'sug-ps5-stealth-stand',
+    title: 'Soporte Stealth para Control PS5 DualSense',
+    searchKeyword: 'stealth ps5 controller stand',
     category: 'Gaming & Controles',
     platform: 'Printables',
-    url: 'https://www.printables.com/model/29841-nintendo-switch-cartridge-case-mario-block',
-    imageUrl: 'https://media.printables.com/media/prints/29841/images/322961_45b37628-97c7-43ca-95df-2d22bdf5f87b/switch_block.jpg',
-    description: 'Bloque con muelle emergente para guardar hasta 12 cartuchos de Nintendo Switch.',
-    whyItSells: 'El coleccionable geek favorito de los poseedores de Switch; venta constante en cualquier época.',
-    tags: ['switch', 'mario', 'gaming', 'estuche', 'geek', 'regalo'],
+    url: 'https://www.printables.com/model/843011-stealth-ps5-controller-stand',
+    imageUrl: 'https://media.printables.com/media/prints/843011/images/6490076_f37a2fec-a6dc-4f69-961a-2b949c2484e8_b47f39ff-453a-44bc-93b7-d04ff4207ad1/img_4184.jpg',
+    description: 'Base angular tipo Stealth diseñada a la medida del control DualSense de PlayStation 5.',
+    whyItSells: 'Uno de los soportes de PS5 más elegantes y rápidos de imprimir para venta en línea.',
+    tags: ['ps5', 'dualsense', 'soporte', 'control', 'gamer', 'setup'],
     estimatedGrams: 85,
-    estimatedHours: 3.0,
+    estimatedHours: 2.9,
+    suggestedPriceMxn: 230,
+    material: 'PLA',
+    demandBadge: '🎮 Top PS5 Setup',
+    baseScore: 95,
+    likesCount: 1359,
+    downloadsCount: 9138,
+  },
+  {
+    id: 'sug-modern-planter-658246',
+    title: 'Maceta Moderna Acanalada de Diseño Interior',
+    searchKeyword: 'modern planter pot',
+    category: 'Decoración & Macetas',
+    platform: 'Printables',
+    url: 'https://www.printables.com/model/658246-modern-planter',
+    imageUrl: 'https://media.printables.com/media/prints/658246/images/5187202_98ccc009-6c1e-4ce0-8194-36c7ce377cd8_c38b48f6-649c-4ef2-bc09-00a06bc3cea2/20231119_110321-edit.jpg',
+    description: 'Maceta arquitectónica con costillas limpias y plato recolector integrado (+11,200 descargas).',
+    whyItSells: 'Luce como cerámica de diseñador cuando se imprime en PLA Mate Terracota, Arena o Negro.',
+    tags: ['maceta', 'moderna', 'decoracion', 'plantas', 'hogar', 'minimalista'],
+    estimatedGrams: 95,
+    estimatedHours: 3.2,
+    suggestedPriceMxn: 250,
+    material: 'PLA',
+    demandBadge: '🌿 11k Descargas',
+    baseScore: 94,
+    likesCount: 2198,
+    downloadsCount: 11235,
+  },
+  {
+    id: 'sug-redesk-headphone-stand',
+    title: 'Soporte Minimalista reDesk para Audífonos',
+    searchKeyword: 'headphone stand redesk',
+    category: 'Gadgets & Escritorio',
+    platform: 'Printables',
+    url: 'https://www.printables.com/model/910680-headphone-stand-redesk',
+    imageUrl: 'https://media.printables.com/media/prints/910680/images/6958562_8abd8b24-2602-4ffa-991a-a5efb1b4f5d6_5a3986b1-89ed-4aa3-9837-c221f2130f6f/headphone_stand_redesk.png',
+    description: 'Pedestal geométrico estable y estilizado para audífonos de diadema con bandeja inferior.',
+    whyItSells: 'Excelente aceptación entre profesionistas, gamers y creadores de contenido.',
+    tags: ['audifonos', 'soporte', 'escritorio', 'setup', 'oficina', 'gadget'],
+    estimatedGrams: 120,
+    estimatedHours: 3.9,
+    suggestedPriceMxn: 270,
+    material: 'PLA',
+    demandBadge: '🔥 2,620 Likes',
+    baseScore: 93,
+    likesCount: 2620,
+    downloadsCount: 9744,
+  },
+  {
+    id: 'sug-octopus-articulated-1153500',
+    title: 'Pulpo Articulado Tentáculos Flexibles (Sin Soportes)',
+    searchKeyword: 'articulated octopus print in place',
+    category: 'Articulados & Flexi',
+    platform: 'Printables',
+    url: 'https://www.printables.com/model/1153500-octopus-articulated-octopus',
+    imageUrl: 'https://media.printables.com/media/prints/1153500/images/8702429_11029c27-7a96-475b-aeed-eaa901c9e204_3605764e-9a48-4330-b590-5702efd1c404/20250118_121920.jpg',
+    description: 'Pulpo impreso en una sola pieza con 8 tentáculos articulados suaves y expresivos.',
+    whyItSells: 'Clásico infalible en mercados y bazares; a los niños y coleccionistas les encanta en colores arcoíris.',
+    tags: ['pulpo', 'articulado', 'flexi', 'juguete', 'sin soportes', 'bestseller'],
+    estimatedGrams: 55,
+    estimatedHours: 2.0,
+    suggestedPriceMxn: 150,
+    material: 'PLA',
+    demandBadge: '🐙 Favorito Bazares',
+    baseScore: 95,
+    likesCount: 742,
+    downloadsCount: 7508,
+  },
+  {
+    id: 'sug-flexi-rex-heart',
+    title: 'Dinosaurio Flexi Rex con Corazón para Regalo',
+    searchKeyword: 'flexi rex valentine heart',
+    category: 'Temporada & Regalos',
+    platform: 'Printables',
+    url: 'https://www.printables.com/model/1576515-flexi-rex-valentine-holding-a-heart',
+    imageUrl: 'https://media.printables.com/media/prints/493b8479-0549-438e-8dbd-1b1e427ae500/images/11873735_3f2f173d-4016-4c26-b547-bfc79d222647_dd66db0f-7568-41a1-9ce3-5fe745339272/flexrex-heart-keychain-bg.png',
+    description: 'El famoso dinosaurio articulado Flexi Rex sosteniendo un corazón, ideal para regalo o llavero.',
+    whyItSells: 'Detalle tierno y económico de producir que se vende todo el año para parejas y amigos.',
+    tags: ['dinosaurio', 'flexi', 'regalo', 'corazon', 'llavero', 'articulado'],
+    estimatedGrams: 38,
+    estimatedHours: 1.3,
+    suggestedPriceMxn: 130,
+    material: 'PLA',
+    demandBadge: '💝 Regalo Viral',
+    baseScore: 94,
+    likesCount: 813,
+    downloadsCount: 5887,
+  },
+  {
+    id: 'sug-spirit-dragon-210311',
+    title: 'Dragón Espíritu Oriental Articulado Print-in-Place',
+    searchKeyword: 'articulated spirit dragon no support',
+    category: 'Articulados & Flexi',
+    platform: 'Printables',
+    url: 'https://www.printables.com/model/210311-articulated-spirit-dragon_-dragon_no-support_easy-',
+    imageUrl: 'https://media.printables.com/media/prints/210311/images/1929822_1931b973-66f8-4099-83a1-7a10e6c53dde/kakaotalk_20220401_153209558-1.jpg',
+    description: 'Dragón oriental de cuerpo largo articulado (+92,500 descargas) optimizado para impresión rápida sin soportes.',
+    whyItSells: 'Uno de los dragones más rentables por su facilidad de impresión y gran tamaño visual.',
+    tags: ['dragon', 'articulado', 'oriental', 'pla silk', 'sin soportes'],
+    estimatedGrams: 95,
+    estimatedHours: 3.4,
+    suggestedPriceMxn: 280,
+    material: 'PLA',
+    demandBadge: '🔥 93k Descargas',
+    baseScore: 96,
+    likesCount: 13786,
+    downloadsCount: 92548,
+  },
+  {
+    id: 'sug-robert-self-watering-planter',
+    title: 'Maceta Robert Autorriego / Germinador Hidropónico',
+    searchKeyword: 'robert planter self watering',
+    category: 'Decoración & Macetas',
+    platform: 'Printables',
+    url: 'https://www.printables.com/model/63192-hydroponic-self-watering-seeds-starter-robert-plan',
+    imageUrl: 'https://media.printables.com/media/prints/63192/images/659155_5181a93c-9a27-40d9-b6f4-35b8e03fb4c1/20210410_121417.jpg',
+    description: 'El famoso personaje Robert sentado en versión maceta con depósito de autorriego (+38,000 descargas).',
+    whyItSells: 'Las macetas Robert son el bestseller #1 en decoración geek y escritorios modernos.',
+    tags: ['maceta', 'robert', 'autorriego', 'plantas', 'suculentas', 'decoracion'],
+    estimatedGrams: 78,
+    estimatedHours: 2.7,
     suggestedPriceMxn: 220,
     material: 'PLA',
-    demandBadge: '⭐ Clásico Gamer',
-    baseScore: 98,
+    demandBadge: '🌱 38k Descargas',
+    baseScore: 97,
+    likesCount: 10541,
+    downloadsCount: 38112,
   },
 ];
 
@@ -828,8 +954,31 @@ const ThreeDSuggestions: React.FC<ThreeDSuggestionsProps> = ({ onSendToCalculato
   // Refs to avoid overwriting dailySlots when pool updates and to guarantee fresh items on every refresh
   const hasInitializedSlotsRef = useRef(false);
   const prevCategoryFilterRef = useRef<string>('Todas');
-  const shownIdsRef = useRef<Set<string>>(new Set());
-  const searchCycleRef = useRef<number>(0);
+  const shownIdsRef = useRef<Set<string>>(
+    (() => {
+      try {
+        const saved = JSON.parse(localStorage.getItem('rembrandt_3d_recent_shown_v3') || '[]');
+        return new Set(Array.isArray(saved) ? saved : []);
+      } catch {
+        return new Set<string>();
+      }
+    })()
+  );
+  const searchCycleRef = useRef<number>(Math.floor(Math.random() * 20));
+
+  const recordShownItems = useCallback((items: PrintSuggestionItem[]) => {
+    items.forEach(item => {
+      if (!item) return;
+      shownIdsRef.current.add(item.id);
+      if (item.url) shownIdsRef.current.add(item.url);
+    });
+    try {
+      const idOnly = Array.from(shownIdsRef.current)
+        .filter(x => !x.startsWith('http'))
+        .slice(-44);
+      localStorage.setItem('rembrandt_3d_recent_shown_v3', JSON.stringify(idOnly));
+    } catch {}
+  }, []);
 
   // Persist taste profile to localStorage and Supabase
   const saveProfile = useCallback(async (nextProfile: TasteProfile) => {
@@ -856,7 +1005,7 @@ const ThreeDSuggestions: React.FC<ThreeDSuggestionsProps> = ({ onSendToCalculato
           if (remote && (remote.interactionsCount || 0) > profile.interactionsCount) {
             setProfile(prev => ({
               ...remote,
-              dailySelection: prev.dailySelection?.date === getTodayStr() ? prev.dailySelection : remote.dailySelection,
+              dailySelection: prev.dailySelection,
             }));
           }
         }
@@ -867,24 +1016,30 @@ const ThreeDSuggestions: React.FC<ThreeDSuggestionsProps> = ({ onSendToCalculato
     };
   }, []);
 
-  // Preload diverse live models from Printables API in the background to enrich the pool
+  // Preload diverse live models from Printables API in the background and rotate fresh suggestions
   useEffect(() => {
     let mounted = true;
     (async () => {
       try {
-        const topCat = Object.entries(profile.categoryWeights).sort((a, b) => Number(b[1]) - Number(a[1]))[0]?.[0] as
-          | SuggestionCategory
-          | undefined;
-        const initialQueries = [
-          (topCat && CATEGORY_QUERY_BANK[topCat]?.[0]) || 'articulated dragon',
-          'self watering planter',
-          'desk organizer stand',
-          'voronoi lamp led',
-        ];
+        const randOffset = Math.floor(Math.random() * 8);
+        const cat1 = ALL_CATEGORIES[randOffset % ALL_CATEGORIES.length];
+        const cat2 = ALL_CATEGORIES[(randOffset + 2) % ALL_CATEGORIES.length];
+        const cat3 = ALL_CATEGORIES[(randOffset + 4) % ALL_CATEGORIES.length];
+        const cat4 = ALL_CATEGORIES[(randOffset + 6) % ALL_CATEGORIES.length];
+
+        const pickQuery = (cat: SuggestionCategory) => {
+          const bank = CATEGORY_QUERY_BANK[cat];
+          return bank[Math.floor(Math.random() * bank.length)];
+        };
+
+        const initialQueries = [pickQuery(cat1), pickQuery(cat2), pickQuery(cat3), pickQuery(cat4)];
+        const excludeIds = Array.from(shownIdsRef.current)
+          .filter(x => !x.startsWith('http'))
+          .slice(-50)
+          .join(',');
+
         const res = await fetch(
-          `/api/print-suggestions?queries=${encodeURIComponent(initialQueries.join(','))}&category=${encodeURIComponent(
-            topCat || 'Articulados & Flexi'
-          )}`
+          `/api/print-suggestions?queries=${encodeURIComponent(initialQueries.join(','))}&exclude=${encodeURIComponent(excludeIds)}`
         );
         if (!res.ok) return;
         const data = await res.json();
@@ -893,7 +1048,7 @@ const ThreeDSuggestions: React.FC<ThreeDSuggestionsProps> = ({ onSendToCalculato
             id: m.id,
             title: m.title,
             searchKeyword: m.originalTitle || m.title,
-            category: (ALL_CATEGORIES.includes(m.category) ? m.category : 'Articulados & Flexi') as SuggestionCategory,
+            category: (ALL_CATEGORIES.includes(m.category) ? m.category : 'Gadgets & Escritorio') as SuggestionCategory,
             platform: 'Printables',
             url: m.url,
             imageUrl: m.imageUrl,
@@ -907,15 +1062,37 @@ const ThreeDSuggestions: React.FC<ThreeDSuggestionsProps> = ({ onSendToCalculato
             suggestedPriceMxn: m.suggestedPriceMxn || 220,
             material: ['PLA', 'PETG', 'TPU'].includes(m.material) ? m.material : 'PLA',
             demandBadge: m.demandBadge || '🔥 En Tendencia Live',
-            baseScore: 93,
+            baseScore: 95,
             likesCount: m.likesCount,
             downloadsCount: m.downloadsCount,
           }));
+
           setPool(prev => {
             const existingIds = new Set(prev.map(p => p.id));
             const uniqueNew = liveItems.filter(li => !existingIds.has(li.id));
             return [...prev, ...uniqueNew];
           });
+
+          // Inject fresh unseen live items into dailySlots when in 'Todas' view so the user always sees new verified models
+          const freshLive = liveItems.filter(
+            li => !shownIdsRef.current.has(li.id) && !profile.dismissedIds.includes(li.id)
+          );
+          if (freshLive.length >= 2 && selectedCategoryFilter === 'Todas') {
+            setDailySlots(prev => {
+              const combined: PrintSuggestionItem[] = [];
+              const usedIds = new Set<string>();
+              // Take up to 2 fresh live models + 2 unseen curated models for maximum variety & speed
+              for (const item of [...freshLive.slice(0, 2), ...prev]) {
+                if (combined.length >= 4) break;
+                if (!usedIds.has(item.id)) {
+                  usedIds.add(item.id);
+                  combined.push(item);
+                }
+              }
+              recordShownItems(combined);
+              return combined;
+            });
+          }
         }
       } catch {}
     })();
@@ -924,7 +1101,7 @@ const ThreeDSuggestions: React.FC<ThreeDSuggestionsProps> = ({ onSendToCalculato
     };
   }, []);
 
-  // Select or restore the 4 Daily Suggestions ONLY on initial mount or when category filter changes
+  // Pick 4 fresh unseen suggestions on initial mount or when category filter changes (never locking the same 4 all day)
   useEffect(() => {
     const categoryChanged = prevCategoryFilterRef.current !== selectedCategoryFilter;
     if (hasInitializedSlotsRef.current && !categoryChanged) {
@@ -936,52 +1113,47 @@ const ThreeDSuggestions: React.FC<ThreeDSuggestionsProps> = ({ onSendToCalculato
     const today = getTodayStr();
     const availablePool = pool.filter(item => !profile.dismissedIds.includes(item.id));
 
-    if (
-      selectedCategoryFilter === 'Todas' &&
-      !categoryChanged &&
-      profile.dailySelection?.date === today &&
-      Array.isArray(profile.dailySelection.itemIds) &&
-      profile.dailySelection.itemIds.length === 4
-    ) {
-      const resolved = profile.dailySelection.itemIds
-        .map(id => pool.find(p => p.id === id))
-        .filter((x): x is PrintSuggestionItem => Boolean(x) && !profile.dismissedIds.includes(x.id));
+    // Filter out recently shown items so every visit shows fresh suggestions
+    let unseenPool = availablePool.filter(
+      item =>
+        !shownIdsRef.current.has(item.id) &&
+        (selectedCategoryFilter === 'Todas' || item.category === selectedCategoryFilter)
+    );
 
-      if (resolved.length === 4) {
-        resolved.forEach(r => {
-          shownIdsRef.current.add(r.id);
-          shownIdsRef.current.add(r.url);
-        });
-        setDailySlots(resolved);
-        return;
-      }
+    // If user has seen almost everything in the pool, reset the recent history so rotation continues seamlessly
+    if (unseenPool.length < 4) {
+      shownIdsRef.current.clear();
+      try {
+        localStorage.removeItem('rembrandt_3d_recent_shown_v3');
+      } catch {}
+      unseenPool = availablePool.filter(
+        item => selectedCategoryFilter === 'Todas' || item.category === selectedCategoryFilter
+      );
     }
 
-    const daySeed = getDateDayIndex(today);
-    // Rotación diaria determinista: cada nuevo día calendario rota automáticamente
-    // a 4 sugerencias totalmente frescas sin repetir el lote anterior
-    const ranked = [...availablePool].sort((a, b) => {
-      const hashA = (daySeed * 37 + a.id.split('').reduce((acc, c) => acc + c.charCodeAt(0), 0)) % 1000;
-      const hashB = (daySeed * 37 + b.id.split('').reduce((acc, c) => acc + c.charCodeAt(0), 0)) % 1000;
-      const scoreB = scoreSuggestionItem(b, profile) + (hashB / 40);
-      const scoreA = scoreSuggestionItem(a, profile) + (hashA / 40);
-      return scoreB - scoreA;
+    // Shuffle with slight affinity weighting so it's always fresh AND tailored
+    const ranked = [...unseenPool].sort((a, b) => {
+      const randA = Math.random() * 18;
+      const randB = Math.random() * 18;
+      return scoreSuggestionItem(b, profile) + randB - (scoreSuggestionItem(a, profile) + randA);
     });
 
     const chosen: PrintSuggestionItem[] = [];
+    const usedCats = new Set<string>();
+
+    // First pass: try to pick 4 items from 4 different categories for variety when 'Todas' is active
     for (const candidate of ranked) {
       if (chosen.length >= 4) break;
-      if (selectedCategoryFilter !== 'Todas' && candidate.category !== selectedCategoryFilter) continue;
+      if (selectedCategoryFilter === 'Todas' && usedCats.has(candidate.category)) continue;
+      usedCats.add(candidate.category);
       chosen.push(candidate);
     }
 
-    if (chosen.length < 4) {
-      for (const candidate of pool) {
-        if (chosen.length >= 4) break;
-        if (selectedCategoryFilter !== 'Todas' && candidate.category !== selectedCategoryFilter) continue;
-        if (!chosen.some(c => c.id === candidate.id)) {
-          chosen.push(candidate);
-        }
+    // Second pass: fill any remaining slots
+    for (const candidate of ranked) {
+      if (chosen.length >= 4) break;
+      if (!chosen.some(c => c.id === candidate.id)) {
+        chosen.push(candidate);
       }
     }
 
@@ -994,10 +1166,7 @@ const ThreeDSuggestions: React.FC<ThreeDSuggestionsProps> = ({ onSendToCalculato
       }
     }
 
-    chosen.forEach(c => {
-      shownIdsRef.current.add(c.id);
-      shownIdsRef.current.add(c.url);
-    });
+    recordShownItems(chosen);
     setDailySlots(chosen);
 
     if (selectedCategoryFilter === 'Todas' && chosen.length === 4) {
@@ -1013,7 +1182,7 @@ const ThreeDSuggestions: React.FC<ThreeDSuggestionsProps> = ({ onSendToCalculato
         localStorage.setItem(STORAGE_KEY, JSON.stringify(updated));
       } catch {}
     }
-  }, [selectedCategoryFilter, pool]);
+  }, [selectedCategoryFilter, pool, recordShownItems]);
 
   /**
    * "No me interesa" -> Penalizes category/tags, adds to dismissedIds, and IMMEDIATELY replaces that slot with a new suggestion!
@@ -1067,8 +1236,7 @@ const ThreeDSuggestions: React.FC<ThreeDSuggestionsProps> = ({ onSendToCalculato
     candidates.sort((a, b) => scoreSuggestionItem(b, tempProfile) - scoreSuggestionItem(a, tempProfile));
     const replacement = candidates[0] || pool[0];
     if (replacement) {
-      shownIdsRef.current.add(replacement.id);
-      shownIdsRef.current.add(replacement.url);
+      recordShownItems([dislikedItem, replacement]);
     }
 
     const nextSlots = [...dailySlots];
@@ -1131,12 +1299,9 @@ const ThreeDSuggestions: React.FC<ThreeDSuggestionsProps> = ({ onSendToCalculato
     toast.info('Eliminado de guardados');
   };
 
-  const handleRefreshFourNew = () => {
+  const handleRefreshFourNew = useCallback((silent = false) => {
     const currentIds = new Set(dailySlots.map(s => s.id));
-    dailySlots.forEach(s => {
-      shownIdsRef.current.add(s.id);
-      shownIdsRef.current.add(s.url);
-    });
+    recordShownItems(dailySlots);
 
     let available = pool.filter(
       item =>
@@ -1149,6 +1314,9 @@ const ThreeDSuggestions: React.FC<ThreeDSuggestionsProps> = ({ onSendToCalculato
     if (available.length < 4) {
       // Reset session shown history except what is currently on screen so rotation never gets stuck
       shownIdsRef.current = new Set([...Array.from(currentIds)]);
+      try {
+        localStorage.setItem('rembrandt_3d_recent_shown_v3', JSON.stringify(Array.from(currentIds)));
+      } catch {}
       available = pool.filter(
         item =>
           !currentIds.has(item.id) &&
@@ -1160,13 +1328,14 @@ const ThreeDSuggestions: React.FC<ThreeDSuggestionsProps> = ({ onSendToCalculato
       available = pool.filter(item => !currentIds.has(item.id));
     }
 
-    const ranked = [...available].sort((a, b) => scoreSuggestionItem(b, profile) - scoreSuggestionItem(a, profile));
+    const ranked = [...available].sort((a, b) => {
+      const randA = Math.random() * 15;
+      const randB = Math.random() * 15;
+      return scoreSuggestionItem(b, profile) + randB - (scoreSuggestionItem(a, profile) + randA);
+    });
     const nextFour = ranked.slice(0, 4);
     if (nextFour.length > 0) {
-      nextFour.forEach(item => {
-        shownIdsRef.current.add(item.id);
-        shownIdsRef.current.add(item.url);
-      });
+      recordShownItems(nextFour);
       setDailySlots(nextFour);
       const updated: TasteProfile = {
         ...profile,
@@ -1176,9 +1345,21 @@ const ThreeDSuggestions: React.FC<ThreeDSuggestionsProps> = ({ onSendToCalculato
         },
       };
       saveProfile(updated);
-      toast.success('¡4 nuevas sugerencias cargadas!');
+      if (!silent) {
+        toast.success('¡4 nuevas sugerencias cargadas!');
+      }
     }
-  };
+  }, [dailySlots, pool, profile, recordShownItems, saveProfile, selectedCategoryFilter]);
+
+  useEffect(() => {
+    const onRefreshEvent = () => {
+      if (hasInitializedSlotsRef.current && dailySlots.length > 0) {
+        handleRefreshFourNew(true);
+      }
+    };
+    window.addEventListener('refresh-3d-daily-suggestions', onRefreshEvent);
+    return () => window.removeEventListener('refresh-3d-daily-suggestions', onRefreshEvent);
+  }, [handleRefreshFourNew, dailySlots.length]);
 
   /**
    * AI + Live Platform Search:
@@ -1396,10 +1577,7 @@ Responde ÚNICAMENTE con un arreglo JSON válido con este formato exacto:
       }
 
       if (chosenRaw.length > 0) {
-        chosenRaw.forEach(item => {
-          shownIdsRef.current.add(item.id);
-          shownIdsRef.current.add(item.url);
-        });
+        recordShownItems(chosenRaw);
 
         setPool(prev => {
           const existingMap = new Map<string, PrintSuggestionItem>(prev.map(p => [p.id, p]));
@@ -1643,9 +1821,9 @@ Responde ÚNICAMENTE con un arreglo JSON válido con este formato exacto:
         </div>
       </div>
 
-      {/* VISTA 1: LAS 4 SUGERENCIAS DEL DÍA */}
+      {/* VISTA 1: LAS 4 SUGERENCIAS DEL DÍA (IMAGEN EN TODO EL FONDO + TEXTOS GRANDES SOBRE LA IMAGEN + BOTONES EN 1 RENGLÓN) */}
       {activeSubView === 'daily' && (
-        <div className="grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-4 gap-3.5">
+        <div className="grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-4 gap-4">
           <AnimatePresence mode="popLayout">
             {dailySlots.map((item, slotIndex) => {
               const isLiked = profile.likedIds.includes(item.id);
@@ -1662,190 +1840,182 @@ Responde ÚNICAMENTE con un arreglo JSON válido con este formato exacto:
                   animate={{ opacity: 1, scale: 1, y: 0 }}
                   exit={{ opacity: 0, scale: 0.9, y: -12 }}
                   transition={{ duration: 0.22 }}
-                  className="bg-slate-900/80 backdrop-blur-xl rounded-3xl border border-white/10 hover:border-amber-400/50 overflow-hidden shadow-xl flex flex-col justify-between group"
+                  className="relative h-[470px] sm:h-[490px] bg-slate-950 rounded-3xl border border-white/15 hover:border-amber-400/70 overflow-hidden shadow-2xl flex flex-col justify-between group"
                 >
-                  <div>
-                    {/* IMAGEN DEL MODELO CON CLIC DIRECTO GARANTIZADO */}
-                    <div
-                      onClick={e => openExternalModelUrl(item.url, e)}
-                      role="link"
-                      tabIndex={0}
-                      onKeyDown={e => {
-                        if (e.key === 'Enter' || e.key === ' ') openExternalModelUrl(item.url);
-                      }}
-                      className="relative h-36 w-full bg-slate-950 overflow-hidden cursor-pointer"
-                      title={`Haz clic para abrir "${item.title}" en ${item.platform}`}
-                    >
-                      <img
-                        src={displayImage}
-                        alt={item.title}
-                        onError={() => setBrokenImages(prev => ({ ...prev, [item.id]: true }))}
-                        className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500"
-                        loading="lazy"
-                      />
-                      <div className="absolute inset-0 bg-gradient-to-t from-slate-950 via-slate-950/20 to-transparent pointer-events-none" />
+                  {/* IMAGEN DEL MODELO CUBRIENDO TODO EL FONDO DE LA TARJETA */}
+                  <div
+                    onClick={e => openExternalModelUrl(item.url, e)}
+                    role="link"
+                    tabIndex={0}
+                    onKeyDown={e => {
+                      if (e.key === 'Enter' || e.key === ' ') openExternalModelUrl(item.url);
+                    }}
+                    className="absolute inset-0 w-full h-full cursor-pointer z-0"
+                    title={`Haz clic para abrir "${item.title}" en ${item.platform}`}
+                  >
+                    <img
+                      src={displayImage}
+                      alt={item.title}
+                      onError={() => setBrokenImages(prev => ({ ...prev, [item.id]: true }))}
+                      className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-700"
+                      loading="lazy"
+                    />
+                    {/* Sombra superior ligera para legibilidad de insignias */}
+                    <div className="absolute inset-x-0 top-0 h-28 bg-gradient-to-b from-slate-950/80 via-slate-950/25 to-transparent pointer-events-none" />
+                    {/* Gradiente inferior progresivo para que los textos grandes sobre la imagen se lean con nitidez */}
+                    <div className="absolute inset-x-0 bottom-0 h-[72%] bg-gradient-to-t from-slate-950 via-slate-950/88 to-transparent pointer-events-none" />
+                  </div>
 
-                      {/* Badges Superiores */}
-                      <div className="absolute top-3 left-3 right-3 flex items-center justify-between gap-2 pointer-events-none">
-                        <span
-                          className={`text-[10px] font-black uppercase px-2.5 py-1 rounded-full border backdrop-blur-md ${badgeStyle.bg} ${badgeStyle.text} ${badgeStyle.border}`}
-                        >
-                          {item.platform}
-                        </span>
-                        <span className="text-[10px] font-black px-2.5 py-1 rounded-full bg-slate-950/80 text-amber-300 border border-amber-500/30 backdrop-blur-md">
+                  {/* BADGES SUPERIORES SOBRE LA IMAGEN */}
+                  <div className="relative z-10 p-3.5 flex flex-col gap-2 pointer-events-none">
+                    <div className="flex items-center justify-between gap-2">
+                      <span
+                        className={`text-[11px] font-black uppercase px-2.5 py-1 rounded-full border backdrop-blur-md shadow-md ${badgeStyle.bg} ${badgeStyle.text} ${badgeStyle.border}`}
+                      >
+                        {item.platform}
+                      </span>
+                      <div className="flex items-center gap-1.5">
+                        <span className="text-[11px] font-black px-2.5 py-1 rounded-full bg-slate-950/85 text-amber-300 border border-amber-500/40 backdrop-blur-md shadow-md">
                           {item.demandBadge}
                         </span>
-                      </div>
-
-                      {/* Afinidad y Precio Sugerido sobre la imagen */}
-                      <div className="absolute bottom-2.5 left-3 right-3 flex items-center justify-between pointer-events-none">
-                        <span className="text-[10px] font-bold text-gray-200 bg-black/70 backdrop-blur-md px-2 py-0.5 rounded-lg border border-white/10 flex items-center gap-1">
-                          <ExternalLink size={10} className="text-amber-400" />
-                          {item.category}
-                        </span>
-                        <span className="text-xs font-black text-emerald-300 bg-emerald-950/90 border border-emerald-500/40 px-2.5 py-1 rounded-xl shadow">
-                          Venta sug: ${item.suggestedPriceMxn} MXN
+                        <span
+                          className="text-[11px] font-black text-indigo-200 bg-indigo-950/85 border border-indigo-400/40 px-2 py-1 rounded-full backdrop-blur-md shadow-md"
+                          title="Porcentaje de coincidencia con tu perfil de gustos"
+                        >
+                          {affinityScore}%
                         </span>
                       </div>
                     </div>
 
-                    {/* CONTENIDO DE LA TARJETA */}
-                    <div className="p-3 space-y-2">
-                      <div
-                        onClick={e => openExternalModelUrl(item.url, e)}
-                        className="flex items-start justify-between gap-2 cursor-pointer group/title"
-                        title={`Abrir modelo en ${item.platform}`}
-                      >
-                        <h3 className="text-sm font-black text-white group-hover/title:text-amber-300 transition-colors line-clamp-2 leading-snug underline decoration-white/20 group-hover/title:decoration-amber-400">
-                          {item.title}
-                        </h3>
-                        <span
-                          className="text-[10px] font-black text-indigo-300 bg-indigo-500/15 border border-indigo-500/30 px-2 py-0.5 rounded-lg shrink-0"
-                          title="Porcentaje de coincidencia con tu perfil de gustos"
-                        >
-                          {affinityScore}% Match
-                        </span>
-                      </div>
-
-                      <p
-                        onClick={e => openExternalModelUrl(item.url, e)}
-                        className="text-xs text-gray-300 line-clamp-2 leading-relaxed cursor-pointer hover:text-white transition-colors"
-                      >
-                        {item.description}
-                      </p>
-
-                      {/* Por qué se vende */}
-                      <div
-                        onClick={e => openExternalModelUrl(item.url, e)}
-                        className="p-2.5 rounded-xl bg-emerald-500/10 border border-emerald-500/20 text-[11px] text-emerald-200 leading-snug cursor-pointer hover:bg-emerald-500/15 transition-colors"
-                      >
-                        <strong className="text-emerald-400 font-black uppercase text-[9px] block mb-0.5">
-                          💡 Por qué se vende bien:
-                        </strong>
-                        {item.whyItSells}
-                      </div>
-
-                      {/* Métricas rápidas de impresión */}
-                      <div className="grid grid-cols-3 gap-1.5 text-center bg-white/5 rounded-xl p-2 border border-white/5">
-                        <div>
-                          <span className="text-[9px] text-gray-400 uppercase block font-bold">Peso Est.</span>
-                          <span className="text-xs font-black text-white">{item.estimatedGrams}g {item.material}</span>
-                        </div>
-                        <div className="border-x border-white/10">
-                          <span className="text-[9px] text-gray-400 uppercase block font-bold">Tiempo</span>
-                          <span className="text-xs font-black text-cyan-300">{item.estimatedHours} hrs</span>
-                        </div>
-                        <div>
-                          <span className="text-[9px] text-gray-400 uppercase block font-bold">Costo Fil.</span>
-                          <span className="text-xs font-black text-amber-300">
-                            ~${Math.round(item.estimatedGrams * 0.4)}
-                          </span>
-                        </div>
-                      </div>
-
-                      {/* Buscador directo de este modelo en las 5 páginas principales */}
-                      <div>
-                        <span className="text-[9px] font-bold uppercase text-gray-400 block mb-1">
-                          Buscar también en otras plataformas:
-                        </span>
-                        <div className="flex flex-wrap gap-1">
-                          {(['MakerWorld', 'Printables', 'Cults3D', 'Thangs', 'Thingiverse'] as PlatformName[]).map(
-                            plat => {
-                              const platUrl = buildPlatformSearchUrl(plat, item.searchKeyword || item.title);
-                              return (
-                                <button
-                                  key={plat}
-                                  type="button"
-                                  onClick={e => openExternalModelUrl(platUrl, e)}
-                                  className="text-[9px] font-bold px-2 py-1 rounded-md bg-white/5 hover:bg-indigo-500/30 text-gray-300 hover:text-white border border-white/10 hover:border-indigo-400/40 transition-all cursor-pointer"
-                                >
-                                  {plat} ↗
-                                </button>
-                              );
-                            }
-                          )}
-                        </div>
-                      </div>
+                    <div className="flex items-center justify-between gap-2">
+                      <span className="text-[11px] font-bold text-white bg-black/70 backdrop-blur-md px-2.5 py-1 rounded-xl border border-white/15 flex items-center gap-1 shadow">
+                        <ExternalLink size={11} className="text-amber-400 shrink-0" />
+                        <span className="truncate">{item.category}</span>
+                      </span>
+                      <span className="text-xs sm:text-sm font-black text-emerald-300 bg-emerald-950/90 border border-emerald-400/50 px-2.5 py-1 rounded-xl shadow-lg backdrop-blur-md shrink-0">
+                        Venta: ${item.suggestedPriceMxn} MXN
+                      </span>
                     </div>
                   </div>
 
-                  {/* BOTONES DE ACCIÓN Y APRENDIZAJE */}
-                  <div className="p-3 pt-0 space-y-1.5">
-                    <div className="grid grid-cols-2 gap-2">
+                  {/* TEXTOS GRANDES Y BOTONES EN 1 SOLO RENGLÓN SOBRE LA PARTE INFERIOR DE LA IMAGEN */}
+                  <div className="relative z-10 p-3.5 pt-0 mt-auto space-y-2.5">
+                    <div
+                      onClick={e => openExternalModelUrl(item.url, e)}
+                      className="cursor-pointer group/title space-y-1"
+                      title={`Abrir "${item.title}" en ${item.platform}`}
+                    >
+                      <h3 className="text-base sm:text-lg font-black text-white group-hover/title:text-amber-300 transition-colors line-clamp-2 leading-tight drop-shadow-[0_2px_8px_rgba(0,0,0,0.95)] underline decoration-white/25 group-hover/title:decoration-amber-400">
+                        {item.title}
+                      </h3>
+
+                      <p className="text-xs sm:text-sm font-medium text-gray-100 line-clamp-2 leading-snug drop-shadow-[0_1px_6px_rgba(0,0,0,0.95)]">
+                        {item.description}
+                      </p>
+                    </div>
+
+                    {/* Por qué se vende (compacto y con letra más grande) */}
+                    <div
+                      onClick={e => openExternalModelUrl(item.url, e)}
+                      className="px-2.5 py-1.5 rounded-xl bg-emerald-950/75 backdrop-blur-md border border-emerald-500/35 text-xs text-emerald-100 leading-snug cursor-pointer hover:bg-emerald-900/80 transition-colors line-clamp-2"
+                    >
+                      <strong className="text-emerald-300 font-black uppercase text-[10px] mr-1">
+                        💡 Rentabilidad:
+                      </strong>
+                      {item.whyItSells}
+                    </div>
+
+                    {/* Métricas rápidas de impresión con letra más grande */}
+                    <div className="grid grid-cols-3 gap-1.5 text-center bg-black/65 backdrop-blur-md rounded-xl p-2 border border-white/15">
+                      <div>
+                        <span className="text-[10px] text-gray-300 uppercase block font-bold">Peso Est.</span>
+                        <span className="text-xs sm:text-sm font-black text-white">
+                          {item.estimatedGrams}g {item.material}
+                        </span>
+                      </div>
+                      <div className="border-x border-white/15">
+                        <span className="text-[10px] text-gray-300 uppercase block font-bold">Tiempo</span>
+                        <span className="text-xs sm:text-sm font-black text-cyan-300">{item.estimatedHours} hrs</span>
+                      </div>
+                      <div>
+                        <span className="text-[10px] text-gray-300 uppercase block font-bold">Costo Fil.</span>
+                        <span className="text-xs sm:text-sm font-black text-amber-300">
+                          ~${Math.round(item.estimatedGrams * 0.4)}
+                        </span>
+                      </div>
+                    </div>
+
+                    {/* Buscador directo en otras plataformas en una sola línea compacta */}
+                    <div className="flex items-center gap-1 overflow-x-auto no-scrollbar">
+                      {(['MakerWorld', 'Printables', 'Cults3D', 'Thangs', 'Thingiverse'] as PlatformName[]).map(plat => {
+                        const platUrl = buildPlatformSearchUrl(plat, item.searchKeyword || item.title);
+                        return (
+                          <button
+                            key={plat}
+                            type="button"
+                            onClick={e => openExternalModelUrl(platUrl, e)}
+                            className="text-[10px] font-bold px-2 py-0.5 rounded-lg bg-black/60 hover:bg-indigo-600/70 text-gray-200 hover:text-white border border-white/15 hover:border-indigo-400/50 transition-all cursor-pointer shrink-0 backdrop-blur-sm"
+                          >
+                            {plat} ↗
+                          </button>
+                        );
+                      })}
+                    </div>
+
+                    {/* BARRA DE ACCIONES EN UN SOLO RENGLÓN: Manita Abajo Roja | Manita Arriba Verde | Ver STL | Calculadora | Compartir Cliente */}
+                    <div className="flex items-center gap-1.5 pt-0.5">
                       <button
                         type="button"
                         onClick={e => handleDislikeAndReplace(slotIndex, item, e)}
-                        className="flex items-center justify-center gap-1.5 py-2.5 px-3 rounded-xl bg-rose-500/15 hover:bg-rose-500/30 text-rose-300 border border-rose-500/30 text-xs font-black uppercase tracking-wider transition-all cursor-pointer"
-                        title="Descartar esta sugerencia y mostrar otra inmediatamente"
+                        className="w-10 h-10 sm:w-11 sm:h-11 shrink-0 flex items-center justify-center rounded-xl bg-rose-500/30 hover:bg-rose-500/50 text-rose-300 hover:text-white border border-rose-500/50 transition-all shadow-lg backdrop-blur-md cursor-pointer active:scale-95"
+                        title="No me interesa (descartar y cambiar por otra sugerencia)"
+                        aria-label="No me interesa"
                       >
-                        <ThumbsDown size={14} />
-                        <span>No me interesa</span>
+                        <ThumbsDown size={19} strokeWidth={2.5} />
                       </button>
 
                       <button
                         type="button"
                         onClick={e => handleLikeAndSave(item, e)}
-                        className={`flex items-center justify-center gap-1.5 py-2.5 px-3 rounded-xl text-xs font-black uppercase tracking-wider transition-all border cursor-pointer ${
+                        className={`w-10 h-10 sm:w-11 sm:h-11 shrink-0 flex items-center justify-center rounded-xl transition-all border shadow-lg backdrop-blur-md cursor-pointer active:scale-95 ${
                           isLiked
-                            ? 'bg-emerald-500 text-slate-950 border-emerald-400 shadow-lg shadow-emerald-500/20'
-                            : 'bg-emerald-500/15 hover:bg-emerald-500/30 text-emerald-300 border-emerald-500/30'
+                            ? 'bg-emerald-500 text-slate-950 border-emerald-300 shadow-emerald-500/30'
+                            : 'bg-emerald-500/30 hover:bg-emerald-500/50 text-emerald-300 hover:text-white border-emerald-500/50'
                         }`}
-                        title="Me gusta: guardar en favoritos y pedir más ideas similares"
+                        title={isLiked ? '¡Guardada en Favoritos!' : 'Me interesa (guardar en favoritos)'}
+                        aria-label="Me interesa"
                       >
-                        <ThumbsUp size={14} />
-                        <span>{isLiked ? '¡Guardada!' : 'Me Interesa'}</span>
+                        <ThumbsUp size={19} strokeWidth={2.5} />
                       </button>
-                    </div>
 
-                    <div className="grid grid-cols-3 gap-1.5">
                       <button
                         type="button"
                         onClick={e => openExternalModelUrl(item.url, e)}
-                        className="flex items-center justify-center gap-1 py-2.5 px-2 rounded-xl bg-gradient-to-r from-indigo-600 to-blue-600 hover:from-indigo-500 hover:to-blue-500 text-white text-[10px] font-black uppercase tracking-wider transition-all shadow-md cursor-pointer"
-                        title="Abrir enlace directo al archivo 3D"
+                        className="flex-1 h-10 sm:h-11 px-2.5 flex items-center justify-center gap-1.5 rounded-xl bg-gradient-to-r from-indigo-600 to-blue-600 hover:from-indigo-500 hover:to-blue-500 text-white text-xs sm:text-sm font-black uppercase tracking-wider transition-all shadow-lg cursor-pointer active:scale-95 whitespace-nowrap"
+                        title="Abrir enlace directo al archivo 3D STL/3MF"
                       >
-                        <ExternalLink size={12} />
+                        <ExternalLink size={15} className="shrink-0" />
                         <span>Ver STL</span>
                       </button>
 
                       <button
                         type="button"
                         onClick={e => handleQuoteItem(item, e)}
-                        className="flex items-center justify-center gap-1 py-2.5 px-2 rounded-xl bg-white/10 hover:bg-white/20 text-cyan-300 border border-cyan-500/30 text-[10px] font-bold transition-all cursor-pointer"
-                        title="Cargar peso y horas en la Calculadora 3D"
+                        className="w-10 h-10 sm:w-11 sm:h-11 shrink-0 flex items-center justify-center rounded-xl bg-cyan-500/30 hover:bg-cyan-500/50 text-cyan-200 hover:text-white border border-cyan-400/50 transition-all shadow-lg backdrop-blur-md cursor-pointer active:scale-95"
+                        title="Cotizar en la Calculadora 3D"
+                        aria-label="Cotizar"
                       >
-                        <Calculator size={12} />
-                        <span>Cotizar</span>
+                        <Calculator size={19} strokeWidth={2.3} />
                       </button>
 
                       <button
                         type="button"
                         onClick={e => handleCopyCustomerCard(item, e)}
-                        className="flex items-center justify-center gap-1 py-2.5 px-2 rounded-xl bg-amber-500/15 hover:bg-amber-500/30 text-amber-300 border border-amber-500/30 text-[10px] font-black uppercase tracking-wider transition-all cursor-pointer"
-                        title="Copiar ficha comercial para mostrar a clientes en WhatsApp/Estados (sin links STL)"
+                        className="w-10 h-10 sm:w-11 sm:h-11 shrink-0 flex items-center justify-center rounded-xl bg-amber-500/30 hover:bg-amber-500/50 text-amber-300 hover:text-white border border-amber-400/50 transition-all shadow-lg backdrop-blur-md cursor-pointer active:scale-95"
+                        title="Cliente: Copiar ficha comercial para mostrar en WhatsApp/Estados (sin links STL)"
+                        aria-label="Compartir con cliente"
                       >
-                        <Share2 size={12} />
-                        <span>Cliente</span>
+                        <Share2 size={19} strokeWidth={2.3} />
                       </button>
                     </div>
                   </div>
@@ -1866,7 +2036,7 @@ Responde ÚNICAMENTE con un arreglo JSON válido con este formato exacto:
                 <span>Mis Ideas Guardadas para Vender ({profile.savedItems.length})</span>
               </h3>
               <p className="text-xs text-gray-400">
-                Catálogo personal de modelos que marcaste con "Me interesa".
+                Catálogo personal de modelos que marcaste con la manita verde arriba.
               </p>
             </div>
           </div>
@@ -1875,7 +2045,7 @@ Responde ÚNICAMENTE con un arreglo JSON válido con este formato exacto:
             <div className="p-10 text-center bg-slate-950/50 rounded-2xl border border-white/5 space-y-2">
               <p className="text-sm font-bold text-gray-300">Aún no has guardado sugerencias favoritas.</p>
               <p className="text-xs text-gray-500">
-                Pulsa el botón verde "Me Interesa" en cualquiera de las 4 sugerencias del día para guardarlas aquí y entrenar tus gustos.
+                Pulsa el botón verde de manita arriba en cualquiera de las 4 sugerencias del día para guardarlas aquí y entrenar tus gustos.
               </p>
             </div>
           ) : (
@@ -1887,67 +2057,78 @@ Responde ÚNICAMENTE con un arreglo JSON válido con este formato exacto:
                 return (
                   <div
                     key={item.id}
-                    className="bg-slate-950/80 rounded-2xl border border-white/10 overflow-hidden flex flex-col justify-between"
+                    className="relative h-[380px] bg-slate-950 rounded-3xl border border-white/15 hover:border-emerald-400/60 overflow-hidden flex flex-col justify-between group shadow-xl"
                   >
                     <div
                       onClick={e => openExternalModelUrl(item.url, e)}
-                      className="cursor-pointer"
+                      className="absolute inset-0 w-full h-full cursor-pointer z-0"
                     >
-                      <div className="relative h-40">
-                        <img
-                          src={displayImage}
-                          alt={item.title}
-                          onError={() => setBrokenImages(prev => ({ ...prev, [item.id]: true }))}
-                          className="w-full h-full object-cover"
-                        />
-                        <span className="absolute top-2 left-2 text-[10px] font-black uppercase px-2 py-0.5 rounded-full bg-slate-950/80 text-emerald-300 border border-emerald-500/30">
-                          {item.platform}
-                        </span>
-                        <span className="absolute bottom-2 right-2 text-xs font-black px-2 py-0.5 rounded-lg bg-emerald-950/90 text-emerald-300 border border-emerald-500/30">
-                          ${item.suggestedPriceMxn} MXN
-                        </span>
-                      </div>
-                      <div className="p-3.5 space-y-2">
-                        <h4 className="text-xs font-black text-white hover:text-amber-300 line-clamp-1 underline decoration-white/20">
+                      <img
+                        src={displayImage}
+                        alt={item.title}
+                        onError={() => setBrokenImages(prev => ({ ...prev, [item.id]: true }))}
+                        className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-700"
+                      />
+                      <div className="absolute inset-x-0 top-0 h-20 bg-gradient-to-b from-slate-950/75 to-transparent pointer-events-none" />
+                      <div className="absolute inset-x-0 bottom-0 h-[65%] bg-gradient-to-t from-slate-950 via-slate-950/88 to-transparent pointer-events-none" />
+                    </div>
+
+                    <div className="relative z-10 p-3 flex items-center justify-between pointer-events-none">
+                      <span className="text-[11px] font-black uppercase px-2.5 py-1 rounded-full bg-slate-950/85 text-emerald-300 border border-emerald-500/40 backdrop-blur-md">
+                        {item.platform}
+                      </span>
+                      <span className="text-xs sm:text-sm font-black px-2.5 py-1 rounded-xl bg-emerald-950/90 text-emerald-300 border border-emerald-400/50 backdrop-blur-md">
+                        ${item.suggestedPriceMxn} MXN
+                      </span>
+                    </div>
+
+                    <div className="relative z-10 p-3.5 pt-0 mt-auto space-y-2.5">
+                      <div
+                        onClick={e => openExternalModelUrl(item.url, e)}
+                        className="cursor-pointer space-y-1"
+                      >
+                        <h4 className="text-base font-black text-white hover:text-amber-300 line-clamp-2 leading-tight drop-shadow-[0_2px_8px_rgba(0,0,0,0.95)] underline decoration-white/25">
                           {item.title}
                         </h4>
-                        <p className="text-[11px] text-gray-400 line-clamp-2">{item.description}</p>
+                        <p className="text-xs sm:text-sm text-gray-200 line-clamp-2 drop-shadow-[0_1px_5px_rgba(0,0,0,0.95)]">
+                          {item.description}
+                        </p>
                       </div>
-                    </div>
-                    <div className="p-3.5 pt-0 flex items-center gap-1.5">
-                      <button
-                        type="button"
-                        onClick={e => openExternalModelUrl(item.url, e)}
-                        className="flex-1 flex items-center justify-center gap-1 py-2 bg-indigo-600 hover:bg-indigo-500 text-white rounded-xl text-xs font-bold cursor-pointer"
-                      >
-                        <ExternalLink size={12} />
-                        <span>STL</span>
-                      </button>
-                      <button
-                        type="button"
-                        onClick={e => handleCopyCustomerCard(item, e)}
-                        className="px-2.5 py-2 bg-amber-500/20 hover:bg-amber-500/30 text-amber-300 rounded-xl border border-amber-500/30 text-xs font-bold flex items-center gap-1 cursor-pointer"
-                        title="Copiar Ficha Comercial para Cliente (sin links STL)"
-                      >
-                        <Share2 size={13} />
-                        <span>Cliente</span>
-                      </button>
-                      <button
-                        type="button"
-                        onClick={e => handleQuoteItem(item, e)}
-                        className="p-2 bg-cyan-500/20 hover:bg-cyan-500/30 text-cyan-300 rounded-xl border border-cyan-500/30 cursor-pointer"
-                        title="Enviar al Cotizador"
-                      >
-                        <Calculator size={14} />
-                      </button>
-                      <button
-                        type="button"
-                        onClick={e => handleRemoveSaved(item.id, e)}
-                        className="p-2 bg-rose-500/20 hover:bg-rose-500/30 text-rose-300 rounded-xl border border-rose-500/30 cursor-pointer"
-                        title="Quitar de guardados"
-                      >
-                        <Trash2 size={14} />
-                      </button>
+
+                      <div className="flex items-center gap-1.5 pt-1">
+                        <button
+                          type="button"
+                          onClick={e => openExternalModelUrl(item.url, e)}
+                          className="flex-1 h-10 flex items-center justify-center gap-1.5 bg-gradient-to-r from-indigo-600 to-blue-600 hover:from-indigo-500 hover:to-blue-500 text-white rounded-xl text-xs sm:text-sm font-black uppercase cursor-pointer shadow-md"
+                        >
+                          <ExternalLink size={15} />
+                          <span>Ver STL</span>
+                        </button>
+                        <button
+                          type="button"
+                          onClick={e => handleQuoteItem(item, e)}
+                          className="w-10 h-10 shrink-0 flex items-center justify-center bg-cyan-500/30 hover:bg-cyan-500/50 text-cyan-200 rounded-xl border border-cyan-400/50 cursor-pointer"
+                          title="Cotizar en la Calculadora 3D"
+                        >
+                          <Calculator size={18} />
+                        </button>
+                        <button
+                          type="button"
+                          onClick={e => handleCopyCustomerCard(item, e)}
+                          className="w-10 h-10 shrink-0 flex items-center justify-center bg-amber-500/30 hover:bg-amber-500/50 text-amber-300 rounded-xl border border-amber-400/50 cursor-pointer"
+                          title="Copiar Ficha Comercial para Cliente (sin links STL)"
+                        >
+                          <Share2 size={18} />
+                        </button>
+                        <button
+                          type="button"
+                          onClick={e => handleRemoveSaved(item.id, e)}
+                          className="w-10 h-10 shrink-0 flex items-center justify-center bg-rose-500/30 hover:bg-rose-500/50 text-rose-300 rounded-xl border border-rose-500/50 cursor-pointer"
+                          title="Quitar de guardados"
+                        >
+                          <Trash2 size={18} />
+                        </button>
+                      </div>
                     </div>
                   </div>
                 );
