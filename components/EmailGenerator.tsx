@@ -2539,6 +2539,44 @@ const EmailGenerator: React.FC<EmailGeneratorProps> = ({ attachedImages, onAttac
                                         </p>
                                     </div>
 
+                                    {/* Caja de WhatsApp (Misma Idea) */}
+                                    {generatedContent.whatsappMessage && (
+                                        <div className="p-3 bg-slate-950/90 rounded-xl border border-emerald-500/30 space-y-1.5">
+                                            <div className="flex items-center justify-between">
+                                                <span className="text-[9.5px] font-black text-emerald-300 uppercase flex items-center gap-1">
+                                                    <MessageSquare size={11} />
+                                                    Mensaje WhatsApp (Misma Idea):
+                                                </span>
+                                                <button
+                                                    type="button"
+                                                    onClick={() => handleCopyToClipboard(generatedContent.whatsappMessage, 
+'whatsapp'
+)}
+                                                    className="text-[10px] text-gray-400 hover:text-white flex items-center gap-1 cursor-pointer"
+                                                >
+                                                    <Copy size={11} />
+                                                    <span>{copied === 
+'whatsapp'
+ ? 
+'¡Copiado!'
+ : 
+'Copiar'
+}</span>
+                                                </button>
+                                            </div>
+                                            <p className="text-[11px] text-emerald-100/95 whitespace-pre-wrap leading-relaxed max-h-40 overflow-y-auto">
+                                                {generatedContent.whatsappMessage}
+                                            </p>
+                                            <button
+                                                type="button"
+                                                onClick={() => handleSendWhatsApp(generatedContent.whatsappMessage)}
+                                                className="w-full py-2 bg-gradient-to-r from-emerald-500 to-green-600 hover:from-emerald-400 text-white rounded-xl text-[10.5px] font-black uppercase tracking-wider flex items-center justify-center gap-1.5 shadow-md active:scale-95 transition-all cursor-pointer"
+                                            >
+                                                <MessageSquare size={13} />
+                                                <span>Enviar por WhatsApp</span>
+                                            </button>
+                                        </div>
+                                    )}
                                     {/* Botones de Adjuntos y Envío en Plegado */}
                                     <div className="space-y-2 pt-1">
                                         <div className="flex items-center justify-between gap-2">
@@ -3451,6 +3489,46 @@ const EmailGenerator: React.FC<EmailGeneratorProps> = ({ attachedImages, onAttac
                                             </button>
                                         </div>
                                     </div>
+                                    {/* Tarjeta WhatsApp con la Misma Idea */}
+                                    {generatedContent.whatsappMessage && (
+                                        <div className="bg-slate-900/95 border-2 border-emerald-500/40 rounded-3xl p-4 shadow-2xl space-y-3">
+                                            <div className="flex items-center justify-between border-b border-gray-800 pb-2">
+                                                <span className="text-xs font-black uppercase text-emerald-400 flex items-center gap-1.5">
+                                                    <MessageSquare size={16} />
+                                                    <span>Mensaje para WhatsApp (Misma Idea)</span>
+                                                </span>
+                                                <button
+                                                    type="button"
+                                                    onClick={() => handleCopyToClipboard(generatedContent.whatsappMessage, 
+'whatsapp'
+)}
+                                                    className="text-[10px] text-gray-400 hover:text-white flex items-center gap-1 cursor-pointer"
+                                                >
+                                                    <Copy size={11} />
+                                                    <span>{copied === 
+'whatsapp'
+ ? 
+'¡Copiado!'
+ : 
+'Copiar'
+}</span>
+                                                </button>
+                                            </div>
+                                            <div className="p-3 bg-slate-950/90 rounded-xl border border-emerald-500/30 max-h-44 overflow-y-auto">
+                                                <p className="text-xs text-emerald-100/95 whitespace-pre-wrap leading-relaxed">
+                                                    {generatedContent.whatsappMessage}
+                                                </p>
+                                            </div>
+                                            <button
+                                                type="button"
+                                                onClick={() => handleSendWhatsApp(generatedContent.whatsappMessage)}
+                                                className="w-full py-2.5 bg-gradient-to-r from-emerald-500 to-green-600 hover:from-emerald-400 text-white rounded-xl text-xs font-black uppercase tracking-wider flex items-center justify-center gap-2 shadow-lg cursor-pointer active:scale-95 transition-all"
+                                            >
+                                                <MessageSquare size={14} />
+                                                <span>Enviar por WhatsApp</span>
+                                            </button>
+                                        </div>
+                                    )}
                                 </div>
                             ) : (
                                 /* Estado Vacío Elegante (Placeholder antes de redactar) */
@@ -4972,6 +5050,49 @@ const EmailGenerator: React.FC<EmailGeneratorProps> = ({ attachedImages, onAttac
                                     </div>
                                 </div>
 
+                                {/* TARJETA DE WHATSAPP (MISMA IDEA REDACTADA PARA CHAT RÁPIDO) */}
+                                {generatedContent.whatsappMessage && (
+                                    <div key="card-wa" className="bg-gray-900/90 rounded-2xl border border-emerald-500/30 overflow-hidden shadow-xl">
+                                        <div className="bg-gray-800/80 px-4 py-2.5 border-b border-gray-800 flex justify-between items-center">
+                                            <div className="flex items-center gap-2">
+                                                <div className="p-1.5 bg-green-600/20 text-green-400 rounded-lg border border-green-500/30">
+                                                    <MessageSquare size={14} />
+                                                </div>
+                                                <span className="text-xs font-black uppercase text-green-400">Mensaje para WhatsApp (Misma Idea)</span>
+                                            </div>
+                                            <div className="flex items-center gap-1.5">
+                                                <button 
+                                                    type="button"
+                                                    onClick={() => handleCopyToClipboard(generatedContent.whatsappMessage, 'whatsapp')} 
+                                                    className={`px-3 py-1.5 rounded-lg text-xs font-bold border transition-all flex items-center gap-1.5 cursor-pointer ${
+                                                        copied === 'whatsapp' ? 'bg-green-600 text-white border-green-500' : 'bg-gray-800 text-gray-300 border-gray-700 hover:bg-gray-700'
+                                                    }`}
+                                                >
+                                                    <Copy size={13} />
+                                                    <span>{copied === 'whatsapp' ? '¡Copiado!' : 'Copiar'}</span>
+                                                </button>
+                                            </div>
+                                        </div>
+                                        <div className="p-4 space-y-3">
+                                            <textarea 
+                                                value={generatedContent.whatsappMessage} 
+                                                onChange={e => setGeneratedContent({ ...generatedContent, whatsappMessage: e.target.value })} 
+                                                onContextMenu={e => handleContextMenu(e, 'whatsapp', 'whatsappMessage')} 
+                                                className="w-full h-32 bg-gray-800/40 border border-gray-700/80 rounded-xl p-3 text-xs text-gray-200 font-sans resize-none outline-none focus:border-green-500 leading-relaxed shadow-inner" 
+                                                placeholder="Mensaje breve para WhatsApp con la misma idea..."
+                                            />
+                                            <button 
+                                                type="button"
+                                                onClick={() => handleSendWhatsApp(generatedContent.whatsappMessage)} 
+                                                className="w-full py-2.5 bg-gradient-to-r from-green-600 to-green-700 hover:from-green-500 hover:to-green-600 text-white rounded-xl font-black text-xs uppercase tracking-widest shadow-md flex items-center justify-center gap-2 hover:scale-[1.01] active:scale-[0.99] transition-all cursor-pointer border border-green-400/30"
+                                            >
+                                                <MessageSquare size={14}/> 
+                                                <span>Enviar por WhatsApp</span>
+                                            </button>
+                                        </div>
+                                    </div>
+                                )}
+
                                 {/* IDEA MEJORADA */}
                                 {generatedContent.improvedIdea && (
                                     <div className="bg-gradient-to-br from-purple-900/20 to-indigo-900/10 rounded-2xl border border-purple-500/20 p-3 shadow-md flex items-center justify-between gap-3">
@@ -5489,6 +5610,15 @@ const EmailGenerator: React.FC<EmailGeneratorProps> = ({ attachedImages, onAttac
                                         >
                                             <Copy size={12} />
                                             <span>{copied === 'preset-email' ? 'Copiado!' : 'Copiar'}</span>
+                                        </button>
+                                        <button
+                                            type="button"
+                                            onClick={() => handleSendWhatsApp(livePreview.whatsappMessage)}
+                                            className="px-2.5 py-1.5 bg-green-600/20 hover:bg-green-600 text-green-300 hover:text-white rounded-xl text-xs font-bold border border-green-500/40 transition-all flex items-center justify-center gap-1 cursor-pointer"
+                                            title="Enviar mensaje breve por WhatsApp"
+                                        >
+                                            <MessageSquare size={12} />
+                                            <span>WhatsApp</span>
                                         </button>
                                         <button
                                             type="button"
