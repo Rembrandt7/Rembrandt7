@@ -19,6 +19,7 @@ const INITIAL_TABS: TabConfig[] = [
     { id: 'listas', label: 'Listas', type: 'system', componentKey: 'Listas', isVisible: true, icon: 'CheckSquare' },
     { id: 'bodega', label: 'Bodega', type: 'system', componentKey: 'Bodega', isVisible: true, icon: 'Archive' },
     { id: 'edicion', label: 'Edición', type: 'system', componentKey: 'Edición', isVisible: true, icon: 'Sliders' },
+    { id: 'pdf-remb', label: 'PDF', type: 'system', componentKey: 'PDF', isVisible: true, icon: 'FileText' },
 ];
 
 const isDeprecatedTab = (t: any) =>

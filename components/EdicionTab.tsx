@@ -36,8 +36,10 @@ import {
   Grid,
   Palette,
   CloudFog,
-  X
+  X,
+  FileText
 } from 'lucide-react';
+import { PdfRembTab } from './PdfRembTab';
 import { toast } from 'sonner';
 import { jsPDF } from 'jspdf';
 import { saveMediaBlob, saveMediaUrl } from '../utils/mediaExportHelper';
@@ -83,6 +85,10 @@ function isPhotoFile(file: File): boolean {
 
 function isVideoFile(file: File): boolean {
   return file.type.startsWith('video/') || VIDEO_EXTENSIONS.test(file.name);
+}
+
+function isPdfFile(file: File): boolean {
+  return file.type === 'application/pdf' || /\.pdf$/i.test(file.name);
 }
 
 export type ColorChannelId =
@@ -511,6 +517,8 @@ const EdicionTab: React.FC = () => {
   const previewCanvasRef = useRef<HTMLCanvasElement | null>(null);
   const photoInputRef = useRef<HTMLInputElement | null>(null);
   const universalInputRef = useRef<HTMLInputElement | null>(null);
+  const [edicionSubMode, setEdicionSubMode] = useState<'media' | 'pdf'>('media');
+  const [droppedPdfFiles, setDroppedPdfFiles] = useState<File[]>([]);
   const baseGeometryCacheRef = useRef<{
     key: string;
     width: number;
@@ -942,15 +950,23 @@ const EdicionTab: React.FC = () => {
   const handleAutoDetectFiles = (files: FileList | null) => {
     if (!files || files.length === 0) return;
     const arr = Array.from(files);
+    if (arr.some(isPdfFile)) {
+      setDroppedPdfFiles(arr.filter(isPdfFile));
+      setEdicionSubMode('pdf');
+      toast.success('Archivo PDF detectado → Abriendo Remb PDF 2.0');
+      return;
+    }
     if (arr.some(isVideoFile)) {
+      setEdicionSubMode('media');
       handleVideoFiles(arr);
       return;
     }
     if (arr.some(isPhotoFile)) {
+      setEdicionSubMode('media');
       handlePhotoFiles(arr);
       return;
     }
-    toast.error('Formato no reconocido. Arrastra una foto (JPG, PNG, WEBP, AVIF) o un video (MP4, WEBM, MOV).');
+    toast.error('Formato no reconocido. Arrastra una foto (JPG, PNG, WEBP, AVIF), un video (MP4, WEBM, MOV) o un PDF.');
   };
 
   // High-Speed 60fps Camera Raw Pixel Processing Engine
@@ -2585,7 +2601,7 @@ const EdicionTab: React.FC = () => {
       <input
         ref={universalInputRef}
         type="file"
-        accept="image/*,video/*,.jpg,.jpeg,.png,.webp,.avif,.gif,.bmp,.mp4,.webm,.mov,.mkv,.m4v,.avi"
+        accept="image/*,video/*,application/pdf,.pdf,.jpg,.jpeg,.png,.webp,.avif,.gif,.bmp,.mp4,.webm,.mov,.mkv,.m4v,.avi"
         multiple
         className="hidden"
         onChange={(e) => {
@@ -2593,6 +2609,51 @@ const EdicionTab: React.FC = () => {
           e.currentTarget.value = '';
         }}
       />
+
+      {/* BARRA SUPERIOR DE INTERCAMBIO EN EDICIÓN: FOTO/VIDEO AL LADO DE PDF */}
+      <div className="flex flex-wrap items-center justify-between gap-2 bg-gray-950/90 border border-white/10 rounded-2xl px-3.5 py-2 shadow-lg">
+        <div className="flex items-center gap-2">
+          <button
+            type="button"
+            onClick={() => setEdicionSubMode('media')}
+            className={`px-4 py-2 rounded-xl text-xs sm:text-sm font-extrabold flex items-center gap-2 transition-all border ${
+              edicionSubMode === 'media'
+                ? 'bg-gradient-to-r from-purple-600/35 to-amber-500/30 border-purple-400/60 text-white shadow-[0_0_18px_rgba(168,85,247,0.3)]'
+                : 'bg-white/5 border-white/10 text-gray-400 hover:text-white hover:bg-white/10'
+            }`}
+          >
+            <Camera size={16} className="text-purple-300" />
+            <span>Foto y Video</span>
+          </button>
+
+          <button
+            type="button"
+            onClick={() => setEdicionSubMode('pdf')}
+            className={`px-4 py-2 rounded-xl text-xs sm:text-sm font-extrabold flex items-center gap-2 transition-all border ${
+              edicionSubMode === 'pdf'
+                ? 'bg-gradient-to-r from-red-600/40 to-rose-600/35 border-red-400/70 text-white shadow-[0_0_18px_rgba(229,50,45,0.35)]'
+                : 'bg-white/5 border-white/10 text-gray-400 hover:text-white hover:bg-white/10'
+            }`}
+          >
+            <FileText size={16} className="text-red-400" />
+            <span>PDF</span>
+            <span className="text-[10px] px-2 py-0.5 rounded-full bg-red-500/25 text-red-200 border border-red-400/40 font-black">
+              Remb PDF 2.0
+            </span>
+          </button>
+        </div>
+
+        <span className="text-[11px] text-gray-400 hidden sm:inline">
+          {edicionSubMode === 'pdf'
+            ? 'Suite completa estilo iLovePDF (24 herramientas 100% locales)'
+            : 'Estudio Camera Raw y Editor de Video'}
+        </span>
+      </div>
+
+      {edicionSubMode === 'pdf' ? (
+        <PdfRembTab initialFiles={droppedPdfFiles.length > 0 ? droppedPdfFiles : undefined} />
+      ) : (
+        <>
       <input
         ref={photoInputRef}
         type="file"
@@ -4081,6 +4142,8 @@ const EdicionTab: React.FC = () => {
             />
           </div>
         </div>
+      )}
+      </>
       )}
     </div>
   );

@@ -44,7 +44,8 @@ import {
   Minimize2,
   UploadCloud,
   Archive,
-  Sliders
+  Sliders,
+  FileText
 } from 'lucide-react';
 import { Tab, TabConfig, LinkItem } from './types';
 import { AnimatePresence, motion } from 'motion/react';
@@ -99,6 +100,7 @@ const PersonalTab = lazyWithRetry(() => import('./components/PersonalTab'));
 const BodegaTab = lazyWithRetry(() => import('./components/BodegaTab'));
 const EdicionTab = lazyWithRetry(() => import('./components/EdicionTab'));
 const WhatsAppTab = lazyWithRetry(() => import('./components/WhatsAppTab'));
+const PdfRembTab = lazyWithRetry(() => import('./components/PdfRembTab'));
 
 import { PanchoState } from './components/Pancho/PanchoRobotAvatar';
 import { GlobalQuickIdeaModal } from './components/ListasRemb/GlobalQuickIdeaModal';
@@ -809,6 +811,20 @@ const MainLayout: React.FC = () => {
         updateConfig({ ...config, tabs: nextTabs });
       }
 
+      // Auto-add PDF (Remb PDF 2.0) tab right next to Edición if missing
+      const hasPdfTab = config.tabs.some(t => t.id === 'pdf-remb' || t.componentKey === 'PDF');
+      if (!hasPdfTab) {
+        const pdfTab: TabConfig = { id: 'pdf-remb', label: 'PDF', type: 'system', componentKey: 'PDF', isVisible: true, icon: 'FileText' };
+        const nextTabs = [...config.tabs];
+        const ediIdx = nextTabs.findIndex(t => t.id === 'edicion' || t.componentKey === 'Edición' || t.componentKey === 'Edicion');
+        if (ediIdx !== -1) {
+          nextTabs.splice(ediIdx + 1, 0, pdfTab);
+        } else {
+          nextTabs.push(pdfTab);
+        }
+        updateConfig({ ...config, tabs: nextTabs });
+      }
+
       // WhatsApp is now unified inside Generador de Mensajes (email-gen)
 
       // Auto-remove deprecated tabs (Compresor, Renders, Video, Archivos, Dashboard, Ingeniero) from horizontal tabs bar
@@ -945,6 +961,7 @@ const MainLayout: React.FC = () => {
     }
 
     if (tabId === 'edicion') { return <EdicionTab />; }
+    if (tabId === 'pdf-remb') { return <PdfRembTab />; }
     if (tabId === 'whatsapp') { return <WhatsAppTab isActiveTab={activeTabId === tabId} onReturnToTab={() => setActiveTabId(tabId)} />; }
     const activeTab = config.tabs.find(t => t.id === tabId);
     if (!activeTab) return null;
@@ -999,6 +1016,9 @@ const MainLayout: React.FC = () => {
       case 'Edición':
       case 'Edicion':
         return <EdicionTab />;
+      case 'PDF':
+      case 'Pdf':
+        return <PdfRembTab />;
       case 'WhatsApp':
       case 'Whatsapp':
         return <WhatsAppTab isActiveTab={activeTabId === tabId} onReturnToTab={() => setActiveTabId(tabId)} />;
@@ -1040,6 +1060,8 @@ const MainLayout: React.FC = () => {
     'Bodega': <Archive />,
     'Edición': <Sliders />,
     'Edicion': <Sliders />,
+    'PDF': <FileText />,
+    'Pdf': <FileText />,
     'WhatsApp': <MessageSquare />,
     'Whatsapp': <MessageSquare />,
   };
